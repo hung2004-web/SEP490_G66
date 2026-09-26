@@ -1,0 +1,6 @@
+@Boilerplate.ProjectBase_HostAddress = http://localhost:5080
+
+GET {{Boilerplate.ProjectBase_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
