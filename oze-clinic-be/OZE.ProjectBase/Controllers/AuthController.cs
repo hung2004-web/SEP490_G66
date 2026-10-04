@@ -12,6 +12,7 @@ namespace OZE.ProjectBase.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        
 
         public AuthController(IAuthService authService)
         {
@@ -32,6 +33,7 @@ namespace OZE.ProjectBase.Controllers
         public async Task<ActionResult<ApiResponse<AuthResult>>> LoginAsync([FromBody] LoginRequest loginRequest)
         {
             var result = await _authService.LoginAsync(loginRequest);
+            int test = 1;
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
