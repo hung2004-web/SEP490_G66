@@ -10,5 +10,6 @@ namespace OZE.Application.Interfaces
         Task<ApiResponse<AuthResult>> RefreshTokenAsync(RefreshTokenRequest request);
         Task<ApiResponse> ConfirmEmailAsync(string userId, string code);
         Task<ApiResponse> LogoutAsync(string userId);
+        Task<ApiResponse> ChangePasswordAsync(string userId, ChangePasswordRequest request);
     }
 }
