@@ -212,5 +212,37 @@ namespace OZE.Application.Services
                 return ApiResponse.FailureResult("Invalid confirmation token: " + ex.Message);
             }
         }
+
+        public async Task<ApiResponse> ChangePasswordAsync(string userId, ChangePasswordRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
+            }
+
+            if (request.CurrentPassword == request.NewPassword)
+            {
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.SamePassword);
+            }
+
+            if (!string.IsNullOrEmpty(request.ConfirmPassword) && request.NewPassword != request.ConfirmPassword)
+            {
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.PasswordMismatch);
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse.FailureResult("Change password failed", errors);
+            }
+
+            // Revoke active refresh tokens for security
+            await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            await _refreshTokenRepository.SaveChangesAsync();
+
+            return ApiResponse.SuccessResult("Password changed successfully");
+        }
     }
 }
