@@ -2,7 +2,11 @@ import React from "react";
 
 const Footer = () => {
     return (
-        <div>Footer</div>
+        <div className="bg-[#f5f5f5]">
+            <div>
+                <img src="@/assets/Logo-OZE-ngang.png" />
+            </div>
+        </div>
     )
 }
 
