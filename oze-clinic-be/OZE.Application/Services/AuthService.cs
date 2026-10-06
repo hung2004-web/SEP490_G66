@@ -8,6 +8,7 @@ using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
+using System.Security.Cryptography;
 
 namespace OZE.Application.Services
 {
@@ -64,11 +65,11 @@ namespace OZE.Application.Services
             }
 
             // Assign default User role
-            if (!await _roleManager.RoleExistsAsync(RoleConstants.UserRole))
+            if (!await _roleManager.RoleExistsAsync(RoleConstants.PatientRole))
             {
-                await _roleManager.CreateAsync(new IdentityRole(RoleConstants.UserRole));
+                await _roleManager.CreateAsync(new IdentityRole(RoleConstants.PatientRole));
             }
-            await _userManager.AddToRoleAsync(user, RoleConstants.UserRole);
+            await _userManager.AddToRoleAsync(user, RoleConstants.PatientRole);
 
             if (request.StartFreeTrial)
             {
@@ -213,36 +214,34 @@ namespace OZE.Application.Services
             }
         }
 
-        public async Task<ApiResponse> ChangePasswordAsync(string userId, ChangePasswordRequest request)
+        public async Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordRequest request, string baseUrl)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.EmailNotFound);
             }
+            var temporaryPassword = GenerateTemporaryPassword();
+            try { await _emailSender.SendTemporaryPasswordAsync(user, temporaryPassword); }
+            catch { return ApiResponse.FailureResult(ErrorConstants.AuthMessage.EmailCantSent); }
 
-            if (request.CurrentPassword == request.NewPassword)
-            {
-                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.SamePassword);
-            }
-
-            if (!string.IsNullOrEmpty(request.ConfirmPassword) && request.NewPassword != request.ConfirmPassword)
-            {
-                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.PasswordMismatch);
-            }
-
-            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, temporaryPassword);
             if (!result.Succeeded)
-            {
-                var errors = result.Errors.Select(e => e.Description).ToList();
-                return ApiResponse.FailureResult("Change password failed", errors);
-            }
+                return ApiResponse.FailureResult("Could not reset password",
+                    result.Errors.Select(e => e.Description).ToList());
 
-            // Revoke active refresh tokens for security
-            await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            await _refreshTokenRepository.RevokeUserTokensAsync(user.Id);
             await _refreshTokenRepository.SaveChangesAsync();
+            return ApiResponse.SuccessResult("Password is changed");
+        }
 
-            return ApiResponse.SuccessResult("Password changed successfully");
+        private static string GenerateTemporaryPassword()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+            return new string(Enumerable.Range(0, 12)
+            .Select(_ => chars[RandomNumberGenerator.GetInt32(chars.Length)])
+            .ToArray());
         }
     }
 }

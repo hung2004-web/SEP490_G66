@@ -6,5 +6,7 @@ namespace OZE.Application.Interfaces
     {
         Task SendEmailAsync(string toEmail, string subject, string message);
         Task SendEmailVerificationAsync(ApplicationUser user, string callbackUrl);
+
+        Task SendTemporaryPasswordAsync(ApplicationUser user, string temporaryPassword);
     }
 }
