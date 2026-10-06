@@ -44,6 +44,7 @@ jobs:
   deploy:
     name: Deploy to Self-Hosted Server
     needs: ci-check
+    if: false
     runs-on: self-hosted
     defaults:
       run:
