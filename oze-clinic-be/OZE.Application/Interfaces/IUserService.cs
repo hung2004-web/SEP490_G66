@@ -8,6 +8,7 @@ namespace OZE.Application.Interfaces
         Task<ApplicationUser?> GetUserByEmailAsync(string email);
         Task<ApplicationUser?> GetUserByIdAsync(string userId);
         Task<bool> IsEmailInUseAsync(string email);
+        Task<bool> IsPhoneInUseAsync(string phoneNumber);
         Task<UserProfileResponse?> GetUserProfileAsync(string userId);
     }
 }

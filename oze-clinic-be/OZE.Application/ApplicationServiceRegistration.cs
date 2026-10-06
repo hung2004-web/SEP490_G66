@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OZE.Application.Interfaces;
@@ -13,12 +14,18 @@ namespace OZE.Application
             // Configure Options
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
             services.Configure<AuthMessageSenderOptions>(configuration.GetSection("AuthMessageSenderOptions"));
+            services.Configure<AuthSmsSenderOptions>(configuration.GetSection("AuthSmsSenderOptions"));
+            services.Configure<RegisterOtpSettings>(configuration.GetSection("RegisterOtpSettings"));
+
+            services.AddMemoryCache();
 
             // Register Services
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IEmailSender, EmailSender>();
+            services.AddScoped<ISmsSender, SmsSender>();
+            services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
 
             return services;
         }
