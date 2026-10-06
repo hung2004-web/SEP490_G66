@@ -1,21 +1,18 @@
-const cx = (...classes) => classes.filter(Boolean).join(" ");
+import { cx } from "../utils/cx";
 
-// Variants and sizes from docs/DESIGN.md section 6 (Buttons).
+// Variants and sizes map to the shared .btn classes in src/styles/index.css.
 const VARIANTS = {
-    primary: "bg-primary text-white hover:bg-primary-hover active:bg-primary-active focus-visible:shadow-focus",
-    secondary: "border border-primary bg-canvas text-primary hover:bg-primary-softer active:bg-primary-soft focus-visible:shadow-focus",
-    tertiary: "border border-line-strong bg-canvas text-ink hover:bg-surface-tint active:bg-surface-muted focus-visible:shadow-focus",
-    ghost: "bg-transparent text-primary hover:bg-primary-softer active:bg-primary-soft focus-visible:shadow-focus",
-    danger: "bg-danger-solid text-white hover:bg-danger active:bg-danger focus-visible:shadow-focus-danger",
+    primary: "btn-primary",
+    secondary: "btn-secondary",
+    link: "btn-link",
+    cta: "btn-cta",
+    danger: "btn-danger",
 };
 
 const SIZES = {
-    sm: "h-8 px-3",
-    md: "h-10 px-4",
-    lg: "h-12 px-7",
+    md: null,
+    lg: "btn-lg",
 };
-
-const DISABLED = "cursor-not-allowed bg-surface-muted text-placeholder";
 
 const Button = ({
     variant = "primary",
@@ -28,32 +25,16 @@ const Button = ({
     children,
     ...props
 }) => {
-    const isInactive = disabled && !loading;
-
     return (
         <button
             type={type}
             disabled={disabled || loading}
             aria-busy={loading || undefined}
-            className={cx(
-                "relative inline-flex items-center justify-center rounded-md text-sm font-semibold leading-none focus-visible:outline-none",
-                SIZES[size],
-                isInactive ? DISABLED : VARIANTS[variant],
-                loading && "cursor-wait",
-                fullWidth && "w-full",
-                className
-            )}
+            className={cx("btn", VARIANTS[variant], SIZES[size], fullWidth && "w-full", className)}
             {...props}
         >
-            {/* The label stays in the layout while loading so the button keeps its width. */}
-            <span className={cx("inline-flex items-center gap-2", loading && "opacity-0")}>
-                {children}
-            </span>
-            {loading && (
-                <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                    <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" />
-                </span>
-            )}
+            {loading && <span className="btn-spinner" aria-hidden="true" />}
+            {children}
         </button>
     );
 };

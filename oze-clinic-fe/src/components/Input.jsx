@@ -1,39 +1,34 @@
-const cx = (...classes) => classes.filter(Boolean).join(" ");
+import { cx } from "../utils/cx";
 
-// Text input with label, required asterisk, helper and error text (docs/DESIGN.md section 6, Form controls).
-const Input = ({ id, label, required = false, error, helperText, className, ...props }) => {
+// Text input with label, required asterisk, help and error text (shared .field classes in src/styles/index.css).
+// `required` only sets aria-required, not the native attribute, so the browser never shows its own validation popup.
+const Input = ({ id, label, required = false, error, helpText, className, ...props }) => {
     const errorId = `${id}-error`;
-    const helperId = `${id}-helper`;
-    const describedBy = error ? errorId : helperText ? helperId : undefined;
+    const helpId = `${id}-help`;
+    const describedBy = error ? errorId : helpText ? helpId : undefined;
 
     return (
-        <div className={className}>
-            <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-ink">
+        <div className={cx("field", className)}>
+            <label htmlFor={id} className={cx("label", required && "label-required")}>
                 {label}
-                {required && <span className="ml-1 text-danger" aria-hidden="true">*</span>}
             </label>
             <input
                 id={id}
+                className="input"
                 aria-required={required || undefined}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={describedBy}
-                className={cx(
-                    "h-10 w-full rounded-md border bg-canvas px-3 text-body-sm text-ink placeholder:text-placeholder focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-placeholder",
-                    error
-                        ? "border-danger-solid focus:shadow-focus-danger"
-                        : "border-line-strong focus:border-primary focus:shadow-focus"
-                )}
                 {...props}
             />
             {/* TODO: add the CircleAlert icon before the error once lucide-react is approved (DESIGN.md section 7). */}
             {error && (
-                <p id={errorId} className="mt-1.5 text-caption text-danger">
+                <p id={errorId} className="error-text">
                     {error}
                 </p>
             )}
-            {!error && helperText && (
-                <p id={helperId} className="mt-1.5 text-caption text-muted">
-                    {helperText}
+            {!error && helpText && (
+                <p id={helpId} className="help-text">
+                    {helpText}
                 </p>
             )}
         </div>

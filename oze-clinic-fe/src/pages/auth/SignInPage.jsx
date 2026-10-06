@@ -2,11 +2,10 @@ import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Alert from "../../components/Alert";
 import Button from "../../components/Button";
+import Card from "../../components/Card";
 import Input from "../../components/Input";
 import { signIn } from "../../services/authService";
 import { MESSAGES, ROUTES, getPostLoginRoute } from "../../utils/constant";
-
-const LINK_CLASS = "rounded-xs text-primary hover:text-primary-hover hover:underline focus-visible:outline-none focus-visible:shadow-focus";
 
 const requiredMessage = (fieldName) => MESSAGES.MSG07.replace("[field name]", fieldName);
 
@@ -70,15 +69,15 @@ const SignInPage = () => {
 
     return (
         <section className="flex justify-center py-12 md:py-16">
-            <div className="w-full max-w-md rounded-xl bg-canvas p-6 shadow-md sm:p-8">
-                <h1 className="text-center font-heading text-heading-1 text-ink">Login</h1>
+            <Card variant="public" className="w-full max-w-md">
+                <h1 className="text-center text-heading-1">Login</h1>
                 <p className="mt-2 text-center text-body-md text-muted">
                     Access your medical records, appointment schedule, and test results online—anytime, anywhere.
                 </p>
 
                 <form noValidate onSubmit={handleSubmit} className="mt-6">
                     {formError && (
-                        <Alert variant="danger" className="mb-4">
+                        <Alert tone="danger" className="mb-4">
                             {formError}
                         </Alert>
                     )}
@@ -113,7 +112,7 @@ const SignInPage = () => {
                     />
 
                     <div className="mt-2 flex justify-end">
-                        <Link to={ROUTES.FORGOT_PASSWORD} className={`text-sm font-medium ${LINK_CLASS}`}>
+                        <Link to={ROUTES.FORGOT_PASSWORD} className="btn btn-link">
                             Forgot password?
                         </Link>
                     </div>
@@ -123,19 +122,19 @@ const SignInPage = () => {
                     </Button>
                 </form>
 
-                <p className="my-4 text-center text-sm text-muted">or</p>
+                <p className="my-4 text-center text-body-sm text-muted">or</p>
 
-                <Button variant="tertiary" size="lg" fullWidth onClick={handleGoogleSignIn}>
+                <Button variant="secondary" size="lg" fullWidth onClick={handleGoogleSignIn}>
                     Sign in via Google
                 </Button>
 
                 <p className="mt-6 text-center text-body-sm text-body">
                     Don’t have an account?{" "}
-                    <Link to={ROUTES.SIGN_UP} className={`font-semibold ${LINK_CLASS}`}>
+                    <Link to={ROUTES.SIGN_UP} className="btn btn-link font-semibold">
                         Sign up
                     </Link>
                 </p>
-            </div>
+            </Card>
         </section>
     );
 };
