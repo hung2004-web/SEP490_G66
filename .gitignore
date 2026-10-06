@@ -8,3 +8,6 @@
 *.sln.docstates
 .idea/
 .vscode/
+
+## Local ASP.NET config (secrets, connection strings)
+**/appsettings.Development.json
