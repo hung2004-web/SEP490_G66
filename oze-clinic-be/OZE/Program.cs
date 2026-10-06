@@ -1,10 +1,12 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OZE.Application;
 using OZE.Common.Models;
 using OZE.Persistence;
+using OZE.Persistence.DbContexts;
 using OZE.Persistence.Seed;
 using OZE.ProjectBase.Middlewares;
 
@@ -32,7 +34,9 @@ builder.Services.AddCors(options =>
 // 4. Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
 var keyBytes = Encoding.UTF8.GetBytes(string.IsNullOrEmpty(jwtSettings.Key) ? "default_super_secret_key_at_least_32_bytes_long" : jwtSettings.Key);
-
+builder.Services.AddDbContext<AppIdentityDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
