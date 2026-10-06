@@ -106,3 +106,40 @@
     color: var(--color-ink);
   }
 }
+
+@layer components {
+  /* Forms */
+  .input {
+    @apply w-full font-sans text-body-sm h-11 px-4 py-2.5 rounded-lg border border-border-strong bg-canvas text-ink transition-all duration-200 outline-none placeholder:text-placeholder hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 shadow-sm;
+  }
+  .input:disabled, .input[readonly] {
+    @apply bg-surface-muted border-transparent shadow-none cursor-default text-body hover:border-transparent focus:ring-0;
+  }
+  .label {
+    @apply font-sans text-label font-medium text-ink;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex h-11 px-5 py-2.5 items-center justify-center font-sans text-body-sm font-medium leading-none rounded-lg transition-all duration-200 active:scale-[0.98] outline-none disabled:opacity-60 disabled:pointer-events-none;
+  }
+  .btn-primary {
+    @apply bg-primary text-on-primary border border-transparent shadow-sm hover:shadow-md focus:ring-4 focus:ring-primary/20 hover:bg-primary-hover active:bg-primary-active;
+  }
+  .btn-secondary {
+    @apply bg-canvas text-ink border border-strong hover:bg-surface-tint hover:border-gray-400 active:bg-surface-muted shadow-sm focus:ring-4 focus:ring-gray-200;
+  }
+  
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-caption font-medium;
+  }
+  .badge-success { @apply bg-success-soft text-success-solid; }
+  .badge-warning { @apply bg-warning-soft text-warning-solid; }
+  .badge-danger { @apply bg-danger-soft text-danger-solid; }
+  
+  /* Layout utilities */
+  .container-public {
+    @apply w-full max-w-[var(--container-container)] mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
