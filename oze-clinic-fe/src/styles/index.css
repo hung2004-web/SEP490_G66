@@ -1,6 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap');
+/*
+ * OZE Dental - global styles (source: docs/DESIGN.md, guide: docs/SHARED_UI.md)
+ * 1. Tokens      @theme: colors, type, radius, shadows, layout sizes
+ * 2. Base        default styles for HTML elements
+ * 3. Components  shared classes used by src/components and layouts
+ * Change tokens and shared classes here only, never inside a page.
+ */
 @import "tailwindcss";
 
+/* ===================== 1. TOKENS ===================== */
+/*
+ * OZE Dental design tokens (source: DESIGN_oze.md).
+ * Tailwind v4 turns each token into utilities:
+ *   --color-primary  -> bg-primary, text-primary, border-primary, ring-primary ...
+ *   --text-heading-1 -> text-heading-1 (size + line height + weight)
+ *   --radius-lg      -> rounded-lg      --shadow-md -> shadow-md
+ * Change a value here only, never in a component.
+ */
 @theme {
   /* Brand */
   --color-primary: #165CDD;
@@ -106,8 +121,7 @@
   --shadow-focus-danger: 0 0 0 3px rgba(229, 72, 77, 0.25);
 
   /* Layout (w-sidebar, h-topbar, max-w-public ...) */
-  --spacing-13: 52px;
-  --spacing-public: 1200px;
+  --container-public: 1200px;
   --spacing-sidebar: 256px;
   --spacing-sidebar-collapsed: 72px;
   --spacing-topbar: 64px;
@@ -116,12 +130,64 @@
   --spacing-control: 40px;
 }
 
+/* ===================== 2. BASE ===================== */
+/* Global element defaults. Keep this file small. */
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply font-sans text-body bg-surface-tint antialiased;
+    @apply bg-canvas font-sans text-body-sm text-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-ink;
+  }
+
+  a {
+    @apply text-primary;
+  }
+
+  ::placeholder {
+    @apply text-placeholder;
+  }
+
+  ::selection {
+    @apply bg-primary-soft text-ink;
+  }
+
+  /* One focus ring for every interactive element */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    @apply outline-none shadow-focus;
+  }
+
+  /* Native checkbox, radio, range use the brand blue */
+  input[type="checkbox"], input[type="radio"], input[type="range"] {
+    accent-color: var(--color-primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
+/* Tabular numbers for IDs, times, amounts, queue numbers */
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===================== 3. COMPONENTS ===================== */
+/*
+ * Shared component classes (source: DESIGN_oze.md).
+ * React components in src/components/ use these classes; screens use the
+ * React components, not the classes directly, whenever a component exists.
+ * Sections marked [EXT] are not in DESIGN_oze.md and need team approval.
+ */
 @layer components {
   /* ---------- Layout ---------- */
   .container-public { @apply mx-auto w-full max-w-public px-4 md:px-6; }
@@ -166,7 +232,7 @@
   .help-text { @apply text-caption text-muted; }
   .error-text { @apply flex items-center gap-1 text-caption text-danger; }
   .search { @apply relative; }
-  .search > svg, .search > .search-icon { @apply pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted; }
+  .search > svg, .search > .search-icon { @apply pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted; }
   .search > .input { @apply pl-9; }
 
   /* ---------- Status badge and queue chip ---------- */
@@ -184,13 +250,13 @@
   .card-public { @apply rounded-xl bg-canvas p-8 text-body-md text-body shadow-md; }
   .card-title { @apply font-heading text-heading-3 text-ink; }
   .stat-label { @apply text-label text-muted; }
-  .stat-value { @apply tabular-nums mt-1 font-heading text-stat text-ink; }
+  .stat-value { @apply num mt-1 font-heading text-stat text-ink; }
 
   /* ---------- Table ---------- */
   .table-wrap { @apply overflow-x-auto rounded-lg border border-border bg-canvas; }
   .table { @apply w-full border-collapse text-body-sm text-body; }
   .table th { @apply bg-surface-tint px-4 py-3 text-left text-label text-muted; }
-  .table td { @apply tabular-nums h-13 border-t border-border px-4; }
+  .table td { @apply num h-13 border-t border-border px-4; }
   .table tbody tr { @apply transition-colors duration-150 hover:bg-primary-softer; }
   .table tbody tr[aria-selected="true"] { @apply bg-primary-soft; }
   .table .cell-primary { @apply text-title text-ink; }
@@ -237,8 +303,7 @@
 
   /* ---------- Empty and loading ---------- */
   .empty-state { @apply flex flex-col items-center px-4 py-10 text-center; }
-  /* [EXT] 24px icon as per design spec */
-  .empty-state-icon { @apply mb-3 size-6 text-placeholder; }
+  .empty-state-icon { @apply mb-3 size-12 text-placeholder; }
   .empty-state-title { @apply text-title text-ink; }
   .empty-state-text { @apply mt-1 text-body-sm text-muted; }
   .skeleton { @apply animate-pulse rounded-md bg-surface-muted; }
