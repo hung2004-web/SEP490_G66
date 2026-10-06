@@ -4,6 +4,7 @@
 @theme {
   /* Brand */
   --color-primary: #165CDD;
+  --color-on-primary: #FFFFFF;
   --color-primary-hover: #1249B3;
   --color-primary-active: #0F3D96;
   --color-primary-soft: #EAF1FD;
@@ -75,6 +76,12 @@
   --text-caption: 12px;
   --text-caption--line-height: 1.4;
   --text-caption--font-weight: 500;
+  --text-label: 14px;
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 500;
+  --text-title: 14px;
+  --text-title--line-height: 1.4;
+  --text-title--font-weight: 600;
 
   /* Radius (pill = rounded-full) */
   --radius-xs: 4px;
@@ -110,7 +117,7 @@
 @layer components {
   /* Forms */
   .input {
-    @apply w-full font-sans text-body-sm h-11 px-4 py-2.5 rounded-lg border border-border-strong bg-canvas text-ink transition-all duration-200 outline-none placeholder:text-placeholder hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 shadow-sm;
+    @apply w-full font-sans text-body-sm h-11 px-4 py-2.5 rounded-lg border border-line-strong bg-canvas text-ink transition-all duration-200 outline-none placeholder:text-placeholder hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 shadow-sm;
   }
   .input:disabled, .input[readonly] {
     @apply bg-surface-muted border-transparent shadow-none cursor-default text-body hover:border-transparent focus:ring-0;
@@ -127,7 +134,7 @@
     @apply bg-primary text-on-primary border border-transparent shadow-sm hover:shadow-md focus:ring-4 focus:ring-primary/20 hover:bg-primary-hover active:bg-primary-active;
   }
   .btn-secondary {
-    @apply bg-canvas text-ink border border-strong hover:bg-surface-tint hover:border-gray-400 active:bg-surface-muted shadow-sm focus:ring-4 focus:ring-gray-200;
+    @apply bg-canvas text-ink border border-line-strong hover:bg-surface-tint hover:border-gray-400 active:bg-surface-muted shadow-sm focus:ring-4 focus:ring-gray-200;
   }
   
   /* Badges */

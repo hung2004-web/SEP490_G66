@@ -13,7 +13,7 @@ export const Input = React.forwardRef(({
   
   const baseClasses = 'w-full font-sans text-body-sm h-11 px-4 py-2.5 rounded-lg border transition-all duration-200 outline-none placeholder:text-placeholder';
   
-  let stateClasses = 'bg-canvas text-ink border-border-strong hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 shadow-sm';
+  let stateClasses = 'bg-canvas text-ink border-line-strong hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 shadow-sm';
   
   if (readOnly) {
     stateClasses = 'bg-surface-muted text-body border-transparent focus:shadow-none cursor-default';
