@@ -9,5 +9,6 @@ namespace OZE.Application.Interfaces
         Task<ApplicationUser?> GetUserByIdAsync(string userId);
         Task<bool> IsEmailInUseAsync(string email);
         Task<UserProfileResponse?> GetUserProfileAsync(string userId);
+        string? GetFullName(string userId);
     }
 }
