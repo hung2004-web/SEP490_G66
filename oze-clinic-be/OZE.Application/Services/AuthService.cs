@@ -51,10 +51,14 @@ namespace OZE.Application.Services
             var user = new ApplicationUser
             {
                 Id = Guid.NewGuid().ToString(),
-                FullName = request.FullName,
                 Email = request.Email,
                 UserName = request.Email,
-                CreateDate = DateTime.UtcNow
+                Patient = new Patient
+                {
+                    PatientCode = GeneratePatientCode(),
+                    FullName = request.FullName,
+                    Email = request.Email
+                }
             };
 
             var createResult = await _userManager.CreateAsync(user, request.Password);
@@ -108,16 +112,12 @@ namespace OZE.Application.Services
 
             var token = await _jwtTokenGenerator.GenerateTokenAsync(user);
             var refreshToken = _jwtTokenGenerator.GenerateRefreshToken();
-            var expiryDate = DateTime.UtcNow.AddDays(7);
 
             var tokenEntry = new UserRefreshToken
             {
-                Id = Guid.NewGuid(),
                 UserId = user.Id,
-                AccessToken = token,
                 RefreshToken = refreshToken,
-                CreationDate = DateTime.UtcNow,
-                ExpiryDate = expiryDate
+                ExpiryDate = DateTimeOffset.UtcNow.AddDays(7)
             };
 
             await _refreshTokenRepository.AddAsync(tokenEntry);
@@ -148,7 +148,7 @@ namespace OZE.Application.Services
             }
 
             // Revoke old refresh token
-            activeToken.RevokeAt = DateTime.UtcNow;
+            activeToken.RevokedAt = DateTimeOffset.UtcNow;
             await _refreshTokenRepository.UpdateAsync(activeToken);
 
             // Generate new token pair
@@ -157,12 +157,9 @@ namespace OZE.Application.Services
 
             var newTokenEntry = new UserRefreshToken
             {
-                Id = Guid.NewGuid(),
                 UserId = user.Id,
                 RefreshToken = newRefreshToken,
-                AccessToken = newAccessToken,
-                CreationDate = DateTime.UtcNow,
-                ExpiryDate = DateTime.UtcNow.AddDays(7)
+                ExpiryDate = DateTimeOffset.UtcNow.AddDays(7)
             };
 
             await _refreshTokenRepository.AddAsync(newTokenEntry);
@@ -274,6 +271,12 @@ namespace OZE.Application.Services
             return new string(Enumerable.Range(0, 12)
             .Select(_ => chars[RandomNumberGenerator.GetInt32(chars.Length)])
             .ToArray());
+        }
+
+        // Format: BN-yyMMdd-XXXXXX (fits Patients.PatientCode NVARCHAR(20)).
+        private static string GeneratePatientCode()
+        {
+            return $"BN-{DateTime.UtcNow:yyMMdd}-{RandomNumberGenerator.GetInt32(0, 1_000_000):D6}";
         }
     }
 }

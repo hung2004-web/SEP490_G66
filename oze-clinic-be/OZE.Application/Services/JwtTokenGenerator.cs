@@ -15,13 +15,16 @@ namespace OZE.Application.Services
     {
         private readonly JwtSettings _jwtSettings;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IUserService _userService;
 
         public JwtTokenGenerator(
             IOptions<JwtSettings> jwtSettings,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IUserService userService)
         {
             _jwtSettings = jwtSettings.Value;
             _userManager = userManager;
+            _userService = userService;
         }
 
         public async Task<string> GenerateTokenAsync(ApplicationUser user)
@@ -35,9 +38,10 @@ namespace OZE.Application.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            if (!string.IsNullOrEmpty(user.FullName))
+            var fullName = _userService.GetFullName(user.Id);
+            if (!string.IsNullOrEmpty(fullName))
             {
-                claims.Add(new Claim("FullName", user.FullName));
+                claims.Add(new Claim("FullName", fullName));
             }
 
             var roles = await _userManager.GetRolesAsync(user);
