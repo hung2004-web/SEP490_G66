@@ -57,6 +57,20 @@ namespace OZE.ProjectBase.Controllers
             return Ok(result);
         }
 
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse>> ChangePasswordAsync([FromBody] ChangePasswordRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse.FailureResult("User not identified"));
+            }
+
+            var result = await _authService.ChangePasswordAsync(userId, request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         [HttpGet("confirm-email")]
         [AllowAnonymous]
         public async Task<ActionResult<ApiResponse>> ConfirmEmailAsync([FromQuery] string userId, [FromQuery] string code)
