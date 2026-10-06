@@ -1,11 +1,16 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import HomePage from "../pages/common/HomePage";
+import Register from "../pages/common/Register";
 
 const routes = [
     {
         path: "/",
         element: <HomePage />
+    },
+    {
+        path: "/register",
+        element: <Register />
     }
 ]
 
