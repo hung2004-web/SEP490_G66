@@ -44,9 +44,19 @@ namespace OZE.Application.Services
             {
                 Id = user.Id,
                 Email = user.Email ?? string.Empty,
-                FullName = user.FullName,
+                FullName = GetFullName(userId),
                 Roles = roles
             };
+        }
+
+        public string? GetFullName(string userId)
+        {
+            return _userManager.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.StaffProfile != null ? u.StaffProfile.FullName
+                           : u.Patient != null ? u.Patient.FullName
+                           : null)
+                .FirstOrDefault();
         }
     }
 }
