@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
@@ -20,6 +21,7 @@ namespace OZE.Application.Services
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
         private readonly IEmailSender _emailSender;
         private readonly JwtSettings _jwtSettings;
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -28,7 +30,8 @@ namespace OZE.Application.Services
             IUserRefreshTokenRepository refreshTokenRepository,
             IJwtTokenGenerator jwtTokenGenerator,
             IEmailSender emailSender,
-            IOptions<JwtSettings> jwtOptions)
+            IOptions<JwtSettings> jwtOptions,
+            ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -37,6 +40,7 @@ namespace OZE.Application.Services
             _jwtTokenGenerator = jwtTokenGenerator;
             _emailSender = emailSender;
             _jwtSettings = jwtOptions.Value;
+            _logger = logger;
         }
 
         public async Task<ApiResponse<AuthResult>> RegisterAsync(RegisterRequest request, string baseUrl)
@@ -84,9 +88,9 @@ namespace OZE.Application.Services
 
                 await _emailSender.SendEmailVerificationAsync(user, callbackUrl);
             }
-            catch
+            catch (Exception ex)
             {
-                // Non-blocking email failure
+                _logger.LogError(ex, "Failed to send confirmation email to {Email} after registration", user.Email);
             }
 
             return ApiResponse<AuthResult>.SuccessResult(new AuthResult(), "User registered successfully. Please check your email to confirm your account.");
