@@ -8,6 +8,7 @@ using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
+using System.Security.Cryptography;
 
 namespace OZE.Application.Services
 {
@@ -64,11 +65,11 @@ namespace OZE.Application.Services
             }
 
             // Assign default User role
-            if (!await _roleManager.RoleExistsAsync(RoleConstants.UserRole))
+            if (!await _roleManager.RoleExistsAsync(RoleConstants.PatientRole))
             {
-                await _roleManager.CreateAsync(new IdentityRole(RoleConstants.UserRole));
+                await _roleManager.CreateAsync(new IdentityRole(RoleConstants.PatientRole));
             }
-            await _userManager.AddToRoleAsync(user, RoleConstants.UserRole);
+            await _userManager.AddToRoleAsync(user, RoleConstants.PatientRole);
 
             if (request.StartFreeTrial)
             {
@@ -211,6 +212,36 @@ namespace OZE.Application.Services
             {
                 return ApiResponse.FailureResult("Invalid confirmation token: " + ex.Message);
             }
+        }
+
+        public async Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordRequest request, string baseUrl)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.EmailNotFound);
+            }
+            var temporaryPassword = GenerateTemporaryPassword();
+            try { await _emailSender.SendTemporaryPasswordAsync(user, temporaryPassword); }
+            catch { return ApiResponse.FailureResult(ErrorConstants.AuthMessage.EmailCantSent); }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, temporaryPassword);
+            if (!result.Succeeded)
+                return ApiResponse.FailureResult("Could not reset password",
+                    result.Errors.Select(e => e.Description).ToList());
+
+            await _refreshTokenRepository.RevokeUserTokensAsync(user.Id);
+            await _refreshTokenRepository.SaveChangesAsync();
+            return ApiResponse.SuccessResult("Password is changed");
+        }
+
+        private static string GenerateTemporaryPassword()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+            return new string(Enumerable.Range(0, 12)
+            .Select(_ => chars[RandomNumberGenerator.GetInt32(chars.Length)])
+            .ToArray());
         }
     }
 }

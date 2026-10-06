@@ -10,6 +10,9 @@ namespace OZE.Common.Constants
     {
         public static class AuthMessage
         {
+            public const string EmailNotFound = "Email not found in system";
+            public const string EmailCantSent = "Could not send the email. Please try again later.";
+            public const string EmailExist = "Email is exist in system";
             public const string UserExist = "User is exist in system";
             public const string UserNotFound = "User not found in system";
             public const string EmailConfirmRequired = "Email confirm Required";

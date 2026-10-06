@@ -6,6 +6,7 @@ namespace OZE.Application.Interfaces
     public interface IAuthService
     {
         Task<ApiResponse<AuthResult>> RegisterAsync(RegisterRequest request, string baseUrl);
+        Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordRequest request, string baseUrl);
         Task<ApiResponse<AuthResult>> LoginAsync(LoginRequest request);
         Task<ApiResponse<AuthResult>> RefreshTokenAsync(RefreshTokenRequest request);
         Task<ApiResponse> ConfirmEmailAsync(string userId, string code);
