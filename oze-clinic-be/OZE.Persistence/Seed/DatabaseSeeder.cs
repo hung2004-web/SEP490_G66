@@ -14,8 +14,15 @@ namespace OZE.Persistence.Seed
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            // 1. Seed Roles
-            string[] roles = { RoleConstants.AdminRole, RoleConstants.UserRole };
+            // 1. Seed Roles (normally already inserted by the InitialCreate migration)
+            string[] roles =
+            {
+                RoleConstants.PatientRole,
+                RoleConstants.DoctorRole,
+                RoleConstants.ReceptionistRole,
+                RoleConstants.DentalImagingTechnicianRole,
+                RoleConstants.ClinicManagerRole
+            };
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
@@ -25,7 +32,7 @@ namespace OZE.Persistence.Seed
                 }
             }
 
-            // 2. Seed Default Admin User
+            // 2. Seed Default Clinic Manager account (each user has exactly one role)
             var adminEmail = "admin@oze.com";
             var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
             if (existingAdmin == null)
@@ -34,22 +41,23 @@ namespace OZE.Persistence.Seed
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
-                    FullName = "System Administrator",
                     EmailConfirmed = true,
-                    CreateDate = DateTime.UtcNow
+                    StaffProfile = new StaffProfile
+                    {
+                        FullName = "System Administrator"
+                    }
                 };
 
                 var createResult = await userManager.CreateAsync(adminUser, "Admin@123456");
                 if (createResult.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(adminUser, RoleConstants.AdminRole);
-                    await userManager.AddToRoleAsync(adminUser, RoleConstants.UserRole);
-                    logger.LogInformation("Default Admin user '{AdminEmail}' created successfully.", adminEmail);
+                    await userManager.AddToRoleAsync(adminUser, RoleConstants.ClinicManagerRole);
+                    logger.LogInformation("Default Clinic Manager user '{AdminEmail}' created successfully.", adminEmail);
                 }
                 else
                 {
                     var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-                    logger.LogError("Failed to create default Admin user: {Errors}", errors);
+                    logger.LogError("Failed to create default Clinic Manager user: {Errors}", errors);
                 }
             }
         }

@@ -59,5 +59,17 @@ namespace OZE.Application.Services
 
             await SendEmailAsync(user.Email ?? string.Empty, subject, htmlMessage);
         }
+
+        public  async Task SendTemporaryPasswordAsync(ApplicationUser user, string temporaryPassword)
+        {
+
+            var subject = "Your temporary password";
+            var htmlMessage = $@"
+            <p>Hello {user.UserName ?? user.Email},</p>
+            <p>Your temporary password is: <b>{temporaryPassword}</b></p>
+            <p>Please log in and change your password right away.</p>";
+
+            await SendEmailAsync(user.Email ?? string.Empty, subject, htmlMessage);
+        }
     }
 }
