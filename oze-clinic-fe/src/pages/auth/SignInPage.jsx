@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Alert from "../../components/Alert";
 import Card from "../../components/Card";
 import { signIn } from "../../services/authService";
 import { MESSAGES, ROUTES, getPostLoginRoute } from "../../utils/constant";
@@ -74,10 +73,11 @@ const SignInPage = () => {
                 </p>
 
                 <form noValidate onSubmit={handleSubmit} className="mt-6">
+                    {/* TODO: add the semantic icon once lucide-react is approved (DESIGN.md section 7). */}
                     {formError && (
-                        <Alert tone="danger" className="mb-4">
+                        <div role="alert" className="alert alert-danger mb-4">
                             {formError}
-                        </Alert>
+                        </div>
                     )}
 
                     {/* aria-required only, not the native required attribute, so the browser never shows its own popup. */}
