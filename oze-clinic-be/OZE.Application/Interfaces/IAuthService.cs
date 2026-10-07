@@ -8,7 +8,6 @@ namespace OZE.Application.Interfaces
         Task<ApiResponse<RegisterPendingResponse>> RegisterAsync(RegisterRequest request, string baseUrl);
         Task<ApiResponse<RegisterPendingResponse>> ResendOtpAsync(ResendOtpRequest request);
         Task<ApiResponse> VerifyOtpAsync(VerifyOtpRequest request, string baseUrl);
-        Task<ApiResponse<AuthResult>> RegisterAsync(RegisterRequest request, string baseUrl);
         Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordRequest request, string baseUrl);
         Task<ApiResponse<AuthResult>> LoginAsync(LoginRequest request);
         Task<ApiResponse<AuthResult>> RefreshTokenAsync(RefreshTokenRequest request);

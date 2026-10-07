@@ -47,8 +47,9 @@ namespace OZE.Application.Services
 
         public async Task SendEmailVerificationAsync(ApplicationUser user, string callbackUrl)
         {
-            var greetingName = !string.IsNullOrWhiteSpace(user.FullName)
-                ? user.FullName
+            var fullName = user.Patient?.FullName ?? user.StaffProfile?.FullName;
+            var greetingName = !string.IsNullOrWhiteSpace(fullName)
+                ? fullName
                 : (user.UserName ?? user.Email);
             var subject = "Verify your email address";
             var htmlMessage = $@"

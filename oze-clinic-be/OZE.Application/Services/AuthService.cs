@@ -11,7 +11,6 @@ using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
-using System.Security.Cryptography;
 
 namespace OZE.Application.Services
 {
@@ -28,7 +27,6 @@ namespace OZE.Application.Services
         private readonly JwtSettings _jwtSettings;
         private readonly RegisterOtpSettings _otpSettings;
         private readonly ILogger<AuthService> _logger;
-        private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -42,8 +40,6 @@ namespace OZE.Application.Services
             IOptions<JwtSettings> jwtOptions,
             IOptions<RegisterOtpSettings> otpOptions,
             ILogger<AuthService> logger)
-            IOptions<JwtSettings> jwtOptions,
-            ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -55,7 +51,6 @@ namespace OZE.Application.Services
             _pendingRegistrationStore = pendingRegistrationStore;
             _jwtSettings = jwtOptions.Value;
             _otpSettings = otpOptions.Value;
-            _logger = logger;
             _logger = logger;
         }
 
@@ -192,20 +187,19 @@ namespace OZE.Application.Services
             var user = new ApplicationUser
             {
                 Id = Guid.NewGuid().ToString(),
-                FullName = pending.FullName,
                 Email = pending.Email,
                 UserName = pending.Email,
                 PhoneNumber = pending.PhoneNumber,
                 PhoneNumberConfirmed = true,
                 PasswordHash = pending.PasswordHash,
-                CreateDate = DateTime.UtcNow
-                Email = request.Email,
-                UserName = request.Email,
+                CreatedAt = DateTimeOffset.UtcNow,
                 Patient = new Patient
                 {
                     PatientCode = GeneratePatientCode(),
-                    FullName = request.FullName,
-                    Email = request.Email
+                    FullName = pending.FullName,
+                    PhoneNumber = pending.PhoneNumber,
+                    Email = pending.Email,
+                    CreatedAt = DateTimeOffset.UtcNow
                 }
             };
 
@@ -216,8 +210,7 @@ namespace OZE.Application.Services
                 return ApiResponse.FailureResult("User registration failed", errors);
             }
 
-            if (!await _roleManager.RoleExistsAsync(RoleConstants.UserRole))
-            // Assign default User role
+            // Assign default Patient role
             if (!await _roleManager.RoleExistsAsync(RoleConstants.PatientRole))
             {
                 await _roleManager.CreateAsync(new IdentityRole(RoleConstants.PatientRole));
@@ -263,12 +256,6 @@ namespace OZE.Application.Services
             var bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{sessionId}:{otp}"));
             return Convert.ToHexString(bytes);
         }
-                await _emailSender.SendEmailVerificationAsync(user, callbackUrl);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send confirmation email to {Email} after registration", user.Email);
-            }
 
         private static bool FixedTimeEquals(string left, string right)
         {
