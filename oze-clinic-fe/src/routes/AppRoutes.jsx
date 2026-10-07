@@ -7,7 +7,7 @@ import { ROUTES } from "../utils/constant";
 
 const routes = [
     {
-        path: "/",
+        path: ROUTES.HOME,
         element: <HomePage />
     },
     {
@@ -15,7 +15,7 @@ const routes = [
         element: <SignInPage />
     },
     {
-        path: "/register",
+        path: ROUTES.REGISTER,
         element: <Register />
     }
 ]

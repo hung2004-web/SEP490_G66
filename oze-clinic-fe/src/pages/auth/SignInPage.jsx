@@ -157,7 +157,7 @@ const SignInPage = () => {
 
                 <p className="mt-6 text-center text-body-sm text-body">
                     Chưa có tài khoản?{" "}
-                    <Link to={ROUTES.SIGN_UP} className="btn btn-link font-semibold">
+                    <Link to={ROUTES.REGISTER} className="btn btn-link font-semibold">
                         Đăng ký
                     </Link>
                 </p>
