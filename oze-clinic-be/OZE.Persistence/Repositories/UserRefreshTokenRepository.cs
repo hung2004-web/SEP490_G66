@@ -23,7 +23,7 @@ namespace OZE.Persistence.Repositories
         public async Task<UserRefreshToken?> GetActiveTokenAsync(string refreshToken)
         {
             return await _context.UserRefreshTokens
-                .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken && x.RevokeAt == null && x.ExpiryDate > DateTime.UtcNow);
+                .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken && x.RevokedAt == null && x.ExpiryDate > DateTimeOffset.UtcNow);
         }
 
         public async Task AddAsync(UserRefreshToken refreshToken)
@@ -40,13 +40,13 @@ namespace OZE.Persistence.Repositories
         public async Task RevokeUserTokensAsync(string userId)
         {
             var activeTokens = await _context.UserRefreshTokens
-                .Where(x => x.UserId == userId && x.RevokeAt == null)
+                .Where(x => x.UserId == userId && x.RevokedAt == null)
                 .ToListAsync();
 
-            var now = DateTime.UtcNow;
+            var now = DateTimeOffset.UtcNow;
             foreach (var token in activeTokens)
             {
-                token.RevokeAt = now;
+                token.RevokedAt = now;
             }
         }
 

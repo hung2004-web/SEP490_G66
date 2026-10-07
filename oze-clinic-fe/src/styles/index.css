@@ -77,7 +77,15 @@
   --text-caption--line-height: 1.4;
   --text-caption--font-weight: 500;
   --text-label: 14px;
+<<<<<<< HEAD
   --text-label--line-height: 1.5;
+=======
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 500;
+  --text-title: 14px;
+  --text-title--line-height: 1.4;
+  --text-title--font-weight: 600;
+>>>>>>> origin/main
 
   /* Radius (pill = rounded-full) */
   --radius-xs: 4px;
