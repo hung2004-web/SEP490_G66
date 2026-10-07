@@ -2,16 +2,25 @@ import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/Card";
 import { signIn } from "../../services/authService";
-import { MESSAGES, ROUTES, getPostLoginRoute } from "../../utils/constant";
+import { ROUTES, getPostLoginRoute } from "../../utils/constant";
+import { isPasswordEmpty, isPhoneEmpty, normalizePhone, requiredMessage, validatePhone } from "../../utils/validation";
 
-const requiredMessage = (fieldName) => MESSAGES.MSG07.replace("[tên trường]", fieldName);
+// Sign In only checks that the password is filled; the length rule (validatePassword) belongs to
+// Register / Reset / Change Password.
+const validateSignInPassword = (value) => (isPasswordEmpty(value) ? requiredMessage("mật khẩu") : undefined);
 
-const validate = ({ phone, password }) => {
+// Per field: the "empty" rule (the same on blur and on submit) and the validator.
+const FIELDS = {
+    phone: { isEmpty: isPhoneEmpty, validate: validatePhone },
+    password: { isEmpty: isPasswordEmpty, validate: validateSignInPassword },
+};
+
+const validate = (values) => {
     const errors = {};
-    // TODO(spec): BR-002 requires a phone number format check, but the SRS does not define the rule.
-    if (!phone.trim()) errors.phone = requiredMessage("số điện thoại");
-    // Password length is not enforced until the team confirms the "At least 8 characters" rule.
-    if (!password) errors.password = requiredMessage("mật khẩu");
+    for (const [name, field] of Object.entries(FIELDS)) {
+        const error = field.validate(values[name]);
+        if (error) errors[name] = error;
+    }
     return errors;
 };
 
@@ -33,6 +42,14 @@ const SignInPage = () => {
         setFieldErrors((current) => ({ ...current, [name]: undefined }));
     };
 
+    // Leaving a filled field validates it; an empty field is only reported on submit (MSG07).
+    const handleBlur = (event) => {
+        const { name, value } = event.target;
+        const field = FIELDS[name];
+        if (field.isEmpty(value)) return;
+        setFieldErrors((current) => ({ ...current, [name]: field.validate(value) }));
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         if (loading) return;
@@ -51,7 +68,7 @@ const SignInPage = () => {
 
         setLoading(true);
         try {
-            const result = await signIn({ phone: values.phone.trim(), password: values.password });
+            const result = await signIn({ phone: normalizePhone(values.phone), password: values.password });
             if (result.success) {
                 // TODO(spec): pass the user's role once the login response defines it.
                 navigate(getPostLoginRoute(), { replace: true });
@@ -90,15 +107,16 @@ const SignInPage = () => {
                             id="phone"
                             name="phone"
                             type="tel"
-                            inputMode="tel"
+                            inputMode="numeric"
                             autoComplete="tel"
-                            placeholder="0123456789"
+                            placeholder="0912 345 678"
                             className="input"
                             aria-required="true"
                             aria-invalid={fieldErrors.phone ? true : undefined}
                             aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
                             value={values.phone}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                         />
                         {/* TODO: add the CircleAlert icon before the error once lucide-react is approved (DESIGN.md section 7). */}
                         {fieldErrors.phone && (
@@ -124,6 +142,7 @@ const SignInPage = () => {
                             aria-describedby={fieldErrors.password ? "password-error" : undefined}
                             value={values.password}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                         />
                         {fieldErrors.password && (
                             <p id="password-error" className="error-text">
