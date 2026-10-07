@@ -12,6 +12,9 @@ namespace OZE.Common.Models
         [EmailAddress(ErrorMessage = "Invalid Email format")]
         public string Email { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Phone number is required")]
+        public string PhoneNumber { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Password is required")]
         [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
         public string Password { get; set; } = string.Empty;

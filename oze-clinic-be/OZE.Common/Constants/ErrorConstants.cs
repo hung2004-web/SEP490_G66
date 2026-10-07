@@ -10,7 +10,15 @@ namespace OZE.Common.Constants
     {
         public static class AuthMessage
         {
+            public const string EmailNotFound = "Email not found in system";
+            public const string EmailCantSent = "Could not send the email. Please try again later.";
+            public const string EmailExist = "Email is exist in system";
             public const string UserExist = "User is exist in system";
+            public const string PhoneExist = "Phone number is already in use";
+            public const string InvalidPhone = "Invalid phone number format";
+            public const string InvalidOtp = "Invalid or expired OTP";
+            public const string OtpExpired = "OTP session is expired, please register again";
+            public const string OtpResendTooSoon = "Please wait before requesting another OTP";
             public const string UserNotFound = "User not found in system";
             public const string EmailConfirmRequired = "Email confirm Required";
             public const string InvalidLogin = "Invalid login, please check again";

@@ -1,9 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Alert from "../../components/Alert";
-import Button from "../../components/Button";
 import Card from "../../components/Card";
-import Input from "../../components/Input";
 import { signIn } from "../../services/authService";
 import { MESSAGES, ROUTES, getPostLoginRoute } from "../../utils/constant";
 
@@ -82,34 +80,57 @@ const SignInPage = () => {
                         </Alert>
                     )}
 
-                    <Input
-                        ref={phoneRef}
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        label="Số điện thoại"
-                        placeholder="0123456789"
-                        required
-                        value={values.phone}
-                        onChange={handleChange}
-                        error={fieldErrors.phone}
-                    />
-                    <Input
-                        ref={passwordRef}
-                        id="password"
-                        name="password"
-                        type="password"
-                        autoComplete="current-password"
-                        label="Mật khẩu"
-                        placeholder="Ít nhất 8 ký tự"
-                        required
-                        value={values.password}
-                        onChange={handleChange}
-                        error={fieldErrors.password}
-                        className="mt-4"
-                    />
+                    {/* aria-required only, not the native required attribute, so the browser never shows its own popup. */}
+                    <div className="field">
+                        <label htmlFor="phone" className="label label-required">
+                            Số điện thoại
+                        </label>
+                        <input
+                            ref={phoneRef}
+                            id="phone"
+                            name="phone"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            placeholder="0123456789"
+                            className="input"
+                            aria-required="true"
+                            aria-invalid={fieldErrors.phone ? true : undefined}
+                            aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+                            value={values.phone}
+                            onChange={handleChange}
+                        />
+                        {/* TODO: add the CircleAlert icon before the error once lucide-react is approved (DESIGN.md section 7). */}
+                        {fieldErrors.phone && (
+                            <p id="phone-error" className="error-text">
+                                {fieldErrors.phone}
+                            </p>
+                        )}
+                    </div>
+                    <div className="field mt-4">
+                        <label htmlFor="password" className="label label-required">
+                            Mật khẩu
+                        </label>
+                        <input
+                            ref={passwordRef}
+                            id="password"
+                            name="password"
+                            type="password"
+                            autoComplete="current-password"
+                            placeholder="Ít nhất 8 ký tự"
+                            className="input"
+                            aria-required="true"
+                            aria-invalid={fieldErrors.password ? true : undefined}
+                            aria-describedby={fieldErrors.password ? "password-error" : undefined}
+                            value={values.password}
+                            onChange={handleChange}
+                        />
+                        {fieldErrors.password && (
+                            <p id="password-error" className="error-text">
+                                {fieldErrors.password}
+                            </p>
+                        )}
+                    </div>
 
                     <div className="mt-2 flex justify-end">
                         <Link to={ROUTES.FORGOT_PASSWORD} className="btn btn-link">
@@ -117,16 +138,22 @@ const SignInPage = () => {
                         </Link>
                     </div>
 
-                    <Button type="submit" size="lg" fullWidth loading={loading} className="mt-6">
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        aria-busy={loading || undefined}
+                        className="btn btn-primary btn-lg mt-6 w-full"
+                    >
+                        {loading && <span className="btn-spinner" aria-hidden="true" />}
                         {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-                    </Button>
+                    </button>
                 </form>
 
                 <p className="my-4 text-center text-body-sm text-muted">hoặc</p>
 
-                <Button variant="secondary" size="lg" fullWidth onClick={handleGoogleSignIn}>
+                <button type="button" className="btn btn-secondary btn-lg w-full" onClick={handleGoogleSignIn}>
                     Đăng nhập bằng Google
-                </Button>
+                </button>
 
                 <p className="mt-6 text-center text-body-sm text-body">
                     Chưa có tài khoản?{" "}

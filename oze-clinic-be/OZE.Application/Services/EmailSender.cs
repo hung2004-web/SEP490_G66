@@ -47,12 +47,28 @@ namespace OZE.Application.Services
 
         public async Task SendEmailVerificationAsync(ApplicationUser user, string callbackUrl)
         {
+            var fullName = user.Patient?.FullName ?? user.StaffProfile?.FullName;
+            var greetingName = !string.IsNullOrWhiteSpace(fullName)
+                ? fullName
+                : (user.UserName ?? user.Email);
             var subject = "Verify your email address";
             var htmlMessage = $@"
-                <p>Hello {user.UserName ?? user.Email},</p>
+                <p>Hello {greetingName},</p>
                 <p>Thank you for registering. Please verify your email by clicking the link below:</p>
                 <p><a href='{callbackUrl}'>Verify Email</a></p>
                 <p>If you did not request this, please ignore this email.</p>";
+
+            await SendEmailAsync(user.Email ?? string.Empty, subject, htmlMessage);
+        }
+
+        public  async Task SendTemporaryPasswordAsync(ApplicationUser user, string temporaryPassword)
+        {
+
+            var subject = "Your temporary password";
+            var htmlMessage = $@"
+            <p>Hello {user.UserName ?? user.Email},</p>
+            <p>Your temporary password is: <b>{temporaryPassword}</b></p>
+            <p>Please log in and change your password right away.</p>";
 
             await SendEmailAsync(user.Email ?? string.Empty, subject, htmlMessage);
         }

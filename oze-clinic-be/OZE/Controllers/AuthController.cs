@@ -20,10 +20,27 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<ActionResult<ApiResponse<AuthResult>>> RegisterAsync([FromBody] RegisterRequest registerRequest)
+        public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> RegisterAsync([FromBody] RegisterRequest registerRequest)
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var result = await _authService.RegisterAsync(registerRequest, baseUrl);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("verify-otp")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse>> VerifyOtpAsync([FromBody] VerifyOtpRequest request)
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var result = await _authService.VerifyOtpAsync(request, baseUrl);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("resend-otp")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> ResendOtpAsync([FromBody] ResendOtpRequest request)
+        {
+            var result = await _authService.ResendOtpAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -76,6 +93,14 @@ namespace OZE.ProjectBase.Controllers
         public async Task<ActionResult<ApiResponse>> ConfirmEmailAsync([FromQuery] string userId, [FromQuery] string code)
         {
             var result = await _authService.ConfirmEmailAsync(userId, code);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse>> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request)
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var result = await _authService.ForgotPasswordAsync(request, baseUrl);
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }

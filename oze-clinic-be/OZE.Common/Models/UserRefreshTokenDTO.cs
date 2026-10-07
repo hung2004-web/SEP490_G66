@@ -5,7 +5,7 @@ namespace OZE.Common.Models
     public class UserRefreshTokenDTO
     {
         [Key]
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; }
 
         [Required]
         public string UserId { get; set; } = string.Empty;
@@ -14,13 +14,11 @@ namespace OZE.Common.Models
         public string RefreshToken { get; set; } = string.Empty;
 
         [Required]
-        public DateTime ExpiryDate { get; set; }
+        public DateTimeOffset ExpiryDate { get; set; }
 
         [Required]
-        public DateTime CreationDate { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset CreatedAt { get; set; }
 
-        public string? AccessToken { get; set; }
-
-        public DateTime? RevokeAt { get; set; }
+        public DateTimeOffset? RevokedAt { get; set; }
     }
 }
