@@ -87,6 +87,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         { jwtSecurityScheme, Array.Empty<string>() }
     });
+    options.CustomSchemaIds(type => type.FullName ?? type.ToString());
 });
 
 var app = builder.Build();

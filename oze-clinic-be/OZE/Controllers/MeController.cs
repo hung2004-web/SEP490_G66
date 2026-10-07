@@ -36,10 +36,5 @@ namespace OZE.ProjectBase.Controllers
 
             return Ok(ApiResponse<UserProfileResponse>.SuccessResult(profile));
         }
-
-        public void test()
-        {
-            
-        }
     }
 }
