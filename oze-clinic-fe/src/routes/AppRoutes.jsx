@@ -2,14 +2,20 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
+import SignInPage from "../pages/auth/SignInPage";
+import { ROUTES } from "../utils/constant";
 
 const routes = [
     {
-        path: "/",
+        path: ROUTES.HOME,
         element: <HomePage />
     },
     {
-        path: "/register",
+        path: ROUTES.SIGN_IN,
+        element: <SignInPage />
+    },
+    {
+        path: ROUTES.REGISTER,
         element: <Register />
     }
 ]
