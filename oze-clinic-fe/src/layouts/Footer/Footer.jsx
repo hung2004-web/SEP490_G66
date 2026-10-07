@@ -92,14 +92,10 @@ const Footer = () => {
                         <div className="flex flex-col gap-2">
                             <label className="text-label text-ink">Số điện thoại</label>
                             <div className="flex gap-3">
-<<<<<<< HEAD
-                                <Input placeholder="0123456789" className="flex-1" />
-=======
                                 <Input
                                     placeholder="0123456789"
                                     className="flex-1"
                                 />
->>>>>>> origin/main
                                 <Button className="px-7 shrink-0 text-[#ffffff]">
                                     Send
                                 </Button>
