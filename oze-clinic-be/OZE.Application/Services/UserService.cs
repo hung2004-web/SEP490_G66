@@ -30,6 +30,12 @@ namespace OZE.Application.Services
             return user != null;
         }
 
+        public Task<bool> IsPhoneInUseAsync(string phoneNumber)
+        {
+            var inUse = _userManager.Users.Any(u => u.PhoneNumber == phoneNumber);
+            return Task.FromResult(inUse);
+        }
+
         public async Task<UserProfileResponse?> GetUserProfileAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
