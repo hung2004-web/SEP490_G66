@@ -1,152 +1,316 @@
+/*
+ * OZE Dental - global styles (source: docs/DESIGN.md, guide: docs/SHARED_UI.md)
+ * 1. Tokens      @theme: colors, type, radius, shadows, layout sizes
+ * 2. Base        default styles for HTML elements
+ * 3. Components  shared classes used by src/components and layouts
+ * Change tokens and shared classes here only, never inside a page.
+ */
 @import "tailwindcss";
 
-/* Design tokens from docs/DESIGN.md (section 12). Update DESIGN.md first, then this file. */
+/* ===================== 1. TOKENS ===================== */
+/*
+ * OZE Dental design tokens (source: DESIGN_oze.md).
+ * Tailwind v4 turns each token into utilities:
+ *   --color-primary  -> bg-primary, text-primary, border-primary, ring-primary ...
+ *   --text-heading-1 -> text-heading-1 (size + line height + weight)
+ *   --radius-lg      -> rounded-lg      --shadow-md -> shadow-md
+ * Change a value here only, never in a component.
+ */
 @theme {
   /* Brand */
   --color-primary: #165CDD;
+  --color-primary-hover: #124DB8;
+  --color-primary-active: #0F3F96;
+  --color-primary-soft: #E8F0FD;
+  --color-primary-softer: #F3F7FE;
   --color-on-primary: #FFFFFF;
-  --color-primary-hover: #1249B3;
-  --color-primary-active: #0F3D96;
-  --color-primary-soft: #EAF1FD;
-  --color-primary-softer: #F4F8FE;
 
   /* Text */
-  --color-ink: #132244;
-  --color-body: #475467;
-  --color-muted: #667085;
-  --color-placeholder: #98A2B3;
+  --color-ink: #0F172A;
+  --color-body: #334155;
+  --color-muted: #64748B;
+  --color-placeholder: #94A3B8;
 
   /* Surfaces */
   --color-canvas: #FFFFFF;
-  --color-surface-tint: #F4F7FC;
-  --color-surface-muted: #F2F4F7;
-  --color-surface-navy: #132244;
+  --color-surface-tint: #F5F7FA;
+  --color-surface-muted: #EEF1F5;
+  --color-surface-navy: #0B1F3A;
+  --color-on-navy: #FFFFFF;
+  --color-on-navy-soft: #B6C2D6;
 
-  /* Lines */
-  --color-line: #E4E9F2;
-  --color-line-strong: #CBD3E1;
+  /* Lines (utilities: border-border, border-border-strong) */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
 
-  /* Semantic */
-  --color-success: #067647;
-  --color-success-solid: #12B76A;
-  --color-success-soft: #E8F7EF;
-  --color-warning: #B54708;
-  --color-warning-solid: #F79009;
-  --color-warning-soft: #FEF3E2;
+  /* Semantic: text / -solid (dots, icons) / -soft (backgrounds) */
+  --color-success: #15803D;
+  --color-success-solid: #22A55A;
+  --color-success-soft: #E7F6EC;
+  --color-warning: #A15C07;
+  --color-warning-solid: #F59E0B;
+  --color-warning-soft: #FEF3DC;
   --color-danger: #B42318;
-  --color-danger-solid: #D92D20;
-  --color-danger-soft: #FDECEA;
+  --color-danger-solid: #E5484D;
+  --color-danger-soft: #FDEBEA;
+  --color-info: #165CDD;
+  --color-info-soft: #E8F0FD;
+  --color-neutral: #334155;
+  --color-neutral-soft: #EEF1F5;
+  --color-rating: #F5B301;
 
-  /* Public site only */
-  --color-rating: #F5B400;
-
-  /* Fonts */
-  --font-heading: Montserrat, "Segoe UI", Arial, sans-serif;
+  /* Fonts (load them in index.html, see docs/SHARED_UI.md) */
   --font-sans: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-heading: Montserrat, Inter, "Segoe UI", sans-serif;
 
   /* Type scale */
   --text-display-xl: 56px;
   --text-display-xl--line-height: 1.1;
-  --text-display-xl--letter-spacing: -0.5px;
+  --text-display-xl--letter-spacing: -1px;
   --text-display-xl--font-weight: 700;
   --text-display-lg: 44px;
   --text-display-lg--line-height: 1.15;
-  --text-display-lg--letter-spacing: -0.4px;
+  --text-display-lg--letter-spacing: -0.5px;
   --text-display-lg--font-weight: 700;
-  --text-display-md: 36px;
+  --text-display-md: 32px;
   --text-display-md--line-height: 1.2;
   --text-display-md--letter-spacing: -0.3px;
-  --text-display-md--font-weight: 700;
-  --text-heading-1: 28px;
-  --text-heading-1--line-height: 1.25;
-  --text-heading-1--letter-spacing: -0.2px;
+  --text-display-md--font-weight: 600;
+  --text-heading-1: 24px;
+  --text-heading-1--line-height: 1.3;
   --text-heading-1--font-weight: 700;
-  --text-heading-2: 22px;
-  --text-heading-2--line-height: 1.3;
-  --text-heading-2--font-weight: 700;
-  --text-heading-3: 18px;
+  --text-heading-2: 20px;
+  --text-heading-2--line-height: 1.35;
+  --text-heading-2--font-weight: 600;
+  --text-heading-3: 16px;
   --text-heading-3--line-height: 1.4;
   --text-heading-3--font-weight: 600;
+  --text-stat: 28px;
+  --text-stat--line-height: 1.2;
+  --text-stat--font-weight: 700;
   --text-body-lg: 18px;
   --text-body-lg--line-height: 1.6;
   --text-body-md: 16px;
   --text-body-md--line-height: 1.6;
   --text-body-sm: 14px;
   --text-body-sm--line-height: 1.5;
-  --text-caption: 12px;
-  --text-caption--line-height: 1.4;
-  --text-caption--font-weight: 500;
   --text-label: 14px;
   --text-label--line-height: 1.4;
   --text-label--font-weight: 500;
   --text-title: 14px;
   --text-title--line-height: 1.4;
   --text-title--font-weight: 600;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+  --text-caption--font-weight: 500;
+  --text-button: 14px;
+  --text-button--line-height: 1;
+  --text-button--font-weight: 500;
 
-  /* Radius (pill = rounded-full) */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
+  /* Radius (pill = built-in rounded-full) */
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-2xl: 24px;
 
   /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(19, 34, 68, 0.06);
-  --shadow-sm: 0 2px 6px rgba(19, 34, 68, 0.08);
-  --shadow-md: 0 8px 24px rgba(22, 92, 221, 0.08);
-  --shadow-lg: 0 16px 40px rgba(19, 34, 68, 0.12);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.16);
   --shadow-focus: 0 0 0 3px rgba(22, 92, 221, 0.25);
-  --shadow-focus-danger: 0 0 0 3px rgba(217, 45, 32, 0.20);
+  --shadow-focus-danger: 0 0 0 3px rgba(229, 72, 77, 0.25);
 
-  /* Layout: w-sidebar, w-sidebar-collapsed, h-topbar, max-w-container, max-w-form */
+  /* Layout (w-sidebar, h-topbar, max-w-public ...) */
+  --container-public: 1200px;
   --spacing-sidebar: 256px;
   --spacing-sidebar-collapsed: 72px;
   --spacing-topbar: 64px;
-  --container-container: 1200px;
-  --container-form: 720px;
+  --spacing-utility-bar: 40px;
+  --spacing-public-nav: 72px;
+  --spacing-control: 40px;
 }
 
+/* ===================== 2. BASE ===================== */
+/* Global element defaults. Keep this file small. */
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
+    @apply bg-canvas font-sans text-body-sm text-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-ink;
+  }
+
+  a {
+    @apply text-primary;
+  }
+
+  ::placeholder {
+    @apply text-placeholder;
+  }
+
+  ::selection {
+    @apply bg-primary-soft text-ink;
+  }
+
+  /* One focus ring for every interactive element */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    @apply outline-none shadow-focus;
+  }
+
+  /* Native checkbox, radio, range use the brand blue */
+  input[type="checkbox"], input[type="radio"], input[type="range"] {
+    accent-color: var(--color-primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-@layer components {
-  /* Forms */
-  .input {
-    @apply w-full font-sans text-body-sm h-11 px-4 py-2.5 rounded-lg border border-line-strong bg-canvas text-ink transition-all duration-200 outline-none placeholder:text-placeholder hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 shadow-sm;
-  }
-  .input:disabled, .input[readonly] {
-    @apply bg-surface-muted border-transparent shadow-none cursor-default text-body hover:border-transparent focus:ring-0;
-  }
-  .label {
-    @apply font-sans text-label font-medium text-ink;
-  }
+/* Tabular numbers for IDs, times, amounts, queue numbers */
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
 
-  /* Buttons */
+/* ===================== 3. COMPONENTS ===================== */
+/*
+ * Shared component classes (source: DESIGN_oze.md).
+ * React components in src/components/ use these classes; screens use the
+ * React components, not the classes directly, whenever a component exists.
+ * Sections marked [EXT] are not in DESIGN_oze.md and need team approval.
+ */
+@layer components {
+  /* ---------- Layout ---------- */
+  .container-public { @apply mx-auto w-full max-w-public px-4 md:px-6; }
+  .app-content { @apply bg-surface-tint p-6; }
+  .page-header { @apply mb-6 flex flex-wrap items-start justify-between gap-4; }
+  .page-title { @apply font-heading text-heading-1 text-ink; }
+  .page-description { @apply mt-1 text-body-sm text-muted; }
+  .section-title { @apply font-heading text-heading-2 text-ink; }
+  .breadcrumb { @apply flex items-center gap-1 text-body-sm text-muted; }
+  .breadcrumb [aria-current="page"] { @apply font-medium text-ink; }
+
+  /* ---------- Buttons ---------- */
   .btn {
-    @apply inline-flex h-11 px-5 py-2.5 items-center justify-center font-sans text-body-sm font-medium leading-none rounded-lg transition-all duration-200 active:scale-[0.98] outline-none disabled:opacity-60 disabled:pointer-events-none;
+    @apply inline-flex h-control cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent px-4 font-sans text-button transition-colors duration-150;
   }
-  .btn-primary {
-    @apply bg-primary text-on-primary border border-transparent shadow-sm hover:shadow-md focus:ring-4 focus:ring-primary/20 hover:bg-primary-hover active:bg-primary-active;
+  .btn:disabled, .btn[aria-disabled="true"] {
+    @apply cursor-not-allowed border-transparent bg-surface-muted text-placeholder;
   }
-  .btn-secondary {
-    @apply bg-canvas text-ink border border-line-strong hover:bg-surface-tint hover:border-gray-400 active:bg-surface-muted shadow-sm focus:ring-4 focus:ring-gray-200;
+  .btn-primary { @apply bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-active; }
+  .btn-secondary { @apply border-border-strong bg-canvas text-ink hover:bg-surface-tint; }
+  .btn-link { @apply h-auto border-0 bg-transparent px-0 text-primary hover:underline; }
+  .btn-cta { @apply h-12 rounded-full bg-primary px-7 text-on-primary hover:bg-primary-hover active:bg-primary-active; }
+  .btn-icon { @apply h-control w-10 px-0; }
+  /* [EXT] 48px app button (Sign In) and danger button (confirmations) */
+  .btn-lg { @apply h-12 px-5; }
+  .btn-danger { @apply bg-danger-solid text-on-primary hover:bg-danger; }
+  /* [EXT] Loading spinner inside .btn (uses the text colour) */
+  .btn-spinner { @apply size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent; }
+
+  /* ---------- Forms ---------- */
+  .field { @apply flex flex-col gap-1.5; }
+  .label { @apply text-label text-ink; }
+  .label-required::after { content: " *"; @apply text-danger; }
+  .input {
+    @apply h-control w-full rounded-md border border-border-strong bg-canvas px-3 text-body-sm text-ink transition-shadow duration-150 placeholder:text-placeholder focus:border-primary focus:shadow-focus focus:outline-none;
   }
-  
-  /* Badges */
-  .badge {
-    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-caption font-medium;
+  textarea.input { @apply h-auto min-h-24 py-2.5; }
+  select.input { @apply pr-8; }
+  .input-error, .input[aria-invalid="true"] {
+    @apply border-danger-solid focus:border-danger-solid focus:shadow-focus-danger;
   }
-  .badge-success { @apply bg-success-soft text-success-solid; }
-  .badge-warning { @apply bg-warning-soft text-warning-solid; }
-  .badge-danger { @apply bg-danger-soft text-danger-solid; }
-  
-  /* Layout utilities */
-  .container-public {
-    @apply w-full max-w-[var(--container-container)] mx-auto px-4 sm:px-6 lg:px-8;
-  }
+  .input-readonly { @apply flex items-center border-transparent bg-surface-muted text-body; }
+  .input:disabled { @apply cursor-not-allowed bg-surface-muted text-placeholder; }
+  .help-text { @apply text-caption text-muted; }
+  .error-text { @apply flex items-center gap-1 text-caption text-danger; }
+  .search { @apply relative; }
+  .search > svg, .search > .search-icon { @apply pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted; }
+  .search > .input { @apply pl-9; }
+
+  /* ---------- Status badge and queue chip ---------- */
+  .badge { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-caption; }
+  .badge::before { content: ""; @apply size-1.5 rounded-full bg-current; }
+  .badge-success { @apply bg-success-soft text-success before:bg-success-solid; }
+  .badge-info { @apply bg-info-soft text-info; }
+  .badge-warning { @apply bg-warning-soft text-warning before:bg-warning-solid; }
+  .badge-danger { @apply bg-danger-soft text-danger before:bg-danger-solid; }
+  .badge-neutral { @apply bg-neutral-soft text-neutral; }
+  .chip-queue { @apply inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-caption text-ink; }
+
+  /* ---------- Cards ---------- */
+  .card-app { @apply rounded-lg border border-border bg-canvas p-6 text-body-sm text-body; }
+  .card-public { @apply rounded-xl bg-canvas p-8 text-body-md text-body shadow-md; }
+  .card-title { @apply font-heading text-heading-3 text-ink; }
+  .stat-label { @apply text-label text-muted; }
+  .stat-value { @apply num mt-1 font-heading text-stat text-ink; }
+
+  /* ---------- Table ---------- */
+  .table-wrap { @apply overflow-x-auto rounded-lg border border-border bg-canvas; }
+  .table { @apply w-full border-collapse text-body-sm text-body; }
+  .table th { @apply bg-surface-tint px-4 py-3 text-left text-label text-muted; }
+  .table td { @apply num h-13 border-t border-border px-4; }
+  .table tbody tr { @apply transition-colors duration-150 hover:bg-primary-softer; }
+  .table tbody tr[aria-selected="true"] { @apply bg-primary-soft; }
+  .table .cell-primary { @apply text-title text-ink; }
+  .table-footer { @apply flex items-center justify-between border-t border-border px-4 py-3 text-caption text-muted; }
+
+  /* ---------- App shell ---------- */
+  .app-shell { @apply grid min-h-dvh grid-cols-1 lg:grid-cols-[var(--spacing-sidebar)_1fr]; }
+  .sidebar { @apply hidden flex-col gap-1 border-r border-border bg-canvas p-3 text-label text-body lg:flex; }
+  .sidebar-item { @apply flex h-control items-center gap-3 rounded-md px-3 text-label text-body hover:bg-surface-tint; }
+  .sidebar-item > svg { @apply size-5 text-muted; }
+  .sidebar-item-active, .sidebar-item[aria-current="page"] { @apply bg-primary-soft text-primary hover:bg-primary-soft; }
+  .sidebar-item-active > svg, .sidebar-item[aria-current="page"] > svg { @apply text-primary; }
+  .topbar { @apply sticky top-0 z-30 flex h-topbar items-center justify-between gap-4 border-b border-border bg-canvas px-6 text-ink; }
+
+  /* ---------- Public site ---------- */
+  .utility-bar { @apply flex h-utility-bar items-center bg-primary text-caption text-on-primary; }
+  .public-nav { @apply sticky top-0 z-30 flex h-public-nav items-center border-b border-border bg-canvas text-label text-ink; }
+  .public-nav-link { @apply text-label text-body hover:text-primary; }
+  .public-nav-link-active, .public-nav-link[aria-current="page"] { @apply text-primary shadow-[inset_0_-2px_0_var(--color-primary)]; }
+  .hero-image { @apply rounded-2xl bg-surface-tint object-cover; }
+  .footer-public { @apply bg-surface-navy px-4 py-16 text-body-sm text-on-navy-soft; }
+  .footer-public a { @apply text-on-navy hover:underline; }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop { @apply fixed inset-0 z-50 flex items-center justify-center bg-surface-navy/45 p-4; }
+  .modal { @apply max-h-[90dvh] w-full max-w-[560px] overflow-y-auto rounded-xl bg-canvas p-6 text-body-sm text-body shadow-lg; }
+  .modal-sm { @apply max-w-[400px]; }
+  .modal-lg { @apply max-w-[800px]; }
+  .modal-title { @apply font-heading text-heading-3 text-ink; }
+  .modal-actions { @apply mt-6 flex justify-end gap-2; }
+
+  /* ---------- Notifications ---------- */
+  .toast-region { @apply pointer-events-none fixed right-4 top-4 z-[60] flex w-[min(380px,calc(100vw-2rem))] flex-col gap-2; }
+  .toast { @apply pointer-events-auto flex items-start gap-3 rounded-lg bg-surface-navy px-4 py-3 text-body-sm text-on-navy shadow-lg; }
+  .toast-icon { @apply mt-0.5 size-4 shrink-0; }
+  .toast-success .toast-icon { @apply text-success-solid; }
+  .toast-error .toast-icon { @apply text-danger-solid; }
+  .alert { @apply flex items-start gap-3 rounded-md border px-4 py-3 text-body-sm; }
+  .alert-info { @apply border-primary bg-info-soft text-info; }
+  .alert-success { @apply border-success-solid bg-success-soft text-success; }
+  .alert-warning { @apply border-warning-solid bg-warning-soft text-warning; }
+  .alert-danger { @apply border-danger-solid bg-danger-soft text-danger; }
+  .alert-title { @apply font-semibold text-ink; }
+
+  /* ---------- Empty and loading ---------- */
+  .empty-state { @apply flex flex-col items-center px-4 py-10 text-center; }
+  .empty-state-icon { @apply mb-3 size-12 text-placeholder; }
+  .empty-state-title { @apply text-title text-ink; }
+  .empty-state-text { @apply mt-1 text-body-sm text-muted; }
+  .skeleton { @apply animate-pulse rounded-md bg-surface-muted; }
+
+  /* ---------- Avatar ---------- */
+  .avatar { @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-caption font-semibold text-primary; }
+  .avatar-lg { @apply size-10; }
 }
