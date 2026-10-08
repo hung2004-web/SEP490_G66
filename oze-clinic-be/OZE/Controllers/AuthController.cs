@@ -62,7 +62,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("logout")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse>> LogoutAsync()
+        public async Task<ActionResult<ApiResponse>> LogoutAsync([FromBody] RefreshTokenRequest? request = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
             if (string.IsNullOrEmpty(userId))
@@ -70,7 +70,7 @@ namespace OZE.ProjectBase.Controllers
                 return Unauthorized(ApiResponse.FailureResult("User not identified"));
             }
 
-            var result = await _authService.LogoutAsync(userId);
+            var result = await _authService.LogoutAsync(userId, request?.RefreshToken);
             return Ok(result);
         }
 
