@@ -346,11 +346,25 @@ namespace OZE.Application.Services
             return ApiResponse<AuthResult>.SuccessResult(result, "Token refreshed successfully");
         }
 
-        public async Task<ApiResponse> LogoutAsync(string userId)
+        public async Task<ApiResponse> LogoutAsync(string userId, string? refreshToken = null)
         {
-            await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                // No token supplied: sign out of every device.
+                await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            }
+            else
+            {
+                // Only end the session of the device that sent this refresh token.
+                var token = await _refreshTokenRepository.GetActiveTokenAsync(refreshToken);
+                if (token != null && token.UserId == userId)
+                {
+                    token.RevokedAt = DateTimeOffset.UtcNow;
+                    await _refreshTokenRepository.UpdateAsync(token);
+                }
+            }
+
             await _refreshTokenRepository.SaveChangesAsync();
-            await _signInManager.SignOutAsync();
 
             return ApiResponse.SuccessResult("Logged out successfully");
         }
