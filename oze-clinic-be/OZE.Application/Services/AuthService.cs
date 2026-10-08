@@ -269,36 +269,38 @@ namespace OZE.Application.Services
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
-            {
                 return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidLogin);
-            }
 
-            if (!await _userManager.CheckPasswordAsync(user, request.Password))
-            {
+         
+            var signIn = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+            if (signIn.IsLockedOut)
+                return ApiResponse<AuthResult>.FailureResult("Account is temporarily locked. Please try again later.");
+            if (!signIn.Succeeded)
                 return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidLogin);
-            }
+
+           
+
+            var now = DateTime.UtcNow;
+            var accessTokenMinutes = _jwtSettings.ExpiresInMinutes > 0 ? _jwtSettings.ExpiresInMinutes : 60;
 
             var token = await _jwtTokenGenerator.GenerateTokenAsync(user);
             var refreshToken = _jwtTokenGenerator.GenerateRefreshToken();
 
-            var tokenEntry = new UserRefreshToken
+            await _refreshTokenRepository.AddAsync(new UserRefreshToken
             {
                 UserId = user.Id,
                 RefreshToken = refreshToken,
-                ExpiryDate = DateTimeOffset.UtcNow.AddDays(7)
-            };
-
-            await _refreshTokenRepository.AddAsync(tokenEntry);
+                //CreationDate = now,
+                ExpiryDate = now.AddDays(7)
+            });
             await _refreshTokenRepository.SaveChangesAsync();
 
-            var result = new AuthResult
+            return ApiResponse<AuthResult>.SuccessResult(new AuthResult
             {
                 Token = token,
                 RefreshToken = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes > 0 ? _jwtSettings.ExpiresInMinutes : 60)
-            };
-
-            return ApiResponse<AuthResult>.SuccessResult(result, "Login successful");
+                ExpiresAt = now.AddMinutes(accessTokenMinutes)
+            }, "Login successful");
         }
 
         public async Task<ApiResponse<AuthResult>> RefreshTokenAsync(RefreshTokenRequest request)
