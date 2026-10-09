@@ -32,6 +32,7 @@ namespace OZE.Persistence
             .AddDefaultTokenProviders();
 
             services.AddScoped<IUserRefreshTokenRepository, UserRefreshTokenRepository>();
+            services.AddScoped<IRoomRepository, RoomRepository>();
 
             return services;
         }

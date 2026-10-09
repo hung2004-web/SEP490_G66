@@ -28,6 +28,15 @@ namespace OZE.Common.Constants
             public const string PasswordMismatch = "New password and confirmation password do not match";
         }
 
+        public static class RoomMessage
+        {
+            public const string RoomNotFound = "Room not found";
+            public const string RoomNameExist = "Room name already exists";
+            public const string InvalidRoomType = "Room type must be one of: General, Imaging, Treatment";
+            public const string InvalidStatus = "Room status must be one of: Active, Maintenance, Inactive";
+            public const string RoomInUse = "Room is used by schedules or queue entries and cannot be deleted. Set its status to Inactive instead";
+        }
+
         public static class Common
         {
             public const string NotFound = "Not Found";
