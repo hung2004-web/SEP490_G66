@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
-import SignInPage from "../pages/auth/SignInPage";
+import SignInPage from "../pages/common/SignInPage";
 import { ROUTES } from "../utils/constant";
 
 const routes = [
