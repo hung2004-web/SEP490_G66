@@ -3,6 +3,7 @@ import MainLayout from "../layouts/MainLayout";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
 import SignInPage from "../pages/common/SignInPage";
+import AboutUs from "../pages/common/AboutUs";
 import { ROUTES } from "../utils/routes";
 
 const routes = [
@@ -17,6 +18,10 @@ const routes = [
     {
         path: ROUTES.REGISTER,
         element: <Register />
+    },
+    {
+        path: ROUTES.ABOUT_US,
+        element: <AboutUs />
     }
 ]
 

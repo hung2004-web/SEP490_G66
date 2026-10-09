@@ -2,6 +2,7 @@ export const ROUTES = {
     HOME: "/",
     SIGN_IN: "/login",
     REGISTER: "/register",
+    ABOUT_US: "/about-us",
     // TODO(spec): Forgot Password screen is not built yet; its route is not registered.
     FORGOT_PASSWORD: "/forgot-password",
 };
