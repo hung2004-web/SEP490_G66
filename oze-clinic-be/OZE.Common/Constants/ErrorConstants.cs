@@ -33,5 +33,14 @@ namespace OZE.Common.Constants
             public const string NotFound = "Not Found";
         }
 
+        public static class ServiceMessage
+        {
+            public const string ServiceNotFound = "Service not found in system";
+            public const string ServiceCodeExist = "Service code already exists in system";
+            public const string ServiceInUse = "Cannot delete service because it is currently linked to existing invoices or treatment plan stages. Please deactivate the service instead.";
+            public const string InvalidRoomType = "Required room type must be one of: General, Imaging, Treatment";
+            public const string InvalidPrice = "Reference price must be greater than or equal to 0";
+            public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
+        }
     }
 }
