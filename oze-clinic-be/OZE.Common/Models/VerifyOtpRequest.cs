@@ -1,14 +1,15 @@
 using System.ComponentModel.DataAnnotations;
+using OZE.Common.Constants;
 
 namespace OZE.Common.Models
 {
     public class VerifyOtpRequest
     {
-        [Required(ErrorMessage = "SessionId is required")]
+        [Required(ErrorMessage = ErrorConstants.AuthMessage.SessionIdRequired)]
         public string SessionId { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "OTP is required")]
-        [StringLength(6, MinimumLength = 6, ErrorMessage = "OTP must be 6 digits")]
+        [Required(ErrorMessage = ErrorConstants.AuthMessage.OtpRequired)]
+        [RegularExpression(@"^\s*\d{6}\s*$", ErrorMessage = ErrorConstants.AuthMessage.InvalidOtp)]
         public string Otp { get; set; } = string.Empty;
     }
 }

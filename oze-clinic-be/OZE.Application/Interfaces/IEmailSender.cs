@@ -8,5 +8,6 @@ namespace OZE.Application.Interfaces
         Task SendEmailVerificationAsync(ApplicationUser user, string callbackUrl);
 
         Task SendTemporaryPasswordAsync(ApplicationUser user, string temporaryPassword);
+        Task SendRegistrationOtpAsync(string toEmail, string fullName, string otp, int expiresInMinutes);
     }
 }
