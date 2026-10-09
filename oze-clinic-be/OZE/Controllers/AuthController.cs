@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 
@@ -20,6 +21,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> RegisterAsync([FromBody] RegisterRequest registerRequest)
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -35,7 +37,7 @@ namespace OZE.ProjectBase.Controllers
             var result = await _authService.VerifyOtpAsync(request, baseUrl);
             return result.Success ? Ok(result) : BadRequest(result);
         }
-
+        // header
         [HttpPost("resend-otp")]
         [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> ResendOtpAsync([FromBody] ResendOtpRequest request)
@@ -54,6 +56,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("refresh-token")]
         [AllowAnonymous]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<AuthResult>>> RefreshTokenAsync([FromBody] RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request);

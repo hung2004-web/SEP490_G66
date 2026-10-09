@@ -4,7 +4,7 @@ namespace OZE.Common.Models.Base
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
-        public T? Data { get; set; }
+        public T? Data { get; set; } // -> generic model
         public List<string>? Errors { get; set; }
 
         public static ApiResponse<T> SuccessResult(T data, string message = "Success")

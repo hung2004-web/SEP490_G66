@@ -13,7 +13,7 @@ namespace OZE.ProjectBase.Middlewares
 
         public GlobalExceptionMiddleware(RequestDelegate _next, ILogger<GlobalExceptionMiddleware> logger, IHostEnvironment env)
         {
-            this._next = _next;
+            this._next = _next; 
             _logger = logger;
             _env = env;
         }
