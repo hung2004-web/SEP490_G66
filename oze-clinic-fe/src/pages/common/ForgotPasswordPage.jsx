@@ -56,14 +56,14 @@ const ForgotPasswordPage = () => {
     };
 
     return (
-        <section className="flex justify-center py-12 md:py-16">
-            <Card variant="public" className="w-full max-w-md">
-                <h1 className="text-center text-heading-1">Khôi phục tài khoản</h1>
-                <p className="mt-2 text-center text-body-md text-muted">
+        <section className="auth-page">
+            <Card variant="auth" className="w-full max-w-md">
+                <h1 className="auth-title">Khôi phục tài khoản</h1>
+                <p className="auth-subtitle">
                     Vui lòng cung cấp thông tin để xác minh tài khoản.
                 </p>
 
-                <form noValidate onSubmit={handleSubmit} className="mt-6">
+                <form noValidate onSubmit={handleSubmit}>
                     <div className="field">
                         <label htmlFor="phone" className="label label-required">
                             Số điện thoại

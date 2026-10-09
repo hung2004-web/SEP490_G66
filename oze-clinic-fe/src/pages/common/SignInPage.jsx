@@ -82,14 +82,14 @@ const SignInPage = () => {
     };
 
     return (
-        <section className="flex justify-center py-12 md:py-16">
-            <Card variant="public" className="w-full max-w-md">
-                <h1 className="text-center text-heading-1">Đăng nhập</h1>
-                <p className="mt-2 text-center text-body-md text-muted">
+        <section className="auth-page">
+            <Card variant="auth" className="w-full max-w-md">
+                <h1 className="auth-title">Đăng nhập</h1>
+                <p className="auth-subtitle">
                     Truy cập hồ sơ bệnh án, lịch hẹn và kết quả xét nghiệm trực tuyến, mọi lúc, mọi nơi.
                 </p>
 
-                <form noValidate onSubmit={handleSubmit} className="mt-6">
+                <form noValidate onSubmit={handleSubmit}>
                     {/* TODO: add the semantic icon once lucide-react is approved (DESIGN.md section 7). */}
                     {formError && (
                         <div role="alert" className="alert alert-danger mb-4">

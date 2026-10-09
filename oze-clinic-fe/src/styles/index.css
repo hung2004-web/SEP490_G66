@@ -253,6 +253,11 @@
   .card-title { @apply font-heading text-heading-3 text-ink; }
   .stat-label { @apply text-label text-muted; }
   .stat-value { @apply num mt-1 font-heading text-stat text-ink; }
+  main:has(> .auth-page) { @apply bg-surface-tint; }
+  .auth-page { @apply flex justify-center py-12 md:py-16; }
+  .card-auth { @apply rounded-2xl bg-canvas p-6 text-body-md text-body shadow-lg sm:p-10; }
+  .auth-title { @apply text-center font-heading text-heading-1 text-ink sm:text-display-md; }
+  .auth-subtitle { @apply mx-auto mt-3 mb-8 max-w-md text-center text-body-md text-body; }
 
   /* ---------- Table ---------- */
   .table-wrap { @apply overflow-x-auto rounded-lg border border-border bg-canvas; }
