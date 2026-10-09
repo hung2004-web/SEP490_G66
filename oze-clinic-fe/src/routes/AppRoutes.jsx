@@ -3,7 +3,7 @@ import MainLayout from "../layouts/MainLayout";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
 import SignInPage from "../pages/common/SignInPage";
-import { ROUTES } from "../utils/constant";
+import { ROUTES } from "../utils/routes";
 
 const routes = [
     {
