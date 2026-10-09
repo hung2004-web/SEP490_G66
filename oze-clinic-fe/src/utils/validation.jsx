@@ -5,6 +5,8 @@ import { MESSAGES, PASSWORD_LENGTH, VALIDATION_MESSAGES } from "./constant";
 // MSG07 with the field name filled in, e.g. "Vui lòng nhập số điện thoại."
 export const requiredMessage = (fieldName) => MESSAGES.MSG07.replace("[tên trường]", fieldName);
 
+export const invalidMessage = (fieldName) => MESSAGES.MSG66.replace("[Tên trường]", fieldName);
+
 // Vietnamese mobile number: 10 digits, starting with 03, 05, 07, 08 or 09. Agreed by the team on 07/10/2026.
 // TODO(spec): the SRS does not define the format yet.
 export const PHONE_PATTERN = /^0[35789]\d{8}$/;

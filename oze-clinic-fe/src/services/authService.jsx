@@ -1,4 +1,5 @@
 import { MESSAGES } from "../utils/constant";
+import { invalidMessage } from "../utils/validation";
 
 // Mock cases until the real API is wired:
 // - phone "0900000000"                        -> account locked (MSG26)
@@ -11,6 +12,8 @@ const MOCK_DELAY_MS = 800;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const failure = (message) => ({ success: false, message, data: null, errors: null });
+
+const success = (data) => ({ success: true, message: null, data, errors: null });
 
 const mockSignIn = async ({ phone, password }) => {
     await wait(MOCK_DELAY_MS);
@@ -45,3 +48,15 @@ export const signIn = async ({ phone, password }) => {
 
     return result;
 };
+
+const MOCK_UNREGISTERED_PHONE = "0900000001";
+
+const mockRequestPasswordReset = async ({ phone }) => {
+    await wait(MOCK_DELAY_MS);
+
+    if (phone === MOCK_UNREGISTERED_PHONE) return failure(invalidMessage("Số điện thoại"));
+
+    return success(null);
+};
+
+export const requestPasswordReset = async ({ phone, method }) => mockRequestPasswordReset({ phone, method });

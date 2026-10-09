@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
 import SignInPage from "../pages/common/SignInPage";
@@ -17,6 +18,10 @@ const routes = [
     {
         path: ROUTES.REGISTER,
         element: <Register />
+    },
+    {
+        path: ROUTES.FORGOT_PASSWORD,
+        element: <ForgotPasswordPage />
     }
 ]
 
