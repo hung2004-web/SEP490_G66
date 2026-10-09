@@ -1,6 +1,6 @@
 import React from 'react';
-import { Input } from '../../components/Input';
-import { Button } from '../../components/Button';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
 
 const Register = () => {
