@@ -4,6 +4,7 @@ import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
 import SignInPage from "../pages/common/SignInPage";
+import VerifyOtpPage from "../pages/common/VerifyOtpPage";
 import { ROUTES } from "../utils/constant";
 
 const routes = [
@@ -22,6 +23,10 @@ const routes = [
     {
         path: ROUTES.FORGOT_PASSWORD,
         element: <ForgotPasswordPage />
+    },
+    {
+        path: ROUTES.VERIFY_OTP,
+        element: <VerifyOtpPage />
     }
 ]
 

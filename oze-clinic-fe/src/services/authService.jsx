@@ -60,3 +60,18 @@ const mockRequestPasswordReset = async ({ phone }) => {
 };
 
 export const requestPasswordReset = async ({ phone, method }) => mockRequestPasswordReset({ phone, method });
+
+const MOCK_OTP_CODE = "123456";
+const MOCK_EXPIRED_OTP_CODE = "000000";
+const MOCK_RESET_TOKEN = "mock-reset-token";
+
+const mockVerifyOtp = async ({ code }) => {
+    await wait(MOCK_DELAY_MS);
+
+    if (code === MOCK_EXPIRED_OTP_CODE) return failure(invalidMessage("Mã xác minh"));
+    if (code !== MOCK_OTP_CODE) return failure(invalidMessage("Mã xác minh"));
+
+    return success({ resetToken: MOCK_RESET_TOKEN });
+};
+
+export const verifyOtp = async ({ phone, code }) => mockVerifyOtp({ phone, code });

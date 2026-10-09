@@ -4,6 +4,7 @@ export const ROUTES = {
     REGISTER: "/register",
     FORGOT_PASSWORD: "/forgot-password",
     VERIFY_OTP: "/verify-otp",
+    RESET_PASSWORD: "/reset-password",
 };
 
 // System Messages (SRS Report 3), Vietnamese texts from the Sign In spec (section 3b), word for word.
@@ -30,6 +31,10 @@ export const VERIFICATION_METHOD_OPTIONS = [
     { value: VERIFICATION_METHOD.SMS, label: "Tin nhắn SMS" },
     { value: VERIFICATION_METHOD.EMAIL, label: "Email" },
 ];
+
+export const OTP_LENGTH = 6;
+
+export const OTP_RESEND_SECONDS = 20;
 
 // TODO(spec): BR-001/UC-04 say Home Page, the screen flow says Patient Dashboard, and staff
 // destinations are not defined. The role source is also not defined in the login response.
