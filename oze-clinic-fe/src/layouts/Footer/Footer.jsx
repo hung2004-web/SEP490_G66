@@ -2,8 +2,8 @@ import React from "react";
 import { MapPin, Phone, Clock, ChevronRight } from "lucide-react";
 import { FaFacebookF, FaTiktok, FaYoutube } from "react-icons/fa";
 import LogoOze from "@/assets/Logo-OZE-ngang.png";
-import { Input } from "@/components/Input";
-import { Button } from "@/components/Button";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 
 const Footer = () => {
     return (
