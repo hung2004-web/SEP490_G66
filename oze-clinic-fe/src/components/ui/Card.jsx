@@ -1,4 +1,4 @@
-import { cx } from "../utils/cx";
+import { cx } from "@/utils/cx";
 
 // Card using the shared classes in src/styles/index.css: "app" (border, no shadow) or "public" (shadow).
 const VARIANTS = {

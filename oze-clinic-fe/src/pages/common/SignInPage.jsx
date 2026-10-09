@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Card from "../../components/Card";
+import Card from "@/components/ui/Card";
 import { signIn } from "../../services/authService";
 import { ROUTES, getPostLoginRoute } from "../../utils/constant";
 import { isPasswordEmpty, isPhoneEmpty, normalizePhone, requiredMessage, validatePhone } from "../../utils/validation";
