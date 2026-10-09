@@ -8,7 +8,13 @@ namespace OZE.Application.MappingProfiles
     {
         public BaseMappingObject()
         {
+            //auto mapper
             CreateMap<UserRefreshToken, UserRefreshTokenDTO>().ReverseMap();
+
+            CreateMap<Service, ServiceDto>();
+
+            CreateMap<CreateServiceRequest, Service>();
+            CreateMap<UpdateServiceRequest, Service>();
         }
     }
 }

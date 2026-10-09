@@ -2,6 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OZE.Application.Interfaces;
+using OZE.Application.MappingProfiles;
 using OZE.Application.Services;
 using OZE.Common.Models;
 
@@ -18,11 +19,13 @@ namespace OZE.Application
             services.Configure<RegisterOtpSettings>(configuration.GetSection("RegisterOtpSettings"));
 
             services.AddMemoryCache();
+            services.AddAutoMapper(typeof(BaseMappingObject).Assembly);
 
             // Register Services
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IClinicServiceService, ClinicServiceService>();
             services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
