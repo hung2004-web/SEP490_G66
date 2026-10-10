@@ -72,7 +72,7 @@ const GuestHeader = () => {
                 <div className={ROW_CLASS}>
                     <div className={ROW_START_CLASS}>
                         <Link to={ROUTES.HOME} className="shrink-0">
-                            <img src={LogoOze} alt={TEXT.LOGO_ALT} className="h-5 w-auto md:h-6" />
+                            <img src={LogoOze} alt={TEXT.LOGO_ALT} className="h-5 w-auto md:h-9" />
                         </Link>
                     </div>
                     <div className="hidden min-w-0 flex-1 justify-center md:flex lg:w-md lg:flex-none">
