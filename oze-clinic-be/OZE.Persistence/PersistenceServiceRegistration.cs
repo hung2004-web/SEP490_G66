@@ -25,13 +25,15 @@ namespace OZE.Persistence
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequiredLength = 6;
-                options.User.RequireUniqueEmail = true;
+                // Email is optional for patients (FR 1.1); uniqueness is kept by the filtered unique index on NormalizedEmail.
+                options.User.RequireUniqueEmail = false;
                 options.SignIn.RequireConfirmedEmail = false; // set true if email confirmation is enforced
             })
             .AddEntityFrameworkStores<AppIdentityDbContext>()
             .AddDefaultTokenProviders();
 
             services.AddScoped<IUserRefreshTokenRepository, UserRefreshTokenRepository>();
+            services.AddScoped<IRegistrationRepository, RegistrationRepository>();
 
             return services;
         }

@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Card from "@/components/ui/Card";
 import { signIn } from "../../services/authService";
-import { ROUTES, getPostLoginRoute } from "../../utils/constant";
+import { ROUTES, getPostLoginRoute } from "../../utils/routes";
 import { isPasswordEmpty, isPhoneEmpty, normalizePhone, requiredMessage, validatePhone } from "../../utils/validation";
 
 // Sign In only checks that the password is filled; the length rule (validatePassword) belongs to
@@ -25,7 +26,7 @@ const validate = (values) => {
 };
 
 // TODO(spec): Sign in via Google is in FR 2.1 and the mockup but not in the UC-04 flow.
-const handleGoogleSignIn = () => {};
+const handleGoogleSignIn = () => { };
 
 const SignInPage = () => {
     const navigate = useNavigate();
@@ -33,7 +34,6 @@ const SignInPage = () => {
     const passwordRef = useRef(null);
     const [values, setValues] = useState({ phone: "", password: "" });
     const [fieldErrors, setFieldErrors] = useState({});
-    const [formError, setFormError] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleChange = (event) => {
@@ -56,7 +56,6 @@ const SignInPage = () => {
 
         const errors = validate(values);
         setFieldErrors(errors);
-        setFormError("");
         if (errors.phone) {
             phoneRef.current?.focus();
             return;
@@ -70,12 +69,13 @@ const SignInPage = () => {
         try {
             const result = await signIn({ phone: normalizePhone(values.phone), password: values.password });
             if (result.success) {
+                toast.success("Đăng nhập thành công!");
                 // TODO(spec): pass the user's role once the login response defines it.
                 navigate(getPostLoginRoute(), { replace: true });
                 return;
             }
             // TODO(spec): no system message is defined for a failure the API returns without a message.
-            setFormError(result.message);
+            toast.error(result.message);
         } finally {
             setLoading(false);
         }
@@ -90,13 +90,6 @@ const SignInPage = () => {
                 </p>
 
                 <form noValidate onSubmit={handleSubmit}>
-                    {/* TODO: add the semantic icon once lucide-react is approved (DESIGN.md section 7). */}
-                    {formError && (
-                        <div role="alert" className="alert alert-danger mb-4">
-                            {formError}
-                        </div>
-                    )}
-
                     {/* aria-required only, not the native required attribute, so the browser never shows its own popup. */}
                     <div className="field">
                         <label htmlFor="phone" className="label label-required">

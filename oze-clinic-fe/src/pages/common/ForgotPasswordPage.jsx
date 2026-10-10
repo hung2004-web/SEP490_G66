@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "@/components/ui/Card";
 import { requestPasswordReset } from "../../services/authService";
-import { ROUTES, VERIFICATION_METHOD, VERIFICATION_METHOD_OPTIONS } from "../../utils/constant";
+import { VERIFICATION_METHOD, VERIFICATION_METHOD_OPTIONS } from "../../utils/messages";
+import { ROUTES } from "../../utils/routes";
 import { isPhoneEmpty, normalizePhone, validatePhone } from "../../utils/validation";
 
 const ForgotPasswordPage = () => {

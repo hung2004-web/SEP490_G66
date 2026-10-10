@@ -6,7 +6,8 @@ import Register from "../pages/common/Register";
 import ResetPasswordPage from "../pages/common/ResetPasswordPage";
 import SignInPage from "../pages/common/SignInPage";
 import VerifyOtpPage from "../pages/common/VerifyOtpPage";
-import { ROUTES } from "../utils/constant";
+import AboutUs from "../pages/common/AboutUs";
+import { ROUTES } from "../utils/routes";
 
 const routes = [
     {
@@ -20,6 +21,10 @@ const routes = [
     {
         path: ROUTES.REGISTER,
         element: <Register />
+    },
+    {
+        path: ROUTES.ABOUT_US,
+        element: <AboutUs />
     },
     {
         path: ROUTES.FORGOT_PASSWORD,

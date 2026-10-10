@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Card from "@/components/ui/Card";
 import { resetPassword } from "../../services/authService";
-import { MESSAGES, PASSWORD_LENGTH, RESET_PASSWORD_REDIRECT_MS, ROUTES } from "../../utils/constant";
+import { MESSAGES, PASSWORD_LENGTH, RESET_PASSWORD_REDIRECT_MS } from "../../utils/messages";
+import { ROUTES } from "../../utils/routes";
 import { invalidMessage, isPasswordEmpty, requiredMessage, validatePassword } from "../../utils/validation";
 
 const validateNewPassword = (password) =>

@@ -319,3 +319,13 @@
   .avatar { @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-caption font-semibold text-primary; }
   .avatar-lg { @apply size-10; }
 }
+
+.root{
+  --nk-unit: max(1px, 0.0625vw);
+}
+
+.container{
+  max-width: calc(1400 * var(--nk-unit));
+  margin: 0 auto;
+  padding: 0 calc(15 * var(--nk-unit));
+}

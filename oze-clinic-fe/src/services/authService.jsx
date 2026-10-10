@@ -1,4 +1,5 @@
-import { MESSAGES } from "../utils/constant";
+import { MESSAGES } from "../utils/messages";
+import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
 import { invalidMessage } from "../utils/validation";
 
 // Mock cases until the real API is wired:
@@ -47,6 +48,25 @@ export const signIn = async ({ phone, password }) => {
     }
 
     return result;
+};
+
+export const register = async (userData) => {
+    await wait(800); // Giả lập độ trễ mạng
+
+    const existingUser = findMockUserByPhone(userData.phone);
+    if (existingUser) {
+        return failure("Số điện thoại này đã được đăng ký.");
+    }
+
+    // Lưu vào mock data
+    saveMockUser(userData);
+
+    return {
+        success: true,
+        message: "Đăng ký thành công",
+        data: null,
+        errors: null
+    };
 };
 
 const MOCK_UNREGISTERED_PHONE = "0900000001";

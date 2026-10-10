@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
@@ -18,12 +18,12 @@ namespace OZE.Application.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserRefreshTokenRepository _refreshTokenRepository;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
         private readonly IEmailSender _emailSender;
         private readonly ISmsSender _smsSender;
         private readonly IPendingRegistrationStore _pendingRegistrationStore;
+        private readonly IRegistrationRepository _registrationRepository;
         private readonly JwtSettings _jwtSettings;
         private readonly RegisterOtpSettings _otpSettings;
         private readonly ILogger<AuthService> _logger;
@@ -31,24 +31,24 @@ namespace OZE.Application.Services
         public AuthService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            RoleManager<IdentityRole> roleManager,
             IUserRefreshTokenRepository refreshTokenRepository,
             IJwtTokenGenerator jwtTokenGenerator,
             IEmailSender emailSender,
             ISmsSender smsSender,
             IPendingRegistrationStore pendingRegistrationStore,
+            IRegistrationRepository registrationRepository,
             IOptions<JwtSettings> jwtOptions,
             IOptions<RegisterOtpSettings> otpOptions,
             ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _roleManager = roleManager;
             _refreshTokenRepository = refreshTokenRepository;
             _jwtTokenGenerator = jwtTokenGenerator;
             _emailSender = emailSender;
             _smsSender = smsSender;
             _pendingRegistrationStore = pendingRegistrationStore;
+            _registrationRepository = registrationRepository;
             _jwtSettings = jwtOptions.Value;
             _otpSettings = otpOptions.Value;
             _logger = logger;
@@ -61,53 +61,77 @@ namespace OZE.Application.Services
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.InvalidPhone);
             }
 
-            var existingUser = await _userManager.FindByEmailAsync(request.Email);
-            if (existingUser != null)
+            // BR-055: the date of birth cannot be in the future. The clinic works in Vietnam time (UTC+7).
+            var dateOfBirth = request.DateOfBirth!.Value;
+            if (dateOfBirth > DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
             {
-                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.UserExist);
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.DateOfBirthInvalid);
             }
 
-            if (_userManager.Users.Any(u => u.PhoneNumber == phoneNumber))
+            var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+            if (email != null && (email.Length > 256 || !new EmailAddressAttribute().IsValid(email)))
             {
-                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.PhoneExist);
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.EmailInvalid);
             }
 
-            var sessionId = Guid.NewGuid().ToString("N");
-            var otp = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            if (request.VerificationMethod == VerificationMethodConstants.Email && email == null)
+            {
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.EmailRequired);
+            }
+
+            // An account that never finished OTP verification is reused, so the guest can sign up again.
+            var user = await _registrationRepository.FindUserByPhoneAsync(PhoneNumberHelper.GetLookupVariants(phoneNumber));
+            if (user != null && !await IsPendingRegistrationAsync(user))
+            {
+                return ApiResponse<RegisterPendingResponse>.FailureResult(
+                    string.Format(ErrorConstants.AuthMessage.PhoneExist, request.PhoneNumber.Trim()));
+            }
+
+            if (email != null)
+            {
+                var emailOwner = await _userManager.FindByEmailAsync(email);
+                if (emailOwner != null && emailOwner.Id != user?.Id)
+                {
+                    return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.EmailExist);
+                }
+            }
+
+            var saved = await _registrationRepository.ExecuteInTransactionAsync(
+                () => SaveUnverifiedUserAsync(user, phoneNumber, email, request.Password),
+                result => result.Result.Succeeded);
+            if (!saved.Result.Succeeded)
+            {
+                var errors = saved.Result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse<RegisterPendingResponse>.FailureResult("User registration failed", errors);
+            }
+
             var now = DateTime.UtcNow;
-            var expiresAt = now.AddMinutes(_otpSettings.ExpiresInMinutes > 0 ? _otpSettings.ExpiresInMinutes : 5);
-            var ttl = expiresAt - now;
-
             var pending = new PendingRegistration
             {
-                SessionId = sessionId,
-                FullName = request.FullName,
-                Email = request.Email,
+                SessionId = Guid.NewGuid().ToString("N"),
+                UserId = saved.User.Id,
+                SecurityStamp = saved.User.SecurityStamp ?? string.Empty,
+                VerificationMethod = request.VerificationMethod,
+                FullName = request.FullName.Trim(),
+                DateOfBirth = dateOfBirth,
+                Gender = request.Gender,
+                Email = email,
                 PhoneNumber = phoneNumber,
-                PasswordHash = _userManager.PasswordHasher.HashPassword(new ApplicationUser(), request.Password),
-                OtpHash = HashOtp(sessionId, otp),
-                ExpiresAt = expiresAt,
+                ExpiresAt = now.AddMinutes(OtpExpiresInMinutes),
                 LastSentAt = now,
-                FailedAttempts = 0,
-                StartFreeTrial = request.StartFreeTrial
+                FailedAttempts = 0
             };
 
-            _pendingRegistrationStore.Save(pending, ttl);
-
-            try
+            var otp = GenerateOtp();
+            pending.OtpHash = HashOtp(pending.SessionId, otp);
+            if (!await SendOtpAsync(pending, otp))
             {
-                await _smsSender.SendSmsAsync(
-                    phoneNumber,
-                    $"Ma OTP OZE cua ban la {otp}. Hieu luc {_otpSettings.ExpiresInMinutes} phut.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send registration OTP SMS to {Phone}", phoneNumber);
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpSendFailed);
             }
 
-            return ApiResponse<RegisterPendingResponse>.SuccessResult(
-                ToPendingResponse(pending),
-                "OTP has been sent to your phone number");
+            _pendingRegistrationStore.Save(pending, pending.ExpiresAt - now);
+
+            return ApiResponse<RegisterPendingResponse>.SuccessResult(ToPendingResponse(pending), OtpSentMessage(pending));
         }
 
         public async Task<ApiResponse<RegisterPendingResponse>> ResendOtpAsync(ResendOtpRequest request)
@@ -118,33 +142,32 @@ namespace OZE.Application.Services
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpExpired);
             }
 
-            var cooldown = _otpSettings.ResendCooldownSeconds > 0 ? _otpSettings.ResendCooldownSeconds : 60;
-            var resendAvailableAt = pending.LastSentAt.AddSeconds(cooldown);
-            if (DateTime.UtcNow < resendAvailableAt)
+            if (DateTime.UtcNow < pending.LastSentAt.AddSeconds(ResendCooldownSeconds))
             {
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpResendTooSoon);
             }
 
-            var otp = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            if (await GetPendingUserAsync(pending) == null)
+            {
+                _pendingRegistrationStore.Remove(pending.SessionId);
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpExpired);
+            }
+
+            // The previous OTP stays valid if the new one cannot be sent.
+            var otp = GenerateOtp();
+            if (!await SendOtpAsync(pending, otp))
+            {
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpSendFailed);
+            }
+
+            var now = DateTime.UtcNow;
             pending.OtpHash = HashOtp(pending.SessionId, otp);
-            pending.LastSentAt = DateTime.UtcNow;
+            pending.LastSentAt = now;
+            pending.ExpiresAt = now.AddMinutes(OtpExpiresInMinutes);
             pending.FailedAttempts = 0;
-            _pendingRegistrationStore.Save(pending, pending.ExpiresAt - DateTime.UtcNow);
+            _pendingRegistrationStore.Save(pending, pending.ExpiresAt - now);
 
-            try
-            {
-                await _smsSender.SendSmsAsync(
-                    pending.PhoneNumber,
-                    $"Ma OTP OZE cua ban la {otp}. Hieu luc {_otpSettings.ExpiresInMinutes} phut.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to resend registration OTP SMS to {Phone}", pending.PhoneNumber);
-            }
-
-            return ApiResponse<RegisterPendingResponse>.SuccessResult(
-                ToPendingResponse(pending),
-                "OTP has been resent to your phone number");
+            return ApiResponse<RegisterPendingResponse>.SuccessResult(ToPendingResponse(pending), OtpSentMessage(pending));
         }
 
         public async Task<ApiResponse> VerifyOtpAsync(VerifyOtpRequest request, string baseUrl)
@@ -177,79 +200,235 @@ namespace OZE.Application.Services
                 return ApiResponse.FailureResult(ErrorConstants.AuthMessage.InvalidOtp);
             }
 
-            if (await _userManager.FindByEmailAsync(pending.Email) != null
-                || _userManager.Users.Any(u => u.PhoneNumber == pending.PhoneNumber))
+            var user = await GetPendingUserAsync(pending);
+            if (user == null)
             {
                 _pendingRegistrationStore.Remove(pending.SessionId);
-                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.UserExist);
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.OtpExpired);
             }
 
-            var user = new ApplicationUser
+            var activated = await _registrationRepository.ExecuteInTransactionAsync(
+                () => ActivateAccountAsync(user, pending),
+                result => result.Success);
+            _pendingRegistrationStore.Remove(pending.SessionId);
+            if (!activated.Success)
+            {
+                return activated;
+            }
+
+            if (pending.VerificationMethod == VerificationMethodConstants.Sms && user.Email != null)
+            {
+                try
+                {
+                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                    var callbackUrl = $"{baseUrl}/api/auth/confirm-email?userId={user.Id}&code={encodedCode}";
+                    await _emailSender.SendEmailVerificationAsync(user, callbackUrl);
+                }
+                catch (Exception ex)
+                {
+                    // Account is already created and the phone is verified, so an email failure must not fail the request.
+                    _logger.LogError(ex, "Failed to send confirmation email to {Email} (UserId: {UserId}) after OTP verification", user.Email, user.Id);
+                }
+            }
+
+            return activated;
+        }
+
+        private async Task<(IdentityResult Result, ApplicationUser User)> SaveUnverifiedUserAsync(
+            ApplicationUser? user, string phoneNumber, string? email, string password)
+        {
+            var isNew = user == null;
+            user ??= new ApplicationUser
             {
                 Id = Guid.NewGuid().ToString(),
-                Email = pending.Email,
-                UserName = pending.Email,
-                PhoneNumber = pending.PhoneNumber,
-                PhoneNumberConfirmed = true,
-                PasswordHash = pending.PasswordHash,
-                CreatedAt = DateTimeOffset.UtcNow,
-                Patient = new Patient
-                {
-                    PatientCode = GeneratePatientCode(),
-                    FullName = pending.FullName,
-                    PhoneNumber = pending.PhoneNumber,
-                    Email = pending.Email,
-                    CreatedAt = DateTimeOffset.UtcNow
-                }
+                CreatedAt = DateTimeOffset.UtcNow
             };
 
-            var createResult = await _userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
+            user.UserName = phoneNumber;
+            user.PhoneNumber = phoneNumber;
+            user.PhoneNumberConfirmed = false;
+            user.Email = email;
+            user.EmailConfirmed = false;
+            // The account cannot sign in until the OTP is verified.
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            // Hashed here instead of CreateAsync(user, password): the Identity password policy differs from the 8-32 rule of Register.
+            user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, password);
+            // A new stamp makes the OTP sessions of an earlier sign-up attempt invalid.
+            user.SecurityStamp = Guid.NewGuid().ToString();
+
+            var result = isNew ? await _userManager.CreateAsync(user) : await _userManager.UpdateAsync(user);
+            if (result.Succeeded && !await _userManager.IsInRoleAsync(user, RoleConstants.PatientRole))
             {
-                var errors = createResult.Errors.Select(e => e.Description).ToList();
+                result = await _userManager.AddToRoleAsync(user, RoleConstants.PatientRole);
+            }
+
+            return (result, user);
+        }
+
+        private async Task<ApiResponse> ActivateAccountAsync(ApplicationUser user, PendingRegistration pending)
+        {
+            var walkInPatients = await _registrationRepository.FindUnlinkedPatientsByPhoneAsync(
+                PhoneNumberHelper.GetLookupVariants(pending.PhoneNumber));
+
+            if (pending.VerificationMethod == VerificationMethodConstants.Sms)
+            {
+                // BR-056, BR-058: the record with the same verified phone number is linked instead of creating a new one.
+                if (walkInPatients.Count > 1)
+                {
+                    return ApiResponse.FailureResult(ErrorConstants.AuthMessage.MultiplePatientRecords);
+                }
+
+                if (walkInPatients.Count == 1)
+                {
+                    LinkPatient(walkInPatients[0], user, pending);
+                }
+                else
+                {
+                    user.Patient = CreatePatient(pending);
+                }
+
+                user.PhoneNumberConfirmed = true;
+            }
+            else
+            {
+                // The phone number is not verified, so a matching record is left for the reception desk to link (MSG39).
+                if (walkInPatients.Count == 0)
+                {
+                    user.Patient = CreatePatient(pending);
+                }
+
+                user.EmailConfirmed = true;
+            }
+
+            user.LockoutEnd = null;
+            user.AccessFailedCount = 0;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
                 return ApiResponse.FailureResult("User registration failed", errors);
             }
 
-            // Assign default Patient role
-            if (!await _roleManager.RoleExistsAsync(RoleConstants.PatientRole))
+            return ApiResponse.SuccessResult(ErrorConstants.AuthMessage.AccountCreated);
+        }
+
+        private static Patient CreatePatient(PendingRegistration pending)
+        {
+            return new Patient
             {
-                await _roleManager.CreateAsync(new IdentityRole(RoleConstants.PatientRole));
-            }
-            await _userManager.AddToRoleAsync(user, RoleConstants.PatientRole);
+                PatientCode = GeneratePatientCode(),
+                FullName = pending.FullName,
+                DateOfBirth = pending.DateOfBirth,
+                Gender = pending.Gender,
+                PhoneNumber = pending.PhoneNumber,
+                Email = pending.Email,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+        }
 
-            if (pending.StartFreeTrial)
+        // Only empty fields are filled; data entered by the reception desk is kept.
+        private static void LinkPatient(Patient patient, ApplicationUser user, PendingRegistration pending)
+        {
+            patient.UserId = user.Id;
+            patient.DateOfBirth ??= pending.DateOfBirth;
+            if (string.IsNullOrWhiteSpace(patient.Gender))
             {
-                await _userManager.AddClaimAsync(user, new Claim("Trial", DateTime.UtcNow.ToString("O")));
+                patient.Gender = pending.Gender;
+            }
+            if (string.IsNullOrWhiteSpace(patient.Email))
+            {
+                patient.Email = pending.Email;
+            }
+            patient.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        // Returns the account of the OTP session while it is still waiting for verification.
+        private async Task<ApplicationUser?> GetPendingUserAsync(PendingRegistration pending)
+        {
+            var user = await _userManager.FindByIdAsync(pending.UserId);
+            if (user == null || user.SecurityStamp != pending.SecurityStamp || !await IsPendingRegistrationAsync(user))
+            {
+                return null;
             }
 
-            _pendingRegistrationStore.Remove(pending.SessionId);
+            return user;
+        }
 
+        private async Task<bool> IsPendingRegistrationAsync(ApplicationUser user)
+        {
+            return !user.PhoneNumberConfirmed
+                && !user.EmailConfirmed
+                && user.LockoutEnd == DateTimeOffset.MaxValue
+                && await _userManager.IsInRoleAsync(user, RoleConstants.PatientRole);
+        }
+
+        private async Task<bool> SendOtpAsync(PendingRegistration pending, string otp)
+        {
             try
             {
-                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = $"{baseUrl}/api/auth/confirm-email?userId={user.Id}&code={encodedCode}";
-                await _emailSender.SendEmailVerificationAsync(user, callbackUrl);
+                if (pending.VerificationMethod == VerificationMethodConstants.Email)
+                {
+                    await _emailSender.SendRegistrationOtpAsync(pending.Email!, pending.FullName, otp, OtpExpiresInMinutes);
+                }
+                else
+                {
+                    await _smsSender.SendSmsAsync(
+                        pending.PhoneNumber,
+                        $"Ma OTP OZE cua ban la {otp}. Hieu luc {OtpExpiresInMinutes} phut.");
+                }
+
+                return true;
             }
             catch (Exception ex)
             {
-                // Account is already created and the phone is verified, so an email failure must not fail the request.
-                _logger.LogError(ex, "Failed to send confirmation email to {Email} (UserId: {UserId}) after OTP verification", user.Email, user.Id);
+                _logger.LogError(ex, "Failed to send registration OTP by {Method} (UserId: {UserId})", pending.VerificationMethod, pending.UserId);
+                return false;
             }
+        }
 
-            return ApiResponse.SuccessResult("Account created successfully. Please log in.");
+        private int OtpExpiresInMinutes => _otpSettings.ExpiresInMinutes > 0 ? _otpSettings.ExpiresInMinutes : 5;
+
+        private int ResendCooldownSeconds => _otpSettings.ResendCooldownSeconds > 0 ? _otpSettings.ResendCooldownSeconds : 60;
+
+        private static string GenerateOtp()
+        {
+            return RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        }
+
+        private static string OtpSentMessage(PendingRegistration pending)
+        {
+            return pending.VerificationMethod == VerificationMethodConstants.Email
+                ? ErrorConstants.AuthMessage.OtpSentEmail
+                : ErrorConstants.AuthMessage.OtpSentSms;
         }
 
         private RegisterPendingResponse ToPendingResponse(PendingRegistration pending)
         {
-            var cooldown = _otpSettings.ResendCooldownSeconds > 0 ? _otpSettings.ResendCooldownSeconds : 60;
             return new RegisterPendingResponse
             {
                 SessionId = pending.SessionId,
-                MaskedPhoneNumber = PhoneNumberHelper.Mask(pending.PhoneNumber),
+                VerificationMethod = pending.VerificationMethod,
+                MaskedDestination = pending.VerificationMethod == VerificationMethodConstants.Email
+                    ? MaskEmail(pending.Email!)
+                    : PhoneNumberHelper.Mask(pending.PhoneNumber),
                 ExpiresAt = pending.ExpiresAt,
-                ResendAvailableAt = pending.LastSentAt.AddSeconds(cooldown)
+                ResendAvailableAt = pending.LastSentAt.AddSeconds(ResendCooldownSeconds)
             };
+        }
+
+        private static string MaskEmail(string email)
+        {
+            var atIndex = email.IndexOf('@');
+            if (atIndex <= 1)
+            {
+                return email;
+            }
+
+            var visible = Math.Min(2, atIndex - 1);
+            return email[..visible] + new string('*', atIndex - visible) + email[atIndex..];
         }
 
         private static string HashOtp(string sessionId, string otp)

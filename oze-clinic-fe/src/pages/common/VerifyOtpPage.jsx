@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Card from "@/components/ui/Card";
 import { requestPasswordReset, verifyOtp } from "../../services/authService";
-import { OTP_LENGTH, OTP_RESEND_SECONDS, ROUTES } from "../../utils/constant";
+import { OTP_LENGTH, OTP_RESEND_SECONDS } from "../../utils/messages";
+import { ROUTES } from "../../utils/routes";
 import { invalidMessage, requiredMessage } from "../../utils/validation";
 
 const EMPTY_CODE = Array(OTP_LENGTH).fill("");

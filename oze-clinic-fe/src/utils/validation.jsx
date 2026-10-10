@@ -1,4 +1,4 @@
-import { MESSAGES, PASSWORD_LENGTH, VALIDATION_MESSAGES } from "./constant";
+import { MESSAGES, PASSWORD_LENGTH, VALIDATION_MESSAGES } from "./messages";
 
 // Shared form rules (BR-002). Each validator returns the message to show, or undefined when the value is valid.
 
@@ -6,6 +6,15 @@ import { MESSAGES, PASSWORD_LENGTH, VALIDATION_MESSAGES } from "./constant";
 export const requiredMessage = (fieldName) => MESSAGES.MSG07.replace("[tên trường]", fieldName);
 
 export const invalidMessage = (fieldName) => MESSAGES.MSG66.replace("[Tên trường]", fieldName);
+
+export const isRequiredEmpty = (value) => value.trim() === "";
+
+export const validateEmail = (value) => {
+    if (!value) return undefined;
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regex.test(value)) return VALIDATION_MESSAGES.EMAIL_INVALID;
+    return undefined;
+};
 
 // Vietnamese mobile number: 10 digits, starting with 03, 05, 07, 08 or 09. Agreed by the team on 07/10/2026.
 // TODO(spec): the SRS does not define the format yet.
