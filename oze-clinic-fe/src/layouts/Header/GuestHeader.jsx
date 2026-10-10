@@ -13,6 +13,9 @@ import { ROUTES, getServiceDetailRoute } from "../../utils/routes";
 const ACCESS_TOKEN_KEY = "accessToken";
 const DRAWER_ID = "guest-drawer";
 const NAV_LINK_CLASS = "public-nav-link flex h-full items-center";
+const ROW_CLASS = "flex h-full w-full items-center justify-between gap-4 px-4 md:px-6";
+const ROW_START_CLASS = "flex shrink-0 items-center lg:flex-1";
+const ROW_END_CLASS = "flex shrink-0 items-center justify-end lg:flex-1";
 
 const ABOUT_ITEMS = [
     { key: "about-us-intro", label: TEXT.ABOUT_US_INTRO, to: ROUTES.ABOUT_US },
@@ -66,31 +69,38 @@ const GuestHeader = () => {
     return (
         <>
             <header className="utility-bar">
-                <div className="container-public flex items-center justify-between gap-4">
-                    <Link to={ROUTES.HOME} className="shrink-0">
-                        <img src={LogoOze} alt={TEXT.LOGO_ALT} className="h-5 w-auto md:h-6" />
-                    </Link>
-                    <GuestSearchForm compact className="hidden max-w-md flex-1 md:flex" />
-                    <a href={`tel:${CLINIC_HOTLINE.TEL}`} className="shrink-0 whitespace-nowrap text-on-primary">
-                        {TEXT.HOTLINE_LABEL} <span className="num font-semibold underline">{CLINIC_HOTLINE.DISPLAY}</span>
-                    </a>
-                    <button
-                        ref={menuButtonRef}
-                        type="button"
-                        className="btn btn-icon text-on-primary md:hidden"
-                        aria-label={TEXT.OPEN_MENU}
-                        aria-haspopup="dialog"
-                        aria-expanded={drawerOpen}
-                        aria-controls={DRAWER_ID}
-                        onClick={() => setDrawerKey(location.key)}
-                    >
-                        <Menu className="size-5" aria-hidden="true" />
-                    </button>
+                <div className={ROW_CLASS}>
+                    <div className={ROW_START_CLASS}>
+                        <Link to={ROUTES.HOME} className="shrink-0">
+                            <img src={LogoOze} alt={TEXT.LOGO_ALT} className="h-5 w-auto md:h-6" />
+                        </Link>
+                    </div>
+                    <div className="hidden min-w-0 flex-1 justify-center md:flex lg:w-md lg:flex-none">
+                        <GuestSearchForm compact className="flex w-full max-w-md" />
+                    </div>
+                    <div className={`${ROW_END_CLASS} gap-4`}>
+                        <a href={`tel:${CLINIC_HOTLINE.TEL}`} className="whitespace-nowrap text-on-primary">
+                            {TEXT.HOTLINE_LABEL} <span className="num font-semibold underline">{CLINIC_HOTLINE.DISPLAY}</span>
+                        </a>
+                        <button
+                            ref={menuButtonRef}
+                            type="button"
+                            className="btn btn-icon text-on-primary md:hidden"
+                            aria-label={TEXT.OPEN_MENU}
+                            aria-haspopup="dialog"
+                            aria-expanded={drawerOpen}
+                            aria-controls={DRAWER_ID}
+                            onClick={() => setDrawerKey(location.key)}
+                        >
+                            <Menu className="size-5" aria-hidden="true" />
+                        </button>
+                    </div>
                 </div>
             </header>
             <nav className="public-nav hidden md:flex">
-                <div className="container-public flex h-full items-center justify-between gap-6">
-                    <ul className="flex h-full items-center gap-6 lg:gap-8">
+                <div className={ROW_CLASS}>
+                    <div className="hidden lg:block lg:flex-1" />
+                    <ul className="flex h-full min-w-0 flex-1 items-center justify-center gap-6 lg:flex-none lg:gap-8">
                         {navEntries.map((entry) =>
                             entry.items ? (
                                 <li key={entry.key} className="relative h-full">
@@ -111,7 +121,7 @@ const GuestHeader = () => {
                             ),
                         )}
                     </ul>
-                    <div className="flex items-center gap-3">
+                    <div className={`${ROW_END_CLASS} gap-3`}>
                         <Link to={ROUTES.SIGN_IN} className="btn btn-primary">
                             {TEXT.SIGN_IN}
                         </Link>
