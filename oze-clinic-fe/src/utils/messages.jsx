@@ -31,3 +31,26 @@ export const OTP_LENGTH = 6;
 export const OTP_RESEND_SECONDS = 20;
 
 export const RESET_PASSWORD_REDIRECT_MS = 3000;
+
+export const CLINIC_HOTLINE = { DISPLAY: "0866 866 010", TEL: "0866866010" };
+
+export const GUEST_HEADER_TEXT = {
+    LOGO_ALT: "OZE Dental",
+    SEARCH_LABEL: "Tìm kiếm",
+    SEARCH_PLACEHOLDER: "Tìm kiếm...",
+    SEARCH_BUTTON: "Tìm kiếm",
+    HOTLINE_LABEL: "Hotline:",
+    HOME: "Trang chủ",
+    SERVICES: "Dịch vụ",
+    ALL_SERVICES: "Xem tất cả dịch vụ",
+    BOOK_APPOINTMENT: "Đặt lịch hẹn",
+    ABOUT_US: "Về chúng tôi",
+    ABOUT_US_INTRO: "Giới thiệu",
+    DOCTORS: "Đội ngũ bác sĩ",
+    CONTACT: "Liên hệ",
+    SIGN_IN: "Đăng nhập",
+    SIGN_UP: "Đăng ký",
+    OPEN_MENU: "Mở menu",
+    CLOSE_MENU: "Đóng menu",
+    DRAWER_LABEL: "Menu",
+};

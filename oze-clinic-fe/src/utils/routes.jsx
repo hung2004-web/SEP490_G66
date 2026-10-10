@@ -1,3 +1,5 @@
+import { generatePath } from "react-router-dom";
+
 export const ROUTES = {
     HOME: "/",
     SIGN_IN: "/login",
@@ -6,7 +8,14 @@ export const ROUTES = {
     FORGOT_PASSWORD: "/forgot-password",
     VERIFY_OTP: "/verify-otp",
     RESET_PASSWORD: "/reset-password",
+    SERVICES: "/services",
+    SERVICE_DETAIL: "/services/:serviceId",
+    DOCTORS: "/doctors",
+    CONTACT: "/contact",
+    BOOK_APPOINTMENT: "/book-appointment",
 };
+
+export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_DETAIL, { serviceId: String(serviceId) });
 
 // TODO(spec): BR-001/UC-04 say Home Page, the screen flow says Patient Dashboard, and staff
 // destinations are not defined. The role source is also not defined in the login response.
