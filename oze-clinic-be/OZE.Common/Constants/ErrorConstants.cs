@@ -59,6 +59,20 @@ namespace OZE.Common.Constants
             public const string PasswordMismatch = "New password and confirmation password do not match";
         }
 
+        // Update profile (UC-08). Texts follow the System Messages table of SRS Report 3.
+        public static class ProfileMessage
+        {
+            // MSG64
+            public const string ProfileUpdated = "Update profile success!";
+            // MSG66
+            public const string AddressInvalid = "Address is invalid. Please check again.";
+            // MSG39
+            public const string PatientNotLinked = "Your account is not linked to a patient record. Please contact the reception desk.";
+            // TODO(spec): the messages below have no System Message code in the SRS yet.
+            public const string OtpExpired = "OTP has expired. Please update your profile again.";
+            public const string UpdateFailed = "Update profile failed";
+        }
+
         public static class Common
         {
             public const string NotFound = "Not Found";

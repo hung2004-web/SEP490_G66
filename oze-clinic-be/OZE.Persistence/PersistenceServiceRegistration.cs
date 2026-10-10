@@ -34,6 +34,7 @@ namespace OZE.Persistence
 
             services.AddScoped<IUserRefreshTokenRepository, UserRefreshTokenRepository>();
             services.AddScoped<IRegistrationRepository, RegistrationRepository>();
+            services.AddScoped<IPatientRepository, PatientRepository>();
 
             return services;
         }
