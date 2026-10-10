@@ -3,6 +3,7 @@ import MainLayout from "../layouts/MainLayout";
 import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
+import ResetPasswordPage from "../pages/common/ResetPasswordPage";
 import SignInPage from "../pages/common/SignInPage";
 import VerifyOtpPage from "../pages/common/VerifyOtpPage";
 import { ROUTES } from "../utils/constant";
@@ -27,6 +28,10 @@ const routes = [
     {
         path: ROUTES.VERIFY_OTP,
         element: <VerifyOtpPage />
+    },
+    {
+        path: ROUTES.RESET_PASSWORD,
+        element: <ResetPasswordPage />
     }
 ]
 

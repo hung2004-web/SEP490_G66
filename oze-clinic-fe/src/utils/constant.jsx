@@ -11,7 +11,9 @@ export const ROUTES = {
 export const MESSAGES = {
     MSG07: "Vui lòng nhập [tên trường].",
     MSG24: "Sai mật khẩu.",
+    MSG25: "Mật khẩu mới không được trùng với mật khẩu cũ.",
     MSG26: "Tài khoản đã bị tạm khóa do đăng nhập sai 5 lần liên tiếp.",
+    MSG64: "Cập nhật mật khẩu thành công!",
     MSG66: "[Tên trường] không hợp lệ. Vui lòng kiểm tra lại.",
 };
 
@@ -35,6 +37,8 @@ export const VERIFICATION_METHOD_OPTIONS = [
 export const OTP_LENGTH = 6;
 
 export const OTP_RESEND_SECONDS = 20;
+
+export const RESET_PASSWORD_REDIRECT_MS = 3000;
 
 // TODO(spec): BR-001/UC-04 say Home Page, the screen flow says Patient Dashboard, and staff
 // destinations are not defined. The role source is also not defined in the login response.

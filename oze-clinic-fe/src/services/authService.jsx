@@ -75,3 +75,13 @@ const mockVerifyOtp = async ({ code }) => {
 };
 
 export const verifyOtp = async ({ phone, code }) => mockVerifyOtp({ phone, code });
+
+const mockResetPassword = async ({ password }) => {
+    await wait(MOCK_DELAY_MS);
+
+    if (password === MOCK_PASSWORD) return failure(MESSAGES.MSG25);
+
+    return success(null);
+};
+
+export const resetPassword = async ({ token, password }) => mockResetPassword({ token, password });
