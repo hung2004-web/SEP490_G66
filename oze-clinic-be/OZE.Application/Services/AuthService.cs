@@ -122,8 +122,8 @@ namespace OZE.Application.Services
                 FailedAttempts = 0
             };
 
-            var otp = GenerateOtp();
-            pending.OtpHash = HashOtp(pending.SessionId, otp);
+            var otp = OtpHelper.Generate();
+            pending.OtpHash = OtpHelper.Hash(pending.SessionId, otp);
             if (!await SendOtpAsync(pending, otp))
             {
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpSendFailed);
@@ -154,14 +154,14 @@ namespace OZE.Application.Services
             }
 
             // The previous OTP stays valid if the new one cannot be sent.
-            var otp = GenerateOtp();
+            var otp = OtpHelper.Generate();
             if (!await SendOtpAsync(pending, otp))
             {
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpSendFailed);
             }
 
             var now = DateTime.UtcNow;
-            pending.OtpHash = HashOtp(pending.SessionId, otp);
+            pending.OtpHash = OtpHelper.Hash(pending.SessionId, otp);
             pending.LastSentAt = now;
             pending.ExpiresAt = now.AddMinutes(OtpExpiresInMinutes);
             pending.FailedAttempts = 0;
@@ -185,7 +185,7 @@ namespace OZE.Application.Services
                 return ApiResponse.FailureResult(ErrorConstants.AuthMessage.InvalidOtp);
             }
 
-            if (!FixedTimeEquals(pending.OtpHash, HashOtp(pending.SessionId, request.Otp.Trim())))
+            if (!OtpHelper.Matches(pending.OtpHash, pending.SessionId, request.Otp))
             {
                 pending.FailedAttempts++;
                 if (pending.FailedAttempts >= maxAttempts)
@@ -393,11 +393,6 @@ namespace OZE.Application.Services
 
         private int ResendCooldownSeconds => _otpSettings.ResendCooldownSeconds > 0 ? _otpSettings.ResendCooldownSeconds : 60;
 
-        private static string GenerateOtp()
-        {
-            return RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-        }
-
         private static string OtpSentMessage(PendingRegistration pending)
         {
             return pending.VerificationMethod == VerificationMethodConstants.Email
@@ -429,20 +424,6 @@ namespace OZE.Application.Services
 
             var visible = Math.Min(2, atIndex - 1);
             return email[..visible] + new string('*', atIndex - visible) + email[atIndex..];
-        }
-
-        private static string HashOtp(string sessionId, string otp)
-        {
-            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{sessionId}:{otp}"));
-            return Convert.ToHexString(bytes);
-        }
-
-        private static bool FixedTimeEquals(string left, string right)
-        {
-            var leftBytes = Encoding.UTF8.GetBytes(left);
-            var rightBytes = Encoding.UTF8.GetBytes(right);
-            return leftBytes.Length == rightBytes.Length
-                && CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
         }
 
         public async Task<ApiResponse<AuthResult>> LoginAsync(LoginRequest request)
