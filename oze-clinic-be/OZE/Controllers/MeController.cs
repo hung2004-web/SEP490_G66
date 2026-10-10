@@ -2,8 +2,10 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
+using OZE.ProjectBase.Filters;
 
 namespace OZE.ProjectBase.Controllers
 {
@@ -22,7 +24,7 @@ namespace OZE.ProjectBase.Controllers
         [HttpGet]
         public async Task<ActionResult<ApiResponse<UserProfileResponse>>> GetProfileAsync()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            var userId = GetUserId();
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized(ApiResponse<UserProfileResponse>.FailureResult("User not identified"));
@@ -35,6 +37,58 @@ namespace OZE.ProjectBase.Controllers
             }
 
             return Ok(ApiResponse<UserProfileResponse>.SuccessResult(profile));
+        }
+
+        [HttpPut]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        [ApiResponseValidationFilter]
+        public async Task<ActionResult<ApiResponse<UpdateProfileResponse>>> UpdateProfileAsync([FromBody] UpdateProfileRequest request)
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse<UpdateProfileResponse>.FailureResult("User not identified"));
+            }
+
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var result = await _userService.UpdateProfileAsync(userId, request, baseUrl);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("verify-phone-otp")]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        [ApiResponseValidationFilter]
+        public async Task<ActionResult<ApiResponse<UserProfileResponse>>> VerifyPhoneOtpAsync([FromBody] VerifyOtpRequest request)
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse<UserProfileResponse>.FailureResult("User not identified"));
+            }
+
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var result = await _userService.VerifyPhoneOtpAsync(userId, request, baseUrl);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("resend-phone-otp")]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        [ApiResponseValidationFilter]
+        public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> ResendPhoneOtpAsync([FromBody] ResendOtpRequest request)
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse<RegisterPendingResponse>.FailureResult("User not identified"));
+            }
+
+            var result = await _userService.ResendPhoneOtpAsync(userId, request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        private string? GetUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         }
     }
 }
