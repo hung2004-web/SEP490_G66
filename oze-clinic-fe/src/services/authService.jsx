@@ -1,5 +1,6 @@
 import { MESSAGES } from "../utils/messages";
 import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
+import { invalidMessage } from "../utils/validation";
 
 // Mock cases until the real API is wired:
 // - phone "0900000000"                        -> account locked (MSG26)
@@ -12,6 +13,8 @@ const MOCK_DELAY_MS = 800;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const failure = (message) => ({ success: false, message, data: null, errors: null });
+
+const success = (data) => ({ success: true, message: null, data, errors: null });
 
 const mockSignIn = async ({ phone, password }) => {
     await wait(MOCK_DELAY_MS);
@@ -65,3 +68,40 @@ export const register = async (userData) => {
         errors: null
     };
 };
+
+const MOCK_UNREGISTERED_PHONE = "0900000001";
+
+const mockRequestPasswordReset = async ({ phone }) => {
+    await wait(MOCK_DELAY_MS);
+
+    if (phone === MOCK_UNREGISTERED_PHONE) return failure(invalidMessage("Số điện thoại"));
+
+    return success(null);
+};
+
+export const requestPasswordReset = async ({ phone, method }) => mockRequestPasswordReset({ phone, method });
+
+const MOCK_OTP_CODE = "123456";
+const MOCK_EXPIRED_OTP_CODE = "000000";
+const MOCK_RESET_TOKEN = "mock-reset-token";
+
+const mockVerifyOtp = async ({ code }) => {
+    await wait(MOCK_DELAY_MS);
+
+    if (code === MOCK_EXPIRED_OTP_CODE) return failure(invalidMessage("Mã xác minh"));
+    if (code !== MOCK_OTP_CODE) return failure(invalidMessage("Mã xác minh"));
+
+    return success({ resetToken: MOCK_RESET_TOKEN });
+};
+
+export const verifyOtp = async ({ phone, code }) => mockVerifyOtp({ phone, code });
+
+const mockResetPassword = async ({ password }) => {
+    await wait(MOCK_DELAY_MS);
+
+    if (password === MOCK_PASSWORD) return failure(MESSAGES.MSG25);
+
+    return success(null);
+};
+
+export const resetPassword = async ({ token, password }) => mockResetPassword({ token, password });

@@ -3,8 +3,9 @@ export const ROUTES = {
     SIGN_IN: "/login",
     REGISTER: "/register",
     ABOUT_US: "/about-us",
-    // TODO(spec): Forgot Password screen is not built yet; its route is not registered.
     FORGOT_PASSWORD: "/forgot-password",
+    VERIFY_OTP: "/verify-otp",
+    RESET_PASSWORD: "/reset-password",
 };
 
 // TODO(spec): BR-001/UC-04 say Home Page, the screen flow says Patient Dashboard, and staff

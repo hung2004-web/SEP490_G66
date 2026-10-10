@@ -5,6 +5,8 @@ import { MESSAGES, PASSWORD_LENGTH, VALIDATION_MESSAGES } from "./messages";
 // MSG07 with the field name filled in, e.g. "Vui lòng nhập số điện thoại."
 export const requiredMessage = (fieldName) => MESSAGES.MSG07.replace("[tên trường]", fieldName);
 
+export const invalidMessage = (fieldName) => MESSAGES.MSG66.replace("[Tên trường]", fieldName);
+
 export const isRequiredEmpty = (value) => value.trim() === "";
 
 export const validateEmail = (value) => {
