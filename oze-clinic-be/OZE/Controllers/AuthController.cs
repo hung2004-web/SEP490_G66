@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using OZE.Application.Interfaces;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
+using OZE.ProjectBase.Filters;
 
 namespace OZE.ProjectBase.Controllers
 {
@@ -20,6 +21,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> RegisterAsync([FromBody] RegisterRequest registerRequest)
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -29,6 +31,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("verify-otp")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse>> VerifyOtpAsync([FromBody] VerifyOtpRequest request)
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -38,6 +41,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("resend-otp")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> ResendOtpAsync([FromBody] ResendOtpRequest request)
         {
             var result = await _authService.ResendOtpAsync(request);

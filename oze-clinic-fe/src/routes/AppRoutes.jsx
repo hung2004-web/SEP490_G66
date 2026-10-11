@@ -1,9 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
 import HomePage from "../pages/common/HomePage";
 import Register from "../pages/common/Register";
-import SignInPage from "../pages/auth/SignInPage";
-import { ROUTES } from "../utils/constant";
+import ResetPasswordPage from "../pages/common/ResetPasswordPage";
+import SignInPage from "../pages/common/SignInPage";
+import VerifyOtpPage from "../pages/common/VerifyOtpPage";
+import AboutUs from "../pages/common/AboutUs";
+import { ROUTES } from "../utils/routes";
 
 const routes = [
     {
@@ -17,6 +21,22 @@ const routes = [
     {
         path: ROUTES.REGISTER,
         element: <Register />
+    },
+    {
+        path: ROUTES.ABOUT_US,
+        element: <AboutUs />
+    },
+    {
+        path: ROUTES.FORGOT_PASSWORD,
+        element: <ForgotPasswordPage />
+    },
+    {
+        path: ROUTES.VERIFY_OTP,
+        element: <VerifyOtpPage />
+    },
+    {
+        path: ROUTES.RESET_PASSWORD,
+        element: <ResetPasswordPage />
     }
 ]
 

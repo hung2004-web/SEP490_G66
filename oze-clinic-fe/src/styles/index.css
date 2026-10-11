@@ -125,7 +125,7 @@
   --spacing-sidebar: 256px;
   --spacing-sidebar-collapsed: 72px;
   --spacing-topbar: 64px;
-  --spacing-utility-bar: 40px;
+  --spacing-utility-bar: 72px;
   --spacing-public-nav: 72px;
   --spacing-control: 40px;
 }
@@ -253,6 +253,11 @@
   .card-title { @apply font-heading text-heading-3 text-ink; }
   .stat-label { @apply text-label text-muted; }
   .stat-value { @apply num mt-1 font-heading text-stat text-ink; }
+  main:has(> .auth-page) { @apply bg-surface-tint; }
+  .auth-page { @apply flex justify-center py-12 md:py-16; }
+  .card-auth { @apply rounded-2xl bg-canvas p-6 text-body-md text-body shadow-lg sm:p-10; }
+  .auth-title { @apply text-center font-heading text-heading-1 text-ink sm:text-display-md; }
+  .auth-subtitle { @apply mx-auto mt-3 mb-8 max-w-md text-center text-body-md text-body; }
 
   /* ---------- Table ---------- */
   .table-wrap { @apply overflow-x-auto rounded-lg border border-border bg-canvas; }
@@ -313,4 +318,14 @@
   /* ---------- Avatar ---------- */
   .avatar { @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-caption font-semibold text-primary; }
   .avatar-lg { @apply size-10; }
+}
+
+.root{
+  --nk-unit: max(1px, 0.0625vw);
+}
+
+.container{
+  max-width: calc(1400 * var(--nk-unit));
+  margin: 0 auto;
+  padding: 0 calc(15 * var(--nk-unit));
 }

@@ -30,7 +30,15 @@ namespace OZE.Persistence.Configurations
                       .HasDatabaseName("IX_Users_NormalizedUserName")
                       .IsUnique()
                       .HasFilter("[NormalizedUserName] IS NOT NULL");
-                entity.HasIndex(x => x.NormalizedEmail).HasDatabaseName("IX_Users_NormalizedEmail");
+                // BR-004: phone numbers and emails must be unique.
+                entity.HasIndex(x => x.NormalizedEmail)
+                      .HasDatabaseName("IX_Users_NormalizedEmail")
+                      .IsUnique()
+                      .HasFilter("[NormalizedEmail] IS NOT NULL");
+                entity.HasIndex(x => x.PhoneNumber)
+                      .HasDatabaseName("IX_Users_PhoneNumber")
+                      .IsUnique()
+                      .HasFilter("[PhoneNumber] IS NOT NULL");
 
                 entity.HasMany<IdentityUserClaim<string>>().WithOne()
                       .HasForeignKey(x => x.UserId)
