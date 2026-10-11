@@ -40,5 +40,12 @@ namespace OZE.ProjectBase.Controllers
             var room = await _roomService.CreateRoomAsync(request);
             return Ok(ApiResponse<RoomResponse>.SuccessResult(room, "Room created successfully"));
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<ApiResponse<RoomResponse>>> UpdateRoomAsync(int id, [FromBody] UpdateRoomRequest request)
+        {
+            var room = await _roomService.UpdateRoomAsync(id, request);
+            return Ok(ApiResponse<RoomResponse>.SuccessResult(room, "Room updated successfully"));
+        }
     }
 }
