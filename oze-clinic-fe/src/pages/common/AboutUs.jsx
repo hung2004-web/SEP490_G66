@@ -69,23 +69,27 @@ const AboutUs = () => {
                 <Breadcrumb items={BREADCRUMB_ITEMS} />
             </div>
 
-            {/* Hero: text and photo, 6/6 split that stacks on mobile */}
-            <section className={`container-public ${SECTION_CLASS} grid grid-cols-1 items-center gap-12 md:grid-cols-2`}>
-                <div>
-                    <p className="text-label text-muted">Giới thiệu về</p>
-                    <h1 className="mt-2 text-display-md md:text-display-lg">Nha khoa OZE</h1>
-                    <div className="mt-6 flex flex-col gap-4 text-body-md text-body md:text-body-lg">
-                        {INTRO_PARAGRAPHS.map((paragraph) => (
-                            <p key={paragraph}>{paragraph}</p>
-                        ))}
-                    </div>
-                </div>
+            {/* Banner: full width at its natural ratio, so the text inside the image is never cropped */}
+            <div className="container-public pt-6">
                 <div className="overflow-hidden rounded-2xl shadow-md">
                     <img
                         src={bannerAboutUs}
-                        alt="Không gian Nha khoa OZE"
-                        className="hero-image w-full transition-transform duration-500 ease-out hover:scale-105"
+                        alt="Nha khoa OZE - Luôn tận tâm, luôn hoàn thiện"
+                        className="hero-image block h-auto w-full transition-transform duration-500 ease-out hover:scale-[1.02]"
                     />
+                </div>
+            </div>
+
+            {/* Intro: title on the left, text on the right; stacks on mobile */}
+            <section className={`container-public ${SECTION_CLASS} grid grid-cols-1 gap-6 lg:grid-cols-[1fr_2fr] lg:gap-12`}>
+                <div>
+                    <p className="text-label text-muted">Giới thiệu về</p>
+                    <h1 className="mt-2 text-display-md md:text-display-lg">Nha khoa OZE</h1>
+                </div>
+                <div className="flex flex-col gap-4 text-body-md text-body md:text-body-lg">
+                    {INTRO_PARAGRAPHS.map((paragraph) => (
+                        <p key={paragraph}>{paragraph}</p>
+                    ))}
                 </div>
             </section>
 

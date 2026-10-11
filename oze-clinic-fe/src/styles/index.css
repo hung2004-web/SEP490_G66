@@ -121,7 +121,8 @@
   --shadow-focus-danger: 0 0 0 3px rgba(229, 72, 77, 0.25);
 
   /* Layout (w-sidebar, h-topbar, max-w-public ...) */
-  --container-public: 1200px;
+  /* [EXT] DESIGN_oze.md says 1200px; widened so public pages do not leave wide empty margins on large screens. */
+  --container-public: 1440px;
   --spacing-sidebar: 256px;
   --spacing-sidebar-collapsed: 72px;
   --spacing-topbar: 64px;
@@ -190,7 +191,7 @@
  */
 @layer components {
   /* ---------- Layout ---------- */
-  .container-public { @apply mx-auto w-full max-w-public px-4 md:px-6; }
+  .container-public { @apply mx-auto w-full max-w-public px-4 md:px-6 lg:px-8; }
   .app-content { @apply bg-surface-tint p-6; }
   .page-header { @apply mb-6 flex flex-wrap items-start justify-between gap-4; }
   .page-title { @apply font-heading text-heading-1 text-ink; }

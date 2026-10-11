@@ -28,7 +28,7 @@ export const VERIFICATION_METHOD_OPTIONS = [
 
 export const OTP_LENGTH = 6;
 
-export const OTP_RESEND_SECONDS = 20;
+export const OTP_RESEND_SECONDS = 60;
 
 export const RESET_PASSWORD_REDIRECT_MS = 3000;
 
