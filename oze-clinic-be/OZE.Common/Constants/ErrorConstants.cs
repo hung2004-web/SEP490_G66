@@ -66,6 +66,8 @@ namespace OZE.Common.Constants
             public const string InvalidRoomType = "Room type must be one of: General, Imaging, Treatment";
             public const string InvalidStatus = "Room status must be one of: Active, Maintenance, Inactive";
             public const string RoomInUse = "Room is used by schedules or queue entries and cannot be deleted. Set its status to Inactive instead";
+        }
+
         // Update profile (UC-08). Texts follow the System Messages table of SRS Report 3.
         public static class ProfileMessage
         {
