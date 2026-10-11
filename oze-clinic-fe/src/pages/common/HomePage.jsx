@@ -1,9 +1,7 @@
-import react from "react";
+import ServicesSection from "./home/ServicesSection.jsx";
 
 const HomePage = () => {
-    return (
-        <h1>Hello, welcome to home page</h1>
-    )
-}
+    return <ServicesSection />;
+};
 
 export default HomePage;
