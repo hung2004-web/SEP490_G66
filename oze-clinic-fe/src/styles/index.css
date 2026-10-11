@@ -125,7 +125,7 @@
   --spacing-sidebar: 256px;
   --spacing-sidebar-collapsed: 72px;
   --spacing-topbar: 64px;
-  --spacing-utility-bar: 40px;
+  --spacing-utility-bar: 72px;
   --spacing-public-nav: 72px;
   --spacing-control: 40px;
 }
@@ -201,15 +201,15 @@
 
   /* ---------- Buttons ---------- */
   .btn {
-    @apply inline-flex h-control cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent px-4 font-sans text-button transition-colors duration-150;
+    @apply inline-flex h-control cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent px-4 font-sans text-button transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] disabled:active:scale-100;
   }
   .btn:disabled, .btn[aria-disabled="true"] {
     @apply cursor-not-allowed border-transparent bg-surface-muted text-placeholder;
   }
-  .btn-primary { @apply bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-active; }
-  .btn-secondary { @apply border-border-strong bg-canvas text-ink hover:bg-surface-tint; }
-  .btn-link { @apply h-auto border-0 bg-transparent px-0 text-primary hover:underline; }
-  .btn-cta { @apply h-12 rounded-full bg-primary px-7 text-on-primary hover:bg-primary-hover active:bg-primary-active; }
+  .btn-primary { @apply bg-primary text-on-primary hover:bg-primary-hover hover:shadow-md active:bg-primary-active; }
+  .btn-secondary { @apply border-border-strong bg-canvas text-ink hover:border-primary hover:bg-surface-tint hover:text-primary; }
+  .btn-link { @apply h-auto border-0 bg-transparent px-0 text-primary underline-offset-4 hover:underline; }
+  .btn-cta { @apply h-12 rounded-full bg-primary px-7 text-on-primary hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-md active:bg-primary-active; }
   .btn-icon { @apply h-control w-10 px-0; }
   /* [EXT] 48px app button (Sign In) and danger button (confirmations) */
   .btn-lg { @apply h-12 px-5; }
@@ -250,9 +250,16 @@
   /* ---------- Cards ---------- */
   .card-app { @apply rounded-lg border border-border bg-canvas p-6 text-body-sm text-body; }
   .card-public { @apply rounded-xl bg-canvas p-8 text-body-md text-body shadow-md; }
+  /* [EXT] Lift on hover for highlighted public cards */
+  .card-hover { @apply transition duration-200 ease-out hover:-translate-y-1 hover:shadow-lg; }
   .card-title { @apply font-heading text-heading-3 text-ink; }
   .stat-label { @apply text-label text-muted; }
   .stat-value { @apply num mt-1 font-heading text-stat text-ink; }
+  main:has(> .auth-page) { @apply bg-surface-tint; }
+  .auth-page { @apply flex justify-center px-4 py-12 md:py-16; }
+  .card-auth { @apply rounded-2xl bg-canvas p-6 text-body-md text-body shadow-lg sm:p-10; }
+  .auth-title { @apply text-center font-heading text-heading-1 text-ink sm:text-display-md; }
+  .auth-subtitle { @apply mx-auto mt-3 mb-8 max-w-md text-center text-body-md text-body; }
 
   /* ---------- Table ---------- */
   .table-wrap { @apply overflow-x-auto rounded-lg border border-border bg-canvas; }
@@ -276,7 +283,7 @@
   /* ---------- Public site ---------- */
   .utility-bar { @apply flex h-utility-bar items-center bg-primary text-caption text-on-primary; }
   .public-nav { @apply sticky top-0 z-30 flex h-public-nav items-center border-b border-border bg-canvas text-label text-ink; }
-  .public-nav-link { @apply text-label text-body hover:text-primary; }
+  .public-nav-link { @apply text-label text-body transition-[color,box-shadow] duration-200 hover:text-primary; }
   .public-nav-link-active, .public-nav-link[aria-current="page"] { @apply text-primary shadow-[inset_0_-2px_0_var(--color-primary)]; }
   .hero-image { @apply rounded-2xl bg-surface-tint object-cover; }
   .footer-public { @apply bg-surface-navy px-4 py-16 text-body-sm text-on-navy-soft; }
@@ -313,4 +320,14 @@
   /* ---------- Avatar ---------- */
   .avatar { @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-caption font-semibold text-primary; }
   .avatar-lg { @apply size-10; }
+}
+
+.root{
+  --nk-unit: max(1px, 0.0625vw);
+}
+
+.container{
+  max-width: calc(1400 * var(--nk-unit));
+  margin: 0 auto;
+  padding: 0 calc(15 * var(--nk-unit));
 }

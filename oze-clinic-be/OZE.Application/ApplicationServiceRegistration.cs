@@ -27,6 +27,7 @@ namespace OZE.Application
             services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
+            services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
 
             return services;
         }
