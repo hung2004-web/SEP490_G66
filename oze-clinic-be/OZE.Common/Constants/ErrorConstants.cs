@@ -82,6 +82,34 @@ namespace OZE.Common.Constants
             public const string UpdateFailed = "Update profile failed";
         }
 
+        // Manage User (UC-44). Texts follow the System Messages table of SRS Report 3.
+        public static class StaffMessage
+        {
+            // MSG07
+            public const string RoleRequired = "Please enter role.";
+            public const string LicenseNumberRequired = "Please enter license number.";
+            // MSG66
+            public const string RoleInvalid = "Role is invalid. Please check again.";
+            public const string SpecializationInvalid = "Specialization is invalid. Please check again.";
+            public const string LicenseNumberInvalid = "License number is invalid. Please check again.";
+            // MSG67
+            public const string StaffNotFound = "Staff not found.";
+            // MSG68
+            public const string PhoneExist = "Phone number already exists in the system.";
+            public const string LicenseNumberExist = "License number already exists in the system.";
+            // MSG64
+            public const string StaffUpdated = "Update staff success!";
+            // MSG70
+            public const string AlreadyInactive = "Cannot deactivate because staff is inactive.";
+            public const string AlreadyActive = "Cannot activate because staff is active.";
+            // TODO(spec): the messages below have no System Message code in the SRS yet.
+            public const string CannotChangeOwnRole = "You cannot change your own role.";
+            public const string CannotDeactivateSelf = "You cannot deactivate your own account.";
+            public const string StaffDeactivated = "Deactivate staff success!";
+            public const string StaffActivated = "Activate staff success!";
+            public const string UpdateFailed = "Update staff failed";
+        }
+
         public static class Common
         {
             public const string NotFound = "Not Found";
