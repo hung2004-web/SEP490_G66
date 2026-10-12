@@ -41,5 +41,25 @@ namespace OZE.ProjectBase.Controllers
             var staff = await _staffService.UpdateStaffAsync(userId, request, managerId);
             return Ok(ApiResponse<StaffResponse>.SuccessResult(staff, ErrorConstants.StaffMessage.StaffUpdated));
         }
+
+        [HttpPut("{userId}/deactivate")]
+        public async Task<ActionResult<ApiResponse<StaffResponse>>> DeactivateStaffAsync(string userId)
+        {
+            var managerId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (string.IsNullOrEmpty(managerId))
+            {
+                return Unauthorized(ApiResponse<StaffResponse>.FailureResult("User not identified"));
+            }
+
+            var staff = await _staffService.DeactivateStaffAsync(userId, managerId);
+            return Ok(ApiResponse<StaffResponse>.SuccessResult(staff, ErrorConstants.StaffMessage.StaffDeactivated));
+        }
+
+        [HttpPut("{userId}/activate")]
+        public async Task<ActionResult<ApiResponse<StaffResponse>>> ActivateStaffAsync(string userId)
+        {
+            var staff = await _staffService.ActivateStaffAsync(userId);
+            return Ok(ApiResponse<StaffResponse>.SuccessResult(staff, ErrorConstants.StaffMessage.StaffActivated));
+        }
     }
 }

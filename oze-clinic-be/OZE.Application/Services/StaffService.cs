@@ -14,15 +14,18 @@ namespace OZE.Application.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IStaffRepository _staffRepository;
         private readonly IRegistrationRepository _registrationRepository;
+        private readonly IUserRefreshTokenRepository _refreshTokenRepository;
 
         public StaffService(
             UserManager<ApplicationUser> userManager,
             IStaffRepository staffRepository,
-            IRegistrationRepository registrationRepository)
+            IRegistrationRepository registrationRepository,
+            IUserRefreshTokenRepository refreshTokenRepository)
         {
             _userManager = userManager;
             _staffRepository = staffRepository;
             _registrationRepository = registrationRepository;
+            _refreshTokenRepository = refreshTokenRepository;
         }
 
         public async Task<StaffResponse> GetStaffAsync(string userId)
@@ -98,6 +101,45 @@ namespace OZE.Application.Services
                 result.Errors.FirstOrDefault()?.Description ?? ErrorConstants.StaffMessage.UpdateFailed);
 
             return ToResponse(user, staff, request.Role);
+        }
+
+        public async Task<StaffResponse> DeactivateStaffAsync(string userId, string managerId)
+        {
+            var (user, staff, role) = await GetExistingStaffAsync(userId);
+            ConditionGuard.ThrowIf(userId == managerId, ErrorConstants.StaffMessage.CannotDeactivateSelf);
+            ConditionGuard.Ensure(staff.IsActive, ErrorConstants.StaffMessage.AlreadyInactive);
+
+            // BR-088: the account is locked instead of deleted, so the staff member cannot log in.
+            staff.IsActive = false;
+            staff.UpdatedAt = DateTimeOffset.UtcNow;
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            // Refresh does not check the lockout, so the sessions on every device are ended here.
+            await _refreshTokenRepository.RevokeUserTokensAsync(user.Id);
+
+            // Saves the account, its staff profile and the revoked tokens in one SaveChanges call (shared DbContext).
+            var result = await _userManager.UpdateAsync(user);
+            ConditionGuard.Ensure(result.Succeeded,
+                result.Errors.FirstOrDefault()?.Description ?? ErrorConstants.StaffMessage.UpdateFailed);
+
+            return ToResponse(user, staff, role);
+        }
+
+        public async Task<StaffResponse> ActivateStaffAsync(string userId)
+        {
+            var (user, staff, role) = await GetExistingStaffAsync(userId);
+            ConditionGuard.Ensure(!staff.IsActive, ErrorConstants.StaffMessage.AlreadyActive);
+
+            staff.IsActive = true;
+            staff.UpdatedAt = DateTimeOffset.UtcNow;
+            user.LockoutEnd = null;
+            user.AccessFailedCount = 0;
+
+            var result = await _userManager.UpdateAsync(user);
+            ConditionGuard.Ensure(result.Succeeded,
+                result.Errors.FirstOrDefault()?.Description ?? ErrorConstants.StaffMessage.UpdateFailed);
+
+            return ToResponse(user, staff, role);
         }
 
         // The account, its staff profile and its role are saved in one transaction.

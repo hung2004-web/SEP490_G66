@@ -99,8 +99,14 @@ namespace OZE.Common.Constants
             public const string LicenseNumberExist = "License number already exists in the system.";
             // MSG64
             public const string StaffUpdated = "Update staff success!";
+            // MSG70
+            public const string AlreadyInactive = "Cannot deactivate because staff is inactive.";
+            public const string AlreadyActive = "Cannot activate because staff is active.";
             // TODO(spec): the messages below have no System Message code in the SRS yet.
             public const string CannotChangeOwnRole = "You cannot change your own role.";
+            public const string CannotDeactivateSelf = "You cannot deactivate your own account.";
+            public const string StaffDeactivated = "Deactivate staff success!";
+            public const string StaffActivated = "Activate staff success!";
             public const string UpdateFailed = "Update staff failed";
         }
 
