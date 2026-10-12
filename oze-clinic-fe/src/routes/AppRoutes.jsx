@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
-import HomePage from "../pages/common/HomePage";
+import HomePage from "../pages/common/homepage/HomePage";
 import Register from "../pages/common/Register";
 import ResetPasswordPage from "../pages/common/ResetPasswordPage";
 import SignInPage from "../pages/common/SignInPage";
 import VerifyOtpPage from "../pages/common/VerifyOtpPage";
-import AboutUs from "../pages/common/AboutUs";
+import AboutUs from "../pages/common/homepage/AboutUs";
 import ContactPage from "../pages/common/ContactPage";
 import { ROUTES } from "../utils/routes";
 

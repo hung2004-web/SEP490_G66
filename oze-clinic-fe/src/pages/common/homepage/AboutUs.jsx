@@ -2,7 +2,7 @@ import { Eye, Gem, Handshake, HeartHandshake, Scale, ShieldCheck, Sparkle, Sprou
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import Card from "@/components/ui/Card";
 import bannerAboutUs from "@/assets/banner/banner_about_us.png";
-import { ROUTES } from "../../utils/routes";
+import { ROUTES } from "@/utils/routes";
 
 const BREADCRUMB_ITEMS = [{ label: "Trang chủ", href: ROUTES.HOME }, { label: "Về chúng tôi" }];
 
