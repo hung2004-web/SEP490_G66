@@ -1,0 +1,563 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\SEP\\OZE\\oze-clinic-be\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.projectbase\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|solutionrelative:oze.projectbase\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.application\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|solutionrelative:oze.application\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\exceptions\\appexceptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\exceptions\\appexceptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\forgotpasswordrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\forgotpasswordrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.application\\interfaces\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|solutionrelative:oze.application\\interfaces\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.projectbase\\controllers\\mecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|solutionrelative:oze.projectbase\\controllers\\mecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\constants\\errorconstants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\constants\\errorconstants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.application\\services\\emailsender.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|solutionrelative:oze.application\\services\\emailsender.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.application\\interfaces\\iemailsender.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|solutionrelative:oze.application\\interfaces\\iemailsender.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.application\\mappingprofiles\\basemappingobject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|solutionrelative:oze.application\\mappingprofiles\\basemappingobject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\constants\\roleconstants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\constants\\roleconstants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.application\\oze.application.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|solutionrelative:oze.application\\oze.application.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.projectbase\\middlewares\\globalexceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|solutionrelative:oze.projectbase\\middlewares\\globalexceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.projectbase\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{5B21C8EE-C584-4E83-BEC8-7A395CF2FDD8}|OZE.ProjectBase\\OZE.csproj|solutionrelative:oze.projectbase\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.application\\middlewares\\conditionguard.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E7AAB276-0786-4878-9603-12C7E808742B}|OZE.Application\\OZE.Application.csproj|solutionrelative:oze.application\\middlewares\\conditionguard.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1480EB57-1671-4997-9DF5-484718BA7136}|OZE.Persistence\\OZE.Persistence.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.persistence\\seed\\databaseseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1480EB57-1671-4997-9DF5-484718BA7136}|OZE.Persistence\\OZE.Persistence.csproj|solutionrelative:oze.persistence\\seed\\databaseseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\jwtsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\jwtsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\authmessagesenderoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\authmessagesenderoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\userrefreshtokendto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\userrefreshtokendto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\userprofileresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\userprofileresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\registerrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\registerrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\base\\messageresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\base\\messageresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\base\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\base\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\refreshtokenrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\refreshtokenrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.common\\models\\authresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D840086E-53A5-4722-AE73-32D9604C487F}|OZE.Common\\OZE.Common.csproj|solutionrelative:oze.common\\models\\authresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AB00E7D7-590D-41AF-8BDA-92B161FB9D85}|OZE.Domain\\OZE.Domain.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.domain\\entities\\userrefreshtoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AB00E7D7-590D-41AF-8BDA-92B161FB9D85}|OZE.Domain\\OZE.Domain.csproj|solutionrelative:oze.domain\\entities\\userrefreshtoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AB00E7D7-590D-41AF-8BDA-92B161FB9D85}|OZE.Domain\\OZE.Domain.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.domain\\entities\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AB00E7D7-590D-41AF-8BDA-92B161FB9D85}|OZE.Domain\\OZE.Domain.csproj|solutionrelative:oze.domain\\entities\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1480EB57-1671-4997-9DF5-484718BA7136}|OZE.Persistence\\OZE.Persistence.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.persistence\\persistenceserviceregistration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1480EB57-1671-4997-9DF5-484718BA7136}|OZE.Persistence\\OZE.Persistence.csproj|solutionrelative:oze.persistence\\persistenceserviceregistration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1480EB57-1671-4997-9DF5-484718BA7136}|OZE.Persistence\\OZE.Persistence.csproj|d:\\sep\\oze\\oze-clinic-be\\oze.persistence\\dbcontexts\\appidentitydbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1480EB57-1671-4997-9DF5-484718BA7136}|OZE.Persistence\\OZE.Persistence.csproj|solutionrelative:oze.persistence\\dbcontexts\\appidentitydbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 12,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:6:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:5:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:14:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:15:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:13:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "MeController.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\Controllers\\MeController.cs",
+              "RelativeDocumentMoniker": "OZE.ProjectBase\\Controllers\\MeController.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\Controllers\\MeController.cs",
+              "RelativeToolTip": "OZE.ProjectBase\\Controllers\\MeController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T06:53:26.891Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "OZE.ProjectBase\\Controllers\\AuthController.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "OZE.ProjectBase\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAACMAAAAAAAAAAAAgwDkAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T06:53:25.682Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "EmailSender.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Services\\EmailSender.cs",
+              "RelativeDocumentMoniker": "OZE.Application\\Services\\EmailSender.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Services\\EmailSender.cs",
+              "RelativeToolTip": "OZE.Application\\Services\\EmailSender.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAYwEEAAABJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T06:15:21.604Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "OZE.Application\\Services\\AuthService.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Services\\AuthService.cs",
+              "RelativeToolTip": "OZE.Application\\Services\\AuthService.cs",
+              "ViewState": "AgIAAMIAAAAAAAAAAAAowNgAAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T02:51:00.245Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Interfaces\\IAuthService.cs",
+              "RelativeDocumentMoniker": "OZE.Application\\Interfaces\\IAuthService.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Interfaces\\IAuthService.cs",
+              "RelativeToolTip": "OZE.Application\\Interfaces\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T02:49:27.427Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ForgotPasswordRequest.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\ForgotPasswordRequest.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\ForgotPasswordRequest.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\ForgotPasswordRequest.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\ForgotPasswordRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T02:48:30.676Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AppExceptions.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Exceptions\\AppExceptions.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Exceptions\\AppExceptions.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Exceptions\\AppExceptions.cs",
+              "RelativeToolTip": "OZE.Common\\Exceptions\\AppExceptions.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:16.215Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "IEmailSender.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Interfaces\\IEmailSender.cs",
+              "RelativeDocumentMoniker": "OZE.Application\\Interfaces\\IEmailSender.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Interfaces\\IEmailSender.cs",
+              "RelativeToolTip": "OZE.Application\\Interfaces\\IEmailSender.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T02:49:29.594Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "BaseMappingObject.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\MappingProfiles\\BaseMappingObject.cs",
+              "RelativeDocumentMoniker": "OZE.Application\\MappingProfiles\\BaseMappingObject.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\MappingProfiles\\BaseMappingObject.cs",
+              "RelativeToolTip": "OZE.Application\\MappingProfiles\\BaseMappingObject.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-06T02:50:52.25Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ErrorConstants.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Constants\\ErrorConstants.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Constants\\ErrorConstants.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Constants\\ErrorConstants.cs",
+              "RelativeToolTip": "OZE.Common\\Constants\\ErrorConstants.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:08.495Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "OZE.Application.csproj",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\OZE.Application.csproj",
+              "RelativeDocumentMoniker": "OZE.Application\\OZE.Application.csproj",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\OZE.Application.csproj",
+              "RelativeToolTip": "OZE.Application\\OZE.Application.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-10-04T16:51:22.61Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "GlobalExceptionMiddleware.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\Middlewares\\GlobalExceptionMiddleware.cs",
+              "RelativeDocumentMoniker": "OZE.ProjectBase\\Middlewares\\GlobalExceptionMiddleware.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\Middlewares\\GlobalExceptionMiddleware.cs",
+              "RelativeToolTip": "OZE.ProjectBase\\Middlewares\\GlobalExceptionMiddleware.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAYwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T03:20:08.875Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\appsettings.json",
+              "RelativeDocumentMoniker": "OZE.ProjectBase\\appsettings.json",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.ProjectBase\\appsettings.json",
+              "RelativeToolTip": "OZE.ProjectBase\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-26T03:20:06.681Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "ConditionGuard.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Middlewares\\ConditionGuard.cs",
+              "RelativeDocumentMoniker": "OZE.Application\\Middlewares\\ConditionGuard.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Application\\Middlewares\\ConditionGuard.cs",
+              "RelativeToolTip": "OZE.Application\\Middlewares\\ConditionGuard.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAgwDgAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-26T02:56:50.583Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "UserRefreshTokenDTO.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\UserRefreshTokenDTO.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\UserRefreshTokenDTO.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\UserRefreshTokenDTO.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\UserRefreshTokenDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:34.821Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "RoleConstants.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Constants\\RoleConstants.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Constants\\RoleConstants.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Constants\\RoleConstants.cs",
+              "RelativeToolTip": "OZE.Common\\Constants\\RoleConstants.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:10.771Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "AuthMessageSenderOptions.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\AuthMessageSenderOptions.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\AuthMessageSenderOptions.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\AuthMessageSenderOptions.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\AuthMessageSenderOptions.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:22.759Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "JwtSettings.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\JwtSettings.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\JwtSettings.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\JwtSettings.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\JwtSettings.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:27.323Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "LoginRequest.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\LoginRequest.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\LoginRequest.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\LoginRequest.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\LoginRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:28.398Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "DatabaseSeeder.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Persistence\\Seed\\DatabaseSeeder.cs",
+              "RelativeDocumentMoniker": "OZE.Persistence\\Seed\\DatabaseSeeder.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Persistence\\Seed\\DatabaseSeeder.cs",
+              "RelativeToolTip": "OZE.Persistence\\Seed\\DatabaseSeeder.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAxwCAAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:39:23.867Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "UserProfileResponse.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\UserProfileResponse.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\UserProfileResponse.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\UserProfileResponse.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\UserProfileResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:33.072Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "RegisterRequest.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\RegisterRequest.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\RegisterRequest.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\RegisterRequest.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\RegisterRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:30.35Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "MessageResponse.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\Base\\MessageResponse.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\Base\\MessageResponse.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\Base\\MessageResponse.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\Base\\MessageResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T17:29:29.39Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "ApiResponse.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\Base\\ApiResponse.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\Base\\ApiResponse.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\Base\\ApiResponse.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\Base\\ApiResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T17:29:26.515Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "AuthResult.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\AuthResult.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\AuthResult.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\AuthResult.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\AuthResult.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:25.067Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "UserRefreshToken.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Domain\\Entities\\UserRefreshToken.cs",
+              "RelativeDocumentMoniker": "OZE.Domain\\Entities\\UserRefreshToken.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Domain\\Entities\\UserRefreshToken.cs",
+              "RelativeToolTip": "OZE.Domain\\Entities\\UserRefreshToken.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:36:21.314Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "ApplicationUser.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Domain\\Entities\\ApplicationUser.cs",
+              "RelativeDocumentMoniker": "OZE.Domain\\Entities\\ApplicationUser.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Domain\\Entities\\ApplicationUser.cs",
+              "RelativeToolTip": "OZE.Domain\\Entities\\ApplicationUser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T17:09:07.796Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "RefreshTokenRequest.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\RefreshTokenRequest.cs",
+              "RelativeDocumentMoniker": "OZE.Common\\Models\\RefreshTokenRequest.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Common\\Models\\RefreshTokenRequest.cs",
+              "RelativeToolTip": "OZE.Common\\Models\\RefreshTokenRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:40:29.351Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "PersistenceServiceRegistration.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Persistence\\PersistenceServiceRegistration.cs",
+              "RelativeDocumentMoniker": "OZE.Persistence\\PersistenceServiceRegistration.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Persistence\\PersistenceServiceRegistration.cs",
+              "RelativeToolTip": "OZE.Persistence\\PersistenceServiceRegistration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T17:08:47.026Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "AppIdentityDbContext.cs",
+              "DocumentMoniker": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Persistence\\DbContexts\\AppIdentityDbContext.cs",
+              "RelativeDocumentMoniker": "OZE.Persistence\\DbContexts\\AppIdentityDbContext.cs",
+              "ToolTip": "D:\\SEP\\OZE\\oze-clinic-be\\OZE.Persistence\\DbContexts\\AppIdentityDbContext.cs",
+              "RelativeToolTip": "OZE.Persistence\\DbContexts\\AppIdentityDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-25T11:39:38.768Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

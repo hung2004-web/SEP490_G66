@@ -13,7 +13,7 @@ namespace OZE.Common.Constants
             public const string EmailNotFound = "Email not found in system";
             public const string EmailCantSent = "Could not send the email. Please try again later.";
             public const string UserExist = "User is exist in system";
-
+            public const string ResetSessionInvalid = "Password reset session is invalid or expired, please request a new code";
             // Register (UC-01). Texts follow the System Messages table of SRS Report 3.
             // MSG07
             public const string FullNameRequired = "Please enter full name.";

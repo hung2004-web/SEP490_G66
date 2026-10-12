@@ -107,5 +107,13 @@ namespace OZE.ProjectBase.Controllers
             var result = await _authService.ForgotPasswordAsync(request, baseUrl);
             return result.Success ? Ok(result) : BadRequest(result);
         }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse>> ResetPasswordAsync([FromBody] ResetPasswordRequest request)
+        {
+            var result = await _authService.ResetPasswordAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
     }
 }

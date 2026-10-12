@@ -30,6 +30,7 @@ namespace OZE.Application
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
             services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
+            services.AddSingleton<IPasswordResetStore, MemoryPasswordResetStore>();
 
             return services;
         }
