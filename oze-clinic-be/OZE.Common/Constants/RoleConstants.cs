@@ -7,5 +7,8 @@ namespace OZE.Common.Constants
         public const string ReceptionistRole = "Receptionist";
         public const string DentalImagingTechnicianRole = "DentalImagingTechnician";
         public const string ClinicManagerRole = "ClinicManager";
+
+        // Roles a Clinic Manager can give to a staff account (UC-44).
+        public static readonly string[] StaffRoles = { DoctorRole, ReceptionistRole, DentalImagingTechnicianRole, ClinicManagerRole };
     }
 }
