@@ -72,6 +72,10 @@
   --text-display-lg--line-height: 1.15;
   --text-display-lg--letter-spacing: -0.5px;
   --text-display-lg--font-weight: 700;
+  --text-display-section: 40px;
+  --text-display-section--line-height: 1.15;
+  --text-display-section--letter-spacing: -0.5px;
+  --text-display-section--font-weight: 700;
   --text-display-md: 32px;
   --text-display-md--line-height: 1.2;
   --text-display-md--letter-spacing: -0.3px;
@@ -122,6 +126,7 @@
 
   /* Layout (w-sidebar, h-topbar, max-w-public ...) */
   --container-public: 1200px;
+  --breakpoint-carousel: 82.5rem;
   --spacing-sidebar: 256px;
   --spacing-sidebar-collapsed: 72px;
   --spacing-topbar: 64px;
