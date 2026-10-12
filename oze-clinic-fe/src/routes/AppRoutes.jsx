@@ -7,6 +7,7 @@ import ResetPasswordPage from "../pages/common/ResetPasswordPage";
 import SignInPage from "../pages/common/SignInPage";
 import VerifyOtpPage from "../pages/common/VerifyOtpPage";
 import AboutUs from "../pages/common/AboutUs";
+import ContactPage from "../pages/common/ContactPage";
 import { ROUTES } from "../utils/routes";
 
 const routes = [
@@ -25,6 +26,10 @@ const routes = [
     {
         path: ROUTES.ABOUT_US,
         element: <AboutUs />
+    },
+    {
+        path: ROUTES.CONTACT,
+        element: <ContactPage />
     },
     {
         path: ROUTES.FORGOT_PASSWORD,

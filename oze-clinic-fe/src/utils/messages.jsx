@@ -28,11 +28,21 @@ export const VERIFICATION_METHOD_OPTIONS = [
 
 export const OTP_LENGTH = 6;
 
-export const OTP_RESEND_SECONDS = 20;
+export const OTP_RESEND_SECONDS = 60;
 
 export const RESET_PASSWORD_REDIRECT_MS = 3000;
 
 export const CLINIC_HOTLINE = { DISPLAY: "0866 866 010", TEL: "0866866010" };
+
+export const CLINIC_ADDRESS = "Số nhà 55-59, tổ 4, quốc lộ 3, Đông Anh, Hà Nội";
+
+export const CLINIC_OPENING_HOURS = "Thứ 2 - Chủ nhật";
+
+// Google Maps embed searched by address (no API key needed).
+// TODO: replace with the clinic's "Share > Embed a map" URL to pin the exact place.
+export const CLINIC_MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(`Nha khoa OZE, ${CLINIC_ADDRESS}`)}&output=embed`;
+
+export const CONSULTATION_NOTE_MAX_LENGTH = 500;
 
 export const GUEST_HEADER_TEXT = {
     LOGO_ALT: "OZE Dental",
