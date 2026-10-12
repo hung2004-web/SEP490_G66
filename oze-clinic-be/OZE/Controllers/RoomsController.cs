@@ -47,5 +47,11 @@ namespace OZE.ProjectBase.Controllers
             var room = await _roomService.UpdateRoomAsync(id, request);
             return Ok(ApiResponse<RoomResponse>.SuccessResult(room, "Room updated successfully"));
         }
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult<ApiResponse>> DeleteRoomAsync(int id)
+        {
+            await _roomService.DeleteRoomAsync(id);
+            return Ok(ApiResponse.SuccessResult("Room deleted successfully"));
+        }
     }
 }

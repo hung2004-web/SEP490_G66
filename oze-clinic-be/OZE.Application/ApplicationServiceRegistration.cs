@@ -24,10 +24,13 @@ namespace OZE.Application
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRoomService, RoomService>();
+            services.AddScoped<IStaffService, StaffService>();
             services.AddScoped<IEmailSender, EmailSender>();
+            services.AddScoped<IHomeService, HomeService>();
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
             services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
+            services.AddSingleton<IPasswordResetStore, MemoryPasswordResetStore>();
 
             return services;
         }

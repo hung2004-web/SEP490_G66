@@ -99,12 +99,18 @@ namespace OZE.ProjectBase.Controllers
             var result = await _authService.ConfirmEmailAsync(userId, code);
             return result.Success ? Ok(result) : BadRequest(result);
         }
-        [HttpPost("forgot-password")]
-        [AllowAnonymous]
-        public async Task<ActionResult<ApiResponse>> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request)
+        // AuthController: action forgot-password
+        public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request)
         {
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var result = await _authService.ForgotPasswordAsync(request, baseUrl);
+            var result = await _authService.ForgotPasswordAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse>> ResetPasswordAsync([FromBody] ResetPasswordRequest request)
+        {
+            var result = await _authService.ResetPasswordAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }
