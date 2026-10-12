@@ -109,7 +109,7 @@ namespace OZE.Common.Constants
             public const string NotFound = "Not Found";
         }
 
-        public static class ServiceMessage
+        public static class ServiceMessage  
         {
             public const string ServiceNotFound = "Service not found in system";
             public const string ServiceCodeExist = "Service code already exists in system";
