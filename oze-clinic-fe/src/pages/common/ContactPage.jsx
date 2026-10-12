@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Clock, ImageIcon, MapPin, Phone } from "lucide-react";
+import { Clock, MapPin, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
-import { cx } from "@/utils/cx";
+import banner2 from "@/assets/banner/banner2.png";
+import contactUsImage from "@/assets/banner/contact-us.png";
 import { submitConsultationRequest } from "../../services/contactService";
 import {
     CLINIC_ADDRESS,
@@ -38,17 +39,10 @@ const validate = (values) => {
     return errors;
 };
 
-// TODO: replace with the real banner / clinic photo once the images are ready.
-const ImagePlaceholder = ({ className }) => (
-    <div className={cx("flex items-center justify-center bg-surface-muted text-placeholder", className)}>
-        <ImageIcon className="size-12" aria-hidden="true" />
-    </div>
-);
-
 const CONTACT_INFO = [
     { key: "phone", Icon: Phone, label: "Số điện thoại", value: CLINIC_HOTLINE.DISPLAY, href: `tel:${CLINIC_HOTLINE.TEL}` },
     { key: "address", Icon: MapPin, label: "Địa chỉ", value: CLINIC_ADDRESS },
-    { key: "hours", Icon: Clock, label: "Giờ mở cửa", value: CLINIC_OPENING_HOURS },
+    { key: "hours", Icon: Clock, label: "Mở cửa", value: CLINIC_OPENING_HOURS },
 ];
 
 const ContactPage = () => {
@@ -127,7 +121,11 @@ const ContactPage = () => {
                 <Breadcrumb items={BREADCRUMB_ITEMS} />
             </div>
 
-            <ImagePlaceholder className="h-48 w-full md:h-72" />
+            <img
+                src={banner2}
+                alt="Nha khoa OZE"
+                className="w-full bg-surface-tint object-contain px-6"
+            />
 
             {/* Clinic address and map */}
             <section className={`container-public ${SECTION_CLASS}`}>
@@ -147,10 +145,14 @@ const ContactPage = () => {
             {/* Clinic info and consultation form */}
             <section className="container-public grid grid-cols-1 gap-12 pb-12 md:grid-cols-2 md:pb-16">
                 <div className="flex flex-col gap-6">
-                    <ImagePlaceholder className="aspect-4/3 w-full rounded-2xl" />
+                    <img
+                        src={contactUsImage}
+                        alt="Tu van nha khoa OZE"
+                        className="aspect-4/3 w-full rounded-2xl object-cover shadow-md"
+                    />
                     <ul className="flex flex-col gap-4">
                         {CONTACT_INFO.map(({ key, Icon, label, value, href }) => (
-                            <li key={key} className="flex items-start gap-4">
+                            <li key={key} className="flex items-start gap-6">
                                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
                                     <Icon className="size-5" aria-hidden="true" />
                                 </span>
@@ -234,12 +236,12 @@ const ContactPage = () => {
                             </p>
                         </div>
 
-                        <div className="flex justify-end">
+                        <div>
                             <button
                                 type="submit"
                                 disabled={loading}
                                 aria-busy={loading || undefined}
-                                className="btn btn-primary btn-lg w-full sm:w-auto sm:min-w-40"
+                                className="btn btn-primary btn-lg w-full"
                             >
                                 {loading && <span className="btn-spinner" aria-hidden="true" />}
                                 {loading ? "Đang gửi..." : "Đăng ký"}
