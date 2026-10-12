@@ -559,26 +559,73 @@ namespace OZE.Application.Services
             }
         }
 
-        public async Task<ApiResponse> ForgotPasswordAsync(ForgotPasswordRequest request, string baseUrl)
+        public async Task<ApiResponse<RegisterPendingResponse>> ForgotPasswordAsync(ForgotPasswordRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null)
+            var identifier = request.Identifier.Trim();
+            var isEmail = identifier.Contains('@');
+
+            ApplicationUser? user;
+            string destination;
+            if (isEmail)
             {
-                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.EmailNotFound);
+                user = await _userManager.FindByEmailAsync(identifier);
+                destination = identifier;
             }
-            var temporaryPassword = GenerateTemporaryPassword();
-            try { await _emailSender.SendTemporaryPasswordAsync(user, temporaryPassword); }
-            catch { return ApiResponse.FailureResult(ErrorConstants.AuthMessage.EmailCantSent); }
+            else
+            {
+                if (!PhoneNumberHelper.TryNormalize(identifier, out var phone))
+                {
+                    return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.InvalidPhone);
+                }
+                user = await _registrationRepository.FindUserByPhoneAsync(PhoneNumberHelper.GetLookupVariants(phone));
+                destination = phone;
+            }
 
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var result = await _userManager.ResetPasswordAsync(user, token, temporaryPassword);
-            if (!result.Succeeded)
-                return ApiResponse.FailureResult("Could not reset password",
-                    result.Errors.Select(e => e.Description).ToList());
+            if (user == null || await IsPendingRegistrationAsync(user))
+            {
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
+            }
 
-            await _refreshTokenRepository.RevokeUserTokensAsync(user.Id);
-            await _refreshTokenRepository.SaveChangesAsync();
-            return ApiResponse.SuccessResult("Password is changed");
+            var now = DateTime.UtcNow;
+            var session = new PasswordResetSession
+            {
+                SessionId = Guid.NewGuid().ToString("N"),
+                UserId = user.Id,
+                ExpiresAt = now.AddMinutes(OtpExpiresInMinutes)
+            };
+
+            var otp = OtpHelper.Generate();
+            session.OtpHash = OtpHelper.Hash(session.SessionId, otp);
+
+            try
+            {
+                if (isEmail)
+                {
+                    await _emailSender.SendEmailAsync(destination, "OZE password reset code",
+                        $"<p>Your password reset code is <b>{otp}</b>.</p><p>It expires in {OtpExpiresInMinutes} minutes.</p>");
+                }
+                else
+                {
+                    await _smsSender.SendSmsAsync(destination,
+                        $"Ma dat lai mat khau OZE cua ban la {otp}. Hieu luc {OtpExpiresInMinutes} phut.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send password reset OTP (UserId: {UserId})", user.Id);
+                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpSendFailed);
+            }
+
+            _passwordResetStore.Save(session, session.ExpiresAt - now);
+
+            return ApiResponse<RegisterPendingResponse>.SuccessResult(new RegisterPendingResponse
+            {
+                SessionId = session.SessionId,
+                VerificationMethod = isEmail ? VerificationMethodConstants.Email : VerificationMethodConstants.Sms,
+                MaskedDestination = isEmail ? MaskEmail(destination) : PhoneNumberHelper.Mask(destination),
+                ExpiresAt = session.ExpiresAt,
+                ResendAvailableAt = now.AddSeconds(ResendCooldownSeconds)
+            });
         }
 
         public async Task<ApiResponse> ChangePasswordAsync(string userId, ChangePasswordRequest request)
