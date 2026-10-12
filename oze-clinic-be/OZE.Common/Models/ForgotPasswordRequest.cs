@@ -9,8 +9,7 @@ namespace OZE.Common.Models
 {
     public class ForgotPasswordRequest
     {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Please enter phone number or email")]
+        public string Identifier { get; set; } = string.Empty;
     }
 }
