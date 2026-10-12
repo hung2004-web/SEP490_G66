@@ -24,6 +24,7 @@ namespace OZE.Application
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRoomService, RoomService>();
+            services.AddScoped<IStaffService, StaffService>();
             services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
