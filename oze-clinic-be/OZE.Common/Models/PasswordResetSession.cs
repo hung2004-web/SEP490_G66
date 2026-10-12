@@ -14,5 +14,7 @@ namespace OZE.Common.Models
         public bool IsOtpVerified { get; set; }
         public string? ResetToken { get; set; }
         public DateTime ExpiresAt { get; set; }
+        public string OtpHash { get; set; } = string.Empty;
+        public int FailedAttempts { get; set; }
     }
 }
