@@ -43,6 +43,11 @@ const GlobalException = ({ code }) => {
                     <p className="mt-3 text-body-md text-body">{error.message}</p>
 
                     <div className="mt-8 flex flex-wrap gap-4">
+                        {error.code === 401 && (
+                            <Link to={ROUTES.SIGN_IN} className="btn btn-primary">
+                                Đăng nhập lại
+                            </Link>
+                        )}
                         <button type="button" onClick={handleBack} className="btn btn-primary">
                             Quay lại
                         </button>

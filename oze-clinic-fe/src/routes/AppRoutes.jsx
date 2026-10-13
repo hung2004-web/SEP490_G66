@@ -9,6 +9,7 @@ import VerifyOtpPage from "../pages/common/VerifyOtpPage";
 import AboutUs from "../pages/common/homepage/AboutUs";
 import ContactPage from "../pages/common/ContactPage";
 import GlobalException from "../pages/globalException/GlobalException";
+import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import { ROUTES } from "../utils/routes";
 
 const routes = [
@@ -57,6 +58,7 @@ const routes = [
 function AppRoutes() {
     return (
         <BrowserRouter>
+            <GlobalErrorListener />
             <Routes>
                 <Route element={<MainLayout />}>
                     {routes.map((route, index) => (
