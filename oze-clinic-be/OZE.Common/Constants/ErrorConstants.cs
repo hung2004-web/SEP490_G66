@@ -118,6 +118,8 @@ namespace OZE.Common.Constants
             public const string InvalidTimeRange = "Shift start time must be earlier than end time";
             public const string PastDate = "Shift date cannot be in the past";
             public const string ShiftOverlap = "This staff member already has a shift that overlaps this time";
+            public const string WorkShiftNotFound = "Work shift not found";
+            public const string InvalidDateRange = "From date must be earlier than or equal to to date";
         }
         public static class Common
         {
