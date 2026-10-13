@@ -28,6 +28,11 @@ namespace OZE.Application.Services
             _refreshTokenRepository = refreshTokenRepository;
         }
 
+        public async Task<List<StaffResponse>> GetStaffListAsync(StaffQueryRequest query)
+        {
+            return await _staffRepository.GetAllAsync(query);
+        }
+
         public async Task<StaffResponse> GetStaffAsync(string userId)
         {
             var (user, staff, role) = await GetExistingStaffAsync(userId);
@@ -184,9 +189,12 @@ namespace OZE.Application.Services
                 FullName = staff.FullName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber ?? staff.PhoneNumber,
+                DateOfBirth = staff.DateOfBirth,
+                Gender = staff.Gender,
                 Role = role,
                 Specialization = staff.Specialization,
                 LicenseNumber = staff.LicenseNumber,
+                HireDate = staff.HireDate,
                 IsActive = staff.IsActive,
                 UpdatedAt = staff.UpdatedAt
             };

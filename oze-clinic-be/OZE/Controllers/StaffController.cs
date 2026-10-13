@@ -21,6 +21,13 @@ namespace OZE.ProjectBase.Controllers
             _staffService = staffService;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<List<StaffResponse>>>> GetStaffListAsync([FromQuery] StaffQueryRequest query)
+        {
+            var staff = await _staffService.GetStaffListAsync(query);
+            return Ok(ApiResponse<List<StaffResponse>>.SuccessResult(staff));
+        }
+
         [HttpGet("{userId}")]
         public async Task<ActionResult<ApiResponse<StaffResponse>>> GetStaffAsync(string userId)
         {
