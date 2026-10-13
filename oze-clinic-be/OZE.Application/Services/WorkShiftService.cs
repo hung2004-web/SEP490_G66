@@ -87,6 +87,30 @@ namespace OZE.Application.Services
                 CreatedAt = schedule.CreatedAt
             };
         }
+
+        public async Task<List<WorkShipResponse>> GetWorkShiftsAsync(WorkShiftQueryRequest query)
+        {
+            var fromDate = query.FromDate ?? GetStartOfWeek(DateOnly.FromDateTime(DateTime.Today));
+            var toDate = query.ToDate ?? fromDate.AddDays(WorkShiftConstants.DaysInWeek - 1);
+
+            ConditionGuard.Ensure(fromDate <= toDate, ErrorConstants.WorkShiftMessage.InvalidDateRange);
+
+            var shifts = await _workShipRepository.GetAllAsync(fromDate, toDate, query.StaffUserId, query.RoomId);
+            return shifts.Select(x => ToResponse(x, x.StaffProfile, x.Room)).ToList();
+        }
+
+        public async Task<WorkShipResponse> GetWorkShiftByIdAsync(long id)
+        {   
+            var shift = await _workShipRepository.GetByIdAsync(id);
+            ConditionGuard.Ensure<NotFoundException>(shift != null, ErrorConstants.WorkShiftMessage.WorkShiftNotFound);
+            return ToResponse(shift!, shift!.StaffProfile, shift.Room);
+        }
+        private static DateOnly GetStartOfWeek(DateOnly date)
+        {
+            var daysSinceWeekStart = ((int)date.DayOfWeek - (int)WorkShiftConstants.WeekStartDay + WorkShiftConstants.DaysInWeek)
+                                     % WorkShiftConstants.DaysInWeek;
+            return date.AddDays(-daysSinceWeekStart);
+        }
     }
 }
 
