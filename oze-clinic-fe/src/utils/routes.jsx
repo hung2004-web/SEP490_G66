@@ -13,6 +13,8 @@ export const ROUTES = {
     DOCTORS: "/doctors",
     CONTACT: "/contact",
     BOOK_APPOINTMENT: "/book-appointment",
+    PROFILE: "/profile",
+    CHANGE_PASSWORD: "/change-password",
 };
 
 export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_DETAIL, { serviceId: String(serviceId) });
