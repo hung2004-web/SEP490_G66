@@ -13,5 +13,7 @@ namespace OZE.Application.Interfaces
         Task<string?> GetConfigValueAsync(string configKey);
         Task AddAsync(StaffSchedule schedule);
         Task SaveChangesAsync();
+        Task<List<StaffSchedule>> GetAllAsync(DateOnly fromDate, DateOnly toDate, string? staffUserId, int? roomId);
+        Task<StaffSchedule?> GetByIdAsync(long id);
     }
 }
