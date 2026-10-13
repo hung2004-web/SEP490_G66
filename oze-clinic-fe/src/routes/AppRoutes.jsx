@@ -8,6 +8,7 @@ import SignInPage from "../pages/common/SignInPage";
 import VerifyOtpPage from "../pages/common/VerifyOtpPage";
 import AboutUs from "../pages/common/homepage/AboutUs";
 import ContactPage from "../pages/common/ContactPage";
+import GlobalException from "../pages/globalException/GlobalException";
 import { ROUTES } from "../utils/routes";
 
 const routes = [
@@ -42,6 +43,14 @@ const routes = [
     {
         path: ROUTES.RESET_PASSWORD,
         element: <ResetPasswordPage />
+    },
+    {
+        path: ROUTES.ERROR,
+        element: <GlobalException />
+    },
+    {
+        path: "*",
+        element: <GlobalException code={404} />
     }
 ]
 
