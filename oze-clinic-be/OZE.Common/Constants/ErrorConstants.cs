@@ -109,7 +109,16 @@ namespace OZE.Common.Constants
             public const string StaffActivated = "Activate staff success!";
             public const string UpdateFailed = "Update staff failed";
         }
-
+        public static class WorkShiftMessage
+        {
+            public const string StaffNotFound = "Staff not found";
+            public const string StaffInactive = "Staff account is inactive";
+            public const string RoomNotFound = "Room not found";
+            public const string RoomNotActive = "Room is not active";
+            public const string InvalidTimeRange = "Shift start time must be earlier than end time";
+            public const string PastDate = "Shift date cannot be in the past";
+            public const string ShiftOverlap = "This staff member already has a shift that overlaps this time";
+        }
         public static class Common
         {
             public const string NotFound = "Not Found";
