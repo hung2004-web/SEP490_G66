@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 namespace OZE.Persistence.Repositories
 {
     
-    public class WorkShipRepository : IWorkShipRepository
+    public class WorkShiftRepository : IWorkShiftRepository
     {
         private readonly AppIdentityDbContext context;
-        public WorkShipRepository(AppIdentityDbContext _context)
+        public WorkShiftRepository(AppIdentityDbContext _context)
         {
             context = _context;
         }
@@ -27,7 +27,7 @@ namespace OZE.Persistence.Repositories
         {
             throw new NotImplementedException();
         }
-
+            
         public async Task<bool> HasOverlapAsync(int staffProfileId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd, long? excludeShiftId = null)
         {
             return await context.StaffSchedules.AnyAsync(x =>

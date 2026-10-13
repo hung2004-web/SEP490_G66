@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace OZE.Application.Interfaces
 {
-    public interface IWorkShipRepository
+    public interface IWorkShiftRepository
     {
         Task<bool> HasOverlapAsync(int staffProfileId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd, long? excludeShiftId = null);
         Task<string?> GetConfigValueAsync(string configKey);

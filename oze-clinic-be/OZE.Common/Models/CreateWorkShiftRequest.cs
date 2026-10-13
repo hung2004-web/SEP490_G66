@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace OZE.Common.Models
 {
-    public class CreateWorkShipRequest
+    public class CreateWorkShiftRequest
     {
         [Required]
-        public int StaffUserId { get; set; }
+        public string StaffUserId { get; set; } = string.Empty;
         [Required]
-        public DateOnly ScheduleDate { get; set; }
+        public DateOnly? ScheduleDate { get; set; }
         [Required]
-        public TimeOnly ShiftStart {get; set;}
+        public TimeOnly? ShiftStart {get; set;}
         [Required]
-        public TimeOnly ShiftEnd { get; set; }
+        public TimeOnly? ShiftEnd { get; set; }
         public int? RoomId { get; set; }
         public string? Assignment { get; set; }
         public string? Note { get; set; }
