@@ -123,13 +123,15 @@ namespace OZE.Common.Constants
             public const string ShiftOverlap = "This staff member already has a shift that overlaps this time";
             public const string WorkShiftNotFound = "Work shift not found";
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
+            public const string ShiftAlreadyStarted = "Cannot delete a work shift that has already started or passed";
+            public const string ShiftHasAppointments = "Cannot delete this work shift because it has booked appointments. Please move the appointments first";
         }
         public static class Common
         {
             public const string NotFound = "Not Found";
         }
 
-        public static class ServiceMessage  
+        public static class ServiceMessage
         {
             public const string ServiceNotFound = "Service not found in system";
             public const string ServiceCodeExist = "Service code already exists in system";
