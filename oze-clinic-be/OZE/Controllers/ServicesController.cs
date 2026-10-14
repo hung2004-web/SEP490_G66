@@ -101,6 +101,29 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Updates an existing clinic service. Requires ClinicManager role.
+        /// </summary>
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<ServiceDto>>> UpdateServiceAsync(
+            [FromRoute] int id,
+            [FromBody] UpdateServiceRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.UpdateServiceAsync(id, request, cancellationToken);
+            if (!result.Success)
+            {
+                if (result.Message == ErrorConstants.ServiceMessage.ServiceNotFound)
+                {
+                    return NotFound(result);
+                }
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Toggles or updates the active status of a clinic service. Requires ClinicManager role.
         /// </summary>
         [HttpPatch("{id:int}/status")]

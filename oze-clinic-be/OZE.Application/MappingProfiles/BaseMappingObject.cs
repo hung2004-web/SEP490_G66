@@ -11,6 +11,7 @@ namespace OZE.Application.MappingProfiles
             CreateMap<UserRefreshToken, UserRefreshTokenDTO>().ReverseMap();
             CreateMap<Service, ServiceDto>().ReverseMap();
             CreateMap<CreateServiceRequest, Service>();
+            CreateMap<UpdateServiceRequest, Service>();
         }
     }
 }
