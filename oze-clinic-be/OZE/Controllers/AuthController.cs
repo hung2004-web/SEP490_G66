@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using OZE.Application.Interfaces;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
+using OZE.ProjectBase.Filters;
 
 namespace OZE.ProjectBase.Controllers
 {
@@ -20,6 +21,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> RegisterAsync([FromBody] RegisterRequest registerRequest)
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -29,6 +31,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("verify-otp")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse>> VerifyOtpAsync([FromBody] VerifyOtpRequest request)
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -38,6 +41,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("resend-otp")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> ResendOtpAsync([FromBody] ResendOtpRequest request)
         {
             var result = await _authService.ResendOtpAsync(request);
@@ -95,12 +99,17 @@ namespace OZE.ProjectBase.Controllers
             var result = await _authService.ConfirmEmailAsync(userId, code);
             return result.Success ? Ok(result) : BadRequest(result);
         }
-        [HttpPost("forgot-password")]
-        [AllowAnonymous]
-        public async Task<ActionResult<ApiResponse>> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request)
+        public async Task<ActionResult<ApiResponse<RegisterPendingResponse>>> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request)
         {
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var result = await _authService.ForgotPasswordAsync(request, baseUrl);
+            var result = await _authService.ForgotPasswordAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse>> ResetPasswordAsync([FromBody] ResetPasswordRequest request)
+        {
+            var result = await _authService.ResetPasswordAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }

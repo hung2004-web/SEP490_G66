@@ -63,14 +63,28 @@ namespace OZE.Application.Services
 
         public  async Task SendTemporaryPasswordAsync(ApplicationUser user, string temporaryPassword)
         {
-
+            var fullName = user.StaffProfile?.FullName ?? user.Patient?.FullName;
+            var greetingName = !string.IsNullOrWhiteSpace(fullName) ? fullName : (user.UserName ?? user.Email);
             var subject = "Your temporary password";
             var htmlMessage = $@"
-            <p>Hello {user.UserName ?? user.Email},</p>
+            <p>Hello {greetingName},</p>
+            <p>Your login email is: <b>{user.Email}</b></p>
             <p>Your temporary password is: <b>{temporaryPassword}</b></p>
             <p>Please log in and change your password right away.</p>";
 
             await SendEmailAsync(user.Email ?? string.Empty, subject, htmlMessage);
+        }
+
+        public async Task SendRegistrationOtpAsync(string toEmail, string fullName, string otp, int expiresInMinutes)
+        {
+            var subject = "Your OZE verification code";
+            var htmlMessage = $@"
+            <p>Hello {fullName},</p>
+            <p>Your verification code is: <b>{otp}</b></p>
+            <p>The code is valid for {expiresInMinutes} minutes.</p>
+            <p>If you did not request this, please ignore this email.</p>";
+
+            await SendEmailAsync(toEmail, subject, htmlMessage);
         }
     }
 }

@@ -38,6 +38,13 @@ namespace OZE.Application.Helpers
             return true;
         }
 
+        // Records created by other screens may store the number as "+84...", "84..." or "0...".
+        public static string[] GetLookupVariants(string e164)
+        {
+            var nationalNumber = e164.StartsWith("+84") ? e164[3..] : e164;
+            return new[] { "+84" + nationalNumber, "84" + nationalNumber, "0" + nationalNumber };
+        }
+
         public static string Mask(string e164)
         {
             if (string.IsNullOrEmpty(e164) || e164.Length < 6)

@@ -1,9 +1,16 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
-import HomePage from "../pages/common/HomePage";
+import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
+import HomePage from "../pages/common/homepage/HomePage";
 import Register from "../pages/common/Register";
+import ResetPasswordPage from "../pages/common/ResetPasswordPage";
 import SignInPage from "../pages/common/SignInPage";
-import { ROUTES } from "../utils/constant";
+import VerifyOtpPage from "../pages/common/VerifyOtpPage";
+import AboutUs from "../pages/common/homepage/AboutUs";
+import ContactPage from "../pages/common/ContactPage";
+import GlobalException from "../pages/globalException/GlobalException";
+import GlobalErrorListener from "../components/error/GlobalErrorListener";
+import { ROUTES } from "../utils/routes";
 
 const routes = [
     {
@@ -17,12 +24,41 @@ const routes = [
     {
         path: ROUTES.REGISTER,
         element: <Register />
+    },
+    {
+        path: ROUTES.ABOUT_US,
+        element: <AboutUs />
+    },
+    {
+        path: ROUTES.CONTACT,
+        element: <ContactPage />
+    },
+    {
+        path: ROUTES.FORGOT_PASSWORD,
+        element: <ForgotPasswordPage />
+    },
+    {
+        path: ROUTES.VERIFY_OTP,
+        element: <VerifyOtpPage />
+    },
+    {
+        path: ROUTES.RESET_PASSWORD,
+        element: <ResetPasswordPage />
+    },
+    {
+        path: ROUTES.ERROR,
+        element: <GlobalException />
+    },
+    {
+        path: "*",
+        element: <GlobalException code={404} />
     }
 ]
 
 function AppRoutes() {
     return (
         <BrowserRouter>
+            <GlobalErrorListener />
             <Routes>
                 <Route element={<MainLayout />}>
                     {routes.map((route, index) => (

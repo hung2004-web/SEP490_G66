@@ -4,6 +4,7 @@ import { cx } from "@/utils/cx";
 const VARIANTS = {
     app: "card-app",
     public: "card-public",
+    auth: "card-auth",
 };
 
 const Card = ({ variant = "app", className, children, ...props }) => {
