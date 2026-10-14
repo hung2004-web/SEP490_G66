@@ -11,5 +11,6 @@ namespace OZE.Application.Interfaces
         Task<ApiResponse<ServiceDto>> GetServiceByCodeAsync(string code, CancellationToken cancellationToken = default);
         Task<ApiResponse<ServiceDto>> CreateServiceAsync(CreateServiceRequest request, CancellationToken cancellationToken = default);
         Task<ApiResponse<ServiceDto>> ToggleServiceStatusAsync(int id, bool isActive, CancellationToken cancellationToken = default);
+        Task<ApiResponse<bool>> DeleteServiceAsync(int id, CancellationToken cancellationToken = default);
     }
 }
