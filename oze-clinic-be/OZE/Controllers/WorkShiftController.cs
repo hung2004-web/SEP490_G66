@@ -38,5 +38,12 @@ namespace OZE.ProjectBase.Controllers
             var shift = await _workShipService.GetWorkShiftByIdAsync(id);
             return Ok(ApiResponse<WorkShipResponse>.SuccessResult(shift));
         }
+
+        [HttpDelete("{id:long}")]
+        public async Task<ActionResult<ApiResponse>> DeleteWorkShiftAsync(long id)
+        {
+            await _workShipService.DeleteWorkShiftAsync(id);
+            return Ok(ApiResponse.SuccessResult("Work shift deleted successfully"));
+        }
     }
 }
