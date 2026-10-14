@@ -21,11 +21,26 @@ namespace OZE.ProjectBase.Controllers
             _staffService = staffService;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<List<StaffResponse>>>> GetStaffListAsync([FromQuery] StaffQueryRequest query)
+        {
+            var staff = await _staffService.GetStaffListAsync(query);
+            return Ok(ApiResponse<List<StaffResponse>>.SuccessResult(staff));
+        }
+
         [HttpGet("{userId}")]
         public async Task<ActionResult<ApiResponse<StaffResponse>>> GetStaffAsync(string userId)
         {
             var staff = await _staffService.GetStaffAsync(userId);
             return Ok(ApiResponse<StaffResponse>.SuccessResult(staff));
+        }
+
+        [HttpPost]
+        [ApiResponseValidationFilter]
+        public async Task<ActionResult<ApiResponse<StaffResponse>>> CreateStaffAsync([FromBody] CreateStaffRequest request)
+        {
+            var staff = await _staffService.CreateStaffAsync(request);
+            return Ok(ApiResponse<StaffResponse>.SuccessResult(staff, ErrorConstants.StaffMessage.StaffCreated));
         }
 
         [HttpPut("{userId}")]

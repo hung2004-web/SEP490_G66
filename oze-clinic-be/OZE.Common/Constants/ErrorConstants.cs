@@ -97,6 +97,8 @@ namespace OZE.Common.Constants
             // MSG68
             public const string PhoneExist = "Phone number already exists in the system.";
             public const string LicenseNumberExist = "License number already exists in the system.";
+            // MSG63
+            public const string StaffCreated = "Create staff success!";
             // MSG64
             public const string StaffUpdated = "Update staff success!";
             // MSG70
@@ -108,6 +110,7 @@ namespace OZE.Common.Constants
             public const string StaffDeactivated = "Deactivate staff success!";
             public const string StaffActivated = "Activate staff success!";
             public const string UpdateFailed = "Update staff failed";
+            public const string CreateFailed = "Create staff failed";
         }
         public static class WorkShiftMessage
         {

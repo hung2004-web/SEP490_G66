@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
@@ -15,23 +16,73 @@ namespace OZE.Application.Services
         private readonly IStaffRepository _staffRepository;
         private readonly IRegistrationRepository _registrationRepository;
         private readonly IUserRefreshTokenRepository _refreshTokenRepository;
+        private readonly IEmailSender _emailSender;
+        private readonly ILogger<StaffService> _logger;
 
         public StaffService(
             UserManager<ApplicationUser> userManager,
             IStaffRepository staffRepository,
             IRegistrationRepository registrationRepository,
-            IUserRefreshTokenRepository refreshTokenRepository)
+            IUserRefreshTokenRepository refreshTokenRepository,
+            IEmailSender emailSender,
+            ILogger<StaffService> logger)
         {
             _userManager = userManager;
             _staffRepository = staffRepository;
             _registrationRepository = registrationRepository;
             _refreshTokenRepository = refreshTokenRepository;
+            _emailSender = emailSender;
+            _logger = logger;
+        }
+
+        public async Task<List<StaffResponse>> GetStaffListAsync(StaffQueryRequest query)
+        {
+            return await _staffRepository.GetAllAsync(query);
         }
 
         public async Task<StaffResponse> GetStaffAsync(string userId)
         {
             var (user, staff, role) = await GetExistingStaffAsync(userId);
             return ToResponse(user, staff, role);
+        }
+
+        public async Task<StaffResponse> CreateStaffAsync(CreateStaffRequest request)
+        {
+            ConditionGuard.Ensure(PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var phoneNumber), ErrorConstants.AuthMessage.InvalidPhone);
+            var (specialization, licenseNumber) = GetDoctorInfo(request);
+
+            var email = request.Email.Trim();
+            await EnsureUniqueAsync(email, PhoneNumberHelper.GetLookupVariants(phoneNumber), licenseNumber, null, 0);
+
+            var now = DateTimeOffset.UtcNow;
+            var staff = new StaffProfile
+            {
+                FullName = request.FullName.Trim(),
+                PhoneNumber = phoneNumber,
+                Specialization = specialization,
+                LicenseNumber = licenseNumber,
+                IsActive = true,
+                CreatedAt = now
+            };
+            // Staff members sign in with their email.
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = email,
+                Email = email,
+                PhoneNumber = phoneNumber,
+                CreatedAt = now,
+                StaffProfile = staff
+            };
+
+            var password = PasswordHelper.GenerateTemporaryPassword();
+            var result = await _registrationRepository.ExecuteInTransactionAsync(
+                () => CreateAccountAsync(user, request.Role, password),
+                created => created.Succeeded);
+            ConditionGuard.Ensure(result.Succeeded,
+                result.Errors.FirstOrDefault()?.Description ?? ErrorConstants.StaffMessage.CreateFailed);
+
+            return ToResponse(user, staff, request.Role);
         }
 
         public async Task<StaffResponse> UpdateStaffAsync(string userId, UpdateStaffRequest request, string managerId)
@@ -41,23 +92,11 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var phoneNumber), ErrorConstants.AuthMessage.InvalidPhone);
             // A manager who changes their own role could leave the clinic without any Clinic Manager.
             ConditionGuard.ThrowIf(userId == managerId && request.Role != currentRole, ErrorConstants.StaffMessage.CannotChangeOwnRole);
+            var (specialization, licenseNumber) = GetDoctorInfo(request);
 
-            var isDoctor = request.Role == RoleConstants.DoctorRole;
-            var licenseNumber = isDoctor && !string.IsNullOrWhiteSpace(request.LicenseNumber) ? request.LicenseNumber.Trim() : null;
-            // BR-088: a Doctor must have a license number.
-            ConditionGuard.ThrowIf(isDoctor && licenseNumber == null, ErrorConstants.StaffMessage.LicenseNumberRequired);
-
-            // BR-004: phone numbers and emails must be unique.
             var email = request.Email.Trim();
-            var emailOwner = await _userManager.FindByEmailAsync(email);
-            ConditionGuard.ThrowIf(emailOwner != null && emailOwner.Id != user.Id, ErrorConstants.AuthMessage.EmailExist);
-
             var phoneVariants = PhoneNumberHelper.GetLookupVariants(phoneNumber);
-            var phoneOwner = await _registrationRepository.FindUserByPhoneAsync(phoneVariants);
-            ConditionGuard.ThrowIf(phoneOwner != null && phoneOwner.Id != user.Id, ErrorConstants.StaffMessage.PhoneExist);
-
-            ConditionGuard.ThrowIf(licenseNumber != null && await _staffRepository.IsLicenseNumberInUseAsync(licenseNumber, staff.Id),
-                ErrorConstants.StaffMessage.LicenseNumberExist);
+            await EnsureUniqueAsync(email, phoneVariants, licenseNumber, user.Id, staff.Id);
 
             var emailChanged = !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase);
             var phoneChanged = user.PhoneNumber == null || !phoneVariants.Contains(user.PhoneNumber);
@@ -90,7 +129,7 @@ namespace OZE.Application.Services
 
             staff.FullName = request.FullName.Trim();
             staff.PhoneNumber = phoneNumber;
-            staff.Specialization = isDoctor && !string.IsNullOrWhiteSpace(request.Specialization) ? request.Specialization.Trim() : null;
+            staff.Specialization = specialization;
             staff.LicenseNumber = licenseNumber;
             staff.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -142,6 +181,65 @@ namespace OZE.Application.Services
             return ToResponse(user, staff, role);
         }
 
+        // The account, its staff profile and its role are created in one transaction, which is rolled back
+        // if the login information cannot be emailed: the staff member would have no way to sign in.
+        private async Task<IdentityResult> CreateAccountAsync(ApplicationUser user, string role, string password)
+        {
+            var result = await _userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
+            {
+                return result;
+            }
+
+            result = await _userManager.AddToRoleAsync(user, role);
+            if (!result.Succeeded)
+            {
+                return result;
+            }
+
+            try
+            {
+                await _emailSender.SendTemporaryPasswordAsync(user, password);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send the login information to {Email} (UserId: {UserId})", user.Email, user.Id);
+                return IdentityResult.Failed(new IdentityError { Description = ErrorConstants.AuthMessage.EmailCantSent });
+            }
+
+            return result;
+        }
+
+        // Specialization and license number are only kept for doctors.
+        private static (string? Specialization, string? LicenseNumber) GetDoctorInfo(UpdateStaffRequest request)
+        {
+            if (request.Role != RoleConstants.DoctorRole)
+            {
+                return (null, null);
+            }
+
+            var specialization = string.IsNullOrWhiteSpace(request.Specialization) ? null : request.Specialization.Trim();
+            var licenseNumber = string.IsNullOrWhiteSpace(request.LicenseNumber) ? null : request.LicenseNumber.Trim();
+            // BR-088: a Doctor must have a license number.
+            ConditionGuard.ThrowIf(licenseNumber == null, ErrorConstants.StaffMessage.LicenseNumberRequired);
+
+            return (specialization, licenseNumber);
+        }
+
+        // BR-004: phone numbers and emails must be unique. License numbers are unique as well.
+        // userId and staffId belong to the staff member being updated; they are null and 0 when a staff member is created.
+        private async Task EnsureUniqueAsync(string email, string[] phoneVariants, string? licenseNumber, string? userId, int staffId)
+        {
+            var emailOwner = await _userManager.FindByEmailAsync(email);
+            ConditionGuard.ThrowIf(emailOwner != null && emailOwner.Id != userId, ErrorConstants.AuthMessage.EmailExist);
+
+            var phoneOwner = await _registrationRepository.FindUserByPhoneAsync(phoneVariants);
+            ConditionGuard.ThrowIf(phoneOwner != null && phoneOwner.Id != userId, ErrorConstants.StaffMessage.PhoneExist);
+
+            ConditionGuard.ThrowIf(licenseNumber != null && await _staffRepository.IsLicenseNumberInUseAsync(licenseNumber, staffId),
+                ErrorConstants.StaffMessage.LicenseNumberExist);
+        }
+
         // The account, its staff profile and its role are saved in one transaction.
         private async Task<IdentityResult> SaveStaffAsync(ApplicationUser user, string? currentRole, string newRole)
         {
@@ -184,9 +282,12 @@ namespace OZE.Application.Services
                 FullName = staff.FullName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber ?? staff.PhoneNumber,
+                DateOfBirth = staff.DateOfBirth,
+                Gender = staff.Gender,
                 Role = role,
                 Specialization = staff.Specialization,
                 LicenseNumber = staff.LicenseNumber,
+                HireDate = staff.HireDate,
                 IsActive = staff.IsActive,
                 UpdatedAt = staff.UpdatedAt
             };
