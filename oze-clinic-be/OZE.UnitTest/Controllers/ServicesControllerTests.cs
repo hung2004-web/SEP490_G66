@@ -106,5 +106,36 @@ namespace OZE.UnitTest.Controllers
             Assert.Equal(2, response.Data.Id);
             Assert.Equal("DV-002", response.Data.ServiceCode);
         }
+
+        [Fact]
+        public async Task ToggleStatusAsync_ShouldReturnOk_WhenServiceExists()
+        {
+            // Arrange
+            var serviceId = 1;
+            var request = new ToggleServiceStatusRequest { IsActive = false };
+            var updatedDto = new ServiceDto
+            {
+                Id = serviceId,
+                ServiceCode = "DV-001",
+                ServiceName = "Lấy cao răng",
+                IsActive = false
+            };
+
+            var expectedResponse = ApiResponse<ServiceDto>.SuccessResult(updatedDto, "Service deactivated successfully");
+
+            _clinicServiceMock
+                .Setup(s => s.ToggleServiceStatusAsync(serviceId, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var actionResult = await _controller.ToggleStatusAsync(serviceId, request, CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ServiceDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
+            Assert.False(response.Data.IsActive);
+        }
     }
 }

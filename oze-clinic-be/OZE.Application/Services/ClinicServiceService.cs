@@ -123,5 +123,29 @@ namespace OZE.Application.Services
             var dto = _mapper.Map<ServiceDto>(service);
             return ApiResponse<ServiceDto>.SuccessResult(dto, "Service created successfully");
         }
+
+        public async Task<ApiResponse<ServiceDto>> ToggleServiceStatusAsync(
+            int id,
+            bool isActive,
+            CancellationToken cancellationToken = default)
+        {
+            var service = await _serviceRepository.GetByIdAsync(id, cancellationToken);
+            if (service == null)
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.ServiceNotFound);
+            }
+
+            service.IsActive = isActive;
+            service.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _serviceRepository.UpdateAsync(service, cancellationToken);
+            await _serviceRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Clinic service {ServiceId} ({ServiceName}) status toggled to {IsActive}.", id, service.ServiceName, isActive);
+
+            var dto = _mapper.Map<ServiceDto>(service);
+            var statusText = isActive ? "activated" : "deactivated";
+            return ApiResponse<ServiceDto>.SuccessResult(dto, $"Service {statusText} successfully");
+        }
     }
 }

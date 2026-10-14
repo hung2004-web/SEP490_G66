@@ -99,5 +99,28 @@ namespace OZE.Controllers
                 new { id = result.Data!.Id },
                 result);
         }
+
+        /// <summary>
+        /// Toggles or updates the active status of a clinic service. Requires ClinicManager role.
+        /// </summary>
+        [HttpPatch("{id:int}/status")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<ServiceDto>>> ToggleStatusAsync(
+            [FromRoute] int id,
+            [FromBody] ToggleServiceStatusRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.ToggleServiceStatusAsync(id, request.IsActive, cancellationToken);
+            if (!result.Success)
+            {
+                if (result.Message == ErrorConstants.ServiceMessage.ServiceNotFound)
+                {
+                    return NotFound(result);
+                }
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
     }
 }
