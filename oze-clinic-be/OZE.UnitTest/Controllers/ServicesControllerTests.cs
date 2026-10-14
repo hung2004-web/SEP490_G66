@@ -158,5 +158,50 @@ namespace OZE.UnitTest.Controllers
             Assert.True(response.Success);
             Assert.True(response.Data);
         }
+
+        [Fact]
+        public async Task UpdateServiceAsync_ShouldReturnOk_WhenServiceUpdatedSuccessfully()
+        {
+            // Arrange
+            var serviceId = 1;
+            var request = new UpdateServiceRequest
+            {
+                ServiceCode = "DV-001-UPDATED",
+                ServiceName = "Lấy cao răng chuyên sâu",
+                ReferencePrice = 300000m,
+                EstimatedMinutes = 45,
+                RequiredRoomType = "Treatment",
+                IsActive = true
+            };
+
+            var updatedDto = new ServiceDto
+            {
+                Id = serviceId,
+                ServiceCode = "DV-001-UPDATED",
+                ServiceName = "Lấy cao răng chuyên sâu",
+                ReferencePrice = 300000m,
+                EstimatedMinutes = 45,
+                RequiredRoomType = "Treatment",
+                IsActive = true,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
+            var expectedResponse = ApiResponse<ServiceDto>.SuccessResult(updatedDto, "Service updated successfully");
+
+            _clinicServiceMock
+                .Setup(s => s.UpdateServiceAsync(serviceId, request, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var actionResult = await _controller.UpdateServiceAsync(serviceId, request, CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<ServiceDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
+            Assert.Equal("DV-001-UPDATED", response.Data.ServiceCode);
+            Assert.Equal(300000m, response.Data.ReferencePrice);
+        }
     }
 }

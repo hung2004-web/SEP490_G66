@@ -124,6 +124,57 @@ namespace OZE.Application.Services
             return ApiResponse<ServiceDto>.SuccessResult(dto, "Service created successfully");
         }
 
+        public async Task<ApiResponse<ServiceDto>> UpdateServiceAsync(
+            int id,
+            UpdateServiceRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var service = await _serviceRepository.GetByIdAsync(id, cancellationToken);
+            if (service == null)
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.ServiceNotFound);
+            }
+
+            if (!RoomTypeConstants.IsValid(request.RequiredRoomType))
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.InvalidRoomType);
+            }
+
+            if (request.ReferencePrice < 0)
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.InvalidPrice);
+            }
+
+            if (request.EstimatedMinutes.HasValue && request.EstimatedMinutes.Value <= 0)
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.InvalidEstimatedMinutes);
+            }
+
+            var normalizedCode = request.ServiceCode.Trim().ToUpperInvariant();
+            var isCodeInUse = await _serviceRepository.ExistsByCodeAsync(normalizedCode, id, cancellationToken);
+            if (isCodeInUse)
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.ServiceCodeExist);
+            }
+
+            service.ServiceCode = normalizedCode;
+            service.ServiceName = request.ServiceName.Trim();
+            service.Description = request.Description?.Trim();
+            service.ReferencePrice = request.ReferencePrice;
+            service.EstimatedMinutes = request.EstimatedMinutes;
+            service.RequiredRoomType = string.IsNullOrWhiteSpace(request.RequiredRoomType) ? null : request.RequiredRoomType.Trim();
+            service.IsActive = request.IsActive;
+            service.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _serviceRepository.UpdateAsync(service, cancellationToken);
+            await _serviceRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Clinic service {ServiceId} updated: {ServiceName} (Code: {ServiceCode})", id, service.ServiceName, service.ServiceCode);
+
+            var dto = _mapper.Map<ServiceDto>(service);
+            return ApiResponse<ServiceDto>.SuccessResult(dto, "Service updated successfully");
+        }
+
         public async Task<ApiResponse<ServiceDto>> ToggleServiceStatusAsync(
             int id,
             bool isActive,
