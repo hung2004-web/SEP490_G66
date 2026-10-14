@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import GuestHeader from "./Header/GuestHeader.jsx";
+import Header from "./Header/Header.jsx";
 import Footer from "./Footer/Footer.jsx";
 import ErrorBoundary from "../components/error/ErrorBoundary.jsx";
 
@@ -8,7 +8,7 @@ const MainLayout = () => {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <GuestHeader/>        
+            <Header/>
             <main className="flex-grow">
                 {/* key resets the boundary after a crash when the user goes to another page */}
                 <ErrorBoundary key={pathname}>

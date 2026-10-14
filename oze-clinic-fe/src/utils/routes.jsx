@@ -13,6 +13,8 @@ export const ROUTES = {
     DOCTORS: "/doctors",
     CONTACT: "/contact",
     BOOK_APPOINTMENT: "/book-appointment",
+    PROFILE: "/profile",
+    CHANGE_PASSWORD: "/change-password",
     ERROR: "/error/:code",
 };
 
