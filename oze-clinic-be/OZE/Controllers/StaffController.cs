@@ -35,6 +35,14 @@ namespace OZE.ProjectBase.Controllers
             return Ok(ApiResponse<StaffResponse>.SuccessResult(staff));
         }
 
+        [HttpPost]
+        [ApiResponseValidationFilter]
+        public async Task<ActionResult<ApiResponse<StaffResponse>>> CreateStaffAsync([FromBody] CreateStaffRequest request)
+        {
+            var staff = await _staffService.CreateStaffAsync(request);
+            return Ok(ApiResponse<StaffResponse>.SuccessResult(staff, ErrorConstants.StaffMessage.StaffCreated));
+        }
+
         [HttpPut("{userId}")]
         [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<StaffResponse>>> UpdateStaffAsync(string userId, [FromBody] UpdateStaffRequest request)
