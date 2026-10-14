@@ -28,6 +28,7 @@ namespace OZE.Application
             services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<IHomeService, HomeService>();
             services.AddScoped<ISmsSender, SmsSender>();
+            services.AddScoped<IWorkShipService, WorkShiftService>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
             services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
             services.AddSingleton<IPasswordResetStore, MemoryPasswordResetStore>();

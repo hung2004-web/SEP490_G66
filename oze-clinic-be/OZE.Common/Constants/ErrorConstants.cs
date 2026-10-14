@@ -97,6 +97,8 @@ namespace OZE.Common.Constants
             // MSG68
             public const string PhoneExist = "Phone number already exists in the system.";
             public const string LicenseNumberExist = "License number already exists in the system.";
+            // MSG63
+            public const string StaffCreated = "Create staff success!";
             // MSG64
             public const string StaffUpdated = "Update staff success!";
             // MSG70
@@ -108,8 +110,20 @@ namespace OZE.Common.Constants
             public const string StaffDeactivated = "Deactivate staff success!";
             public const string StaffActivated = "Activate staff success!";
             public const string UpdateFailed = "Update staff failed";
+            public const string CreateFailed = "Create staff failed";
         }
-
+        public static class WorkShiftMessage
+        {
+            public const string StaffNotFound = "Staff not found";
+            public const string StaffInactive = "Staff account is inactive";
+            public const string RoomNotFound = "Room not found";
+            public const string RoomNotActive = "Room is not active";
+            public const string InvalidTimeRange = "Shift start time must be earlier than end time";
+            public const string PastDate = "Shift date cannot be in the past";
+            public const string ShiftOverlap = "This staff member already has a shift that overlaps this time";
+            public const string WorkShiftNotFound = "Work shift not found";
+            public const string InvalidDateRange = "From date must be earlier than or equal to to date";
+        }
         public static class Common
         {
             public const string NotFound = "Not Found";

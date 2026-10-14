@@ -36,6 +36,8 @@ export const RESET_PASSWORD_REDIRECT_MS = 3000;
 
 export const CLINIC_HOTLINE = { DISPLAY: "0866 866 010", TEL: "0866866010" };
 
+export const CLINIC_EMAIL = "nhakhoaoze@gmail.com";
+
 export const CLINIC_ADDRESS = "Số nhà 55-59, tổ 4, quốc lộ 3, Đông Anh, Hà Nội";
 
 export const CLINIC_OPENING_HOURS = "Thứ 2 - Chủ nhật";

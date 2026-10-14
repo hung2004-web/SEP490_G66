@@ -15,9 +15,12 @@ export const ROUTES = {
     BOOK_APPOINTMENT: "/book-appointment",
     PROFILE: "/profile",
     CHANGE_PASSWORD: "/change-password",
+    ERROR: "/error/:code",
 };
 
 export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_DETAIL, { serviceId: String(serviceId) });
+
+export const getErrorRoute = (code) => generatePath(ROUTES.ERROR, { code: String(code) });
 
 // TODO(spec): BR-001/UC-04 say Home Page, the screen flow says Patient Dashboard, and staff
 // destinations are not defined. The role source is also not defined in the login response.
