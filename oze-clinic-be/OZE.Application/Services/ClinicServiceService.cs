@@ -147,5 +147,30 @@ namespace OZE.Application.Services
             var statusText = isActive ? "activated" : "deactivated";
             return ApiResponse<ServiceDto>.SuccessResult(dto, $"Service {statusText} successfully");
         }
+
+        public async Task<ApiResponse<bool>> DeleteServiceAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            var service = await _serviceRepository.GetByIdAsync(id, cancellationToken);
+            if (service == null)
+            {
+                return ApiResponse<bool>.FailureResult(ErrorConstants.ServiceMessage.ServiceNotFound);
+            }
+
+            var isInUse = await _serviceRepository.IsServiceInUseAsync(id, cancellationToken);
+            if (isInUse)
+            {
+                _logger.LogWarning("Service {ServiceId} ({ServiceName}) is in use and cannot be hard-deleted.", id, service.ServiceName);
+                return ApiResponse<bool>.FailureResult(ErrorConstants.ServiceMessage.ServiceInUse);
+            }
+
+            await _serviceRepository.DeleteAsync(service, cancellationToken);
+            await _serviceRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Clinic service {ServiceId} ({ServiceName}) deleted successfully.", id, service.ServiceName);
+
+            return ApiResponse<bool>.SuccessResult(true, "Service deleted successfully");
+        }
     }
 }

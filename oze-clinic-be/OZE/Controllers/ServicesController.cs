@@ -122,5 +122,27 @@ namespace OZE.Controllers
 
             return Ok(result);
         }
+
+        /// <summary>
+        /// Deletes a clinic service. If the service is referenced by invoices or treatment plans, deletion is rejected. Requires ClinicManager role.
+        /// </summary>
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteServiceAsync(
+            [FromRoute] int id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.DeleteServiceAsync(id, cancellationToken);
+            if (!result.Success)
+            {
+                if (result.Message == ErrorConstants.ServiceMessage.ServiceNotFound)
+                {
+                    return NotFound(result);
+                }
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
     }
 }

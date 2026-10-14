@@ -137,5 +137,26 @@ namespace OZE.UnitTest.Controllers
             Assert.NotNull(response.Data);
             Assert.False(response.Data.IsActive);
         }
+
+        [Fact]
+        public async Task DeleteServiceAsync_ShouldReturnOk_WhenServiceDeletedSuccessfully()
+        {
+            // Arrange
+            var serviceId = 1;
+            var expectedResponse = ApiResponse<bool>.SuccessResult(true, "Service deleted successfully");
+
+            _clinicServiceMock
+                .Setup(s => s.DeleteServiceAsync(serviceId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var actionResult = await _controller.DeleteServiceAsync(serviceId, CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var response = Assert.IsType<ApiResponse<bool>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.True(response.Data);
+        }
     }
 }
