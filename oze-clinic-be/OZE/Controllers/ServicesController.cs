@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 
@@ -76,6 +77,27 @@ namespace OZE.Controllers
             }
 
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Creates a new clinic service. Requires ClinicManager role.
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<ServiceDto>>> CreateServiceAsync(
+            [FromBody] CreateServiceRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.CreateServiceAsync(request, cancellationToken);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return CreatedAtAction(
+                nameof(GetServiceByIdAsync),
+                new { id = result.Data!.Id },
+                result);
         }
     }
 }
