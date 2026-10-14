@@ -106,6 +106,23 @@ namespace OZE.Application.Services
             return ToResponse(shift!, shift!.StaffProfile, shift.Room);
         }
 
+        public async Task DeleteWorkShiftAsync(long id)
+        {
+            var shift = await _workShipRepository.GetByIdAsync(id);
+            ConditionGuard.Ensure<NotFoundException>(shift != null, ErrorConstants.WorkShiftMessage.WorkShiftNotFound);
+
+            // Only future shifts can be deleted; a started or past shift keeps attendance history
+            var shiftStartAt = shift!.ScheduleDate.ToDateTime(shift.ShiftStart);
+            ConditionGuard.Ensure(shiftStartAt > DateTime.Now, ErrorConstants.WorkShiftMessage.ShiftAlreadyStarted);
+
+            var hasAppointments = await _workShipRepository.HasBookedAppointmentsAsync(
+                shift.StaffProfileId, shift.ScheduleDate, shift.ShiftStart, shift.ShiftEnd);
+            ConditionGuard.ThrowIf(hasAppointments, ErrorConstants.WorkShiftMessage.ShiftHasAppointments);
+
+            _workShipRepository.Remove(shift);
+            await _workShipRepository.SaveChangesAsync();
+        }
+
         private static DateOnly GetStartOfWeek(DateOnly date)
         {
             var daysSinceWeekStart = ((int)date.DayOfWeek - (int)WorkShiftConstants.WeekStartDay + WorkShiftConstants.DaysInWeek)
