@@ -61,5 +61,50 @@ namespace OZE.UnitTest.Controllers
             Assert.Single(response.Data.Items);
             Assert.Equal("DV-001", response.Data.Items[0].ServiceCode);
         }
+
+        [Fact]
+        public async Task CreateServiceAsync_ShouldReturnCreatedAtAction_WhenValidRequest()
+        {
+            // Arrange
+            var request = new CreateServiceRequest
+            {
+                ServiceCode = "DV-002",
+                ServiceName = "Tẩy trắng răng",
+                ReferencePrice = 1500000m,
+                EstimatedMinutes = 60,
+                RequiredRoomType = "Treatment",
+                IsActive = true
+            };
+
+            var createdDto = new ServiceDto
+            {
+                Id = 2,
+                ServiceCode = "DV-002",
+                ServiceName = "Tẩy trắng răng",
+                ReferencePrice = 1500000m,
+                EstimatedMinutes = 60,
+                RequiredRoomType = "Treatment",
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            var expectedResponse = ApiResponse<ServiceDto>.SuccessResult(createdDto, "Service created successfully");
+
+            _clinicServiceMock
+                .Setup(s => s.CreateServiceAsync(request, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var actionResult = await _controller.CreateServiceAsync(request, CancellationToken.None);
+
+            // Assert
+            var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(actionResult.Result);
+            Assert.Equal(nameof(ServicesController.GetServiceByIdAsync), createdAtActionResult.ActionName);
+            var response = Assert.IsType<ApiResponse<ServiceDto>>(createdAtActionResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
+            Assert.Equal(2, response.Data.Id);
+            Assert.Equal("DV-002", response.Data.ServiceCode);
+        }
     }
 }

@@ -9,5 +9,6 @@ namespace OZE.Application.Interfaces
         Task<ApiResponse<IReadOnlyList<ServiceDto>>> GetActiveServicesAsync(CancellationToken cancellationToken = default);
         Task<ApiResponse<ServiceDto>> GetServiceByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<ApiResponse<ServiceDto>> GetServiceByCodeAsync(string code, CancellationToken cancellationToken = default);
+        Task<ApiResponse<ServiceDto>> CreateServiceAsync(CreateServiceRequest request, CancellationToken cancellationToken = default);
     }
 }
