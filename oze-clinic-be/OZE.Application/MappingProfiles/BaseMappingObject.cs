@@ -9,6 +9,7 @@ namespace OZE.Application.MappingProfiles
         public BaseMappingObject()
         {
             CreateMap<UserRefreshToken, UserRefreshTokenDTO>().ReverseMap();
+            CreateMap<Service, ServiceDto>().ReverseMap();
         }
     }
 }

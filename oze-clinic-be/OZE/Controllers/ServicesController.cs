@@ -1,0 +1,81 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using OZE.Application.Interfaces;
+using OZE.Common.Models;
+using OZE.Common.Models.Base;
+
+namespace OZE.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ServicesController : ControllerBase
+    {
+        private readonly IClinicServiceService _clinicService;
+
+        public ServicesController(IClinicServiceService clinicService)
+        {
+            _clinicService = clinicService;
+        }
+
+        /// <summary>
+        /// Retrieves a paginated list of clinic services with optional filtering, search, and sorting.
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<PagedResult<ServiceDto>>>> GetServicesAsync(
+            [FromQuery] ServiceQueryParameters query,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.GetServicesAsync(query, cancellationToken);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Retrieves all active clinic services (useful for booking forms and dropdown menus).
+        /// </summary>
+        [HttpGet("active")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<ServiceDto>>>> GetActiveServicesAsync(
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.GetActiveServicesAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Retrieves a single clinic service by its ID.
+        /// </summary>
+        [HttpGet("{id:int}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<ServiceDto>>> GetServiceByIdAsync(
+            [FromRoute] int id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.GetServiceByIdAsync(id, cancellationToken);
+            if (!result.Success)
+            {
+                return NotFound(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Retrieves a single clinic service by its unique service code.
+        /// </summary>
+        [HttpGet("by-code/{code}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<ServiceDto>>> GetServiceByCodeAsync(
+            [FromRoute] string code,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.GetServiceByCodeAsync(code, cancellationToken);
+            if (!result.Success)
+            {
+                return NotFound(result);
+            }
+
+            return Ok(result);
+        }
+    }
+}
