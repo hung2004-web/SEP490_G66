@@ -105,6 +105,7 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<NotFoundException>(shift != null, ErrorConstants.WorkShiftMessage.WorkShiftNotFound);
             return ToResponse(shift!, shift!.StaffProfile, shift.Room);
         }
+
         private static DateOnly GetStartOfWeek(DateOnly date)
         {
             var daysSinceWeekStart = ((int)date.DayOfWeek - (int)WorkShiftConstants.WeekStartDay + WorkShiftConstants.DaysInWeek)
