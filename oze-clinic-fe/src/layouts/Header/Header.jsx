@@ -1,9 +1,10 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Link, NavLink, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { Bell, BellOff, ChevronDown, ChevronLeft, ChevronRight, Info, Menu, PanelLeft, User, X } from "lucide-react";
 import LogoOze from "@/assets/logo/Logo-OZE-ngang.png";
 import useAsync from "@/hooks/useAsync";
-import { getSessionUserName, signOut } from "@/services/authService";
+import useSession from "@/hooks/useSession";
+import { signOut } from "@/services/authService";
 import { getDentalServices } from "@/services/dentalService";
 import {
     getNotifications,
@@ -18,7 +19,6 @@ import { ROUTES, getServiceDetailRoute } from "@/utils/routes";
 const HOVER_CLOSE_DELAY_MS = 150;
 const FOCUSABLE_SELECTOR = "a[href], button:not([disabled]), input:not([disabled])";
 const LINK_CLASS = "public-nav-link flex min-h-11 items-center";
-const ACCESS_TOKEN_KEY = "accessToken";
 const DRAWER_ID = "guest-drawer";
 const NAV_LINK_CLASS = "public-nav-link flex h-full items-center";
 const ROW_CLASS = "flex h-full w-full items-center justify-between gap-4 px-4 md:px-6";
@@ -54,13 +54,6 @@ const focusItem = (list, target) => {
     const item = target === "last" ? menuItems.at(-1) : menuItems[0];
     item?.focus();
 };
-
-const subscribeToSession = (onChange) => {
-    window.addEventListener("storage", onChange);
-    return () => window.removeEventListener("storage", onChange);
-};
-
-const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
 
 const toServiceItems = (services) => [
     ...services.map((service) => ({
@@ -645,7 +638,7 @@ const UserMenu = ({ open, onOpenChange }) => {
     const navigate = useNavigate();
     const containerRef = useRef(null);
     const buttonRef = useRef(null);
-    const userName = useSyncExternalStore(subscribeToSession, getSessionUserName);
+    const { userName } = useSession();
     const dismissHandlers = useDismiss({
         open,
         containerRef,
@@ -746,7 +739,7 @@ const TopBar = ({ onToggleSidebar, sidebarOpen }) => {
 
 const Header = ({ onToggleSidebar, sidebarOpen }) => {
     const location = useLocation();
-    const accessToken = useSyncExternalStore(subscribeToSession, getAccessToken);
+    const { token } = useSession();
     const { value: servicesResult } = useAsync(getDentalServices, []);
     const [openMenu, setOpenMenu] = useState(null);
     const [drawerKey, setDrawerKey] = useState(null);
@@ -770,7 +763,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
             return current?.id === menuId ? null : current;
         });
 
-    if (accessToken) return <TopBar onToggleSidebar={onToggleSidebar} sidebarOpen={sidebarOpen} />;
+    if (token) return <TopBar onToggleSidebar={onToggleSidebar} sidebarOpen={sidebarOpen} />;
 
     return (
         <>

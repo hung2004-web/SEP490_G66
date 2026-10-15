@@ -1,4 +1,4 @@
-import { MESSAGES } from "../utils/messages";
+import { MESSAGES, USER_ROLES } from "../utils/messages";
 import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
 import { invalidMessage } from "../utils/validation";
 
@@ -36,6 +36,7 @@ const mockSignIn = async ({ phone, password }) => {
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const USER_NAME_KEY = "userFullName";
+const USER_ROLE_KEY = "userRole";
 
 const rememberUserName = (phone) => {
     const fullName = findMockUserByPhone(phone)?.fullname;
@@ -55,16 +56,27 @@ export const signIn = async ({ phone, password }) => {
         // Same key src/services/api.jsx reads for the Authorization header.
         localStorage.setItem(ACCESS_TOKEN_KEY, result.data.token);
         rememberUserName(phone);
+        localStorage.setItem(USER_ROLE_KEY, USER_ROLES.PATIENT);
     }
 
     return result;
 };
 
+export const subscribeToSession = (onChange) => {
+    window.addEventListener("storage", onChange);
+    return () => window.removeEventListener("storage", onChange);
+};
+
+export const getSessionToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
+
 export const getSessionUserName = () => localStorage.getItem(USER_NAME_KEY);
+
+export const getSessionRole = () => localStorage.getItem(USER_ROLE_KEY);
 
 export const signOut = () => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(USER_NAME_KEY);
+    localStorage.removeItem(USER_ROLE_KEY);
 };
 
 export const register = async (userData) => {
