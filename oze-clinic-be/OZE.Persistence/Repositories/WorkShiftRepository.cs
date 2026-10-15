@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Domain.Entities;
 using OZE.Persistence.DbContexts;
 using System;
@@ -70,9 +71,31 @@ namespace OZE.Persistence.Repositories
                 && shiftStart < x.ShiftEnd);
         }
 
+        public async Task<bool> HasBookedAppointmentsAsync(int staffProfileId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd)
+        {
+            // An appointment belongs to the shift when its time slot overlaps the shift time
+            return await context.Appointments.AnyAsync(x =>
+                x.DoctorId == staffProfileId
+                && x.AppointmentDate == scheduleDate
+                && x.Status != AppointmentConstants.CancelledStatus
+                && x.Status != AppointmentConstants.NoShowStatus
+                && x.TimeSlotStart < shiftEnd
+                && shiftStart < x.TimeSlotEnd);
+        }
+
+        public void Remove(StaffSchedule schedule)
+        {
+            context.StaffSchedules.Remove(schedule);
+        }
+
         public async Task SaveChangesAsync()
         {
             await context.SaveChangesAsync();
+        }
+
+        public void Update(StaffSchedule schedule)
+        {
+            context.StaffSchedules.Update(schedule);
         }
     }
 }

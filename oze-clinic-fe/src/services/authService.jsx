@@ -34,6 +34,15 @@ const mockSignIn = async ({ phone, password }) => {
     };
 };
 
+const ACCESS_TOKEN_KEY = "accessToken";
+const USER_NAME_KEY = "userFullName";
+
+const rememberUserName = (phone) => {
+    const fullName = findMockUserByPhone(phone)?.fullname;
+    if (fullName) localStorage.setItem(USER_NAME_KEY, fullName);
+    else localStorage.removeItem(USER_NAME_KEY);
+};
+
 // Returns the ApiResponse shape: { success, message, data: { token, refreshToken, expiresAt }, errors }.
 export const signIn = async ({ phone, password }) => {
     // TODO: replace mockSignIn with the shared axios instance from "./api", e.g. api.post(<login endpoint>, ...).
@@ -44,10 +53,18 @@ export const signIn = async ({ phone, password }) => {
 
     if (result.success) {
         // Same key src/services/api.jsx reads for the Authorization header.
-        localStorage.setItem("accessToken", result.data.token);
+        localStorage.setItem(ACCESS_TOKEN_KEY, result.data.token);
+        rememberUserName(phone);
     }
 
     return result;
+};
+
+export const getSessionUserName = () => localStorage.getItem(USER_NAME_KEY);
+
+export const signOut = () => {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(USER_NAME_KEY);
 };
 
 export const register = async (userData) => {

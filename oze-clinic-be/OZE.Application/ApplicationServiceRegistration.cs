@@ -18,11 +18,13 @@ namespace OZE.Application
             services.Configure<RegisterOtpSettings>(configuration.GetSection("RegisterOtpSettings"));
 
             services.AddMemoryCache();
+            services.AddAutoMapper(typeof(OZE.Application.MappingProfiles.BaseMappingObject).Assembly);
 
             // Register Services
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IClinicServiceService, ClinicServiceService>();
             services.AddScoped<IRoomService, RoomService>();
             services.AddScoped<IStaffService, StaffService>();
             services.AddScoped<IRoleService, RoleService>();

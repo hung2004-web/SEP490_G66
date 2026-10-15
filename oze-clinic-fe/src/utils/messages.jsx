@@ -4,6 +4,8 @@ export const MESSAGES = {
     MSG24: "Sai mật khẩu.",
     MSG25: "Mật khẩu mới không được trùng với mật khẩu cũ.",
     MSG26: "Tài khoản đã bị tạm khóa do đăng nhập sai 5 lần liên tiếp.",
+    MSG55: "Bạn chưa có thông báo nào.",
+    MSG56: "Thông tin liên quan không còn tồn tại.",
     MSG64: "Cập nhật mật khẩu thành công!",
     MSG66: "[Tên trường] không hợp lệ. Vui lòng kiểm tra lại.",
 };

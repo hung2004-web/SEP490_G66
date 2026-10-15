@@ -1,0 +1,73 @@
+import { ROUTES, getServiceDetailRoute } from "@/utils/routes";
+
+const MINUTE_MS = 60 * 1000;
+const HOUR = 60;
+const DAY = 24 * HOUR;
+
+const minutesAgo = (minutes) => new Date(Date.now() - minutes * MINUTE_MS).toISOString();
+
+const TITLE = {
+    APPOINTMENT_CONFIRMED: "Lịch hẹn đã được xác nhận",
+    APPOINTMENT_REMINDER: "Nhắc lịch hẹn",
+    APPOINTMENT_CHANGED: "Lịch hẹn đã thay đổi",
+    APPOINTMENT_CANCELLED: "Lịch hẹn đã bị hủy",
+    TREATMENT_PLAN: "Kế hoạch điều trị mới",
+    INVOICE: "Hóa đơn mới",
+    PAYMENT: "Thanh toán thành công",
+    IMAGING_RESULT: "Kết quả chụp phim đã có",
+    PROFILE_UPDATED: "Cập nhật hồ sơ",
+    PASSWORD_CHANGED: "Mật khẩu đã được thay đổi",
+    NEW_SERVICE: "Dịch vụ mới",
+    OPENING_HOURS: "Thay đổi giờ làm việc",
+};
+
+export const MOCK_NOTIFICATIONS = [
+    { id: 48, title: TITLE.APPOINTMENT_REMINDER, content: "Bạn có lịch hẹn điều trị lúc 14:30 ngày mai tại Nha khoa Oze.", createdAt: minutesAgo(2), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 47, title: TITLE.APPOINTMENT_CONFIRMED, content: "Lịch hẹn khám tổng quát lúc 09:00 ngày 15/10/2026 đã được xác nhận.", createdAt: minutesAgo(15), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 46, title: TITLE.APPOINTMENT_CANCELLED, content: "Lịch hẹn ngày 16/10/2026 đã bị hủy theo yêu cầu.", createdAt: minutesAgo(40), isRead: false, relatedPath: null },
+    { id: 45, title: TITLE.IMAGING_RESULT, content: "Kết quả chụp X-quang của bạn đã sẵn sàng.", createdAt: minutesAgo(HOUR + 35), isRead: true, relatedPath: ROUTES.DOCTORS },
+    { id: 44, title: TITLE.NEW_SERVICE, content: "Nha khoa Oze vừa bổ sung dịch vụ Cấy ghép Implant.", createdAt: minutesAgo(3 * HOUR), isRead: false, relatedPath: getServiceDetailRoute(1) },
+    { id: 43, title: TITLE.PROFILE_UPDATED, content: "Thông tin cá nhân của bạn đã được cập nhật.", createdAt: minutesAgo(5 * HOUR), isRead: true, relatedPath: ROUTES.PROFILE },
+    { id: 42, title: TITLE.APPOINTMENT_CHANGED, content: "Lịch hẹn của bạn được chuyển sang 10:00 ngày 18/10/2026.", createdAt: minutesAgo(9 * HOUR), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 41, title: TITLE.OPENING_HOURS, content: "Phòng khám làm việc đến 20:00 từ tuần sau.", createdAt: minutesAgo(15 * HOUR), isRead: false, relatedPath: ROUTES.CONTACT },
+    { id: 40, title: TITLE.APPOINTMENT_CONFIRMED, content: "Lịch hẹn tẩy trắng răng lúc 08:30 ngày 20/10/2026 đã được xác nhận.", createdAt: minutesAgo(DAY + 2 * HOUR), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 39, title: TITLE.PASSWORD_CHANGED, content: "Mật khẩu tài khoản của bạn vừa được đổi.", createdAt: minutesAgo(DAY + 6 * HOUR), isRead: true, relatedPath: ROUTES.CHANGE_PASSWORD },
+    { id: 38, title: TITLE.NEW_SERVICE, content: "Nha khoa Oze vừa bổ sung dịch vụ Niềng răng chỉnh nha.", createdAt: minutesAgo(DAY + 14 * HOUR), isRead: true, relatedPath: getServiceDetailRoute(2) },
+    { id: 37, title: TITLE.TREATMENT_PLAN, content: "Bác sĩ đã lập kế hoạch điều trị niềng răng cho bạn.", createdAt: minutesAgo(2 * DAY + HOUR), isRead: false, relatedPath: null },
+    { id: 36, title: TITLE.APPOINTMENT_REMINDER, content: "Bạn có lịch hẹn khám tổng quát lúc 09:00 thứ Bảy tuần này.", createdAt: minutesAgo(2 * DAY + 8 * HOUR), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 35, title: TITLE.IMAGING_RESULT, content: "Kết quả chụp phim toàn cảnh của bạn đã sẵn sàng.", createdAt: minutesAgo(3 * DAY), isRead: true, relatedPath: ROUTES.DOCTORS },
+    { id: 34, title: TITLE.APPOINTMENT_CHANGED, content: "Lịch hẹn của bạn được chuyển sang 15:00 ngày 22/10/2026.", createdAt: minutesAgo(3 * DAY + 10 * HOUR), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 33, title: TITLE.NEW_SERVICE, content: "Nha khoa Oze vừa bổ sung dịch vụ Bọc răng sứ, dán sứ Veneers.", createdAt: minutesAgo(4 * DAY), isRead: true, relatedPath: getServiceDetailRoute(3) },
+    { id: 32, title: TITLE.APPOINTMENT_CONFIRMED, content: "Lịch hẹn nhổ răng khôn lúc 10:30 ngày 24/10/2026 đã được xác nhận.", createdAt: minutesAgo(4 * DAY + 9 * HOUR), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 31, title: TITLE.PROFILE_UPDATED, content: "Số điện thoại liên hệ của bạn đã được cập nhật.", createdAt: minutesAgo(5 * DAY), isRead: true, relatedPath: ROUTES.PROFILE },
+    { id: 30, title: TITLE.OPENING_HOURS, content: "Phòng khám mở cửa từ 07:30 các ngày trong tuần.", createdAt: minutesAgo(5 * DAY + 12 * HOUR), isRead: true, relatedPath: ROUTES.CONTACT },
+    { id: 29, title: TITLE.APPOINTMENT_REMINDER, content: "Bạn có lịch hẹn tái khám niềng răng lúc 16:00 ngày mai.", createdAt: minutesAgo(6 * DAY), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 28, title: TITLE.NEW_SERVICE, content: "Nha khoa Oze vừa bổ sung dịch vụ Phục hình sứ Inlay - Onlay.", createdAt: minutesAgo(6 * DAY + 10 * HOUR), isRead: true, relatedPath: getServiceDetailRoute(4) },
+    { id: 27, title: TITLE.APPOINTMENT_CONFIRMED, content: "Lịch hẹn tái khám niềng răng lúc 16:00 ngày 09/10/2026 đã được xác nhận.", createdAt: minutesAgo(7 * DAY), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 26, title: TITLE.IMAGING_RESULT, content: "Kết quả chụp CT Cone Beam của bạn đã sẵn sàng.", createdAt: minutesAgo(8 * DAY), isRead: true, relatedPath: ROUTES.DOCTORS },
+    { id: 25, title: TITLE.INVOICE, content: "Hóa đơn cho lần khám ngày 03/10/2026 đã được tạo.", createdAt: minutesAgo(9 * DAY), isRead: true, relatedPath: null },
+    { id: 24, title: TITLE.APPOINTMENT_CHANGED, content: "Lịch hẹn của bạn được chuyển sang 08:00 ngày 07/10/2026.", createdAt: minutesAgo(10 * DAY), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 23, title: TITLE.APPOINTMENT_REMINDER, content: "Bạn có lịch hẹn cạo vôi răng lúc 09:30 ngày mai.", createdAt: minutesAgo(11 * DAY), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 22, title: TITLE.NEW_SERVICE, content: "Nha khoa Oze vừa bổ sung dịch vụ Tẩy trắng răng.", createdAt: minutesAgo(12 * DAY), isRead: true, relatedPath: getServiceDetailRoute(5) },
+    { id: 21, title: TITLE.PROFILE_UPDATED, content: "Địa chỉ của bạn đã được cập nhật.", createdAt: minutesAgo(13 * DAY), isRead: true, relatedPath: ROUTES.PROFILE },
+    { id: 20, title: TITLE.OPENING_HOURS, content: "Phòng khám nghỉ ngày Chủ nhật tuần này.", createdAt: minutesAgo(14 * DAY), isRead: true, relatedPath: ROUTES.CONTACT },
+    { id: 19, title: TITLE.APPOINTMENT_CONFIRMED, content: "Lịch hẹn cạo vôi răng lúc 09:30 ngày 02/10/2026 đã được xác nhận.", createdAt: minutesAgo(15 * DAY), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 18, title: TITLE.IMAGING_RESULT, content: "Kết quả chụp X-quang răng khôn của bạn đã sẵn sàng.", createdAt: minutesAgo(16 * DAY), isRead: false, relatedPath: ROUTES.DOCTORS },
+    { id: 17, title: TITLE.NEW_SERVICE, content: "Nha khoa Oze vừa bổ sung dịch vụ Nhổ răng khôn.", createdAt: minutesAgo(17 * DAY), isRead: true, relatedPath: getServiceDetailRoute(6) },
+    { id: 16, title: TITLE.PAYMENT, content: "Nha khoa Oze đã nhận thanh toán cho hóa đơn của bạn.", createdAt: minutesAgo(18 * DAY), isRead: true, relatedPath: null },
+    { id: 15, title: TITLE.APPOINTMENT_REMINDER, content: "Bạn có lịch hẹn khám tổng quát lúc 14:00 ngày mai.", createdAt: minutesAgo(19 * DAY), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 14, title: TITLE.PASSWORD_CHANGED, content: "Mật khẩu tài khoản của bạn vừa được đổi.", createdAt: minutesAgo(20 * DAY), isRead: true, relatedPath: ROUTES.CHANGE_PASSWORD },
+    { id: 13, title: TITLE.APPOINTMENT_CHANGED, content: "Lịch hẹn của bạn được chuyển sang 13:30 ngày 26/09/2026.", createdAt: minutesAgo(21 * DAY), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 12, title: TITLE.NEW_SERVICE, content: "Nha khoa Oze vừa bổ sung nhiều dịch vụ mới.", createdAt: minutesAgo(22 * DAY), isRead: true, relatedPath: ROUTES.SERVICES },
+    { id: 11, title: TITLE.APPOINTMENT_CONFIRMED, content: "Lịch hẹn khám tổng quát lúc 14:00 ngày 25/09/2026 đã được xác nhận.", createdAt: minutesAgo(23 * DAY), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 10, title: TITLE.OPENING_HOURS, content: "Phòng khám làm việc cả ngày thứ Bảy từ tháng này.", createdAt: minutesAgo(24 * DAY), isRead: true, relatedPath: ROUTES.CONTACT },
+    { id: 9, title: TITLE.IMAGING_RESULT, content: "Kết quả chụp X-quang của bạn đã sẵn sàng.", createdAt: minutesAgo(25 * DAY), isRead: true, relatedPath: ROUTES.DOCTORS },
+    { id: 8, title: TITLE.APPOINTMENT_REMINDER, content: "Bạn có lịch hẹn tư vấn Implant lúc 10:00 ngày mai.", createdAt: minutesAgo(26 * DAY), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 7, title: TITLE.PROFILE_UPDATED, content: "Thông tin cá nhân của bạn đã được cập nhật.", createdAt: minutesAgo(27 * DAY), isRead: false, relatedPath: ROUTES.PROFILE },
+    { id: 6, title: TITLE.APPOINTMENT_CHANGED, content: "Lịch hẹn của bạn được chuyển sang 09:00 ngày 20/09/2026.", createdAt: minutesAgo(28 * DAY), isRead: true, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 5, title: TITLE.APPOINTMENT_CONFIRMED, content: "Lịch hẹn tư vấn Implant lúc 10:00 ngày 19/09/2026 đã được xác nhận.", createdAt: minutesAgo(29 * DAY), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 4, title: TITLE.APPOINTMENT_CANCELLED, content: "Lịch hẹn ngày 16/09/2026 đã bị hủy theo yêu cầu.", createdAt: minutesAgo(30 * DAY), isRead: true, relatedPath: null },
+    { id: 3, title: TITLE.IMAGING_RESULT, content: "Kết quả chụp phim toàn cảnh của bạn đã sẵn sàng.", createdAt: minutesAgo(33 * DAY), isRead: true, relatedPath: ROUTES.DOCTORS },
+    { id: 2, title: TITLE.APPOINTMENT_REMINDER, content: "Bạn có lịch hẹn điều trị lúc 14:30 ngày mai tại Nha khoa Oze.", createdAt: minutesAgo(36 * DAY), isRead: false, relatedPath: ROUTES.BOOK_APPOINTMENT },
+    { id: 1, title: TITLE.PASSWORD_CHANGED, content: "Mật khẩu tài khoản của bạn vừa được đổi.", createdAt: minutesAgo(40 * DAY), isRead: true, relatedPath: ROUTES.CHANGE_PASSWORD },
+];
