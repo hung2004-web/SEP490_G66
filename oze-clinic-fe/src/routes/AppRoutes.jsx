@@ -57,7 +57,7 @@ const routes = [
 
 function AppRoutes() {
     return (
-        <BrowserRouter>
+        <BrowserRouter useTransitions={false}>
             <GlobalErrorListener />
             <Routes>
                 <Route element={<MainLayout />}>
