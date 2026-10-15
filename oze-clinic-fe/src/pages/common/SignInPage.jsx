@@ -70,7 +70,6 @@ const SignInPage = () => {
             const result = await signIn({ phone: normalizePhone(values.phone), password: values.password });
             if (result.success) {
                 toast.success("Đăng nhập thành công!");
-                // TODO(spec): pass the user's role once the login response defines it.
                 navigate(getPostLoginRoute(), { replace: true });
                 return;
             }

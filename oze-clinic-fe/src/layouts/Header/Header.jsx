@@ -701,7 +701,7 @@ const UserMenu = ({ open, onOpenChange }) => {
     );
 };
 
-const TopBar = ({ onToggleSidebar, sidebarOpen }) => {
+const TopBar = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) => {
     const location = useLocation();
     const [openPanel, setOpenPanel] = useState(null);
     const openPanelId = openPanel?.key === location.key ? openPanel.id : null;
@@ -716,14 +716,17 @@ const TopBar = ({ onToggleSidebar, sidebarOpen }) => {
         <header className="topbar">
             {onToggleSidebar && (
                 <button
+                    ref={sidebarToggleRef}
                     type="button"
                     className="btn btn-secondary btn-icon"
                     aria-label="Ẩn hoặc hiện thanh bên"
                     title="Ẩn hoặc hiện thanh bên"
                     aria-expanded={sidebarOpen}
+                    aria-controls={sidebarId}
                     onClick={onToggleSidebar}
                 >
-                    <PanelLeft className="size-5" aria-hidden="true" />
+                    <PanelLeft className="hidden size-5 lg:block" aria-hidden="true" />
+                    <Menu className="size-5 lg:hidden" aria-hidden="true" />
                 </button>
             )}
             <div className="relative ml-auto flex h-full items-center gap-2">
@@ -737,7 +740,7 @@ const TopBar = ({ onToggleSidebar, sidebarOpen }) => {
     );
 };
 
-const Header = ({ onToggleSidebar, sidebarOpen }) => {
+const Header = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) => {
     const location = useLocation();
     const { token } = useSession();
     const { value: servicesResult } = useAsync(getDentalServices, []);
@@ -763,7 +766,16 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
             return current?.id === menuId ? null : current;
         });
 
-    if (token) return <TopBar onToggleSidebar={onToggleSidebar} sidebarOpen={sidebarOpen} />;
+    if (token) {
+        return (
+            <TopBar
+                onToggleSidebar={onToggleSidebar}
+                sidebarOpen={sidebarOpen}
+                sidebarId={sidebarId}
+                sidebarToggleRef={sidebarToggleRef}
+            />
+        );
+    }
 
     return (
         <>
