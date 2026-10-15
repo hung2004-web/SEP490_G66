@@ -11,7 +11,7 @@ namespace OZE.Persistence.Seed
         public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseSeeder");
-            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
             // 1. Seed Roles (normally already inserted by the InitialCreate migration)
@@ -27,7 +27,7 @@ namespace OZE.Persistence.Seed
             {
                 if (!await roleManager.RoleExistsAsync(role))
                 {
-                    await roleManager.CreateAsync(new IdentityRole(role));
+                    await roleManager.CreateAsync(new ApplicationRole(role) { CreatedAt = DateTimeOffset.UtcNow });
                     logger.LogInformation("Role '{Role}' created successfully.", role);
                 }
             }
