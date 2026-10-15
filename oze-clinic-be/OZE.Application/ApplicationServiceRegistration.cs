@@ -27,6 +27,7 @@ namespace OZE.Application
             services.AddScoped<IClinicServiceService, ClinicServiceService>();
             services.AddScoped<IRoomService, RoomService>();
             services.AddScoped<IStaffService, StaffService>();
+            services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<IHomeService, HomeService>();
             services.AddScoped<ISmsSender, SmsSender>();

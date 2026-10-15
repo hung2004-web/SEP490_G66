@@ -58,9 +58,13 @@ namespace OZE.Persistence.Configurations
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            builder.Entity<IdentityRole>(entity =>
+            builder.Entity<ApplicationRole>(entity =>
             {
                 entity.ToTable("AspNetRoles");
+
+                entity.Property(x => x.Description).HasMaxLength(500);
+                entity.Property(x => x.IsActive).HasDefaultValue(true).HasSentinel(true);
+                entity.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
                 entity.HasIndex(x => x.NormalizedName)
                       .HasDatabaseName("IX_AspNetRoles_NormalizedName")
@@ -77,11 +81,16 @@ namespace OZE.Persistence.Configurations
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasData(
-                    Role("8d04dce2-969a-435d-bba4-df3f325983dc", RoleConstants.PatientRole, "f0a1b2c3-0001-4000-8000-000000000001"),
-                    Role("a1f4c1b5-7b2e-4c6e-9f3a-2d5e8b7c9a01", RoleConstants.DoctorRole, "f0a1b2c3-0002-4000-8000-000000000002"),
-                    Role("b2e5d2c6-8c3f-4d7f-a04b-3e6f9c8dab02", RoleConstants.ReceptionistRole, "f0a1b2c3-0003-4000-8000-000000000003"),
-                    Role("c3f6e3d7-9d40-4e80-b15c-4f70ad9ebc03", RoleConstants.DentalImagingTechnicianRole, "f0a1b2c3-0004-4000-8000-000000000004"),
-                    Role("d4071408-ae51-4f91-a26d-5081beafcd04", RoleConstants.ClinicManagerRole, "f0a1b2c3-0005-4000-8000-000000000005"));
+                    Role("8d04dce2-969a-435d-bba4-df3f325983dc", RoleConstants.PatientRole, "f0a1b2c3-0001-4000-8000-000000000001",
+                        "A person receiving dental care at the clinic who has a patient account."),
+                    Role("a1f4c1b5-7b2e-4c6e-9f3a-2d5e8b7c9a01", RoleConstants.DoctorRole, "f0a1b2c3-0002-4000-8000-000000000002",
+                        "A dentist who examines patients, makes diagnoses and provides treatment."),
+                    Role("b2e5d2c6-8c3f-4d7f-a04b-3e6f9c8dab02", RoleConstants.ReceptionistRole, "f0a1b2c3-0003-4000-8000-000000000003",
+                        "A staff member who handles patient reception and front-desk operations."),
+                    Role("c3f6e3d7-9d40-4e80-b15c-4f70ad9ebc03", RoleConstants.DentalImagingTechnicianRole, "f0a1b2c3-0004-4000-8000-000000000004",
+                        "A staff member who carries out dental imaging work and records the results."),
+                    Role("d4071408-ae51-4f91-a26d-5081beafcd04", RoleConstants.ClinicManagerRole, "f0a1b2c3-0005-4000-8000-000000000005",
+                        "A staff member who oversees the clinic's daily operations."));
             });
 
             builder.Entity<IdentityUserRole<string>>(entity =>
@@ -119,12 +128,16 @@ namespace OZE.Persistence.Configurations
             });
         }
 
-        private static IdentityRole Role(string id, string name, string concurrencyStamp) => new()
+        // Seed values must be constant, otherwise every new migration would update these rows again.
+        private static ApplicationRole Role(string id, string name, string concurrencyStamp, string description) => new()
         {
             Id = id,
             Name = name,
             NormalizedName = name.ToUpperInvariant(),
-            ConcurrencyStamp = concurrencyStamp
+            ConcurrencyStamp = concurrencyStamp,
+            Description = description,
+            IsActive = true,
+            CreatedAt = new DateTimeOffset(2026, 10, 6, 0, 0, 0, TimeSpan.Zero)
         };
     }
 }
