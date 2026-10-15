@@ -20,9 +20,9 @@ const ServiceDetailSkeleton = () => (
             <div className="skeleton aspect-4/3" />
             <div className="skeleton h-40" />
         </div>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {[0, 1, 2, 3].map((index) => (
-                <div key={index} className="skeleton h-24" />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {[0, 1, 2, 3, 4, 5].map((index) => (
+                <div key={index} className="skeleton h-32" />
             ))}
         </div>
     </div>
@@ -31,13 +31,16 @@ const ServiceDetailSkeleton = () => (
 const BenefitsSection = ({ benefits }) => (
     <section aria-labelledby={BENEFITS_TITLE_ID} className={SECTION_CLASS}>
         <SectionHeading id={BENEFITS_TITLE_ID}>Lợi ích sau điều trị</SectionHeading>
-        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {benefits.map(({ number, icon: Icon, description }) => (
-                <li key={number} className="card-public card-hover flex overflow-hidden p-0">
+        <ul className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {benefits.map(({ number, icon: Icon, title, description }) => (
+                <li key={number} className="card-public card-hover flex h-full overflow-hidden p-0">
                     <span className="flex w-20 shrink-0 items-center justify-center bg-primary-soft text-primary md:w-24">
                         <Icon className="size-8" aria-hidden="true" />
                     </span>
-                    <p className="flex flex-1 items-center p-5 text-body-md text-body">{description}</p>
+                    <div className="flex flex-1 flex-col justify-center gap-2 p-5 md:p-6">
+                        <h3 className="card-title">{title}</h3>
+                        <p className="text-body-sm text-body md:text-body-md">{description}</p>
+                    </div>
                 </li>
             ))}
         </ul>
@@ -47,14 +50,14 @@ const BenefitsSection = ({ benefits }) => (
 const StepsSection = ({ steps }) => (
     <section aria-labelledby={STEPS_TITLE_ID} className={SECTION_CLASS}>
         <SectionHeading id={STEPS_TITLE_ID}>Quy trình điều trị</SectionHeading>
-        <ol className="grid grid-cols-2 gap-y-10 sm:grid-cols-3 md:flex md:justify-center">
-            {steps.map(({ step, icon: Icon }, index) => (
-                <li key={step} className="relative flex flex-col items-center gap-4 md:flex-1">
+        <ol className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:flex lg:justify-center">
+            {steps.map(({ step, icon: Icon, description }, index) => (
+                <li key={step} className="relative flex flex-col items-center gap-4 lg:flex-1">
                     {/* Connector to the next step, only when the steps sit on one row. */}
                     {index < steps.length - 1 && (
                         <span
                             aria-hidden="true"
-                            className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-primary-soft md:block"
+                            className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-primary-soft lg:block"
                         />
                     )}
                     <span className="relative flex size-24 items-center justify-center rounded-full border-4 border-primary bg-canvas text-primary shadow-md">
@@ -63,7 +66,10 @@ const StepsSection = ({ steps }) => (
                             {step}
                         </span>
                     </span>
-                    <span className="text-title text-ink">Bước {step}</span>
+                    <div className="flex max-w-44 flex-col items-center gap-1 text-center">
+                        <span className="text-label text-primary">Bước {step}</span>
+                        <span className="text-title text-ink">{description}</span>
+                    </div>
                 </li>
             ))}
         </ol>
@@ -74,18 +80,19 @@ const FeedbacksSection = ({ feedbacks, serviceName }) => (
     <section aria-labelledby={FEEDBACKS_TITLE_ID} className={SECTION_CLASS}>
         <SectionHeading id={FEEDBACKS_TITLE_ID}>Phản hồi của khách hàng</SectionHeading>
         <ul className="flex flex-col gap-8">
-            {feedbacks.map(({ id, imageUrl, content }) => (
-                <li key={id} className="card-public grid grid-cols-1 items-center gap-6 p-6 md:grid-cols-2 md:gap-10 md:p-8">
+            {feedbacks.map(({ id, imageUrl, title, content }) => (
+                <li key={id} className="card-public grid grid-cols-1 items-start gap-6 p-6 md:grid-cols-2 md:gap-10 md:p-8">
                     <img
                         src={imageUrl}
                         alt={`Khách hàng sau điều trị ${serviceName}`}
                         loading="lazy"
                         className="aspect-4/3 w-full rounded-xl bg-surface-tint object-contain"
                     />
-                    <blockquote className="flex flex-col gap-4">
+                    <figure className="flex flex-col gap-4">
                         <Quote className="size-8 text-primary" aria-hidden="true" />
-                        <p className="text-body-lg text-body">{content}</p>
-                    </blockquote>
+                        <figcaption className="font-heading text-heading-2 text-ink">{title}</figcaption>
+                        <blockquote className="text-body-md text-body">{content}</blockquote>
+                    </figure>
                 </li>
             ))}
         </ul>
