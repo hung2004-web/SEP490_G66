@@ -129,6 +129,68 @@ namespace OZE.Application.Services
                                      % WorkShiftConstants.DaysInWeek;
             return date.AddDays(-daysSinceWeekStart);
         }
+
+        public async Task<WorkShipResponse> UpdateWorkShiftAsync(long id, UpdateWorkShiftRequest request)
+        {
+            var shift = await _workShipRepository.GetByIdAsync(id);
+            ConditionGuard.Ensure<NotFoundException>(shift != null, ErrorConstants.WorkShiftMessage.WorkShiftNotFound);
+
+            // Only future shifts can be edited; a started or past shift keeps its original schedule
+            var currentShiftStartAt = shift!.ScheduleDate.ToDateTime(shift.ShiftStart);
+            ConditionGuard.Ensure(currentShiftStartAt > DateTime.Now, ErrorConstants.WorkShiftMessage.CannotUpdateStartedShift);
+
+            // [Required] has already rejected missing values, so .Value is safe here
+            var scheduleDate = request.ScheduleDate!.Value;
+            var shiftStart = request.ShiftStart!.Value;
+            var shiftEnd = request.ShiftEnd!.Value;
+
+            ConditionGuard.Ensure(shiftStart < shiftEnd, ErrorConstants.WorkShiftMessage.InvalidTimeRange);
+            ConditionGuard.Ensure(scheduleDate >= DateOnly.FromDateTime(DateTime.Today), ErrorConstants.WorkShiftMessage.PastDate);
+
+            var staff = await _staffRepository.GetByUserIdAsync(request.StaffUserId);
+            ConditionGuard.Ensure<NotFoundException>(staff != null, ErrorConstants.WorkShiftMessage.StaffNotFound);
+            ConditionGuard.Ensure(staff!.IsActive, ErrorConstants.WorkShiftMessage.StaffInactive);
+
+            Room? room = null;
+            if (request.RoomId.HasValue)
+            {
+                room = await _roomRepository.GetByIdAsync(request.RoomId.Value);
+                ConditionGuard.Ensure<NotFoundException>(room != null, ErrorConstants.WorkShiftMessage.RoomNotFound);
+                ConditionGuard.Ensure(room!.Status == RoomConstants.ActiveStatus, ErrorConstants.WorkShiftMessage.RoomNotActive);
+            }
+
+            var isStaffOrTimeChanged = staff.Id != shift.StaffProfileId
+                || scheduleDate != shift.ScheduleDate
+                || shiftStart != shift.ShiftStart
+                || shiftEnd != shift.ShiftEnd;
+
+            if (isStaffOrTimeChanged)
+            {
+                // Check with the OLD shift values, before they are overwritten below
+                var hasAppointments = await _workShipRepository.HasBookedAppointmentsAsync(
+                    shift.StaffProfileId, shift.ScheduleDate, shift.ShiftStart, shift.ShiftEnd);
+                ConditionGuard.ThrowIf(hasAppointments, ErrorConstants.WorkShiftMessage.ShiftHasAppointmentsCannotChange);
+            }
+
+            // Exclude the current shift so it does not overlap with itself
+            var hasOverlap = await _workShipRepository.HasOverlapAsync(staff.Id, scheduleDate, shiftStart, shiftEnd, id);
+            ConditionGuard.ThrowIf(hasOverlap, ErrorConstants.WorkShiftMessage.ShiftOverlap);
+
+            shift.StaffProfileId = staff.Id;
+            shift.RoomId = request.RoomId;
+            shift.ScheduleDate = scheduleDate;
+            shift.ShiftStart = shiftStart;
+            shift.ShiftEnd = shiftEnd;
+            shift.Assignment = request.Assignment?.Trim();
+            shift.Notes = request.Note?.Trim();
+            shift.UpdatedAt = DateTimeOffset.UtcNow;
+
+            _workShipRepository.Update(shift);
+            await _workShipRepository.SaveChangesAsync();
+
+            // Pass the new staff and room; shift.StaffProfile / shift.Room still point to the old ones
+            return ToResponse(shift, staff, room);
+        }
     }
 }
 

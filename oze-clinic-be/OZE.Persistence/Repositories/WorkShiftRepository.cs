@@ -92,5 +92,10 @@ namespace OZE.Persistence.Repositories
         {
             await context.SaveChangesAsync();
         }
+
+        public void Update(StaffSchedule schedule)
+        {
+            context.StaffSchedules.Update(schedule);
+        }
     }
 }

@@ -125,6 +125,8 @@ namespace OZE.Common.Constants
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
             public const string ShiftAlreadyStarted = "Cannot delete a work shift that has already started or passed";
             public const string ShiftHasAppointments = "Cannot delete this work shift because it has booked appointments. Please move the appointments first";
+            public const string CannotUpdateStartedShift = "Cannot update a work shift that has already started or passed";
+            public const string ShiftHasAppointmentsCannotChange = "Cannot change staff, date or time of this work shift because it has booked appointments. Please move the appointments first";
         }
         public static class Common
         {
