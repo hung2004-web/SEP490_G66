@@ -1,4 +1,4 @@
-import { MOCK_DENTAL_SERVICES } from "../utils/mockDentalServices";
+import { MOCK_DENTAL_SERVICES } from "../utils/data/mockDentalServices";
 
 const MOCK_DELAY_MS = 300;
 

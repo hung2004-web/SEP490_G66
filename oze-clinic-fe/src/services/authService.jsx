@@ -1,5 +1,5 @@
 import { MESSAGES } from "../utils/messages";
-import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
+import { findMockUserByPhone, saveMockUser } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
 
 // Mock cases until the real API is wired:

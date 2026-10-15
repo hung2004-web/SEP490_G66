@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -82,7 +82,7 @@ const Register = () => {
       } else {
         toast.error(result.message);
       }
-    } catch (err) {
+    } catch {
       toast.error("Có lỗi xảy ra, vui lòng thử lại sau.");
     } finally {
       setLoading(false);
