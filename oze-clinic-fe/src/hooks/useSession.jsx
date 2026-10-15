@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { getSessionRole, getSessionToken, getSessionUserName, subscribeToSession } from "@/services/authService";
+import { getSessionRole, getSessionToken, getSessionUserName, subscribeToSession } from "@/services/sessionStore";
 
 export default function useSession() {
     const token = useSyncExternalStore(subscribeToSession, getSessionToken);

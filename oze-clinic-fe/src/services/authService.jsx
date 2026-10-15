@@ -1,11 +1,8 @@
 import { MESSAGES, USER_ROLES } from "../utils/messages";
 import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
 import { invalidMessage } from "../utils/validation";
+import { clearSession, saveSession } from "./sessionStore";
 
-// Mock cases until the real API is wired:
-// - phone "0900000000"                        -> account locked (MSG26)
-// - any other phone, password not "12345678"  -> wrong password (MSG24)
-// - any other phone, password "12345678"      -> success
 const MOCK_LOCKED_PHONE = "0900000000";
 const MOCK_PASSWORD = "12345678";
 const MOCK_DELAY_MS = 800;
@@ -34,50 +31,21 @@ const mockSignIn = async ({ phone, password }) => {
     };
 };
 
-const ACCESS_TOKEN_KEY = "accessToken";
-const USER_NAME_KEY = "userFullName";
-const USER_ROLE_KEY = "userRole";
-
-const rememberUserName = (phone) => {
-    const fullName = findMockUserByPhone(phone)?.fullname;
-    if (fullName) localStorage.setItem(USER_NAME_KEY, fullName);
-    else localStorage.removeItem(USER_NAME_KEY);
-};
-
-// Returns the ApiResponse shape: { success, message, data: { token, refreshToken, expiresAt }, errors }.
 export const signIn = async ({ phone, password }) => {
-    // TODO: replace mockSignIn with the shared axios instance from "./api", e.g. api.post(<login endpoint>, ...).
-    // Catch axios errors and return error.response.data so screens keep the same response shape.
-    // TODO(spec): the SRS (UC-04, FR 2.1) signs in with phone number, but the backend login model uses email.
-    // The team must align the backend contract before wiring.
     const result = await mockSignIn({ phone, password });
 
     if (result.success) {
-        // Same key src/services/api.jsx reads for the Authorization header.
-        localStorage.setItem(ACCESS_TOKEN_KEY, result.data.token);
-        rememberUserName(phone);
-        localStorage.setItem(USER_ROLE_KEY, USER_ROLES.PATIENT);
+        saveSession({
+            token: result.data.token,
+            userName: findMockUserByPhone(phone)?.fullname,
+            role: USER_ROLES.PATIENT,
+        });
     }
 
     return result;
 };
 
-export const subscribeToSession = (onChange) => {
-    window.addEventListener("storage", onChange);
-    return () => window.removeEventListener("storage", onChange);
-};
-
-export const getSessionToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
-
-export const getSessionUserName = () => localStorage.getItem(USER_NAME_KEY);
-
-export const getSessionRole = () => localStorage.getItem(USER_ROLE_KEY);
-
-export const signOut = () => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(USER_NAME_KEY);
-    localStorage.removeItem(USER_ROLE_KEY);
-};
+export const signOut = () => clearSession();
 
 export const register = async (userData) => {
     await wait(800); // Giả lập độ trễ mạng
