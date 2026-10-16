@@ -9,6 +9,7 @@ import SignInPage from "../pages/common/SignInPage";
 import VerifyOtpPage from "../pages/common/VerifyOtpPage";
 import AboutUs from "../pages/common/homepage/AboutUs";
 import ContactPage from "../pages/common/ContactPage";
+import ServiceDetail from "../pages/common/ServiceDetail";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
@@ -36,6 +37,10 @@ const routes = [
     {
         path: ROUTES.CONTACT,
         element: <ContactPage />
+    },
+    {
+        path: ROUTES.SERVICE_DETAIL,
+        element: <ServiceDetail />
     },
     {
         path: ROUTES.FORGOT_PASSWORD,

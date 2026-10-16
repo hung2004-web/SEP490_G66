@@ -1,5 +1,3 @@
-import React from 'react';
-
 const variants = {
   success: 'bg-success-soft text-success',
   info: 'bg-primary-soft text-primary',
