@@ -126,8 +126,11 @@ namespace OZE.Common.Constants
             public const string RoleNotFound = "Role not found.";
             // MSG63
             public const string RoleCreated = "Create role success!";
+            // MSG64
+            public const string RoleUpdated = "Update role success!";
             // TODO(spec): the messages below have no System Message code in the SRS yet.
             public const string CreateFailed = "Create role failed";
+            public const string UpdateFailed = "Update role failed";
         }
 
         public static class WorkShiftMessage

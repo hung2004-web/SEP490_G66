@@ -51,6 +51,22 @@ namespace OZE.Application.Services
             return ToResponse(role, 0);
         }
 
+        public async Task<RoleResponse> UpdateRoleAsync(string id, UpdateRoleRequest request)
+        {
+            var role = await _roleManager.FindByIdAsync(id);
+            ConditionGuard.Ensure<NotFoundException>(role != null, ErrorConstants.RoleMessage.RoleNotFound);
+
+            role!.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+            role.UpdatedAt = DateTimeOffset.UtcNow;
+
+            var result = await _roleManager.UpdateAsync(role);
+            ConditionGuard.Ensure(result.Succeeded,
+                result.Errors.FirstOrDefault()?.Description ?? ErrorConstants.RoleMessage.UpdateFailed);
+
+            // UserCount is not stored on the role, so it is read again after the update.
+            return await GetRoleAsync(role.Id);
+        }
+
         private static RoleResponse ToResponse(ApplicationRole role, int userCount)
         {
             return new RoleResponse

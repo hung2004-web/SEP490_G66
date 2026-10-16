@@ -41,5 +41,13 @@ namespace OZE.ProjectBase.Controllers
             var role = await _roleService.CreateRoleAsync(request);
             return Ok(ApiResponse<RoleResponse>.SuccessResult(role, ErrorConstants.RoleMessage.RoleCreated));
         }
+
+        [HttpPut("{id}")]
+        [ApiResponseValidationFilter]
+        public async Task<ActionResult<ApiResponse<RoleResponse>>> UpdateRoleAsync(string id, [FromBody] UpdateRoleRequest request)
+        {
+            var role = await _roleService.UpdateRoleAsync(id, request);
+            return Ok(ApiResponse<RoleResponse>.SuccessResult(role, ErrorConstants.RoleMessage.RoleUpdated));
+        }
     }
 }
