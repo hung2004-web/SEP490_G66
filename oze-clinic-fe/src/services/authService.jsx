@@ -1,11 +1,9 @@
-import { MESSAGES } from "../utils/messages";
-import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
+import api from "./api";
+import { MESSAGES, USER_ROLES, VERIFICATION_METHOD } from "../utils/messages";
+import { findMockUserByPhone } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
+import { clearSession, saveSession } from "./sessionStore";
 
-// Mock cases until the real API is wired:
-// - phone "0900000000"                        -> account locked (MSG26)
-// - any other phone, password not "12345678"  -> wrong password (MSG24)
-// - any other phone, password "12345678"      -> success
 const MOCK_LOCKED_PHONE = "0900000000";
 const MOCK_PASSWORD = "12345678";
 const MOCK_DELAY_MS = 800;
@@ -34,57 +32,58 @@ const mockSignIn = async ({ phone, password }) => {
     };
 };
 
-const ACCESS_TOKEN_KEY = "accessToken";
-const USER_NAME_KEY = "userFullName";
-
-const rememberUserName = (phone) => {
-    const fullName = findMockUserByPhone(phone)?.fullname;
-    if (fullName) localStorage.setItem(USER_NAME_KEY, fullName);
-    else localStorage.removeItem(USER_NAME_KEY);
-};
-
-// Returns the ApiResponse shape: { success, message, data: { token, refreshToken, expiresAt }, errors }.
 export const signIn = async ({ phone, password }) => {
-    // TODO: replace mockSignIn with the shared axios instance from "./api", e.g. api.post(<login endpoint>, ...).
-    // Catch axios errors and return error.response.data so screens keep the same response shape.
-    // TODO(spec): the SRS (UC-04, FR 2.1) signs in with phone number, but the backend login model uses email.
-    // The team must align the backend contract before wiring.
     const result = await mockSignIn({ phone, password });
 
     if (result.success) {
-        // Same key src/services/api.jsx reads for the Authorization header.
-        localStorage.setItem(ACCESS_TOKEN_KEY, result.data.token);
-        rememberUserName(phone);
+        saveSession({
+            token: result.data.token,
+            userName: findMockUserByPhone(phone)?.fullname,
+            role: USER_ROLES.PATIENT,
+        });
     }
 
     return result;
 };
 
-export const getSessionUserName = () => localStorage.getItem(USER_NAME_KEY);
+export const signOut = () => clearSession();
 
-export const signOut = () => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(USER_NAME_KEY);
-};
+const GENERIC_ERROR = "Có lỗi xảy ra, vui lòng thử lại sau.";
 
-export const register = async (userData) => {
-    await wait(800); // Giả lập độ trễ mạng
-
-    const existingUser = findMockUserByPhone(userData.phone);
-    if (existingUser) {
-        return failure("Số điện thoại này đã được đăng ký.");
+// The backend answers 400 with the same ApiResponse shape, so screens only check result.success.
+// Statuses in ERROR_PAGE_STATUSES are already sent to the error page by the interceptor in "./api".
+const postApi = async (url, body) => {
+    try {
+        const response = await api.post(url, body);
+        return response.data;
+    } catch (error) {
+        // Anything that is not an ApiResponse (e.g. the HTML 404 page when VITE_API_URL is missing) gets a generic message.
+        const data = error.response?.data;
+        return typeof data?.success === "boolean" ? data : failure(GENERIC_ERROR);
     }
-
-    // Lưu vào mock data
-    saveMockUser(userData);
-
-    return {
-        success: true,
-        message: "Đăng ký thành công",
-        data: null,
-        errors: null
-    };
 };
+
+// The backend expects "Male"/"Female" and "Sms"/"Email".
+const GENDER_VALUES = { male: "Male", female: "Female" };
+const BACKEND_VERIFICATION_METHOD = { [VERIFICATION_METHOD.SMS]: "Sms", [VERIFICATION_METHOD.EMAIL]: "Email" };
+
+// Returns data: { sessionId, verificationMethod, maskedDestination, expiresAt, resendAvailableAt }.
+export const register = async ({ fullname, birthdate, gender, phone, email, password, confirmPassword, method }) =>
+    postApi("/api/Auth/register", {
+        fullName: fullname.trim(),
+        dateOfBirth: birthdate,
+        gender: GENDER_VALUES[gender],
+        phoneNumber: phone,
+        email: email.trim() || null,
+        password,
+        confirmPassword,
+        verificationMethod: BACKEND_VERIFICATION_METHOD[method],
+    });
+
+export const verifyRegisterOtp = async ({ sessionId, code }) =>
+    postApi("/api/Auth/verify-otp", { sessionId, otp: code });
+
+export const resendRegisterOtp = async ({ sessionId }) => postApi("/api/Auth/resend-otp", { sessionId });
 
 const MOCK_UNREGISTERED_PHONE = "0900000001";
 

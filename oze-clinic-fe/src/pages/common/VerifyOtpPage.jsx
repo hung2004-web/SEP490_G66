@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Card from "@/components/ui/Card";
-import { requestPasswordReset, verifyOtp } from "../../services/authService";
+import { toast } from "react-toastify";
+import { requestPasswordReset, resendRegisterOtp, verifyOtp, verifyRegisterOtp } from "../../services/authService";
 import { OTP_LENGTH, OTP_RESEND_SECONDS } from "../../utils/messages";
 import { ROUTES } from "../../utils/routes";
 import { invalidMessage, requiredMessage } from "../../utils/validation";
@@ -34,11 +35,13 @@ const VerifyOtpPage = () => {
         return () => clearTimeout(timeoutId);
     }, [secondsLeft]);
 
-    if (!state?.phone || !state?.method) {
-        return <Navigate to={ROUTES.FORGOT_PASSWORD} replace />;
+    // Used by Forgot Password and by Register (state.flow === "register", identified by the backend sessionId).
+    const isRegister = state?.flow === "register";
+    if (isRegister ? !state.sessionId : !state?.phone || !state?.method) {
+        return <Navigate to={isRegister ? ROUTES.REGISTER : ROUTES.FORGOT_PASSWORD} replace />;
     }
 
-    const { phone, method } = state;
+    const { phone, method, sessionId, maskedDestination } = state;
     const busy = loading || resending;
 
     const focusBox = (index) => inputRefs.current[index]?.focus();
@@ -94,7 +97,9 @@ const VerifyOtpPage = () => {
 
         setResending(true);
         try {
-            const result = await requestPasswordReset({ phone, method });
+            const result = isRegister
+                ? await resendRegisterOtp({ sessionId })
+                : await requestPasswordReset({ phone, method });
             if (result.success) {
                 setDigits(EMPTY_CODE);
                 setCodeError(undefined);
@@ -126,6 +131,18 @@ const VerifyOtpPage = () => {
 
         setLoading(true);
         try {
+            if (isRegister) {
+                const result = await verifyRegisterOtp({ sessionId, code });
+                if (result.success) {
+                    toast.success(result.message);
+                    navigate(ROUTES.SIGN_IN, { replace: true });
+                    return;
+                }
+                setCodeError(result.message);
+                focusBox(0);
+                return;
+            }
+
             const result = await verifyOtp({ phone, code });
             if (result.success) {
                 navigate(ROUTES.RESET_PASSWORD, { replace: true, state: { phone, resetToken: result.data.resetToken } });
@@ -143,7 +160,7 @@ const VerifyOtpPage = () => {
             <Card variant="auth" className="w-full max-w-md">
                 <h1 className="auth-title">Nhập mã xác minh (OTP)</h1>
                 <p className="auth-subtitle">
-                    Mã xác minh gồm 6 chữ số vừa được gửi. Vui lòng nhập mã để tiếp tục.
+                    Mã xác minh gồm 6 chữ số vừa được gửi{maskedDestination ? ` đến ${maskedDestination}` : ""}. Vui lòng nhập mã để tiếp tục.
                 </p>
 
                 <form noValidate onSubmit={handleSubmit}>

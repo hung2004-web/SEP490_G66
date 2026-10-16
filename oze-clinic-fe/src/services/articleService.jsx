@@ -1,4 +1,4 @@
-import { ARTICLE_CATEGORIES, MOCK_ARTICLES } from "../utils/mockArticles";
+import { ARTICLE_CATEGORIES, MOCK_ARTICLES } from "../utils/data/mockArticles";
 
 const MOCK_DELAY_MS = 300;
 

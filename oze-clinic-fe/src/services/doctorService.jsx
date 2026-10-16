@@ -1,4 +1,4 @@
-import { MOCK_DOCTORS } from "../utils/mockDoctors";
+import { MOCK_DOCTORS } from "../utils/data/mockDoctors";
 
 const MOCK_DELAY_MS = 300;
 
