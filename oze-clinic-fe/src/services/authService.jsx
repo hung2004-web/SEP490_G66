@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 import api from "./api";
-import { MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
+import { MESSAGES, USER_ROLES, VERIFICATION_METHOD } from "../utils/messages";
 import { findMockUserByPhone } from "../utils/data/mockData";
-=======
-import { MESSAGES, USER_ROLES } from "../utils/messages";
-import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
->>>>>>> main
 import { invalidMessage } from "../utils/validation";
 import { clearSession, saveSession } from "./sessionStore";
 
@@ -62,7 +57,9 @@ const postApi = async (url, body) => {
         const response = await api.post(url, body);
         return response.data;
     } catch (error) {
-        return error.response?.data ?? failure(GENERIC_ERROR);
+        // Anything that is not an ApiResponse (e.g. the HTML 404 page when VITE_API_URL is missing) gets a generic message.
+        const data = error.response?.data;
+        return typeof data?.success === "boolean" ? data : failure(GENERIC_ERROR);
     }
 };
 

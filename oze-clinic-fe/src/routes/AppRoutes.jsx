@@ -12,12 +12,8 @@ import ContactPage from "../pages/common/ContactPage";
 import ServiceDetail from "../pages/common/ServiceDetail";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
-<<<<<<< HEAD
-import AuthApiTester from "../pages/common/AuthApiTester";
-=======
 import useSession from "../hooks/useSession";
 import { USER_ROLES } from "../utils/messages";
->>>>>>> main
 import { ROUTES } from "../utils/routes";
 import RequireRole from "./RequireRole";
 
