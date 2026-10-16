@@ -11,6 +11,7 @@ import ContactPage from "../pages/common/ContactPage";
 import ServiceDetail from "../pages/common/ServiceDetail";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
+import AuthApiTester from "../pages/common/AuthApiTester";
 import { ROUTES } from "../utils/routes";
 
 const routes = [

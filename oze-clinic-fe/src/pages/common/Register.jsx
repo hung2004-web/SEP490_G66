@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { register } from '../../services/authService';
-import { validatePhone, validatePassword, requiredMessage, isRequiredEmpty, validateEmail } from '../../utils/validation';
+import { VERIFICATION_METHOD, VERIFICATION_METHOD_OPTIONS } from '../../utils/messages';
+import { ROUTES } from '../../utils/routes';
+import { validatePhone, validatePassword, requiredMessage, isRequiredEmpty, validateEmail, normalizePhone } from '../../utils/validation';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -16,7 +18,8 @@ const Register = () => {
     phone: '',
     email: '',
     password: '',
-    confirm_password: ''
+    confirm_password: '',
+    method: VERIFICATION_METHOD.SMS
   });
 
   const [errors, setErrors] = useState({});
@@ -41,6 +44,8 @@ const Register = () => {
     
     const emailErr = validateEmail(values.email);
     if (emailErr) newErrors.email = emailErr;
+    // The OTP can only go to the email when one is given.
+    else if (values.method === VERIFICATION_METHOD.EMAIL && isRequiredEmpty(values.email)) newErrors.email = requiredMessage("email");
     
     const passErr = validatePassword(values.password);
     if (passErr) newErrors.password = passErr;
@@ -67,18 +72,31 @@ const Register = () => {
     setLoading(true);
     
     try {
+      const phone = normalizePhone(values.phone);
       const result = await register({
         fullname: values.fullname,
         birthdate: values.birthdate,
         gender: values.gender,
-        phone: values.phone.replace(/\s/g, ""), // Normalize phone
+        phone,
         email: values.email,
-        password: values.password
+        password: values.password,
+        confirmPassword: values.confirm_password,
+        method: values.method
       });
 
       if (result.success) {
-        toast.success("Đăng ký thành công!");
-        navigate('/login');
+        // The account is activated only after the OTP is verified on the next screen.
+        toast.success(result.message);
+        navigate(ROUTES.VERIFY_OTP, {
+          state: {
+            flow: 'register',
+            phone,
+            method: values.method,
+            sessionId: result.data.sessionId,
+            maskedDestination: result.data.maskedDestination,
+            resendAvailableAt: result.data.resendAvailableAt
+          }
+        });
       } else {
         toast.error(result.message);
       }
@@ -212,6 +230,27 @@ const Register = () => {
                 error={errors.confirm_password}
                 required
               />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-label text-ink mb-1.5">
+                Nhận mã xác minh qua <span className="text-danger-solid">*</span>
+              </label>
+              <div className="flex items-center gap-6 h-11">
+                {VERIFICATION_METHOD_OPTIONS.map((option) => (
+                  <label key={option.value} className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="method"
+                      value={option.value}
+                      checked={values.method === option.value}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-primary bg-canvas border-border-strong focus:ring-primary focus:ring-offset-1 transition-all"
+                    />
+                    <span className="text-body-sm text-ink group-hover:text-primary transition-colors">{option.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
           </div>
