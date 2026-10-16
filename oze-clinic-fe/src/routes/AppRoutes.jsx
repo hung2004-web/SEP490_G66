@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppLayout from "../layouts/AppLayout";
 import MainLayout from "../layouts/MainLayout";
 import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
 import HomePage from "../pages/common/homepage/HomePage";
@@ -10,7 +11,10 @@ import AboutUs from "../pages/common/homepage/AboutUs";
 import ContactPage from "../pages/common/ContactPage";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
+import useSession from "../hooks/useSession";
+import { USER_ROLES } from "../utils/messages";
 import { ROUTES } from "../utils/routes";
+import RequireRole from "./RequireRole";
 
 const routes = [
     {
@@ -55,19 +59,61 @@ const routes = [
     }
 ]
 
+const sessionRoutes = [
+    {
+        path: ROUTES.BOOK_APPOINTMENT,
+        element: <GlobalException code={404} />
+    }
+]
+
+const sharedRoutes = [
+    {
+        path: ROUTES.DASHBOARD,
+        element: <GlobalException code={404} />
+    },
+    {
+        path: ROUTES.PROFILE,
+        element: <GlobalException code={404} />
+    },
+    {
+        path: ROUTES.CHANGE_PASSWORD,
+        element: <GlobalException code={404} />
+    }
+]
+
+const patientRoutes = [ROUTES.APPOINTMENTS, ROUTES.TREATMENT_PLANS, ROUTES.MEDICAL_RECORD, ROUTES.INVOICES].map((path) => ({
+    path: `${path}/*`,
+    element: <GlobalException code={404} />
+}))
+
+const renderRoutes = (list) =>
+    list.map((route) => (
+        <Route
+            key={route.path}
+            path={route.path}
+            element={route.element}
+        />
+    ));
+
 function AppRoutes() {
+    const { token } = useSession();
+
     return (
-        <BrowserRouter>
+        <BrowserRouter useTransitions={false}>
             <GlobalErrorListener />
             <Routes>
                 <Route element={<MainLayout />}>
-                    {routes.map((route, index) => (
-                        <Route
-                            key={index}
-                            path={route.path}
-                            element={route.element}
-                        />
-                    ))}
+                    {renderRoutes(routes)}
+                    {!token && renderRoutes(sessionRoutes)}
+                </Route>
+                <Route element={<RequireRole />}>
+                    <Route element={<AppLayout />}>
+                        {token && renderRoutes(sessionRoutes)}
+                        {renderRoutes(sharedRoutes)}
+                        <Route element={<RequireRole roles={[USER_ROLES.PATIENT]} />}>
+                            {renderRoutes(patientRoutes)}
+                        </Route>
+                    </Route>
                 </Route>
             </Routes>
         </BrowserRouter>
