@@ -22,70 +22,6 @@ namespace OZE.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("IX_AspNetRoles_NormalizedName")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
-
-                    b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "8d04dce2-969a-435d-bba4-df3f325983dc",
-                            ConcurrencyStamp = "f0a1b2c3-0001-4000-8000-000000000001",
-                            Name = "Patient",
-                            NormalizedName = "PATIENT"
-                        },
-                        new
-                        {
-                            Id = "a1f4c1b5-7b2e-4c6e-9f3a-2d5e8b7c9a01",
-                            ConcurrencyStamp = "f0a1b2c3-0002-4000-8000-000000000002",
-                            Name = "Doctor",
-                            NormalizedName = "DOCTOR"
-                        },
-                        new
-                        {
-                            Id = "b2e5d2c6-8c3f-4d7f-a04b-3e6f9c8dab02",
-                            ConcurrencyStamp = "f0a1b2c3-0003-4000-8000-000000000003",
-                            Name = "Receptionist",
-                            NormalizedName = "RECEPTIONIST"
-                        },
-                        new
-                        {
-                            Id = "c3f6e3d7-9d40-4e80-b15c-4f70ad9ebc03",
-                            ConcurrencyStamp = "f0a1b2c3-0004-4000-8000-000000000004",
-                            Name = "DentalImagingTechnician",
-                            NormalizedName = "DENTALIMAGINGTECHNICIAN"
-                        },
-                        new
-                        {
-                            Id = "d4071408-ae51-4f91-a26d-5081beafcd04",
-                            ConcurrencyStamp = "f0a1b2c3-0005-4000-8000-000000000005",
-                            Name = "ClinicManager",
-                            NormalizedName = "CLINICMANAGER"
-                        });
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
@@ -202,6 +138,102 @@ namespace OZE.Persistence.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.ApplicationRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AspNetRoles_NormalizedName")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "8d04dce2-969a-435d-bba4-df3f325983dc",
+                            ConcurrencyStamp = "f0a1b2c3-0001-4000-8000-000000000001",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "A person receiving dental care at the clinic who has a patient account.",
+                            IsActive = true,
+                            Name = "Patient",
+                            NormalizedName = "PATIENT"
+                        },
+                        new
+                        {
+                            Id = "a1f4c1b5-7b2e-4c6e-9f3a-2d5e8b7c9a01",
+                            ConcurrencyStamp = "f0a1b2c3-0002-4000-8000-000000000002",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "A dentist who examines patients, makes diagnoses and provides treatment.",
+                            IsActive = true,
+                            Name = "Doctor",
+                            NormalizedName = "DOCTOR"
+                        },
+                        new
+                        {
+                            Id = "b2e5d2c6-8c3f-4d7f-a04b-3e6f9c8dab02",
+                            ConcurrencyStamp = "f0a1b2c3-0003-4000-8000-000000000003",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "A staff member who handles patient reception and front-desk operations.",
+                            IsActive = true,
+                            Name = "Receptionist",
+                            NormalizedName = "RECEPTIONIST"
+                        },
+                        new
+                        {
+                            Id = "c3f6e3d7-9d40-4e80-b15c-4f70ad9ebc03",
+                            ConcurrencyStamp = "f0a1b2c3-0004-4000-8000-000000000004",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "A staff member who carries out dental imaging work and records the results.",
+                            IsActive = true,
+                            Name = "DentalImagingTechnician",
+                            NormalizedName = "DENTALIMAGINGTECHNICIAN"
+                        },
+                        new
+                        {
+                            Id = "d4071408-ae51-4f91-a26d-5081beafcd04",
+                            ConcurrencyStamp = "f0a1b2c3-0005-4000-8000-000000000005",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "A staff member who oversees the clinic's daily operations.",
+                            IsActive = true,
+                            Name = "ClinicManager",
+                            NormalizedName = "CLINICMANAGER"
+                        });
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.ApplicationUser", b =>
@@ -2145,7 +2177,7 @@ namespace OZE.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("OZE.Domain.Entities.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2175,7 +2207,7 @@ namespace OZE.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("OZE.Domain.Entities.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)

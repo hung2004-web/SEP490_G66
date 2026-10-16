@@ -6,7 +6,7 @@ using OZE.Persistence.Configurations;
 
 namespace OZE.Persistence.DbContexts
 {
-    public class AppIdentityDbContext : IdentityDbContext<ApplicationUser>
+    public class AppIdentityDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
     {
         public AppIdentityDbContext(DbContextOptions<AppIdentityDbContext> options) : base(options)
         {

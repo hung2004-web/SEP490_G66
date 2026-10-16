@@ -112,6 +112,22 @@ namespace OZE.Common.Constants
             public const string UpdateFailed = "Update staff failed";
             public const string CreateFailed = "Create staff failed";
         }
+        // Manage Role. Texts follow the System Messages table of SRS Report 3.
+        public static class RoleMessage
+        {
+            // MSG07
+            public const string NameRequired = "Please enter role name.";
+            // MSG66
+            public const string NameInvalid = "Role name is invalid. Please check again.";
+            public const string DescriptionInvalid = "Description is invalid. Please check again.";
+            // MSG68
+            public const string RoleExist = "Role already exists in the system.";
+            // MSG63
+            public const string RoleCreated = "Create role success!";
+            // TODO(spec): the messages below have no System Message code in the SRS yet.
+            public const string CreateFailed = "Create role failed";
+        }
+
         public static class WorkShiftMessage
         {
             public const string StaffNotFound = "Staff not found";
@@ -125,6 +141,8 @@ namespace OZE.Common.Constants
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
             public const string ShiftAlreadyStarted = "Cannot delete a work shift that has already started or passed";
             public const string ShiftHasAppointments = "Cannot delete this work shift because it has booked appointments. Please move the appointments first";
+            public const string CannotUpdateStartedShift = "Cannot update a work shift that has already started or passed";
+            public const string ShiftHasAppointmentsCannotChange = "Cannot change staff, date or time of this work shift because it has booked appointments. Please move the appointments first";
         }
         public static class Common
         {
