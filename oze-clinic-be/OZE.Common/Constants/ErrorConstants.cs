@@ -122,6 +122,8 @@ namespace OZE.Common.Constants
             public const string DescriptionInvalid = "Description is invalid. Please check again.";
             // MSG68
             public const string RoleExist = "Role already exists in the system.";
+            // MSG67
+            public const string RoleNotFound = "Role not found.";
             // MSG63
             public const string RoleCreated = "Create role success!";
             // TODO(spec): the messages below have no System Message code in the SRS yet.

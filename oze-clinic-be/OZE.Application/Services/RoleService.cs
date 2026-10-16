@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
+using OZE.Common.Exceptions;
 using OZE.Common.Models;
 using OZE.Domain.Entities;
 
@@ -10,10 +11,24 @@ namespace OZE.Application.Services
     public class RoleService : IRoleService
     {
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly IRoleRepository _roleRepository;
 
-        public RoleService(RoleManager<ApplicationRole> roleManager)
+        public RoleService(RoleManager<ApplicationRole> roleManager, IRoleRepository roleRepository)
         {
             _roleManager = roleManager;
+            _roleRepository = roleRepository;
+        }
+
+        public async Task<List<RoleResponse>> GetRolesAsync(RoleQueryRequest query)
+        {
+            return await _roleRepository.GetAllAsync(query);
+        }
+
+        public async Task<RoleResponse> GetRoleAsync(string id)
+        {
+            var role = await _roleRepository.GetByIdAsync(id);
+            ConditionGuard.Ensure<NotFoundException>(role != null, ErrorConstants.RoleMessage.RoleNotFound);
+            return role!;
         }
 
         public async Task<RoleResponse> CreateRoleAsync(CreateRoleRequest request)
