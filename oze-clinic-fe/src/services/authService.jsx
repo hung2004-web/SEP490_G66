@@ -1,12 +1,14 @@
+<<<<<<< HEAD
 import api from "./api";
 import { MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
 import { findMockUserByPhone } from "../utils/data/mockData";
+=======
+import { MESSAGES, USER_ROLES } from "../utils/messages";
+import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
+>>>>>>> main
 import { invalidMessage } from "../utils/validation";
+import { clearSession, saveSession } from "./sessionStore";
 
-// Mock cases until the real API is wired:
-// - phone "0900000000"                        -> account locked (MSG26)
-// - any other phone, password not "12345678"  -> wrong password (MSG24)
-// - any other phone, password "12345678"      -> success
 const MOCK_LOCKED_PHONE = "0900000000";
 const MOCK_PASSWORD = "12345678";
 const MOCK_DELAY_MS = 800;
@@ -35,38 +37,21 @@ const mockSignIn = async ({ phone, password }) => {
     };
 };
 
-const ACCESS_TOKEN_KEY = "accessToken";
-const USER_NAME_KEY = "userFullName";
-
-const rememberUserName = (phone) => {
-    const fullName = findMockUserByPhone(phone)?.fullname;
-    if (fullName) localStorage.setItem(USER_NAME_KEY, fullName);
-    else localStorage.removeItem(USER_NAME_KEY);
-};
-
-// Returns the ApiResponse shape: { success, message, data: { token, refreshToken, expiresAt }, errors }.
 export const signIn = async ({ phone, password }) => {
-    // TODO: replace mockSignIn with the shared axios instance from "./api", e.g. api.post(<login endpoint>, ...).
-    // Catch axios errors and return error.response.data so screens keep the same response shape.
-    // TODO(spec): the SRS (UC-04, FR 2.1) signs in with phone number, but the backend login model uses email.
-    // The team must align the backend contract before wiring.
     const result = await mockSignIn({ phone, password });
 
     if (result.success) {
-        // Same key src/services/api.jsx reads for the Authorization header.
-        localStorage.setItem(ACCESS_TOKEN_KEY, result.data.token);
-        rememberUserName(phone);
+        saveSession({
+            token: result.data.token,
+            userName: findMockUserByPhone(phone)?.fullname,
+            role: USER_ROLES.PATIENT,
+        });
     }
 
     return result;
 };
 
-export const getSessionUserName = () => localStorage.getItem(USER_NAME_KEY);
-
-export const signOut = () => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(USER_NAME_KEY);
-};
+export const signOut = () => clearSession();
 
 const GENERIC_ERROR = "Có lỗi xảy ra, vui lòng thử lại sau.";
 

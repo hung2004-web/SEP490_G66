@@ -15,6 +15,11 @@ export const ROUTES = {
     BOOK_APPOINTMENT: "/book-appointment",
     PROFILE: "/profile",
     CHANGE_PASSWORD: "/change-password",
+    DASHBOARD: "/dashboard",
+    APPOINTMENTS: "/appointments",
+    TREATMENT_PLANS: "/treatment-plans",
+    MEDICAL_RECORD: "/medical-record",
+    INVOICES: "/invoices",
     ERROR: "/error/:code",
 };
 
@@ -22,7 +27,4 @@ export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_
 
 export const getErrorRoute = (code) => generatePath(ROUTES.ERROR, { code: String(code) });
 
-// TODO(spec): BR-001/UC-04 say Home Page, the screen flow says Patient Dashboard, and staff
-// destinations are not defined. The role source is also not defined in the login response.
-// eslint-disable-next-line no-unused-vars
-export const getPostLoginRoute = (role) => ROUTES.HOME;
+export const getPostLoginRoute = () => ROUTES.DASHBOARD;
