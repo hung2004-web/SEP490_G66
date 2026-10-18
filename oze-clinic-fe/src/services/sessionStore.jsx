@@ -43,6 +43,13 @@ export const saveSession = ({ token, userName, role }) => {
     notify();
 };
 
+// After the user edits their own profile, so the header shows the new name.
+export const updateSessionUserName = (userName) => {
+    if (!getSessionToken()) return;
+    writeItem(USER_NAME_KEY, userName);
+    notify();
+};
+
 export const subscribeToSession = (onChange) => {
     const listener = () => onChange();
     listeners.add(listener);

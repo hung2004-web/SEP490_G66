@@ -1,6 +1,6 @@
 import api from "./api";
 import { MESSAGES, USER_ROLES, VERIFICATION_METHOD } from "../utils/messages";
-import { findMockUserByPhone } from "../utils/data/mockData";
+import { findMockUserByPhone, setMockCurrentUserId } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
 import { clearSession, saveSession } from "./sessionStore";
 
@@ -18,7 +18,9 @@ const mockSignIn = async ({ phone, password }) => {
     await wait(MOCK_DELAY_MS);
 
     if (phone === MOCK_LOCKED_PHONE) return failure(MESSAGES.MSG26);
-    if (password !== MOCK_PASSWORD) return failure(MESSAGES.MSG24);
+    // Users from mockData sign in with their own password; any other phone still uses MOCK_PASSWORD.
+    const user = findMockUserByPhone(phone);
+    if (password !== (user?.password ?? MOCK_PASSWORD)) return failure(MESSAGES.MSG24);
 
     return {
         success: true,
@@ -36,17 +38,22 @@ export const signIn = async ({ phone, password }) => {
     const result = await mockSignIn({ phone, password });
 
     if (result.success) {
+        const user = findMockUserByPhone(phone);
+        setMockCurrentUserId(user?.id);
         saveSession({
             token: result.data.token,
-            userName: findMockUserByPhone(phone)?.fullname,
-            role: USER_ROLES.PATIENT,
+            userName: user?.fullname,
+            role: user?.role ?? USER_ROLES.PATIENT,
         });
     }
 
     return result;
 };
 
-export const signOut = () => clearSession();
+export const signOut = () => {
+    setMockCurrentUserId(null);
+    clearSession();
+};
 
 const GENERIC_ERROR = "Có lỗi xảy ra, vui lòng thử lại sau.";
 
