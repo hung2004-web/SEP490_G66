@@ -1,12 +1,14 @@
 import { useEffect, useId, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import {
+    CalendarClock,
     CalendarDays,
     CalendarPlus,
     ClipboardList,
     FileText,
     KeyRound,
     LayoutDashboard,
+    ListOrdered,
     Receipt,
     User,
     X,
@@ -30,6 +32,24 @@ const ROLE_GROUPS = {
                 { key: "treatment-plans", label: "Kế hoạch điều trị", icon: ClipboardList, to: ROUTES.TREATMENT_PLANS },
                 { key: "medical-record", label: "Hồ sơ bệnh án", icon: FileText, to: ROUTES.MEDICAL_RECORD },
                 { key: "invoices", label: "Hóa đơn", icon: Receipt, to: ROUTES.INVOICES },
+            ],
+        },
+        {
+            key: "account",
+            label: "Tài khoản",
+            items: [
+                { key: "profile", label: "Hồ sơ cá nhân", icon: User, to: ROUTES.PROFILE },
+                { key: "change-password", label: "Đổi mật khẩu", icon: KeyRound, to: ROUTES.CHANGE_PASSWORD },
+            ],
+        },
+    ],
+    [USER_ROLES.DOCTOR]: [
+        {
+            key: "main",
+            items: [
+                { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard, to: ROUTES.DASHBOARD },
+                { key: "queue", label: "Hàng chờ khám", icon: ListOrdered, to: ROUTES.QUEUE },
+                { key: "work-shifts", label: "Ca làm việc", icon: CalendarClock, to: ROUTES.WORK_SHIFTS },
             ],
         },
         {
@@ -182,7 +202,7 @@ const SidebarDrawer = ({ id, groups, onClose, returnFocusRef }) => {
 
 const Sidebar = ({ id, drawer = false, collapsed = false, onClose, returnFocusRef }) => {
     const { role } = useSession();
-    const groups = ROLE_GROUPS[role] ?? [];
+    const groups = Object.hasOwn(ROLE_GROUPS, role) ? ROLE_GROUPS[role] : [];
 
     if (drawer) return <SidebarDrawer id={id} groups={groups} onClose={onClose} returnFocusRef={returnFocusRef} />;
 
