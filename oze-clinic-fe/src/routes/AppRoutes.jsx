@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import AppLayout from "../layouts/AppLayout";
 import MainLayout from "../layouts/MainLayout";
 import ForgotPasswordPage from "../pages/common/ForgotPasswordPage";
@@ -13,7 +13,7 @@ import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
 import { USER_ROLES } from "../utils/messages";
-import { ROUTES } from "../utils/routes";
+import { ROUTES, getErrorRoute } from "../utils/routes";
 import RequireRole from "./RequireRole";
 
 const routes = [
@@ -86,6 +86,22 @@ const patientRoutes = [ROUTES.APPOINTMENTS, ROUTES.TREATMENT_PLANS, ROUTES.MEDIC
     element: <GlobalException code={404} />
 }))
 
+const rolePages = {
+    [ROUTES.QUEUE]: { [USER_ROLES.DOCTOR]: <GlobalException code={404} /> },
+    [ROUTES.WORK_SHIFTS]: { [USER_ROLES.DOCTOR]: <GlobalException code={404} /> }
+}
+
+const RolePage = ({ pages }) => {
+    const { role } = useSession();
+
+    return Object.hasOwn(pages, role) ? pages[role] : <Navigate to={getErrorRoute(403)} replace />;
+}
+
+const roleRoutes = Object.entries(rolePages).map(([path, pages]) => ({
+    path: `${path}/*`,
+    element: <RolePage pages={pages} />
+}))
+
 const renderRoutes = (list) =>
     list.map((route) => (
         <Route
@@ -110,6 +126,7 @@ function AppRoutes() {
                     <Route element={<AppLayout />}>
                         {token && renderRoutes(sessionRoutes)}
                         {renderRoutes(sharedRoutes)}
+                        {renderRoutes(roleRoutes)}
                         <Route element={<RequireRole roles={[USER_ROLES.PATIENT]} />}>
                             {renderRoutes(patientRoutes)}
                         </Route>

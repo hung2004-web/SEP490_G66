@@ -20,6 +20,8 @@ export const ROUTES = {
     TREATMENT_PLANS: "/treatment-plans",
     MEDICAL_RECORD: "/medical-record",
     INVOICES: "/invoices",
+    QUEUE: "/queue",
+    WORK_SHIFTS: "/work-shifts",
     ERROR: "/error/:code",
 };
 
