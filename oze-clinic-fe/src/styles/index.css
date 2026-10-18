@@ -324,8 +324,8 @@
   .skeleton { @apply animate-pulse rounded-md bg-surface-muted; }
 
   /* ---------- Avatar ---------- */
-  .avatar { @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-caption font-semibold text-primary; }
-  .avatar-lg { @apply size-10; }
+  .avatar { @apply inline-flex size-8 shrink-0 select-none items-center justify-center rounded-full bg-primary font-heading text-title leading-none text-on-primary shadow-sm ring-2 ring-canvas; }
+  .avatar-lg { @apply size-10 text-body-md font-semibold; }
 }
 
 .root{

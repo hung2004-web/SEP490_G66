@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, NavLink, matchPath, useLocation, useNavigate } from "react-router-dom";
-import { Bell, BellOff, ChevronDown, ChevronLeft, ChevronRight, Info, Menu, PanelLeft, User, X } from "lucide-react";
+import { Bell, BellOff, ChevronDown, ChevronLeft, ChevronRight, Info, Menu, PanelLeft, X } from "lucide-react";
 import LogoOze from "@/assets/logo/Logo-OZE-ngang.png";
+import Avatar from "@/components/ui/Avatar";
 import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
 import { signOut } from "@/services/authService";
@@ -662,9 +663,7 @@ const UserMenu = ({ open, onOpenChange }) => {
                 aria-controls={USER_MENU_ID}
                 onClick={() => onOpenChange(!open)}
             >
-                <span className="avatar">
-                    <User className="size-4" aria-hidden="true" />
-                </span>
+                <Avatar fullName={userName} />
                 <span title={label} className="hidden max-w-40 truncate text-label sm:block">
                     {label}
                 </span>

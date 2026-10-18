@@ -48,7 +48,13 @@ export const CLINIC_MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURICo
 
 export const CONSULTATION_NOTE_MAX_LENGTH = 500;
 
-export const USER_ROLES = { PATIENT: "patient" };
+export const USER_ROLES = {
+    PATIENT: "patient",
+    DOCTOR: "doctor",
+    DENTAL_IMAGING_TECHNICIAN: "dental_imaging_technician",
+    RECEPTIONIST: "receptionist",
+    CLINIC_MANAGER: "clinic_manager",
+};
 
 export const GUEST_HEADER_TEXT = {
     LOGO_ALT: "OZE Dental",
