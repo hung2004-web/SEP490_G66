@@ -11,7 +11,7 @@ namespace OZE.Application.Interfaces
     {
         Task<WorkShipResponse> CreateWorkShipAsync(CreateWorkShiftRequest request);
         Task<List<WorkShipResponse>> GetWorkShiftsAsync(WorkShiftQueryRequest query);
-        Task<WorkShipResponse> GetWorkShiftByIdAsync(long id);
+        Task<WorkShipResponse> GetWorkShiftByIdAsync(long id);  
         Task<WorkShipResponse> UpdateWorkShiftAsync(long id, UpdateWorkShiftRequest request);
         Task DeleteWorkShiftAsync(long id);
     }
