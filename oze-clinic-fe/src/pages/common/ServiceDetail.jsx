@@ -1,11 +1,10 @@
 import { Quote } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import SectionHeading from "@/components/ui/SectionHeading";
 import useAsync from "@/hooks/useAsync";
-import GlobalException from "@/pages/globalException/GlobalException";
 import { getServiceDetail } from "@/services/dentalService";
-import { ROUTES } from "@/utils/routes";
+import { ROUTES, getErrorRoute } from "@/utils/routes";
 
 const SECTION_CLASS = "container-public flex flex-col gap-10 py-12 md:py-16";
 
@@ -104,7 +103,7 @@ const ServiceDetail = () => {
     const { loading, value } = useAsync(() => getServiceDetail(serviceId), [serviceId]);
 
     if (loading) return <ServiceDetailSkeleton />;
-    if (!value?.success) return <GlobalException code={404} />;
+    if (!value?.success) return <Navigate to={getErrorRoute(404)} replace />;
 
     const service = value.data;
     const breadcrumbItems = [

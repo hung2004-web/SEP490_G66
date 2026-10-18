@@ -1,7 +1,8 @@
 import { Component } from "react";
-import GlobalException from "../../pages/globalException/GlobalException";
+import { Navigate } from "react-router-dom";
+import { getErrorRoute } from "../../utils/routes";
 
-// Catches render errors in the page below it and shows the 500 page instead of a blank screen.
+// Catches render errors in the page below it and goes to the 500 page (outside the layout) instead of a blank screen.
 // Give it key={pathname} so moving to another page resets it.
 class ErrorBoundary extends Component {
     state = { hasError: false };
@@ -15,7 +16,7 @@ class ErrorBoundary extends Component {
     }
 
     render() {
-        if (this.state.hasError) return <GlobalException code={500} />;
+        if (this.state.hasError) return <Navigate to={getErrorRoute(500)} replace />;
         return this.props.children;
     }
 }

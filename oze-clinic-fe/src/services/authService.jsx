@@ -1,6 +1,6 @@
 import api from "./api";
 import { MESSAGES, USER_ROLES, VERIFICATION_METHOD } from "../utils/messages";
-import { findMockUserByPhone } from "../utils/data/mockData";
+import { findMockUserByPhone, setMockCurrentUserId } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
 import { clearSession, saveSession } from "./sessionStore";
 
@@ -39,6 +39,7 @@ export const signIn = async ({ phone, password }) => {
 
     if (result.success) {
         const user = findMockUserByPhone(phone);
+        setMockCurrentUserId(user?.id);
         saveSession({
             token: result.data.token,
             userName: user?.fullname,
@@ -49,7 +50,10 @@ export const signIn = async ({ phone, password }) => {
     return result;
 };
 
-export const signOut = () => clearSession();
+export const signOut = () => {
+    setMockCurrentUserId(null);
+    clearSession();
+};
 
 const GENERIC_ERROR = "Có lỗi xảy ra, vui lòng thử lại sau.";
 

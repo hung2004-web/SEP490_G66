@@ -3,7 +3,8 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Card from "@/components/ui/Card";
 import { toast } from "react-toastify";
 import { requestPasswordReset, resendRegisterOtp, verifyOtp, verifyRegisterOtp } from "../../services/authService";
-import { OTP_LENGTH, OTP_RESEND_SECONDS } from "../../utils/messages";
+import { cancelProfileOtp, hasPendingProfileChanges, resendProfileOtp, verifyProfileOtp } from "../../services/profileService";
+import { OTP_LENGTH, OTP_RESEND_SECONDS, PROFILE_MESSAGES } from "../../utils/messages";
 import { ROUTES } from "../../utils/routes";
 import { invalidMessage, requiredMessage } from "../../utils/validation";
 
@@ -35,9 +36,13 @@ const VerifyOtpPage = () => {
         return () => clearTimeout(timeoutId);
     }, [secondsLeft]);
 
-    // Used by Forgot Password and by Register (state.flow === "register", identified by the backend sessionId).
+    // Used by Forgot Password, by Register (state.flow === "register", identified by the backend sessionId)
+    // and by Profile (state.flow === "profile", the changes wait in profileService until the code is verified).
     const isRegister = state?.flow === "register";
-    if (isRegister ? !state.sessionId : !state?.phone || !state?.method) {
+    const isProfile = state?.flow === "profile";
+    if (isProfile) {
+        if (!hasPendingProfileChanges()) return <Navigate to={ROUTES.PROFILE} replace />;
+    } else if (isRegister ? !state.sessionId : !state?.phone || !state?.method) {
         return <Navigate to={isRegister ? ROUTES.REGISTER : ROUTES.FORGOT_PASSWORD} replace />;
     }
 
@@ -97,9 +102,10 @@ const VerifyOtpPage = () => {
 
         setResending(true);
         try {
-            const result = isRegister
-                ? await resendRegisterOtp({ sessionId })
-                : await requestPasswordReset({ phone, method });
+            let result;
+            if (isProfile) result = await resendProfileOtp();
+            else if (isRegister) result = await resendRegisterOtp({ sessionId });
+            else result = await requestPasswordReset({ phone, method });
             if (result.success) {
                 setDigits(EMPTY_CODE);
                 setCodeError(undefined);
@@ -111,6 +117,12 @@ const VerifyOtpPage = () => {
         } finally {
             setResending(false);
         }
+    };
+
+    // Drops the pending profile changes; nothing was saved.
+    const handleCancelProfile = () => {
+        cancelProfileOtp();
+        navigate(ROUTES.PROFILE, { replace: true });
     };
 
     const handleSubmit = async (event) => {
@@ -131,6 +143,18 @@ const VerifyOtpPage = () => {
 
         setLoading(true);
         try {
+            if (isProfile) {
+                const result = await verifyProfileOtp({ code });
+                if (result.success) {
+                    toast.success(PROFILE_MESSAGES.UPDATE_SUCCESS);
+                    navigate(ROUTES.PROFILE, { replace: true });
+                    return;
+                }
+                setCodeError(result.message);
+                focusBox(0);
+                return;
+            }
+
             if (isRegister) {
                 const result = await verifyRegisterOtp({ sessionId, code });
                 if (result.success) {
@@ -160,7 +184,9 @@ const VerifyOtpPage = () => {
             <Card variant="auth" className="w-full max-w-md">
                 <h1 className="auth-title">Nhập mã xác minh (OTP)</h1>
                 <p className="auth-subtitle">
-                    Mã xác minh gồm 6 chữ số vừa được gửi{maskedDestination ? ` đến ${maskedDestination}` : ""}. Vui lòng nhập mã để tiếp tục.
+                    {isProfile
+                        ? `Mã xác minh gồm 6 chữ số vừa được gửi đến ${state.isEmail ? "email" : "số điện thoại"} ${maskedDestination}. Vui lòng nhập mã để xác nhận thay đổi thông tin cá nhân.`
+                        : `Mã xác minh gồm 6 chữ số vừa được gửi${maskedDestination ? ` đến ${maskedDestination}` : ""}. Vui lòng nhập mã để tiếp tục.`}
                 </p>
 
                 <form noValidate onSubmit={handleSubmit}>
@@ -223,6 +249,17 @@ const VerifyOtpPage = () => {
                         {loading && <span className="btn-spinner" aria-hidden="true" />}
                         {loading ? "Đang xác nhận..." : "Xác nhận và tiếp tục"}
                     </button>
+
+                    {isProfile && (
+                        <button
+                            type="button"
+                            disabled={busy}
+                            className="btn btn-secondary btn-lg mt-3 w-full"
+                            onClick={handleCancelProfile}
+                        >
+                            Hủy thay đổi
+                        </button>
+                    )}
                 </form>
             </Card>
         </section>

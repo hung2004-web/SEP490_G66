@@ -1,14 +1,25 @@
 import { useEffect, useId, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import {
+    CalendarClock,
     CalendarDays,
     CalendarPlus,
+    ChartColumn,
     ClipboardList,
+    DoorOpen,
     FileText,
+    Images,
     KeyRound,
     LayoutDashboard,
+    MessageSquareText,
     Receipt,
+    ScanLine,
+    ShieldCheck,
+    Stethoscope,
     User,
+    UserCheck,
+    UserCog,
+    Users,
     X,
 } from "lucide-react";
 import useSession from "@/hooks/useSession";
@@ -19,12 +30,83 @@ import { ROUTES } from "@/utils/routes";
 const FOCUSABLE_SELECTOR = "a[href], button:not([disabled])";
 const SCROLL_LOCK_CLASS = "overflow-hidden";
 
+const ACCOUNT_GROUP = {
+    key: "account",
+    label: "Tài khoản",
+    items: [
+        { key: "profile", label: "Hồ sơ cá nhân", icon: User, to: ROUTES.PROFILE },
+        { key: "change-password", label: "Đổi mật khẩu", icon: KeyRound, to: ROUTES.CHANGE_PASSWORD },
+    ],
+};
+
+const DASHBOARD_ITEM = { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard, to: ROUTES.DASHBOARD };
+const WORK_SCHEDULE_ITEM = { key: "work-schedule", label: "Lịch làm việc", icon: CalendarClock, to: ROUTES.WORK_SCHEDULE };
+
 const ROLE_GROUPS = {
+    [USER_ROLES.DOCTOR]: [
+        {
+            key: "main",
+            items: [
+                DASHBOARD_ITEM,
+                { key: "appointments", label: "Lịch hẹn khám", icon: CalendarDays, to: ROUTES.DOCTOR_APPOINTMENTS },
+                { key: "patients", label: "Bệnh nhân", icon: Users, to: ROUTES.DOCTOR_PATIENTS },
+                { key: "treatment-plans", label: "Kế hoạch điều trị", icon: ClipboardList, to: ROUTES.DOCTOR_TREATMENT_PLANS },
+                { key: "imaging-requests", label: "Yêu cầu chụp phim", icon: ScanLine, to: ROUTES.DOCTOR_IMAGING_REQUESTS },
+                WORK_SCHEDULE_ITEM,
+            ],
+        },
+        ACCOUNT_GROUP,
+    ],
+    [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: [
+        {
+            key: "main",
+            items: [
+                DASHBOARD_ITEM,
+                { key: "imaging-requests", label: "Yêu cầu chụp phim", icon: ScanLine, to: ROUTES.TECHNICIAN_IMAGING_REQUESTS },
+                { key: "imaging-results", label: "Kết quả hình ảnh", icon: Images, to: ROUTES.TECHNICIAN_IMAGING_RESULTS },
+                WORK_SCHEDULE_ITEM,
+            ],
+        },
+        ACCOUNT_GROUP,
+    ],
+    [USER_ROLES.RECEPTIONIST]: [
+        {
+            key: "main",
+            items: [
+                DASHBOARD_ITEM,
+                { key: "appointments", label: "Quản lý lịch hẹn", icon: CalendarDays, to: ROUTES.RECEPTION_APPOINTMENTS },
+                { key: "check-in", label: "Tiếp đón bệnh nhân", icon: UserCheck, to: ROUTES.RECEPTION_CHECK_IN },
+                { key: "patients", label: "Bệnh nhân", icon: Users, to: ROUTES.RECEPTION_PATIENTS },
+                { key: "consultations", label: "Yêu cầu tư vấn", icon: MessageSquareText, to: ROUTES.RECEPTION_CONSULTATIONS },
+                { key: "invoices", label: "Thanh toán", icon: Receipt, to: ROUTES.RECEPTION_INVOICES },
+                WORK_SCHEDULE_ITEM,
+            ],
+        },
+        ACCOUNT_GROUP,
+    ],
+    [USER_ROLES.CLINIC_MANAGER]: [
+        {
+            key: "main",
+            items: [DASHBOARD_ITEM, { key: "reports", label: "Báo cáo", icon: ChartColumn, to: ROUTES.ADMIN_REPORTS }],
+        },
+        {
+            key: "management",
+            label: "Quản lý",
+            items: [
+                { key: "staff", label: "Nhân viên", icon: UserCog, to: ROUTES.ADMIN_STAFF },
+                { key: "roles", label: "Vai trò", icon: ShieldCheck, to: ROUTES.ADMIN_ROLES },
+                { key: "work-shifts", label: "Ca làm việc", icon: CalendarClock, to: ROUTES.ADMIN_WORK_SHIFTS },
+                { key: "rooms", label: "Phòng khám", icon: DoorOpen, to: ROUTES.ADMIN_ROOMS },
+                { key: "services", label: "Dịch vụ", icon: Stethoscope, to: ROUTES.ADMIN_SERVICES },
+            ],
+        },
+        ACCOUNT_GROUP,
+    ],
     [USER_ROLES.PATIENT]: [
         {
             key: "main",
             items: [
-                { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard, to: ROUTES.DASHBOARD },
+                DASHBOARD_ITEM,
                 { key: "book-appointment", label: "Đặt lịch hẹn", icon: CalendarPlus, to: ROUTES.BOOK_APPOINTMENT },
                 { key: "appointments", label: "Lịch hẹn của tôi", icon: CalendarDays, to: ROUTES.APPOINTMENTS },
                 { key: "treatment-plans", label: "Kế hoạch điều trị", icon: ClipboardList, to: ROUTES.TREATMENT_PLANS },
@@ -32,14 +114,7 @@ const ROLE_GROUPS = {
                 { key: "invoices", label: "Hóa đơn", icon: Receipt, to: ROUTES.INVOICES },
             ],
         },
-        {
-            key: "account",
-            label: "Tài khoản",
-            items: [
-                { key: "profile", label: "Hồ sơ cá nhân", icon: User, to: ROUTES.PROFILE },
-                { key: "change-password", label: "Đổi mật khẩu", icon: KeyRound, to: ROUTES.CHANGE_PASSWORD },
-            ],
-        },
+        ACCOUNT_GROUP,
     ],
 };
 
