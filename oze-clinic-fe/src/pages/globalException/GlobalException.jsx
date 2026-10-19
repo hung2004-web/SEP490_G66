@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import LogoOze from "../../assets/logo/Logo-OZE-ngang.png";
 import { Exception } from "../../utils/globalException";
 import { CLINIC_EMAIL, CLINIC_HOTLINE } from "../../utils/messages";
 import { ROUTES } from "../../utils/routes";
@@ -28,8 +29,11 @@ const GlobalException = ({ code }) => {
     };
 
     return (
-        <div className="bg-surface-tint">
-            <section className="container-public py-12 md:py-16">
+        <div className="flex min-h-dvh items-center bg-surface-tint">
+            <section className="container-public w-full py-12 md:py-16">
+                <Link to={ROUTES.HOME} className="mx-auto mb-8 block w-fit">
+                    <img src={LogoOze} alt="OZE Dental" className="h-9 w-auto" />
+                </Link>
                 <div className="card-public mx-auto max-w-2xl md:p-12">
                     <span className="inline-block rounded-full bg-danger-soft px-3 py-1 text-label text-danger">
                         {error["label-status"]}

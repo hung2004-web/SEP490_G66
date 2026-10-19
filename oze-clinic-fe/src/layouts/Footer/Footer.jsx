@@ -1,4 +1,3 @@
-import React from "react";
 import { MapPin, Phone, Clock, ChevronRight } from "lucide-react";
 import { FaFacebookF, FaTiktok, FaYoutube } from "react-icons/fa";
 import LogoOze from "@/assets/logo/Logo-OZE-ngang.png";

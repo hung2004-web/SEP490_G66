@@ -1,4 +1,4 @@
-import { MOCK_NOTIFICATIONS } from "../utils/mockNotifications";
+import { MOCK_NOTIFICATIONS } from "../utils/data/mockNotifications";
 
 const MOCK_DELAY_MS = 300;
 

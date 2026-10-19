@@ -22,6 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.env
 
 # Local docs (not committed)
 oze-fe-docs/

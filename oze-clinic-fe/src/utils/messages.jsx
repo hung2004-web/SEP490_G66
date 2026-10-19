@@ -14,12 +14,29 @@ export const MESSAGES = {
 // TODO(spec): not in the SRS yet.
 export const PASSWORD_LENGTH = { MIN: 8, MAX: 32 };
 
+// Same limits as UpdateProfileRequest in the backend.
+export const PROFILE_LIMITS = { FULL_NAME_MAX: 100, ADDRESS_MAX: 500 };
+
 // TODO(spec): not in the SRS System Messages table yet; replace with the MSG codes once added.
 export const VALIDATION_MESSAGES = {
     PHONE_INVALID: "Số điện thoại không hợp lệ.",
     PASSWORD_LENGTH: `Mật khẩu phải có từ ${PASSWORD_LENGTH.MIN} đến ${PASSWORD_LENGTH.MAX} ký tự.`,
     EMAIL_INVALID: "Email không hợp lệ.",
+    FULL_NAME_TOO_LONG: `Họ và tên không được vượt quá ${PROFILE_LIMITS.FULL_NAME_MAX} ký tự.`,
+    BIRTHDATE_IN_FUTURE: "Ngày sinh không được lớn hơn ngày hiện tại.",
+    ADDRESS_TOO_LONG: `Địa chỉ không được vượt quá ${PROFILE_LIMITS.ADDRESS_MAX} ký tự.`,
+    PHONE_IN_USE: "Số điện thoại đã được sử dụng bởi tài khoản khác.",
+    EMAIL_IN_USE: "Email đã được sử dụng bởi tài khoản khác.",
 };
+
+// TODO(spec): not in the SRS System Messages table yet.
+export const PROFILE_MESSAGES = {
+    UPDATE_SUCCESS: "Cập nhật thông tin cá nhân thành công!",
+    OTP_SENT: "Mã xác minh đã được gửi. Vui lòng nhập mã để hoàn tất cập nhật.",
+    NO_CHANGES: "Không có thông tin nào thay đổi.",
+};
+
+export const GENDER_LABELS = { male: "Nam", female: "Nữ" };
 
 export const VERIFICATION_METHOD = { SMS: "SMS", EMAIL: "EMAIL" };
 
@@ -48,7 +65,21 @@ export const CLINIC_MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURICo
 
 export const CONSULTATION_NOTE_MAX_LENGTH = 500;
 
-export const USER_ROLES = { PATIENT: "patient", DOCTOR: "doctor" };
+export const USER_ROLES = {
+    PATIENT: "patient",
+    DOCTOR: "doctor",
+    DENTAL_IMAGING_TECHNICIAN: "dental_imaging_technician",
+    RECEPTIONIST: "receptionist",
+    CLINIC_MANAGER: "clinic_manager",
+};
+
+export const ROLE_LABELS = {
+    [USER_ROLES.PATIENT]: "Bệnh nhân",
+    [USER_ROLES.DOCTOR]: "Bác sĩ",
+    [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: "Kỹ thuật viên chẩn đoán hình ảnh",
+    [USER_ROLES.RECEPTIONIST]: "Lễ tân",
+    [USER_ROLES.CLINIC_MANAGER]: "Quản lý phòng khám",
+};
 
 export const GUEST_HEADER_TEXT = {
     LOGO_ALT: "OZE Dental",

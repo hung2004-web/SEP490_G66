@@ -20,12 +20,34 @@ namespace OZE.ProjectBase.Controllers
             _roleService = roleService;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<List<RoleResponse>>>> GetRolesAsync([FromQuery] RoleQueryRequest query)
+        {
+            var roles = await _roleService.GetRolesAsync(query);
+            return Ok(ApiResponse<List<RoleResponse>>.SuccessResult(roles));
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse<RoleResponse>>> GetRoleAsync(string id)
+        {
+            var role = await _roleService.GetRoleAsync(id);
+            return Ok(ApiResponse<RoleResponse>.SuccessResult(role));
+        }
+
         [HttpPost]
         [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<RoleResponse>>> CreateRoleAsync([FromBody] CreateRoleRequest request)
         {
             var role = await _roleService.CreateRoleAsync(request);
             return Ok(ApiResponse<RoleResponse>.SuccessResult(role, ErrorConstants.RoleMessage.RoleCreated));
+        }
+
+        [HttpPut("{id}")]
+        [ApiResponseValidationFilter]
+        public async Task<ActionResult<ApiResponse<RoleResponse>>> UpdateRoleAsync(string id, [FromBody] UpdateRoleRequest request)
+        {
+            var role = await _roleService.UpdateRoleAsync(id, request);
+            return Ok(ApiResponse<RoleResponse>.SuccessResult(role, ErrorConstants.RoleMessage.RoleUpdated));
         }
     }
 }

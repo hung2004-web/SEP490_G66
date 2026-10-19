@@ -122,10 +122,15 @@ namespace OZE.Common.Constants
             public const string DescriptionInvalid = "Description is invalid. Please check again.";
             // MSG68
             public const string RoleExist = "Role already exists in the system.";
+            // MSG67
+            public const string RoleNotFound = "Role not found.";
             // MSG63
             public const string RoleCreated = "Create role success!";
+            // MSG64
+            public const string RoleUpdated = "Update role success!";
             // TODO(spec): the messages below have no System Message code in the SRS yet.
             public const string CreateFailed = "Create role failed";
+            public const string UpdateFailed = "Update role failed";
         }
 
         public static class WorkShiftMessage
@@ -157,6 +162,16 @@ namespace OZE.Common.Constants
             public const string InvalidRoomType = "Required room type must be one of: General, Imaging, Treatment";
             public const string InvalidPrice = "Reference price must be greater than or equal to 0";
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
+        }
+        public static class AppointmentMessage
+        {
+            public const string ServiceNotFound = "Service not found";
+            public const string ServiceInactive = "This service is not available for booking";
+            public const string PastDate = "Appointment date cannot be in the past";
+            public const string TooFarAhead = "Appointment date is too far in advance";
+            public const string SlotNotAvailable = "This time slot is no longer available. Please choose another time";
+            public const string PhoneHasAccount = "This phone number already has an account. Please sign in to book";
+            public const string ConfigMissing = "System configuration {0} is missing";
         }
     }
 }

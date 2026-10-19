@@ -1,4 +1,4 @@
-import { MOCK_HOME_HERO } from "@/utils/mockHomeHero";
+import { MOCK_HOME_HERO } from "@/utils/data/mockHomeHero";
 
 const TITLE_ID = "home-hero-title";
 
