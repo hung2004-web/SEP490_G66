@@ -1,5 +1,5 @@
 import { MESSAGES, USER_ROLES } from "../utils/messages";
-import { findMockUserByPhone, saveMockUser } from "../utils/mockData";
+import { findMockStaffByPhone, findMockUserByPhone, saveMockUser } from "../utils/mockData";
 import { invalidMessage } from "../utils/validation";
 import { clearSession, saveSession } from "./sessionStore";
 
@@ -35,10 +35,11 @@ export const signIn = async ({ phone, password }) => {
     const result = await mockSignIn({ phone, password });
 
     if (result.success) {
+        const staffAccount = findMockStaffByPhone(phone);
         saveSession({
             token: result.data.token,
-            userName: findMockUserByPhone(phone)?.fullname,
-            role: USER_ROLES.PATIENT,
+            userName: staffAccount?.fullname ?? findMockUserByPhone(phone)?.fullname,
+            role: staffAccount?.role ?? USER_ROLES.PATIENT,
         });
     }
 

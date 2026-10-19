@@ -1,3 +1,9 @@
+import { USER_ROLES } from "./messages";
+
+const MOCK_STAFF_ACCOUNTS = {
+  "0911000001": { fullname: "BS. Nguyễn Văn Bình", role: USER_ROLES.DOCTOR },
+};
+
 export const getMockUsers = () => {
   const users = localStorage.getItem("mock_users");
   if (users) {
@@ -35,3 +41,6 @@ export const findMockUserByPhone = (phone) => {
   const users = getMockUsers();
   return users.find(u => u.phone === phone);
 };
+
+export const findMockStaffByPhone = (phone) =>
+  Object.hasOwn(MOCK_STAFF_ACCOUNTS, phone) ? MOCK_STAFF_ACCOUNTS[phone] : null;
