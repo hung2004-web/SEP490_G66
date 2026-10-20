@@ -32,6 +32,7 @@ namespace OZE.Application
             services.AddScoped<IHomeService, HomeService>();
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddScoped<IWorkShipService, WorkShiftService>();
+            services.AddScoped<ITreatmentPlanService, TreatmentPlanService>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
             services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
             services.AddSingleton<IPasswordResetStore, MemoryPasswordResetStore>();
