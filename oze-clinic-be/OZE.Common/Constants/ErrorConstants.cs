@@ -173,5 +173,12 @@ namespace OZE.Common.Constants
             public const string PhoneHasAccount = "This phone number already has an account. Please sign in to book";
             public const string ConfigMissing = "System configuration {0} is missing";
         }
+        public static class DoctorScheduleMessage
+        {
+            public const string DoctorNotFound = "Doctor profile not found";
+            public const string ShiftNotFound = "Work shift not found";
+            public const string InvalidDateRange = "From date must be earlier than or equal to to date";
+            public const string DateRangeTooLong = "You can view at most one week at a time";
+        }
     }
 }
