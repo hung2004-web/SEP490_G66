@@ -195,6 +195,13 @@ namespace OZE.Common.Constants
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
             public const string DateRangeTooLong = "You can view at most one week at a time";
         }
+        public static class MedicalRecordMessage
+        {
+            public const string DoctorNotFound = "Doctor profile not found";
+            public const string PatientNotFound = "Patient not found";
+            public const string ExaminationNotFound = "Examination not found";
+            public const string AccessDenied = "You do not have permission to view this patient's medical record";
+        }
     }
 }
 

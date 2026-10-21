@@ -35,8 +35,7 @@ namespace OZE.Controllers
             var shift = await _doctorScheduleService.GetMyShiftDetailAsync(GetUserId(), shiftId);
             return Ok(ApiResponse<DoctorShiftResponse>.SuccessResult(shift));
         }
-
-        
+      
         private string GetUserId()
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? string.Empty;
