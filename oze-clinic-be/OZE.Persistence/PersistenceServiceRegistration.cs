@@ -42,7 +42,7 @@ namespace OZE.Persistence
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IWorkShiftRepository, WorkShiftRepository>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
-          
+            services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 
             return services;
         }
