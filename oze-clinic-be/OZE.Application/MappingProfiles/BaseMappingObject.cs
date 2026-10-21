@@ -12,6 +12,13 @@ namespace OZE.Application.MappingProfiles
             CreateMap<Service, ServiceDto>().ReverseMap();
             CreateMap<CreateServiceRequest, Service>();
             CreateMap<UpdateServiceRequest, Service>();
+            CreateMap<Patient, PatientDto>();
+            CreateMap<Patient, PatientDetailDto>()
+                .ForMember(dest => dest.TotalAppointments, opt => opt.MapFrom(src => src.Appointments.Count));
+            CreateMap<CreatePatientRequest, Patient>();
+            CreateMap<UpdatePatientRequest, Patient>();
+            CreateMap<PatientMedicalProfile, PatientMedicalProfileDto>();
+            CreateMap<CreateMedicalProfileRequest, PatientMedicalProfile>();
         }
     }
 }
