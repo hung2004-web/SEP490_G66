@@ -163,7 +163,6 @@ namespace OZE.Common.Constants
             public const string InvalidPrice = "Reference price must be greater than or equal to 0";
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
         }
-<<<<<<< HEAD
 
         // Track Treatment Progress (UC-52 / SCRUM-351). Texts follow System Messages where applicable.
         public static class TreatmentPlanMessage
@@ -178,7 +177,6 @@ namespace OZE.Common.Constants
             public const string StageNotInProgress = "Cannot update or complete this stage because it is not in progress.";
             // MSG07 / BR-187
             public const string NotesRequiredWhenCostDiffers = "Please enter a note when the actual cost differs from the estimated cost.";
-=======
         public static class AppointmentMessage
         {
             public const string ServiceNotFound = "Service not found";
@@ -195,7 +193,6 @@ namespace OZE.Common.Constants
             public const string ShiftNotFound = "Work shift not found";
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
             public const string DateRangeTooLong = "You can view at most one week at a time";
->>>>>>> main
         }
     }
 }
