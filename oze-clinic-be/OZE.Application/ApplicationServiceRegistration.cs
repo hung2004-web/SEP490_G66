@@ -36,6 +36,7 @@ namespace OZE.Application
             services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
             services.AddSingleton<IPasswordResetStore, MemoryPasswordResetStore>();
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<IPatientService, PatientService>();
 
             return services;
         }
