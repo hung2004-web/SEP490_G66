@@ -62,6 +62,19 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<List<Appointment>> GetDoctorAppointmentsAsync(int doctorId, DateOnly fromDate, DateOnly toDate)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Where(x => x.DoctorId == doctorId
+                && x.AppointmentDate >= fromDate && x.AppointmentDate <= toDate
+                && x.Status != AppointmentConstants.CancelledStatus)
+                .OrderBy(x => x.AppointmentDate)
+                .ThenBy(x => x.TimeSlotStart)
+                .ToListAsync();
+        }
+
         public async Task<List<StaffSchedule>> GetDoctorShiftsAsync(DateOnly date, int? doctorId)
         {
             // Doctor role ids, joined through Identity tables

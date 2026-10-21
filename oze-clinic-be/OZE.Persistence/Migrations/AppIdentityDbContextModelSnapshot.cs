@@ -2110,7 +2110,7 @@ namespace OZE.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Planned");
+                        .HasDefaultValue("Scheduled");
 
                     b.Property<long>("TreatmentPlanId")
                         .HasColumnType("bigint");
@@ -2122,7 +2122,7 @@ namespace OZE.Persistence.Migrations
 
                     b.HasIndex("ScheduledDate")
                         .HasDatabaseName("IX_TreatmentPlanStages_ScheduledDate")
-                        .HasFilter("[StageStatus] IN ('Planned', 'Scheduled')");
+                        .HasFilter("[StageStatus] = 'Scheduled'");
 
                     b.HasIndex("TreatmentPlanId", "StageNumber")
                         .HasDatabaseName("IX_TreatmentPlanStages_PlanId");
@@ -2131,7 +2131,7 @@ namespace OZE.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_TreatmentPlanStages_EstimatedCost", "[EstimatedCost] >= 0");
 
-                            t.HasCheckConstraint("CK_TreatmentPlanStages_Status", "[StageStatus] IN ('Planned', 'Scheduled', 'InProgress', 'Completed', 'Cancelled')");
+                            t.HasCheckConstraint("CK_TreatmentPlanStages_Status", "[StageStatus] IN ('Scheduled', 'InProgress', 'Completed', 'Cancelled')");
                         });
                 });
 

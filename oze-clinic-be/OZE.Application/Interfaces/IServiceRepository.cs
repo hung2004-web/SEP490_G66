@@ -7,6 +7,7 @@ namespace OZE.Application.Interfaces
     public interface IServiceRepository
     {
         Task<Service?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<Service?> GetByIdAsync(int id, bool asNoTracking, CancellationToken cancellationToken = default);
         Task<Service?> GetByCodeAsync(string serviceCode, CancellationToken cancellationToken = default);
         Task<bool> ExistsByCodeAsync(string serviceCode, int? excludeId = null, CancellationToken cancellationToken = default);
         Task<PagedResult<Service>> GetAllAsync(ServiceQueryParameters parameters, CancellationToken cancellationToken = default);

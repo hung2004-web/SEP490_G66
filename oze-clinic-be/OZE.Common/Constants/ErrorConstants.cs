@@ -163,6 +163,21 @@ namespace OZE.Common.Constants
             public const string InvalidPrice = "Reference price must be greater than or equal to 0";
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
         }
+
+        // Track Treatment Progress (UC-52 / SCRUM-351). Texts follow System Messages where applicable.
+        public static class TreatmentPlanMessage
+        {
+            // MSG67
+            public const string PlanNotFound = "Treatment plan not found.";
+            public const string StageNotFound = "Treatment stage not found.";
+            // MSG70
+            public const string PlanNotApproved = "Cannot start treatment because the plan is not approved.";
+            public const string EarlierStageNotCompleted = "Cannot start this stage because an earlier stage is not completed.";
+            public const string StageNotScheduled = "Cannot start this stage because it is not scheduled.";
+            public const string StageNotInProgress = "Cannot update or complete this stage because it is not in progress.";
+            // MSG07 / BR-187
+            public const string NotesRequiredWhenCostDiffers = "Please enter a note when the actual cost differs from the estimated cost.";
+        }
         public static class AppointmentMessage
         {
             public const string ServiceNotFound = "Service not found";
@@ -184,5 +199,20 @@ namespace OZE.Common.Constants
             public const string InvalidStatus = "Status must be one of: Active, Resolved, Discontinued";
             public const string InvalidDateOfBirth = "Date of birth cannot be in the future";
         }
+        public static class DoctorScheduleMessage
+        {
+            public const string DoctorNotFound = "Doctor profile not found";
+            public const string ShiftNotFound = "Work shift not found";
+            public const string InvalidDateRange = "From date must be earlier than or equal to to date";
+            public const string DateRangeTooLong = "You can view at most one week at a time";
+        }
+        public static class MedicalRecordMessage
+        {
+            public const string DoctorNotFound = "Doctor profile not found";
+            public const string PatientNotFound = "Patient not found";
+            public const string ExaminationNotFound = "Examination not found";
+            public const string AccessDenied = "You do not have permission to view this patient's medical record";
+        }
     }
 }
+

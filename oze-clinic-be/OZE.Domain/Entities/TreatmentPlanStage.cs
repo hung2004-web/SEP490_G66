@@ -10,7 +10,7 @@ namespace OZE.Domain.Entities
         public int? ServiceId { get; set; }
         public decimal EstimatedCost { get; set; }
         public decimal? ActualCost { get; set; }
-        public string StageStatus { get; set; } = "Planned";
+        public string StageStatus { get; set; } = "Scheduled";
         public DateOnly? ScheduledDate { get; set; }
         public DateOnly? ActualDate { get; set; }
         public int? PerformedByDoctorId { get; set; }

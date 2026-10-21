@@ -32,12 +32,14 @@ namespace OZE.Application
             services.AddScoped<IHomeService, HomeService>();
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddScoped<IWorkShipService, WorkShiftService>();
+            services.AddScoped<ITreatmentPlanService, TreatmentPlanService>();
             services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
             services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
             services.AddSingleton<IPasswordResetStore, MemoryPasswordResetStore>();
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IPatientService, PatientService>();
-
+            services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+            services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             return services;
         }
     }
