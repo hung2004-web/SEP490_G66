@@ -18,26 +18,44 @@ namespace OZE.Persistence.Repositories
 
         public async Task<Service?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _context.Services.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+            return await GetByIdAsync(id, asNoTracking: false, cancellationToken);
+        }
+
+        public async Task<Service?> GetByIdAsync(int id, bool asNoTracking, CancellationToken cancellationToken = default)
+        {
+            var query = asNoTracking ? _context.Services.AsNoTracking() : _context.Services;
+            return await query.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
         }
 
         public async Task<Service?> GetByCodeAsync(string serviceCode, CancellationToken cancellationToken = default)
         {
-            return await _context.Services.FirstOrDefaultAsync(
-                s => s.ServiceCode.ToLower() == serviceCode.ToLower(),
+            if (string.IsNullOrWhiteSpace(serviceCode))
+            {
+                return null;
+            }
+
+            var normalizedCode = serviceCode.Trim().ToUpperInvariant();
+            return await _context.Services.AsNoTracking().FirstOrDefaultAsync(
+                s => s.ServiceCode == normalizedCode,
                 cancellationToken);
         }
 
         public async Task<bool> ExistsByCodeAsync(string serviceCode, int? excludeId = null, CancellationToken cancellationToken = default)
         {
-            var query = _context.Services.AsQueryable();
+            if (string.IsNullOrWhiteSpace(serviceCode))
+            {
+                return false;
+            }
+
+            var normalizedCode = serviceCode.Trim().ToUpperInvariant();
+            var query = _context.Services.AsNoTracking().AsQueryable();
             if (excludeId.HasValue)
             {
                 query = query.Where(s => s.Id != excludeId.Value);
             }
 
             return await query.AnyAsync(
-                s => s.ServiceCode.ToLower() == serviceCode.ToLower(),
+                s => s.ServiceCode == normalizedCode,
                 cancellationToken);
         }
 
@@ -47,8 +65,8 @@ namespace OZE.Persistence.Repositories
 
             if (!string.IsNullOrWhiteSpace(parameters.SearchKeyword))
             {
-                var keyword = parameters.SearchKeyword.Trim().ToLower();
-                query = query.Where(s => s.ServiceName.ToLower().Contains(keyword) || s.ServiceCode.ToLower().Contains(keyword));
+                var keyword = parameters.SearchKeyword.Trim();
+                query = query.Where(s => s.ServiceName.Contains(keyword) || s.ServiceCode.Contains(keyword));
             }
 
             if (parameters.IsActive.HasValue)
@@ -58,7 +76,8 @@ namespace OZE.Persistence.Repositories
 
             if (!string.IsNullOrWhiteSpace(parameters.RequiredRoomType))
             {
-                query = query.Where(s => s.RequiredRoomType == parameters.RequiredRoomType);
+                var roomType = parameters.RequiredRoomType.Trim();
+                query = query.Where(s => s.RequiredRoomType == roomType);
             }
 
             if (parameters.MinPrice.HasValue)
@@ -71,7 +90,13 @@ namespace OZE.Persistence.Repositories
                 query = query.Where(s => s.ReferencePrice <= parameters.MaxPrice.Value);
             }
 
-            query = parameters.SortBy?.ToLower() switch
+            var totalCount = await query.CountAsync(cancellationToken);
+            if (totalCount == 0)
+            {
+                return new PagedResult<Service>(new List<Service>(), 0, parameters.PageNumber, parameters.PageSize);
+            }
+
+            query = parameters.SortBy?.Trim().ToLowerInvariant() switch
             {
                 "name" => parameters.SortDescending ? query.OrderByDescending(s => s.ServiceName) : query.OrderBy(s => s.ServiceName),
                 "code" => parameters.SortDescending ? query.OrderByDescending(s => s.ServiceCode) : query.OrderBy(s => s.ServiceCode),
@@ -80,7 +105,6 @@ namespace OZE.Persistence.Repositories
                 _ => parameters.SortDescending ? query.OrderByDescending(s => s.Id) : query.OrderBy(s => s.Id)
             };
 
-            var totalCount = await query.CountAsync(cancellationToken);
             var items = await query
                 .Skip((parameters.PageNumber - 1) * parameters.PageSize)
                 .Take(parameters.PageSize)
@@ -114,7 +138,10 @@ namespace OZE.Persistence.Repositories
 
         public Task UpdateAsync(Service service, CancellationToken cancellationToken = default)
         {
-            _context.Services.Update(service);
+            if (_context.Entry(service).State == EntityState.Detached)
+            {
+                _context.Services.Update(service);
+            }
             return Task.CompletedTask;
         }
 

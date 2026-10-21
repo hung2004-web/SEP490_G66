@@ -257,7 +257,7 @@ const SidebarDrawer = ({ id, groups, onClose, returnFocusRef }) => {
 
 const Sidebar = ({ id, drawer = false, collapsed = false, onClose, returnFocusRef }) => {
     const { role } = useSession();
-    const groups = ROLE_GROUPS[role] ?? [];
+    const groups = Object.hasOwn(ROLE_GROUPS, role) ? ROLE_GROUPS[role] : [];
 
     if (drawer) return <SidebarDrawer id={id} groups={groups} onClose={onClose} returnFocusRef={returnFocusRef} />;
 

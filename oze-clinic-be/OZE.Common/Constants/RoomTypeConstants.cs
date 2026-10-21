@@ -15,7 +15,27 @@ namespace OZE.Common.Constants
                 return true; // Optional in Service entity
             }
 
-            return AllowedTypes.Contains(roomType);
+            return AllowedTypes.Any(t => string.Equals(t, roomType.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static bool TryNormalize(string? roomType, out string? normalized)
+        {
+            if (string.IsNullOrWhiteSpace(roomType))
+            {
+                normalized = null;
+                return true;
+            }
+
+            var trimmed = roomType.Trim();
+            var matched = AllowedTypes.FirstOrDefault(t => string.Equals(t, trimmed, StringComparison.OrdinalIgnoreCase));
+            if (matched != null)
+            {
+                normalized = matched;
+                return true;
+            }
+
+            normalized = null;
+            return false;
         }
     }
 }
