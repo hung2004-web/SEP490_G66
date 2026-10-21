@@ -22,5 +22,18 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(s => s.Service)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
+
+        public async Task<TreatmentPlan?> GetTrackedByIdWithStagesAsync(long id, CancellationToken cancellationToken = default)
+        {
+            return await _context.TreatmentPlans
+                .Include(x => x.Stages)
+                    .ThenInclude(s => s.Service)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }
