@@ -26,6 +26,45 @@ namespace OZE.Application.Services
             return ToProgressResponse(plan!);
         }
 
+        public async Task<TreatmentPlanProgressResponse> StartStageAsync(
+            long treatmentPlanId,
+            long stageId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+
+            var stage = plan!.Stages.FirstOrDefault(s => s.Id == stageId);
+            ConditionGuard.Ensure<NotFoundException>(stage != null, ErrorConstants.TreatmentPlanMessage.StageNotFound);
+
+            var planCanStart = plan.Status == TreatmentPlanConstants.Approved
+                || plan.Status == TreatmentPlanConstants.InProgress;
+            ConditionGuard.Ensure(planCanStart, ErrorConstants.TreatmentPlanMessage.PlanNotApproved);
+
+            ConditionGuard.Ensure(
+                stage!.StageStatus == TreatmentPlanConstants.StageStatus.Scheduled,
+                ErrorConstants.TreatmentPlanMessage.StageNotScheduled);
+
+            var earlierStageOpen = plan.Stages.Any(s =>
+                s.StageNumber < stage.StageNumber
+                && s.StageStatus != TreatmentPlanConstants.StageStatus.Completed
+                && s.StageStatus != TreatmentPlanConstants.StageStatus.Cancelled);
+            ConditionGuard.ThrowIf(earlierStageOpen, ErrorConstants.TreatmentPlanMessage.EarlierStageNotCompleted);
+
+            var now = DateTimeOffset.UtcNow;
+            stage.StageStatus = TreatmentPlanConstants.StageStatus.InProgress;
+            stage.UpdatedAt = now;
+
+            if (plan.Status == TreatmentPlanConstants.Approved)
+            {
+                plan.Status = TreatmentPlanConstants.InProgress;
+                plan.UpdatedAt = now;
+            }
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
         private static TreatmentPlanProgressResponse ToProgressResponse(TreatmentPlan plan)
         {
             var stages = plan.Stages
