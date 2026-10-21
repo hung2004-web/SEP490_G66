@@ -32,12 +32,12 @@ const GlobalException = ({ code, inShell = false }) => {
     };
 
     const card = (
-        <div className={cx(inShell ? "card-app" : "card-public", "mx-auto max-w-2xl md:p-12")}>
+        <div className={cx(inShell ? "card-app" : "card-public md:p-12", "mx-auto max-w-2xl")}>
             <span className="inline-block rounded-full bg-danger-soft px-3 py-1 text-label text-danger">
                 {error["label-status"]}
             </span>
 
-            <h1 className="mt-4 text-heading-1 text-ink md:text-display-md">
+            <h1 className={cx("mt-4 text-heading-1 text-ink", !inShell && "md:text-display-md")}>
                 <span className="num">{error.code}</span> - {error.title}
             </h1>
 
