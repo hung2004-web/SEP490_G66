@@ -65,6 +65,73 @@ namespace OZE.Application.Services
             return ToProgressResponse(plan);
         }
 
+        public async Task<TreatmentPlanProgressResponse> UpdateStageAsync(
+            long treatmentPlanId,
+            long stageId,
+            UpdateTreatmentStageRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+
+            var stage = plan!.Stages.FirstOrDefault(s => s.Id == stageId);
+            ConditionGuard.Ensure<NotFoundException>(stage != null, ErrorConstants.TreatmentPlanMessage.StageNotFound);
+
+            ConditionGuard.Ensure(
+                stage!.StageStatus == TreatmentPlanConstants.StageStatus.InProgress,
+                ErrorConstants.TreatmentPlanMessage.StageNotInProgress);
+
+            var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+
+            if (request.ActualCost.HasValue)
+            {
+                ConditionGuard.Ensure(
+                    request.ActualCost.Value >= 0,
+                    ErrorConstants.TreatmentPlanMessage.InvalidActualCost);
+
+                var costDiffers = request.ActualCost.Value != stage.EstimatedCost;
+                ConditionGuard.ThrowIf(
+                    costDiffers && notes == null,
+                    ErrorConstants.TreatmentPlanMessage.NotesRequiredWhenCostDiffers);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+
+            if (request.NextStageScheduledDate.HasValue)
+            {
+                ApplyNextStageDate(plan, stage, request.NextStageScheduledDate.Value, now);
+            }
+
+            stage.Notes = notes;
+            stage.ActualCost = request.ActualCost;
+            stage.UpdatedAt = now;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
+        private static void ApplyNextStageDate(
+            TreatmentPlan plan,
+            TreatmentPlanStage currentStage,
+            DateOnly nextDate,
+            DateTimeOffset now)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var dateIsValid = nextDate >= today
+                && (!currentStage.ScheduledDate.HasValue || nextDate >= currentStage.ScheduledDate.Value);
+            ConditionGuard.Ensure(dateIsValid, ErrorConstants.TreatmentPlanMessage.ScheduledDateInvalid);
+
+            var nextStage = plan.Stages
+                .Where(s => s.StageNumber > currentStage.StageNumber
+                    && s.StageStatus == TreatmentPlanConstants.StageStatus.Scheduled)
+                .OrderBy(s => s.StageNumber)
+                .FirstOrDefault();
+            ConditionGuard.Ensure<NotFoundException>(nextStage != null, ErrorConstants.TreatmentPlanMessage.NextStageNotFound);
+
+            nextStage!.ScheduledDate = nextDate;
+            nextStage.UpdatedAt = now;
+        }
+
         private static TreatmentPlanProgressResponse ToProgressResponse(TreatmentPlan plan)
         {
             var stages = plan.Stages
