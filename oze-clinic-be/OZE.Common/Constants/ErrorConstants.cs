@@ -177,6 +177,11 @@ namespace OZE.Common.Constants
             public const string StageNotInProgress = "Cannot update or complete this stage because it is not in progress.";
             // MSG07 / BR-187
             public const string NotesRequiredWhenCostDiffers = "Please enter a note when the actual cost differs from the estimated cost.";
+            // MSG66
+            public const string InvalidActualCost = "Actual cost is invalid. Please check again.";
+            public const string ScheduledDateInvalid = "Scheduled date is invalid. Please check again.";
+            // MSG67
+            public const string NextStageNotFound = "Next treatment stage not found.";
         }
         public static class AppointmentMessage
         {
