@@ -12,6 +12,7 @@ import ContactPage from "../pages/common/ContactPage";
 import ServiceDetail from "../pages/common/ServiceDetail";
 import DashboardPage from "../pages/common/DashboardPage";
 import ProfilePage from "../pages/common/ProfilePage";
+import RoomManagement from "../pages/admin/RoomManagement";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
@@ -99,8 +100,12 @@ const sharedRoutes = [
     }
 ]
 
-// Role pages (ROLE_ROUTES) are all placeholders for now.
-const toPlaceholderRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: SHELL_NOT_FOUND }))
+// Role pages (ROLE_ROUTES) that are built so far; the rest are placeholders.
+const ROLE_PAGES = {
+    [ROUTES.ADMIN_ROOMS]: <RoomManagement />
+}
+
+const toRoleRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: ROLE_PAGES[path] ?? SHELL_NOT_FOUND }))
 
 const renderRoutes = (list) =>
     list.map((route) => (
@@ -128,7 +133,7 @@ function AppRoutes() {
                         {renderRoutes(sharedRoutes)}
                         {ROLE_ROUTES.map(({ roles, paths }) => (
                             <Route key={roles.join()} element={<RequireRole roles={roles} />}>
-                                {renderRoutes(toPlaceholderRoutes(paths))}
+                                {renderRoutes(toRoleRoutes(paths))}
                             </Route>
                         ))}
                         {token && <Route path="*" element={SHELL_NOT_FOUND} />}
