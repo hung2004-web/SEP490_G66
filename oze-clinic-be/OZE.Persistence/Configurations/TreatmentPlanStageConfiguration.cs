@@ -10,7 +10,7 @@ namespace OZE.Persistence.Configurations
         {
             builder.ToTable("TreatmentPlanStages", t =>
             {
-                t.HasCheckConstraint("CK_TreatmentPlanStages_Status", "[StageStatus] IN ('Planned', 'Scheduled', 'InProgress', 'Completed', 'Cancelled')");
+                t.HasCheckConstraint("CK_TreatmentPlanStages_Status", "[StageStatus] IN ('Scheduled', 'InProgress', 'Completed', 'Cancelled')");
                 t.HasCheckConstraint("CK_TreatmentPlanStages_EstimatedCost", "[EstimatedCost] >= 0");
             });
             builder.HasKey(x => x.Id);
@@ -18,7 +18,7 @@ namespace OZE.Persistence.Configurations
             builder.Property(x => x.StageName).HasMaxLength(200);
             builder.Property(x => x.EstimatedCost).HasPrecision(18, 2).HasDefaultValue(0m);
             builder.Property(x => x.ActualCost).HasPrecision(18, 2);
-            builder.Property(x => x.StageStatus).HasMaxLength(20).HasDefaultValue("Planned");
+            builder.Property(x => x.StageStatus).HasMaxLength(20).HasDefaultValue("Scheduled");
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
             builder.HasOne(x => x.TreatmentPlan)
@@ -41,7 +41,7 @@ namespace OZE.Persistence.Configurations
                    .HasDatabaseName("IX_TreatmentPlanStages_PlanId");
             builder.HasIndex(x => x.ScheduledDate)
                    .HasDatabaseName("IX_TreatmentPlanStages_ScheduledDate")
-                   .HasFilter("[StageStatus] IN ('Planned', 'Scheduled')");
+                   .HasFilter("[StageStatus] = 'Scheduled'");
         }
     }
 }
