@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Header from "./Header/Header.jsx";
 import Sidebar from "./Sidebar/Sidebar.jsx";
+import Footer from "./Footer/Footer.jsx";
 import ErrorBoundary from "../components/error/ErrorBoundary.jsx";
 
 const SIDEBAR_ID = "app-sidebar";
@@ -15,7 +16,8 @@ const subscribeToDesktop = (onChange) => {
 
 const getIsDesktop = () => window.matchMedia(DESKTOP_QUERY).matches;
 
-const AppLayout = () => {
+// publicPage: a public page (home, services...) opened by a signed-in patient. Keeps the sidebar, drops the app padding, adds the footer.
+const AppLayout = ({ publicPage = false }) => {
     const location = useLocation();
     const isDesktop = useSyncExternalStore(subscribeToDesktop, getIsDesktop);
     const toggleRef = useRef(null);
@@ -46,11 +48,12 @@ const AppLayout = () => {
                     sidebarId={sidebarInDom ? SIDEBAR_ID : undefined}
                     sidebarToggleRef={toggleRef}
                 />
-                <main className="app-content flex-1">
+                <main className={publicPage ? "flex-1" : "app-content flex-1"}>
                     <ErrorBoundary key={location.pathname}>
                         <Outlet />
                     </ErrorBoundary>
                 </main>
+                {publicPage && <Footer />}
             </div>
             {drawerOpen && (
                 <Sidebar id={SIDEBAR_ID} drawer onClose={() => setDrawerOpen(false)} returnFocusRef={toggleRef} />

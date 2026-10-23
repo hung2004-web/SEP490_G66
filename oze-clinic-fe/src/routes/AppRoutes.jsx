@@ -12,11 +12,11 @@ import ContactPage from "../pages/common/ContactPage";
 import ServiceDetail from "../pages/common/ServiceDetail";
 import DashboardPage from "../pages/common/DashboardPage";
 import ProfilePage from "../pages/common/ProfilePage";
+import RoomManagement from "../pages/admin/RoomManagement";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
-import { USER_ROLES } from "../utils/messages";
-import { ROUTES, getErrorRoute } from "../utils/routes";
+import { ROUTES, ROLE_ROUTES, getErrorRoute } from "../utils/routes";
 import RequireRole from "./RequireRole";
 
 // Placeholder for pages not built yet. Error pages never render inside a layout, so it goes to /error/404.
@@ -100,35 +100,12 @@ const sharedRoutes = [
     }
 ]
 
-// Pages only some roles may open. All of them are placeholders for now.
-const roleRoutes = [
-    {
-        roles: [USER_ROLES.PATIENT],
-        paths: [ROUTES.APPOINTMENTS, ROUTES.TREATMENT_PLANS, ROUTES.MEDICAL_RECORD, ROUTES.INVOICES]
-    },
-    {
-        roles: [USER_ROLES.DOCTOR],
-        paths: [ROUTES.DOCTOR_APPOINTMENTS, ROUTES.DOCTOR_PATIENTS, ROUTES.DOCTOR_TREATMENT_PLANS, ROUTES.DOCTOR_IMAGING_REQUESTS]
-    },
-    {
-        roles: [USER_ROLES.DENTAL_IMAGING_TECHNICIAN],
-        paths: [ROUTES.TECHNICIAN_IMAGING_REQUESTS, ROUTES.TECHNICIAN_IMAGING_RESULTS]
-    },
-    {
-        roles: [USER_ROLES.RECEPTIONIST],
-        paths: [ROUTES.RECEPTION_APPOINTMENTS, ROUTES.RECEPTION_CHECK_IN, ROUTES.RECEPTION_PATIENTS, ROUTES.RECEPTION_CONSULTATIONS, ROUTES.RECEPTION_INVOICES]
-    },
-    {
-        roles: [USER_ROLES.CLINIC_MANAGER],
-        paths: [ROUTES.ADMIN_REPORTS, ROUTES.ADMIN_STAFF, ROUTES.ADMIN_ROLES, ROUTES.ADMIN_WORK_SHIFTS, ROUTES.ADMIN_ROOMS, ROUTES.ADMIN_SERVICES]
-    },
-    {
-        roles: [USER_ROLES.DOCTOR, USER_ROLES.DENTAL_IMAGING_TECHNICIAN, USER_ROLES.RECEPTIONIST],
-        paths: [ROUTES.WORK_SCHEDULE]
-    }
-]
+// Role pages (ROLE_ROUTES) that are built so far; the rest are placeholders.
+const ROLE_PAGES = {
+    [ROUTES.ADMIN_ROOMS]: <RoomManagement />
+}
 
-const toPlaceholderRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: SHELL_NOT_FOUND }))
+const toRoleRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: ROLE_PAGES[path] ?? SHELL_NOT_FOUND }))
 
 const renderRoutes = (list) =>
     list.map((route) => (
@@ -154,9 +131,9 @@ function AppRoutes() {
                     <Route element={<AppLayout />}>
                         {token && renderRoutes(sessionRoutes.map((route) => (route.element === NOT_FOUND ? { ...route, element: SHELL_NOT_FOUND } : route)))}
                         {renderRoutes(sharedRoutes)}
-                        {roleRoutes.map(({ roles, paths }) => (
+                        {ROLE_ROUTES.map(({ roles, paths }) => (
                             <Route key={roles.join()} element={<RequireRole roles={roles} />}>
-                                {renderRoutes(toPlaceholderRoutes(paths))}
+                                {renderRoutes(toRoleRoutes(paths))}
                             </Route>
                         ))}
                         {token && <Route path="*" element={SHELL_NOT_FOUND} />}

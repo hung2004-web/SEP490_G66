@@ -14,7 +14,7 @@ import {
     markNotificationAsRead,
 } from "@/services/notificationService";
 import { cx } from "@/utils/cx";
-import { CLINIC_HOTLINE, GUEST_HEADER_TEXT as TEXT, MESSAGES } from "@/utils/messages";
+import { CLINIC_HOTLINE, GUEST_HEADER_TEXT as TEXT, MESSAGES, USER_ROLES } from "@/utils/messages";
 import { ROUTES, getServiceDetailRoute } from "@/utils/routes";
 
 const HOVER_CLOSE_DELAY_MS = 150;
@@ -296,7 +296,7 @@ const NavMenu = ({ id, label, items, open, onOpenChange }) => {
     );
 };
 
-const Drawer = ({ id, entries, onClose, returnFocusRef }) => {
+const Drawer = ({ id, entries, onClose, returnFocusRef, signedIn = false }) => {
     const dialogRef = useRef(null);
     const closeButtonRef = useRef(null);
 
@@ -388,14 +388,16 @@ const Drawer = ({ id, entries, onClose, returnFocusRef }) => {
                         ))}
                     </ul>
                 </nav>
-                <div className="flex flex-col gap-3">
-                    <Link to={ROUTES.SIGN_IN} className="btn btn-primary h-11 w-full">
-                        {TEXT.SIGN_IN}
-                    </Link>
-                    <Link to={ROUTES.REGISTER} className="btn btn-secondary h-11 w-full">
-                        {TEXT.SIGN_UP}
-                    </Link>
-                </div>
+                {!signedIn && (
+                    <div className="flex flex-col gap-3">
+                        <Link to={ROUTES.SIGN_IN} className="btn btn-primary h-11 w-full">
+                            {TEXT.SIGN_IN}
+                        </Link>
+                        <Link to={ROUTES.REGISTER} className="btn btn-secondary h-11 w-full">
+                            {TEXT.SIGN_UP}
+                        </Link>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -700,7 +702,23 @@ const UserMenu = ({ open, onOpenChange }) => {
     );
 };
 
-const TopBar = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) => {
+const SidebarToggle = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) => (
+    <button
+        ref={sidebarToggleRef}
+        type="button"
+        className="btn btn-secondary btn-icon"
+        aria-label="Ẩn hoặc hiện thanh bên"
+        title="Ẩn hoặc hiện thanh bên"
+        aria-expanded={sidebarOpen}
+        aria-controls={sidebarId}
+        onClick={onToggleSidebar}
+    >
+        <PanelLeft className="hidden size-5 lg:block" aria-hidden="true" />
+        <Menu className="size-5 lg:hidden" aria-hidden="true" />
+    </button>
+);
+
+const SessionActions = ({ className }) => {
     const location = useLocation();
     const [openPanel, setOpenPanel] = useState(null);
     const openPanelId = openPanel?.key === location.key ? openPanel.id : null;
@@ -712,36 +730,26 @@ const TopBar = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) =
         });
 
     return (
-        <header className="topbar">
-            {onToggleSidebar && (
-                <button
-                    ref={sidebarToggleRef}
-                    type="button"
-                    className="btn btn-secondary btn-icon"
-                    aria-label="Ẩn hoặc hiện thanh bên"
-                    title="Ẩn hoặc hiện thanh bên"
-                    aria-expanded={sidebarOpen}
-                    aria-controls={sidebarId}
-                    onClick={onToggleSidebar}
-                >
-                    <PanelLeft className="hidden size-5 lg:block" aria-hidden="true" />
-                    <Menu className="size-5 lg:hidden" aria-hidden="true" />
-                </button>
-            )}
-            <div className="relative ml-auto flex h-full items-center gap-2">
-                <Notifications
-                    open={openPanelId === NOTIFICATIONS_PANEL_ID}
-                    onOpenChange={setPanelOpen(NOTIFICATIONS_PANEL_ID)}
-                />
-                <UserMenu open={openPanelId === USER_MENU_ID} onOpenChange={setPanelOpen(USER_MENU_ID)} />
-            </div>
-        </header>
+        <div className={cx("relative flex h-full items-center gap-2", className)}>
+            <Notifications
+                open={openPanelId === NOTIFICATIONS_PANEL_ID}
+                onOpenChange={setPanelOpen(NOTIFICATIONS_PANEL_ID)}
+            />
+            <UserMenu open={openPanelId === USER_MENU_ID} onOpenChange={setPanelOpen(USER_MENU_ID)} />
+        </div>
     );
 };
 
+const TopBar = ({ onToggleSidebar, ...toggleProps }) => (
+    <header className="topbar">
+        {onToggleSidebar && <SidebarToggle onToggleSidebar={onToggleSidebar} {...toggleProps} />}
+        <SessionActions className="ml-auto" />
+    </header>
+);
+
 const Header = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) => {
     const location = useLocation();
-    const { token } = useSession();
+    const { token, role } = useSession();
     const { value: servicesResult } = useAsync(getDentalServices, []);
     const [openMenu, setOpenMenu] = useState(null);
     const [drawerKey, setDrawerKey] = useState(null);
@@ -765,7 +773,7 @@ const Header = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) =
             return current?.id === menuId ? null : current;
         });
 
-    if (token) {
+    if (token && role !== USER_ROLES.PATIENT) {
         return (
             <TopBar
                 onToggleSidebar={onToggleSidebar}
@@ -775,6 +783,9 @@ const Header = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) =
             />
         );
     }
+
+    // Guests and signed-in patients share the public header; patients get session actions instead of sign-in links.
+    const signedIn = Boolean(token);
 
     return (
         <>
@@ -807,10 +818,23 @@ const Header = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) =
                     </div>
                 </div>
             </header>
-            <nav className="public-nav hidden md:flex">
+            <nav className={cx("public-nav", !signedIn && "hidden md:flex")}>
                 <div className={ROW_CLASS}>
-                    <div className="hidden lg:block lg:flex-1" />
-                    <ul className="flex h-full min-w-0 flex-1 items-center justify-center gap-6 lg:flex-none lg:gap-8">
+                    {signedIn ? (
+                        <div className={ROW_START_CLASS}>
+                            {onToggleSidebar && (
+                                <SidebarToggle
+                                    onToggleSidebar={onToggleSidebar}
+                                    sidebarOpen={sidebarOpen}
+                                    sidebarId={sidebarId}
+                                    sidebarToggleRef={sidebarToggleRef}
+                                />
+                            )}
+                        </div>
+                    ) : (
+                        <div className="hidden lg:block lg:flex-1" />
+                    )}
+                    <ul className="hidden h-full min-w-0 flex-1 items-center justify-center gap-6 md:flex lg:flex-none lg:gap-8">
                         {navEntries.map((entry) =>
                             entry.items ? (
                                 <li key={entry.key} className="relative h-full">
@@ -831,14 +855,18 @@ const Header = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) =
                             ),
                         )}
                     </ul>
-                    <div className={`${ROW_END_CLASS} gap-3`}>
-                        <Link to={ROUTES.SIGN_IN} className="btn btn-primary">
-                            {TEXT.SIGN_IN}
-                        </Link>
-                        <Link to={ROUTES.REGISTER} className="btn btn-secondary">
-                            {TEXT.SIGN_UP}
-                        </Link>
-                    </div>
+                    {signedIn ? (
+                        <SessionActions className={ROW_END_CLASS} />
+                    ) : (
+                        <div className={`${ROW_END_CLASS} gap-3`}>
+                            <Link to={ROUTES.SIGN_IN} className="btn btn-primary">
+                                {TEXT.SIGN_IN}
+                            </Link>
+                            <Link to={ROUTES.REGISTER} className="btn btn-secondary">
+                                {TEXT.SIGN_UP}
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </nav>
             {drawerOpen && (
@@ -847,6 +875,7 @@ const Header = ({ onToggleSidebar, sidebarOpen, sidebarId, sidebarToggleRef }) =
                     entries={navEntries}
                     onClose={() => setDrawerKey(null)}
                     returnFocusRef={menuButtonRef}
+                    signedIn={signedIn}
                 />
             )}
         </>
