@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
 using OZE.Common.Models;
@@ -35,15 +36,7 @@ namespace OZE.Application.Services
             CancellationToken cancellationToken = default)
         {
             var pagedServices = await _serviceRepository.GetAllAsync(parameters, cancellationToken);
-            var dtos = _mapper.Map<List<ServiceDto>>(pagedServices.Items);
-
-            var result = new PagedResult<ServiceDto>(
-                dtos,
-                pagedServices.TotalCount,
-                pagedServices.PageNumber,
-                pagedServices.PageSize);
-
-            return ApiResponse<PagedResult<ServiceDto>>.SuccessResult(result);
+            return pagedServices.ToPagedApiResponse<Service, ServiceDto>(_mapper);
         }
 
         public async Task<ApiResponse<IReadOnlyList<ServiceDto>>> GetActiveServicesAsync(
