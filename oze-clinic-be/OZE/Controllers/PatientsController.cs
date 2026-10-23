@@ -11,7 +11,7 @@ namespace OZE.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.DoctorRole},{RoleConstants.ClinicManagerRole}")]
-    public class PatientsController : ControllerBase
+    public class PatientsController : BaseApiController
     {
         private readonly IPatientService _patientService;
 
@@ -139,7 +139,7 @@ namespace OZE.Controllers
             [FromBody] CreateMedicalProfileRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = CurrentUserId;
             var result = await _patientService.AddMedicalProfileAsync(id, request, userId, cancellationToken);
             if (!result.Success)
             {
