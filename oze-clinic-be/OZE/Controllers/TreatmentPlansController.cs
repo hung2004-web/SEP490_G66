@@ -43,5 +43,19 @@ namespace OZE.Controllers
             var progress = await _treatmentPlanService.StartStageAsync(id, stageId, cancellationToken);
             return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Start treatment stage success!"));
         }
+
+        /// <summary>
+        /// Updates notes and actual cost of the stage in progress, and optionally schedules the next stage (UC-52 step 5).
+        /// </summary>
+        [HttpPatch("{id:long}/stages/{stageId:long}")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> UpdateStageAsync(
+            [FromRoute] long id,
+            [FromRoute] long stageId,
+            [FromBody] UpdateTreatmentStageRequest request,
+            CancellationToken cancellationToken)
+        {
+            var progress = await _treatmentPlanService.UpdateStageAsync(id, stageId, request, cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Update treatment stage success!"));
+        }
     }
 }
