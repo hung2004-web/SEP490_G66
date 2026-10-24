@@ -175,6 +175,7 @@ namespace OZE.Common.Constants
             public const string EarlierStageNotCompleted = "Cannot start this stage because an earlier stage is not completed.";
             public const string StageNotScheduled = "Cannot start this stage because it is not scheduled.";
             public const string StageNotInProgress = "Cannot update or complete this stage because it is not in progress.";
+            public const string PlanNotInProgress = "Cannot complete this stage because the plan is not in progress.";
             // MSG07 / BR-187
             public const string NotesRequiredWhenCostDiffers = "Please enter a note when the actual cost differs from the estimated cost.";
             // MSG66
