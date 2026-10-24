@@ -21,7 +21,6 @@ import RequireRole from "./RequireRole";
 
 // Placeholder for pages not built yet. Error pages never render inside a layout, so it goes to /error/404.
 const NOT_FOUND = <Navigate to={getErrorRoute(404)} replace />;
-const SHELL_NOT_FOUND = <GlobalException code={404} inShell />;
 
 const routes = [
     {
@@ -96,7 +95,7 @@ const sharedRoutes = [
     },
     {
         path: ROUTES.CHANGE_PASSWORD,
-        element: SHELL_NOT_FOUND
+        element: NOT_FOUND
     }
 ]
 
@@ -105,7 +104,7 @@ const ROLE_PAGES = {
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />
 }
 
-const toRoleRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: ROLE_PAGES[path] ?? SHELL_NOT_FOUND }))
+const toRoleRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: ROLE_PAGES[path] ?? NOT_FOUND }))
 
 const renderRoutes = (list) =>
     list.map((route) => (
@@ -129,17 +128,16 @@ function AppRoutes() {
                 </Route>
                 <Route element={<RequireRole />}>
                     <Route element={<AppLayout />}>
-                        {token && renderRoutes(sessionRoutes.map((route) => (route.element === NOT_FOUND ? { ...route, element: SHELL_NOT_FOUND } : route)))}
+                        {token && renderRoutes(sessionRoutes)}
                         {renderRoutes(sharedRoutes)}
                         {ROLE_ROUTES.map(({ roles, paths }) => (
                             <Route key={roles.join()} element={<RequireRole roles={roles} />}>
                                 {renderRoutes(toRoleRoutes(paths))}
                             </Route>
                         ))}
-                        {token && <Route path="*" element={SHELL_NOT_FOUND} />}
                     </Route>
                 </Route>
-                {renderRoutes(token ? errorRoutes.filter((route) => route.path !== "*") : errorRoutes)}
+                {renderRoutes(errorRoutes)}
             </Routes>
         </BrowserRouter>
     );
