@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronLeft, ChevronRight, DoorOpen, Pencil, ScanLine, Search, Stethoscope, Syringe, Wrench } from "lucide-react";
+import { CheckCircle2, DoorOpen, Pencil, ScanLine, Search, Stethoscope, Syringe, Wrench } from "lucide-react";
+import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
+import Pagination from "@/components/ui/Pagination";
+import StatCard from "@/components/ui/StatCard";
 import useAsync from "@/hooks/useAsync";
 import { createRoom, getRooms, setRoomMaintenance, updateRoom } from "@/services/roomService";
 import { cx } from "@/utils/cx";
@@ -66,39 +69,6 @@ const StatusBadge = ({ status }) => {
     const option = findOption(STATUS_OPTIONS, status);
     return option ? <span className={cx("badge", option.badge)}>{option.label}</span> : null;
 };
-
-const StatCard = ({ label, value, active, onClick }) => (
-    <button
-        type="button"
-        aria-pressed={active}
-        onClick={onClick}
-        className={cx(
-            "card-app flex cursor-pointer items-center justify-between gap-4 px-4 py-4 text-left transition-colors duration-150 hover:border-primary",
-            active && "border-primary bg-primary-softer",
-        )}
-    >
-        <span className="stat-label">{label}</span>
-        {value === undefined ? (
-            <span className="skeleton h-7 w-8" aria-hidden="true" />
-        ) : (
-            <span className="num font-heading text-heading-2 text-ink">{value}</span>
-        )}
-    </button>
-);
-
-const FormField = ({ id, label, required, error, children }) => (
-    <div className="field">
-        <label htmlFor={id} className={cx("label", required && "label-required")}>
-            {label}
-        </label>
-        {children}
-        {error && (
-            <p id={`${id}-error`} className="error-text">
-                {error}
-            </p>
-        )}
-    </div>
-);
 
 const RoomFormModal = ({ room, onClose, onSaved }) => {
     const editing = Boolean(room);
@@ -301,46 +271,6 @@ const RoomRow = ({ room, onEdit, onMaintenance }) => {
     );
 };
 
-const Pagination = ({ page, totalPages, onChange }) => (
-    <nav aria-label="Phân trang danh sách phòng" className="flex items-center gap-2">
-        <button
-            type="button"
-            className={ICON_BUTTON_CLASS}
-            aria-label="Trang trước"
-            title="Trang trước"
-            disabled={page <= 1}
-            onClick={() => onChange(page - 1)}
-        >
-            <ChevronLeft className="size-4" aria-hidden="true" />
-        </button>
-        {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-            <button
-                key={pageNumber}
-                type="button"
-                className={cx(
-                    "btn btn-icon num size-8",
-                    pageNumber === page ? "bg-primary-soft text-primary" : "hover:bg-surface-tint",
-                )}
-                aria-current={pageNumber === page ? "page" : undefined}
-                aria-label={`Trang ${pageNumber}`}
-                onClick={() => onChange(pageNumber)}
-            >
-                {pageNumber}
-            </button>
-        ))}
-        <button
-            type="button"
-            className={ICON_BUTTON_CLASS}
-            aria-label="Trang sau"
-            title="Trang sau"
-            disabled={page >= totalPages}
-            onClick={() => onChange(page + 1)}
-        >
-            <ChevronRight className="size-4" aria-hidden="true" />
-        </button>
-    </nav>
-);
-
 const RoomManagement = () => {
     const [searchInput, setSearchInput] = useState("");
     const [keyword, setKeyword] = useState("");
@@ -532,7 +462,7 @@ const RoomManagement = () => {
                         <p className="num text-caption text-muted">
                             Hiển thị {firstItem}–{lastItem} trong {data.totalItems} bản ghi
                         </p>
-                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} />
+                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách phòng" />
                     </div>
                 )}
             </div>
