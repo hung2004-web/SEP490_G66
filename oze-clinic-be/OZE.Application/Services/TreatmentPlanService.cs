@@ -10,10 +10,14 @@ namespace OZE.Application.Services
     public class TreatmentPlanService : ITreatmentPlanService
     {
         private readonly ITreatmentPlanRepository _treatmentPlanRepository;
+        private readonly IStaffRepository _staffRepository;
 
-        public TreatmentPlanService(ITreatmentPlanRepository treatmentPlanRepository)
+        public TreatmentPlanService(
+            ITreatmentPlanRepository treatmentPlanRepository,
+            IStaffRepository staffRepository)
         {
             _treatmentPlanRepository = treatmentPlanRepository;
+            _staffRepository = staffRepository;
         }
 
         public async Task<TreatmentPlanProgressResponse> GetProgressAsync(
@@ -130,6 +134,71 @@ namespace OZE.Application.Services
 
             nextStage!.ScheduledDate = nextDate;
             nextStage.UpdatedAt = now;
+        }
+
+        public async Task<TreatmentPlanProgressResponse> CompleteStageAsync(
+            long treatmentPlanId,
+            long stageId,
+            CompleteTreatmentStageRequest? request,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+
+            var stage = plan!.Stages.FirstOrDefault(s => s.Id == stageId);
+            ConditionGuard.Ensure<NotFoundException>(stage != null, ErrorConstants.TreatmentPlanMessage.StageNotFound);
+
+            ConditionGuard.Ensure(
+                plan.Status == TreatmentPlanConstants.InProgress,
+                ErrorConstants.TreatmentPlanMessage.PlanNotInProgress);
+            ConditionGuard.Ensure(
+                stage!.StageStatus == TreatmentPlanConstants.StageStatus.InProgress,
+                ErrorConstants.TreatmentPlanMessage.StageNotInProgress);
+
+            var doctor = await _staffRepository.GetByUserIdAsync(userId);
+            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.DoctorScheduleMessage.DoctorNotFound);
+
+            var notes = stage.Notes;
+            if (request?.Notes != null)
+            {
+                notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+            }
+
+            var actualCost = stage.ActualCost;
+            if (request?.ActualCost != null)
+            {
+                ConditionGuard.Ensure(
+                    request.ActualCost.Value >= 0,
+                    ErrorConstants.TreatmentPlanMessage.InvalidActualCost);
+                actualCost = request.ActualCost;
+            }
+
+            var costDiffers = actualCost.HasValue && actualCost.Value != stage.EstimatedCost;
+            ConditionGuard.ThrowIf(
+                costDiffers && string.IsNullOrWhiteSpace(notes),
+                ErrorConstants.TreatmentPlanMessage.NotesRequiredWhenCostDiffers);
+
+            var now = DateTimeOffset.UtcNow;
+            stage.Notes = notes;
+            stage.ActualCost = actualCost;
+            stage.StageStatus = TreatmentPlanConstants.StageStatus.Completed;
+            stage.ActualDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            stage.CompletedAt = now;
+            stage.PerformedByDoctorId = doctor!.Id;
+            stage.UpdatedAt = now;
+
+            var hasOpenStage = plan.Stages.Any(s =>
+                s.StageStatus != TreatmentPlanConstants.StageStatus.Completed
+                && s.StageStatus != TreatmentPlanConstants.StageStatus.Cancelled);
+            if (!hasOpenStage)
+            {
+                plan.Status = TreatmentPlanConstants.Completed;
+                plan.UpdatedAt = now;
+            }
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
         }
 
         private static TreatmentPlanProgressResponse ToProgressResponse(TreatmentPlan plan)
