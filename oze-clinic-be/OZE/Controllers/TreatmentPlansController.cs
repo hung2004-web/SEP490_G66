@@ -4,6 +4,7 @@ using OZE.Application.Interfaces;
 using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
+using System.Security.Claims;
 
 namespace OZE.Controllers
 {
@@ -56,6 +57,25 @@ namespace OZE.Controllers
         {
             var progress = await _treatmentPlanService.UpdateStageAsync(id, stageId, request, cancellationToken);
             return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Update treatment stage success!"));
+        }
+
+        /// <summary>
+        /// Completes the stage in progress. The plan becomes Completed when every stage is completed or cancelled (UC-52 step 6–7).
+        /// </summary>
+        [HttpPost("{id:long}/stages/{stageId:long}/complete")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> CompleteStageAsync(
+            [FromRoute] long id,
+            [FromRoute] long stageId,
+            [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] CompleteTreatmentStageRequest? request,
+            CancellationToken cancellationToken)
+        {
+            var progress = await _treatmentPlanService.CompleteStageAsync(id, stageId, request, GetUserId(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Complete treatment stage success!"));
+        }
+
+        private string GetUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? string.Empty;
         }
     }
 }
