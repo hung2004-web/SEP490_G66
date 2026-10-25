@@ -12,6 +12,8 @@ import ContactPage from "../pages/common/ContactPage";
 import ServiceDetail from "../pages/common/ServiceDetail";
 import DashboardPage from "../pages/common/DashboardPage";
 import ProfilePage from "../pages/common/ProfilePage";
+import ChangePasswordPage from "../pages/common/ChangePasswordPage";
+import ComingSoonPage from "../pages/common/ComingSoonPage";
 import RoomManagement from "../pages/admin/RoomManagement";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
@@ -95,16 +97,44 @@ const sharedRoutes = [
     },
     {
         path: ROUTES.CHANGE_PASSWORD,
-        element: NOT_FOUND
+        element: <ChangePasswordPage />
     }
 ]
 
-// Role pages (ROLE_ROUTES) that are built so far; the rest are placeholders.
+// Role pages (ROLE_ROUTES) that are built so far.
 const ROLE_PAGES = {
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />
 }
 
-const toRoleRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: ROLE_PAGES[path] ?? NOT_FOUND }))
+// Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
+const COMING_SOON_TITLES = {
+    [ROUTES.APPOINTMENTS]: "Lịch hẹn của tôi",
+    [ROUTES.TREATMENT_PLANS]: "Kế hoạch điều trị",
+    [ROUTES.MEDICAL_RECORD]: "Hồ sơ bệnh án",
+    [ROUTES.INVOICES]: "Hóa đơn",
+    [ROUTES.DOCTOR_APPOINTMENTS]: "Lịch hẹn khám",
+    [ROUTES.DOCTOR_PATIENTS]: "Bệnh nhân",
+    [ROUTES.DOCTOR_TREATMENT_PLANS]: "Kế hoạch điều trị",
+    [ROUTES.DOCTOR_IMAGING_REQUESTS]: "Yêu cầu chụp phim",
+    [ROUTES.TECHNICIAN_IMAGING_REQUESTS]: "Yêu cầu chụp phim",
+    [ROUTES.TECHNICIAN_IMAGING_RESULTS]: "Kết quả hình ảnh",
+    [ROUTES.RECEPTION_APPOINTMENTS]: "Quản lý lịch hẹn",
+    [ROUTES.RECEPTION_CHECK_IN]: "Tiếp đón bệnh nhân",
+    [ROUTES.RECEPTION_PATIENTS]: "Bệnh nhân",
+    [ROUTES.RECEPTION_CONSULTATIONS]: "Yêu cầu tư vấn",
+    [ROUTES.RECEPTION_INVOICES]: "Thanh toán",
+    [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
+    [ROUTES.ADMIN_REPORTS]: "Báo cáo",
+    [ROUTES.ADMIN_STAFF]: "Nhân viên",
+    [ROUTES.ADMIN_ROLES]: "Vai trò",
+    [ROUTES.ADMIN_WORK_SHIFTS]: "Ca làm việc",
+    [ROUTES.ADMIN_SERVICES]: "Dịch vụ",
+}
+
+const getRolePage = (path) =>
+    ROLE_PAGES[path] ?? (COMING_SOON_TITLES[path] ? <ComingSoonPage title={COMING_SOON_TITLES[path]} /> : NOT_FOUND)
+
+const toRoleRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: getRolePage(path) }))
 
 const renderRoutes = (list) =>
     list.map((route) => (
@@ -128,7 +158,7 @@ function AppRoutes() {
                 </Route>
                 <Route element={<RequireRole />}>
                     <Route element={<AppLayout />}>
-                        {token && renderRoutes(sessionRoutes)}
+                        {token && <Route path={ROUTES.BOOK_APPOINTMENT} element={<ComingSoonPage title="Đặt lịch hẹn" />} />}
                         {renderRoutes(sharedRoutes)}
                         {ROLE_ROUTES.map(({ roles, paths }) => (
                             <Route key={roles.join()} element={<RequireRole roles={roles} />}>
