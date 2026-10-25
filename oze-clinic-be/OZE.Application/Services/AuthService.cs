@@ -431,11 +431,10 @@ namespace OZE.Application.Services
 
         public async Task<ApiResponse<AuthResult>> LoginAsync(LoginRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null)
+            var user = await FindUserByIdentifierAsync(request.Identifier.Trim());
+            if (user == null || await IsPendingRegistrationAsync(user))
                 return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidLogin);
 
-         
             var signIn = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
             if (signIn.IsLockedOut)
                 return ApiResponse<AuthResult>.FailureResult("Account is temporarily locked. Please try again later.");
@@ -466,7 +465,16 @@ namespace OZE.Application.Services
                 ExpiresAt = now.AddMinutes(accessTokenMinutes)
             }, "Login successful");
         }
+        private async Task<ApplicationUser?> FindUserByIdentifierAsync(string identifier)
+        {
+            if (identifier.Contains('@'))
+                return await _userManager.FindByEmailAsync(identifier);
 
+            if (!PhoneNumberHelper.TryNormalize(identifier, out var phone))
+                return null;
+
+            return await _registrationRepository.FindUserByPhoneAsync(PhoneNumberHelper.GetLookupVariants(phone));
+        }
         public async Task<ApiResponse<AuthResult>> RefreshTokenAsync(RefreshTokenRequest request)
         {
             var activeToken = await _refreshTokenRepository.GetActiveTokenAsync(request.RefreshToken);
