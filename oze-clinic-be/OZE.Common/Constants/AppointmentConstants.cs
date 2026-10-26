@@ -11,5 +11,12 @@ namespace OZE.Common.Constants
         // Must match the check constraint CK_Appointments_Type
         public const string BookedType = "BOOKED";
         public const string WalkInType = "WALK_IN";
+
+        // Must match the check constraint CK_AppointmentServices_Status
+        public const string ServiceRequestedStatus = "REQUESTED";
+        public const string ServiceConfirmedStatus = "CONFIRMED";
+        public const string ServicePerformedStatus = "PERFORMED";
+        public const string ServicePostponedStatus = "POSTPONED";
+        public const string ServiceCancelledStatus = "CANCELLED";
     }
 }
