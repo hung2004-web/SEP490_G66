@@ -1,6 +1,6 @@
 import api from "./api";
 import { MESSAGES, USER_ROLES, VERIFICATION_METHOD } from "../utils/messages";
-import { findMockUserByPhone, setMockCurrentUserId } from "../utils/data/mockData";
+import { findMockUserByPhone, getMockCurrentUser, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
 import { clearSession, saveSession } from "./sessionStore";
 
@@ -128,3 +128,37 @@ const mockResetPassword = async ({ password }) => {
 };
 
 export const resetPassword = async ({ token, password }) => mockResetPassword({ token, password });
+
+const MAX_CHANGE_PASSWORD_ATTEMPTS = 5;
+const LOCK_MINUTES = 15;
+
+// Wrong current-password attempts in this tab. TODO(be): the backend counts these and locks the account.
+let wrongPasswordAttempts = 0;
+
+// Change password while signed in. On a wrong current password, data.attemptsLeft says how many tries remain;
+// data.locked is true once the account is locked (the screen then signs the user out).
+export const changePassword = async ({ currentPassword, newPassword }) => {
+    await wait(MOCK_DELAY_MS);
+
+    const user = getMockCurrentUser();
+    if (!user) return failure("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+
+    if (currentPassword !== user.password) {
+        wrongPasswordAttempts += 1;
+        const attemptsLeft = MAX_CHANGE_PASSWORD_ATTEMPTS - wrongPasswordAttempts;
+        if (attemptsLeft <= 0) {
+            wrongPasswordAttempts = 0;
+            return { ...failure(MESSAGES.MSG26), data: { locked: true } };
+        }
+        return {
+            ...failure(`Mật khẩu hiện tại không đúng. Bạn còn ${attemptsLeft} lần thử trước khi tài khoản bị tạm khoá ${LOCK_MINUTES} phút.`),
+            data: { attemptsLeft },
+        };
+    }
+
+    wrongPasswordAttempts = 0;
+    if (newPassword === user.password) return failure(MESSAGES.MSG25);
+
+    updateMockUser(user.id, { password: newPassword });
+    return success(null);
+};

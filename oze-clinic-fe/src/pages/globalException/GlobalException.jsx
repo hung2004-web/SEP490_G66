@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import LogoOze from "../../assets/logo/Logo-OZE-ngang.png";
 import useSession from "../../hooks/useSession";
-import { cx } from "../../utils/cx";
 import { Exception } from "../../utils/globalException";
 import { CLINIC_EMAIL, CLINIC_HOTLINE } from "../../utils/messages";
 import { ROUTES, getPostLoginRoute } from "../../utils/routes";
@@ -14,8 +13,8 @@ const findException = (code) =>
     Exception.find((item) => item.code === DEFAULT_CODE);
 
 // Shows a global error by HTTP code: from the `code` prop (catch-all route) or the /error/:code param.
-// Unknown codes fall back to 404.
-const GlobalException = ({ code, inShell = false }) => {
+// Unknown codes fall back to 404. Always full screen, never inside a layout.
+const GlobalException = ({ code }) => {
     const params = useParams();
     const navigate = useNavigate();
     const { token } = useSession();
@@ -32,12 +31,12 @@ const GlobalException = ({ code, inShell = false }) => {
     };
 
     const card = (
-        <div className={cx(inShell ? "card-app" : "card-public md:p-12", "mx-auto max-w-2xl")}>
+        <div className="card-public mx-auto max-w-2xl md:p-12">
             <span className="inline-block rounded-full bg-danger-soft px-3 py-1 text-label text-danger">
                 {error["label-status"]}
             </span>
 
-            <h1 className={cx("mt-4 text-heading-1 text-ink", !inShell && "md:text-display-md")}>
+            <h1 className="mt-4 text-heading-1 text-ink md:text-display-md">
                 <span className="num">{error.code}</span> - {error.title}
             </h1>
 
@@ -73,8 +72,6 @@ const GlobalException = ({ code, inShell = false }) => {
             </p>
         </div>
     );
-
-    if (inShell) return card;
 
     return (
         <div className="flex min-h-dvh items-center bg-surface-tint">

@@ -4,6 +4,7 @@ using OZE.Application.Interfaces;
 using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
+using System.Security.Claims;
 
 namespace OZE.Controllers
 {
@@ -42,6 +43,39 @@ namespace OZE.Controllers
         {
             var progress = await _treatmentPlanService.StartStageAsync(id, stageId, cancellationToken);
             return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Start treatment stage success!"));
+        }
+
+        /// <summary>
+        /// Updates notes and actual cost of the stage in progress, and optionally schedules the next stage (UC-52 step 5).
+        /// </summary>
+        [HttpPatch("{id:long}/stages/{stageId:long}")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> UpdateStageAsync(
+            [FromRoute] long id,
+            [FromRoute] long stageId,
+            [FromBody] UpdateTreatmentStageRequest request,
+            CancellationToken cancellationToken)
+        {
+            var progress = await _treatmentPlanService.UpdateStageAsync(id, stageId, request, cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Update treatment stage success!"));
+        }
+
+        /// <summary>
+        /// Completes the stage in progress. The plan becomes Completed when every stage is completed or cancelled (UC-52 step 6–7).
+        /// </summary>
+        [HttpPost("{id:long}/stages/{stageId:long}/complete")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> CompleteStageAsync(
+            [FromRoute] long id,
+            [FromRoute] long stageId,
+            [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] CompleteTreatmentStageRequest? request,
+            CancellationToken cancellationToken)
+        {
+            var progress = await _treatmentPlanService.CompleteStageAsync(id, stageId, request, GetUserId(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Complete treatment stage success!"));
+        }
+
+        private string GetUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? string.Empty;
         }
     }
 }

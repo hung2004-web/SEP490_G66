@@ -31,15 +31,7 @@ namespace OZE.Application.Services
             CancellationToken cancellationToken = default)
         {
             var pagedPatients = await _patientRepository.GetAllAsync(parameters, cancellationToken);
-            var dtos = _mapper.Map<List<PatientDto>>(pagedPatients.Items);
-
-            var result = new PagedResult<PatientDto>(
-                dtos,
-                pagedPatients.TotalCount,
-                pagedPatients.PageNumber,
-                pagedPatients.PageSize);
-
-            return ApiResponse<PagedResult<PatientDto>>.SuccessResult(result);
+            return pagedPatients.ToPagedApiResponse<Patient, PatientDto>(_mapper);
         }
 
         public async Task<ApiResponse<PatientDetailDto>> GetPatientByIdAsync(

@@ -14,7 +14,24 @@ const DEFAULT_USERS = [
     birthdate: "1990-01-01",
     email: "test@example.com",
     address: "12 Nguyễn Trãi, Thanh Xuân, Hà Nội",
-    role: USER_ROLES.PATIENT
+    role: USER_ROLES.PATIENT,
+    code: "BN000123",
+    createdAt: "2024-05-12",
+    lastVisitAt: "2026-10-08",
+    emergencyContact: null,
+    health: {
+      medicalHistory: "Viêm nướu (2024). Không có bệnh tim mạch, tiểu đường.",
+      allergies: ["Penicillin"],
+      medications: "Không",
+      specialConditions: "Không mang thai, không hút thuốc.",
+    },
+    pendingIdentityRequest: {
+      field: "birthdate",
+      oldValue: "1990-01-01",
+      newValue: "1990-01-10",
+      reason: "Sai ngày sinh so với CCCD.",
+      createdAt: "2026-10-19",
+    },
   },
   {
     id: "mock-doctor",
@@ -25,7 +42,27 @@ const DEFAULT_USERS = [
     birthdate: "1995-05-05",
     email: "test2@example.com",
     address: "45 Láng Hạ, Đống Đa, Hà Nội",
-    role: USER_ROLES.DOCTOR
+    role: USER_ROLES.DOCTOR,
+    code: "BS000004",
+    createdAt: "2023-09-01",
+    certificates: [
+      {
+        id: "cert-1",
+        name: "Chứng chỉ hành nghề khám bệnh, chữa bệnh",
+        issuer: "Sở Y tế Hà Nội",
+        number: "012345/HNO-CCHN",
+        issuedAt: "2020-06-15",
+        expiresAt: "",
+      },
+      {
+        id: "cert-2",
+        name: "Chứng nhận đào tạo cấy ghép Implant",
+        issuer: "Bệnh viện Răng Hàm Mặt Trung ương",
+        number: "IMP-2021-0457",
+        issuedAt: "2021-11-20",
+        expiresAt: "2026-12-01",
+      },
+    ],
   },
   {
     id: "mock-imaging-technician",

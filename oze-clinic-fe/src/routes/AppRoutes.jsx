@@ -12,16 +12,17 @@ import ContactPage from "../pages/common/ContactPage";
 import ServiceDetail from "../pages/common/ServiceDetail";
 import DashboardPage from "../pages/common/DashboardPage";
 import ProfilePage from "../pages/common/ProfilePage";
+import ChangePasswordPage from "../pages/common/ChangePasswordPage";
+import ComingSoonPage from "../pages/common/ComingSoonPage";
+import RoomManagement from "../pages/admin/RoomManagement";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
-import { USER_ROLES } from "../utils/messages";
-import { ROUTES, getErrorRoute } from "../utils/routes";
+import { ROUTES, ROLE_ROUTES, getErrorRoute } from "../utils/routes";
 import RequireRole from "./RequireRole";
 
 // Placeholder for pages not built yet. Error pages never render inside a layout, so it goes to /error/404.
 const NOT_FOUND = <Navigate to={getErrorRoute(404)} replace />;
-const SHELL_NOT_FOUND = <GlobalException code={404} inShell />;
 
 const routes = [
     {
@@ -96,39 +97,44 @@ const sharedRoutes = [
     },
     {
         path: ROUTES.CHANGE_PASSWORD,
-        element: SHELL_NOT_FOUND
+        element: <ChangePasswordPage />
     }
 ]
 
-// Pages only some roles may open. All of them are placeholders for now.
-const roleRoutes = [
-    {
-        roles: [USER_ROLES.PATIENT],
-        paths: [ROUTES.APPOINTMENTS, ROUTES.TREATMENT_PLANS, ROUTES.MEDICAL_RECORD, ROUTES.INVOICES]
-    },
-    {
-        roles: [USER_ROLES.DOCTOR],
-        paths: [ROUTES.DOCTOR_APPOINTMENTS, ROUTES.DOCTOR_PATIENTS, ROUTES.DOCTOR_TREATMENT_PLANS, ROUTES.DOCTOR_IMAGING_REQUESTS]
-    },
-    {
-        roles: [USER_ROLES.DENTAL_IMAGING_TECHNICIAN],
-        paths: [ROUTES.TECHNICIAN_IMAGING_REQUESTS, ROUTES.TECHNICIAN_IMAGING_RESULTS]
-    },
-    {
-        roles: [USER_ROLES.RECEPTIONIST],
-        paths: [ROUTES.RECEPTION_APPOINTMENTS, ROUTES.RECEPTION_CHECK_IN, ROUTES.RECEPTION_PATIENTS, ROUTES.RECEPTION_CONSULTATIONS, ROUTES.RECEPTION_INVOICES]
-    },
-    {
-        roles: [USER_ROLES.CLINIC_MANAGER],
-        paths: [ROUTES.ADMIN_REPORTS, ROUTES.ADMIN_STAFF, ROUTES.ADMIN_ROLES, ROUTES.ADMIN_WORK_SHIFTS, ROUTES.ADMIN_ROOMS, ROUTES.ADMIN_SERVICES]
-    },
-    {
-        roles: [USER_ROLES.DOCTOR, USER_ROLES.DENTAL_IMAGING_TECHNICIAN, USER_ROLES.RECEPTIONIST],
-        paths: [ROUTES.WORK_SCHEDULE]
-    }
-]
+// Role pages (ROLE_ROUTES) that are built so far.
+const ROLE_PAGES = {
+    [ROUTES.ADMIN_ROOMS]: <RoomManagement />
+}
 
-const toPlaceholderRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: SHELL_NOT_FOUND }))
+// Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
+const COMING_SOON_TITLES = {
+    [ROUTES.APPOINTMENTS]: "Lịch hẹn của tôi",
+    [ROUTES.TREATMENT_PLANS]: "Kế hoạch điều trị",
+    [ROUTES.MEDICAL_RECORD]: "Hồ sơ bệnh án",
+    [ROUTES.INVOICES]: "Hóa đơn",
+    [ROUTES.DOCTOR_APPOINTMENTS]: "Lịch hẹn khám",
+    [ROUTES.DOCTOR_PATIENTS]: "Bệnh nhân",
+    [ROUTES.DOCTOR_TREATMENT_PLANS]: "Kế hoạch điều trị",
+    [ROUTES.DOCTOR_IMAGING_REQUESTS]: "Yêu cầu chụp phim",
+    [ROUTES.TECHNICIAN_IMAGING_REQUESTS]: "Yêu cầu chụp phim",
+    [ROUTES.TECHNICIAN_IMAGING_RESULTS]: "Kết quả hình ảnh",
+    [ROUTES.RECEPTION_APPOINTMENTS]: "Quản lý lịch hẹn",
+    [ROUTES.RECEPTION_CHECK_IN]: "Tiếp đón bệnh nhân",
+    [ROUTES.RECEPTION_PATIENTS]: "Bệnh nhân",
+    [ROUTES.RECEPTION_CONSULTATIONS]: "Yêu cầu tư vấn",
+    [ROUTES.RECEPTION_INVOICES]: "Thanh toán",
+    [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
+    [ROUTES.ADMIN_REPORTS]: "Báo cáo",
+    [ROUTES.ADMIN_STAFF]: "Nhân viên",
+    [ROUTES.ADMIN_ROLES]: "Vai trò",
+    [ROUTES.ADMIN_WORK_SHIFTS]: "Ca làm việc",
+    [ROUTES.ADMIN_SERVICES]: "Dịch vụ",
+}
+
+const getRolePage = (path) =>
+    ROLE_PAGES[path] ?? (COMING_SOON_TITLES[path] ? <ComingSoonPage title={COMING_SOON_TITLES[path]} /> : NOT_FOUND)
+
+const toRoleRoutes = (paths) => paths.map((path) => ({ path: `${path}/*`, element: getRolePage(path) }))
 
 const renderRoutes = (list) =>
     list.map((route) => (
@@ -152,17 +158,16 @@ function AppRoutes() {
                 </Route>
                 <Route element={<RequireRole />}>
                     <Route element={<AppLayout />}>
-                        {token && renderRoutes(sessionRoutes.map((route) => (route.element === NOT_FOUND ? { ...route, element: SHELL_NOT_FOUND } : route)))}
+                        {token && <Route path={ROUTES.BOOK_APPOINTMENT} element={<ComingSoonPage title="Đặt lịch hẹn" />} />}
                         {renderRoutes(sharedRoutes)}
-                        {roleRoutes.map(({ roles, paths }) => (
+                        {ROLE_ROUTES.map(({ roles, paths }) => (
                             <Route key={roles.join()} element={<RequireRole roles={roles} />}>
-                                {renderRoutes(toPlaceholderRoutes(paths))}
+                                {renderRoutes(toRoleRoutes(paths))}
                             </Route>
                         ))}
-                        {token && <Route path="*" element={SHELL_NOT_FOUND} />}
                     </Route>
                 </Route>
-                {renderRoutes(token ? errorRoutes.filter((route) => route.path !== "*") : errorRoutes)}
+                {renderRoutes(errorRoutes)}
             </Routes>
         </BrowserRouter>
     );
