@@ -28,7 +28,7 @@ const QueueTicket = ({ queue }) => {
     if (queue?.status === QUEUE_STATUS.CALLED && queue.roomName) {
         return (
             <div className="alert alert-info shrink-0">
-                <p className="font-heading text-heading-3">{MESSAGES.MSG37.replace("[phòng khám]", queue.roomName)}</p>
+                <p className="font-heading text-heading-3">{MESSAGES.MSG37.replace("[phòng khám]", () => queue.roomName)}</p>
             </div>
         );
     }
