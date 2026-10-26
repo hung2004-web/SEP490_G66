@@ -23,6 +23,16 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.Id == examinationId, cancellationToken);
         }
 
+        public Task<List<ImagingRequest>> GetByExaminationIdAsync(long examinationId, CancellationToken cancellationToken = default)
+        {
+            return _context.ImagingRequests
+                .AsNoTracking()
+                .Where(x => x.ExaminationId == examinationId)
+                .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.Id)
+                .ToListAsync(cancellationToken);
+        }
+
         public Task<List<string>> GetActiveTechnicianUserIdsAsync(CancellationToken cancellationToken = default)
         {
             return (
