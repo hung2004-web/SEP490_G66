@@ -18,5 +18,8 @@ namespace OZE.Application.Interfaces
         Task<T> ExecuteSerializableAsync<T>(Func<Task<T>> action);
 
         Task<List<Appointment>> GetDoctorAppointmentsAsync(int doctorId, DateOnly fromDate, DateOnly toDate);
+
+        Task<List<Service>> GetServicesWithCategoryAsync(IReadOnlyCollection<int> serviceIds);
+        Task<List<ServiceCategory>> GetBookableCategoriesAsync();
     }
 }

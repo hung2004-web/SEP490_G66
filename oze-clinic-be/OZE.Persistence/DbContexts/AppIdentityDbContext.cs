@@ -26,11 +26,13 @@ namespace OZE.Persistence.DbContexts
 
         // Configuration
         public DbSet<Room> Rooms => Set<Room>();
+        public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
         public DbSet<Service> Services => Set<Service>();
         public DbSet<SystemConfiguration> SystemConfigurations => Set<SystemConfiguration>();
 
         // Patient Journey
         public DbSet<Appointment> Appointments => Set<Appointment>();
+        public DbSet<AppointmentServiceItem> AppointmentServiceItems => Set<AppointmentServiceItem>();
         public DbSet<QueueEntry> QueueEntries => Set<QueueEntry>();
 
         // Clinical / EMR

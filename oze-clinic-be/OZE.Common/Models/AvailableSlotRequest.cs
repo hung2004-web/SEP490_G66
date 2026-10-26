@@ -5,8 +5,8 @@ namespace OZE.Common.Models
 {
     public class AvailableSlotRequest
     {
-        [Required]
-        public int? ServiceId { get; set; }
+        // Services the patient picked; the general exam is added by the system, so this may be empty
+        public List<int> ServiceId { get; set; } = new();
 
         [Required]
         public DateOnly? Date { get; set; }

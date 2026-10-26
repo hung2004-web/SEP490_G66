@@ -105,5 +105,25 @@ namespace OZE.Persistence.Repositories
         {
          await _context.SaveChangesAsync();
         }
+
+        public async Task<List<Service>> GetServicesWithCategoryAsync(IReadOnlyCollection<int> serviceIds)
+        {
+            return await _context.Services
+                .AsNoTracking()
+                .Include(s => s.Category)
+                .Where(s => serviceIds.Contains(s.Id))
+                .ToListAsync();
+        }
+
+        // Active categories with their active services, in display order
+        public async Task<List<ServiceCategory>> GetBookableCategoriesAsync()
+        {
+            return await _context.ServiceCategories
+                .AsNoTracking()
+                .Where(c => c.IsActive)
+                .Include(c => c.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName))
+                .OrderBy(c => c.DisplayOrder)
+                .ToListAsync();
+        }
     }
 }
