@@ -64,8 +64,8 @@ namespace OZE.Application.Services
 
         public async Task<List<AvailableSlotResponse>> GetAvailableSlotsAsync(AvailableSlotRequest request)
         {
-            var service = await GetBookableServiceAsync(request.ServiceId!.Value);
-            return await FindSlotsAsync(service, request.Date!.Value, request.DoctorId);
+            var services = await ResolveBookingServicesAsync(request.ServiceId);
+            return await FindSlotsAsync(services, request.Date!.Value, request.DoctorId);
         }
 
         public async Task<AppointmentResponse> BookAsGuestAsync(GuestBookingRequest request)
@@ -77,7 +77,7 @@ namespace OZE.Application.Services
             ConditionGuard.ThrowIf(email != null && (email.Length > 256 || !new EmailAddressAttribute().IsValid(email)),
                 ErrorConstants.AuthMessage.EmailInvalid);
 
-            var service = await GetBookableServiceAsync(request.ServiceId!.Value);
+            var services = await ResolveBookingServicesAsync(request.ServiceId);
             var date = request.Date!.Value;
             var slotStart = request.SlotStart!.Value;
             var phoneVariants = PhoneNumberHelper.GetLookupVariants(phone);
@@ -89,7 +89,7 @@ namespace OZE.Application.Services
             var (appointment, patient, slot) = await _appointmentRepository.ExecuteSerializableAsync(async () =>
             {
                 // Re-check inside the transaction; never trust the slot sent by the client
-                var candidates = (await FindSlotsAsync(service, date, request.DoctorId))
+                var candidates = (await FindSlotsAsync(services, date, request.DoctorId))
                     .Where(x => x.SlotStart == slotStart)
                     .ToList();
                 ConditionGuard.Ensure(candidates.Count > 0, ErrorConstants.AppointmentMessage.SlotNotAvailable);
@@ -133,12 +133,13 @@ namespace OZE.Application.Services
                 return (appointment, patient, chosen);
             });
 
-            await SendBookingNotificationAsync(phone, email, appointment, service);
-            return ToResponse(appointment, patient, slot, service);
+            // TODO step 5: pass the whole service list
+            await SendBookingNotificationAsync(phone, email, appointment, services[0]);
+            return ToResponse(appointment, patient, slot, services[0]);
         }
 
         // Splits each doctor shift into slots and keeps the ones that are free and not too soon
-        private async Task<List<AvailableSlotResponse>> FindSlotsAsync(Service service, DateOnly date, int? doctorId)
+        private async Task<List<AvailableSlotResponse>> FindSlotsAsync(List<Service> services, DateOnly date, int? doctorId)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var maxDaysAhead = await GetIntConfigAsync(ConfigKeyConstants.BookingMaxDaysAhead);
@@ -148,13 +149,16 @@ namespace OZE.Application.Services
             var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
             var minHoursAhead = await GetIntConfigAsync(ConfigKeyConstants.BookingMinHoursAhead);
             var earliestStart = DateTime.Now.AddHours(minHoursAhead);
-            // A service without an estimate takes one slot
-            var duration = TimeSpan.FromMinutes(service.EstimatedMinutes ?? slotMinutes);
+            // Services are done one after another, so the slot must fit their total time
+            var duration = TimeSpan.FromMinutes(services.Sum(s => GetServiceMinutes(s, slotMinutes)));
 
             var shifts = await _appointmentRepository.GetDoctorShiftsAsync(date, doctorId);
-            if (!string.IsNullOrWhiteSpace(service.RequiredRoomType))
+            var requiredRoomType = services
+                .Select(s => s.RequiredRoomType)
+                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+            if (requiredRoomType != null)
             {
-                shifts = shifts.Where(x => x.Room!.RoomType == service.RequiredRoomType).ToList();
+                shifts = shifts.Where(x => x.Room!.RoomType == requiredRoomType).ToList();
             }
 
             var doctorIds = shifts.Select(x => x.StaffProfileId).Distinct().ToList();
@@ -205,12 +209,45 @@ namespace OZE.Application.Services
                 .First();
         }
 
-        private async Task<Service> GetBookableServiceAsync(int serviceId)
+        // The general exam comes first, then the services the patient picked, without duplicates
+        private async Task<List<Service>> ResolveBookingServicesAsync(IReadOnlyCollection<int> pickedServiceIds)
         {
-            var service = await _serviceRepository.GetByIdAsync(serviceId);
-            ConditionGuard.Ensure<NotFoundException>(service != null, ErrorConstants.AppointmentMessage.ServiceNotFound);
-            ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
-            return service;
+            var examServiceCode = await GetStringConfigAsync(ConfigKeyConstants.GeneralExamServiceCode);
+            var exam = await _serviceRepository.GetByCodeAsync(examServiceCode);
+            ConditionGuard.Ensure(exam != null && exam.IsActive, ErrorConstants.AppointmentMessage.GeneralExamServiceMissing);
+
+            var pickedIds = pickedServiceIds.Where(id => id != exam!.Id).Distinct().ToList();
+            var picked = await _appointmentRepository.GetServicesWithCategoryAsync(pickedIds);
+            ConditionGuard.Ensure<NotFoundException>(picked.Count == pickedIds.Count, ErrorConstants.AppointmentMessage.ServiceNotFound);
+            ConditionGuard.Ensure(picked.All(s => s.IsActive), ErrorConstants.AppointmentMessage.ServiceInactive);
+
+            // A category that does not allow multiple selection may appear only once
+            var overLimit = picked
+                .Where(s => s.Category != null && !s.Category.AllowMultipleSelection)
+                .GroupBy(s => s.Category!.CategoryName)
+                .FirstOrDefault(g => g.Count() > 1);
+            ConditionGuard.Ensure(overLimit == null,
+                string.Format(ErrorConstants.AppointmentMessage.OneServicePerCategory, overLimit?.Key));
+
+            // Keep the order the patient chose
+            var services = new List<Service> { exam! };
+            services.AddRange(pickedIds.Select(id => picked.First(s => s.Id == id)));
+
+            // One appointment uses one doctor shift in one room
+            var roomTypes = services
+                .Where(s => !string.IsNullOrWhiteSpace(s.RequiredRoomType))
+                .Select(s => s.RequiredRoomType)
+                .Distinct()
+                .Count();
+            ConditionGuard.Ensure(roomTypes <= 1, ErrorConstants.AppointmentMessage.ServicesNeedDifferentRooms);
+
+            return services;
+        }
+
+        // A service without an estimate takes one slot
+        private static int GetServiceMinutes(Service service, int slotMinutes)
+        {
+            return service.EstimatedMinutes ?? slotMinutes;
         }
 
         private async Task<string> GetStringConfigAsync(string configKey)
