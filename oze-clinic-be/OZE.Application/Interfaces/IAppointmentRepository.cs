@@ -1,8 +1,9 @@
-﻿using OZE.Domain.Entities;
+using OZE.Common.Models;
+using OZE.Common.Models.Base;
+using OZE.Domain.Entities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OZE.Application.Interfaces
@@ -21,5 +22,9 @@ namespace OZE.Application.Interfaces
 
         Task<List<Service>> GetServicesWithCategoryAsync(IReadOnlyCollection<int> serviceIds);
         Task<List<ServiceCategory>> GetBookableCategoriesAsync();
+
+        Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default);
+        Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default);
+        Task UpdateAsync(Appointment appointment);
     }
 }
