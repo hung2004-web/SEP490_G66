@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using OZE.Application.Helpers;
@@ -7,6 +7,7 @@ using OZE.Application.Middlewares;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
 using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 
 namespace OZE.Application.Services
@@ -330,6 +331,94 @@ namespace OZE.Application.Services
                 TimeSlotStart = slot.SlotStart,
                 TimeSlotEnd = slot.SlotEnd,
                 Status = appointment.Status,
+                Notes = appointment.Notes,
+                CreatedAt = appointment.CreatedAt
+            };
+        }
+
+        public async Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentQueryParameters query, CancellationToken cancellationToken = default)
+        {
+            var pagedResult = await _appointmentRepository.GetAppointmentsAsync(query, cancellationToken);
+            var mappedItems = pagedResult.Items.Select(MapToResponse).ToList();
+            return new PagedResult<AppointmentResponse>(mappedItems, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
+        }
+
+        public async Task<AppointmentResponse> GetAppointmentByIdAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            return MapToResponse(appointment!);
+        }
+
+        public async Task<AppointmentResponse> CancelAppointmentAsync(long id, CancelAppointmentRequest request, string? userId, CancellationToken cancellationToken = default)
+        {
+            ConditionGuard.Ensure(!string.IsNullOrWhiteSpace(request?.Reason), ErrorConstants.AppointmentMessage.ReasonRequired);
+
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            ConditionGuard.ThrowIf(
+                appointment!.Status == AppointmentConstants.CompletedStatus || appointment.Status == AppointmentConstants.CancelledStatus,
+                ErrorConstants.AppointmentMessage.CannotCancelCompleted);
+
+            appointment.Status = AppointmentConstants.CancelledStatus;
+            appointment.CancellationReason = request!.Reason.Trim();
+            appointment.CancelledAt = DateTimeOffset.UtcNow;
+            appointment.CancelledByUserId = userId;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _appointmentRepository.UpdateAsync(appointment);
+
+            return MapToResponse(appointment);
+        }
+
+        public async Task<AppointmentResponse> CheckInAppointmentAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.CancelledStatus, ErrorConstants.AppointmentMessage.CannotCheckInCancelled);
+            ConditionGuard.ThrowIf(appointment.Status == AppointmentConstants.CompletedStatus, ErrorConstants.AppointmentMessage.CannotCheckInCompleted);
+
+            appointment.Status = AppointmentConstants.CheckedInStatus;
+            appointment.CheckInAt = DateTimeOffset.UtcNow;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _appointmentRepository.UpdateAsync(appointment);
+
+            return MapToResponse(appointment);
+        }
+
+        private static AppointmentResponse MapToResponse(Appointment appointment)
+        {
+            var firstItem = appointment.ServiceItems.FirstOrDefault();
+            return new AppointmentResponse
+            {
+                Id = appointment.Id,
+                PatientId = appointment.PatientId,
+                PatientCode = appointment.Patient?.PatientCode ?? string.Empty,
+                PatientName = appointment.Patient?.FullName ?? string.Empty,
+                PatientPhoneNumber = appointment.Patient?.PhoneNumber ?? string.Empty,
+                DoctorId = appointment.DoctorId,
+                DoctorName = appointment.Doctor?.FullName,
+                ServiceId = firstItem?.ServiceId ?? 0,
+                ServiceName = firstItem?.Service?.ServiceName ?? string.Empty,
+                Services = appointment.ServiceItems.Select(item => new AppointmentServiceResponse
+                {
+                    ServiceId = item.ServiceId,
+                    ServiceName = item.Service?.ServiceName ?? string.Empty,
+                    DurationMinutes = item.DurationMinutes,
+                    PriceAtBooking = item.PriceAtBooking,
+                    Status = item.Status
+                }).ToList(),
+                AppointmentType = appointment.AppointmentType,
+                AppointmentDate = appointment.AppointmentDate,
+                TimeSlotStart = appointment.TimeSlotStart ?? default,
+                TimeSlotEnd = appointment.TimeSlotEnd ?? default,
+                Status = appointment.Status,
+                CheckInAt = appointment.CheckInAt,
+                CancellationReason = appointment.CancellationReason,
                 Notes = appointment.Notes,
                 CreatedAt = appointment.CreatedAt
             };

@@ -20,6 +20,8 @@ namespace OZE.Common.Models
         public TimeOnly TimeSlotStart { get; set; }
         public TimeOnly TimeSlotEnd { get; set; }
         public string Status { get; set; } = string.Empty;
+        public DateTimeOffset? CheckInAt { get; set; }
+        public string? CancellationReason { get; set; }
         public string? Notes { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
     }
