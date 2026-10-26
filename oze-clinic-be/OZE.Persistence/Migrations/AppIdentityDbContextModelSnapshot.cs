@@ -415,6 +415,58 @@ namespace OZE.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.AppointmentServiceItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("AppointmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PriceAtBooking")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("REQUESTED");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceId")
+                        .HasDatabaseName("IX_AppointmentServices_ServiceId");
+
+                    b.HasIndex("AppointmentId", "ServiceId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_AppointmentServices_Appointment_Service");
+
+                    b.ToTable("AppointmentServices", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AppointmentServices_Duration", "[DurationMinutes] > 0");
+
+                            t.HasCheckConstraint("CK_AppointmentServices_Price", "[PriceAtBooking] >= 0");
+
+                            t.HasCheckConstraint("CK_AppointmentServices_Status", "[Status] IN ('REQUESTED', 'CONFIRMED', 'PERFORMED', 'POSTPONED', 'CANCELLED')");
+                        });
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<long>("Id")
@@ -1663,6 +1715,9 @@ namespace OZE.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetimeoffset")
@@ -1704,6 +1759,9 @@ namespace OZE.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("IX_Services_CategoryId");
+
                     b.HasIndex("IsActive")
                         .HasDatabaseName("IX_Services_IsActive");
 
@@ -1719,6 +1777,60 @@ namespace OZE.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_Services_RequiredRoomType", "[RequiredRoomType] IN ('General', 'Imaging', 'Treatment')");
                         });
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.ServiceCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowMultipleSelection")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("CategoryCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ServiceCategories_CategoryCode");
+
+                    b.ToTable("ServiceCategories", (string)null);
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.StaffProfile", b =>
@@ -2264,6 +2376,27 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.AppointmentServiceItem", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.Appointment", "Appointment")
+                        .WithMany("ServiceItems")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_AppointmentServices_Appointments");
+
+                    b.HasOne("OZE.Domain.Entities.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_AppointmentServices_Services");
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Service");
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.ClinicalDiagnosis", b =>
                 {
                     b.HasOne("OZE.Domain.Entities.StaffProfile", "DiagnosedByDoctor")
@@ -2653,6 +2786,17 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Payment");
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.Service", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.ServiceCategory", "Category")
+                        .WithMany("Services")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_Services_ServiceCategories");
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.StaffProfile", b =>
                 {
                     b.HasOne("OZE.Domain.Entities.ApplicationUser", "User")
@@ -2776,6 +2920,8 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Examination");
 
                     b.Navigation("QueueEntries");
+
+                    b.Navigation("ServiceItems");
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.Examination", b =>
@@ -2819,6 +2965,11 @@ namespace OZE.Persistence.Migrations
             modelBuilder.Entity("OZE.Domain.Entities.Prescription", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.ServiceCategory", b =>
+                {
+                    b.Navigation("Services");
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.StaffProfile", b =>

@@ -22,7 +22,14 @@ namespace OZE.Persistence.Configurations
             builder.Property(x => x.IsActive).HasDefaultValue(true).HasSentinel(true);
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
+            builder.HasOne(x => x.Category)
+                   .WithMany(x => x.Services)
+                   .HasForeignKey(x => x.CategoryId)
+                   .HasConstraintName("FK_Services_ServiceCategories")
+                   .OnDelete(DeleteBehavior.NoAction);
+
             builder.HasIndex(x => x.ServiceCode).HasDatabaseName("IX_Services_ServiceCode").IsUnique();
+            builder.HasIndex(x => x.CategoryId).HasDatabaseName("IX_Services_CategoryId");
             builder.HasIndex(x => x.IsActive)
                    .HasDatabaseName("IX_Services_IsActive")
                    .IncludeProperties(x => new { x.ServiceName, x.ReferencePrice });

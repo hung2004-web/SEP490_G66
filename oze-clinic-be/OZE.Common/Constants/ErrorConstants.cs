@@ -188,6 +188,9 @@ namespace OZE.Common.Constants
         {
             public const string ServiceNotFound = "Service not found";
             public const string ServiceInactive = "This service is not available for booking";
+            public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";
+            public const string OneServicePerCategory = "Only one service can be chosen in {0}";
+            public const string ServicesNeedDifferentRooms = "These services need different rooms and cannot be booked in one appointment";
             public const string PastDate = "Appointment date cannot be in the past";
             public const string TooFarAhead = "Appointment date is too far in advance";
             public const string SlotNotAvailable = "This time slot is no longer available. Please choose another time";

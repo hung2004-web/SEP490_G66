@@ -24,5 +24,6 @@ namespace OZE.Domain.Entities
         public virtual StaffProfile? Doctor { get; set; }
         public virtual Examination? Examination { get; set; }
         public virtual ICollection<QueueEntry> QueueEntries { get; set; } = new List<QueueEntry>();
+        public virtual ICollection<AppointmentServiceItem> ServiceItems { get; set; } = new List<AppointmentServiceItem>();
     }
 }

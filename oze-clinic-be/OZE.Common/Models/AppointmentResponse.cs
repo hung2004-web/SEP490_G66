@@ -11,8 +11,10 @@ namespace OZE.Common.Models
         public string PatientPhoneNumber { get; set; } = string.Empty;
         public int? DoctorId { get; set; }
         public string? DoctorName { get; set; }
+        // Kept for the current frontend: the first service of the appointment
         public int ServiceId { get; set; }
         public string ServiceName { get; set; } = string.Empty;
+        public List<AppointmentServiceResponse> Services { get; set; } = new();
         public string AppointmentType { get; set; } = string.Empty;
         public DateOnly AppointmentDate { get; set; }
         public TimeOnly TimeSlotStart { get; set; }
