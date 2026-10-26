@@ -1,4 +1,5 @@
 import { generatePath } from "react-router-dom";
+import { USER_ROLES } from "./messages";
 
 export const ROUTES = {
     HOME: "/",
@@ -42,6 +43,34 @@ export const ROUTES = {
     ADMIN_REPORTS: "/admin/reports",
     ERROR: "/error/:code",
 };
+
+// Pages only some roles may open.
+export const ROLE_ROUTES = [
+    {
+        roles: [USER_ROLES.PATIENT],
+        paths: [ROUTES.APPOINTMENTS, ROUTES.TREATMENT_PLANS, ROUTES.MEDICAL_RECORD, ROUTES.INVOICES]
+    },
+    {
+        roles: [USER_ROLES.DOCTOR],
+        paths: [ROUTES.DOCTOR_APPOINTMENTS, ROUTES.DOCTOR_PATIENTS, ROUTES.DOCTOR_TREATMENT_PLANS, ROUTES.DOCTOR_IMAGING_REQUESTS]
+    },
+    {
+        roles: [USER_ROLES.DENTAL_IMAGING_TECHNICIAN],
+        paths: [ROUTES.TECHNICIAN_IMAGING_REQUESTS, ROUTES.TECHNICIAN_IMAGING_RESULTS]
+    },
+    {
+        roles: [USER_ROLES.RECEPTIONIST],
+        paths: [ROUTES.RECEPTION_APPOINTMENTS, ROUTES.RECEPTION_CHECK_IN, ROUTES.RECEPTION_PATIENTS, ROUTES.RECEPTION_CONSULTATIONS, ROUTES.RECEPTION_INVOICES]
+    },
+    {
+        roles: [USER_ROLES.CLINIC_MANAGER],
+        paths: [ROUTES.ADMIN_REPORTS, ROUTES.ADMIN_STAFF, ROUTES.ADMIN_ROLES, ROUTES.ADMIN_WORK_SHIFTS, ROUTES.ADMIN_ROOMS, ROUTES.ADMIN_SERVICES]
+    },
+    {
+        roles: [USER_ROLES.DOCTOR, USER_ROLES.DENTAL_IMAGING_TECHNICIAN, USER_ROLES.RECEPTIONIST],
+        paths: [ROUTES.WORK_SCHEDULE]
+    }
+];
 
 export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_DETAIL, { serviceId: String(serviceId) });
 
