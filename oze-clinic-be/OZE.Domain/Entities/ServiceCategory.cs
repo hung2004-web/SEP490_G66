@@ -8,6 +8,8 @@ namespace OZE.Domain.Entities
         public string CategoryName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
+        // true: a booking may pick several services of this category; false: at most one
+        public bool AllowMultipleSelection { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }

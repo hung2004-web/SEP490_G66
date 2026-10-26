@@ -15,6 +15,7 @@ namespace OZE.Persistence.Configurations
             builder.Property(x => x.CategoryName).HasMaxLength(100).IsRequired();
             builder.Property(x => x.Description).HasMaxLength(500);
             builder.Property(x => x.DisplayOrder).HasDefaultValue(0);
+            builder.Property(x => x.AllowMultipleSelection).HasDefaultValue(false);
             builder.Property(x => x.IsActive).HasDefaultValue(true).HasSentinel(true);
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
