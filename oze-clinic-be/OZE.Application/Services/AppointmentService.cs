@@ -78,6 +78,7 @@ namespace OZE.Application.Services
                 ErrorConstants.AuthMessage.EmailInvalid);
 
             var services = await ResolveBookingServicesAsync(request.ServiceId);
+            var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
             var date = request.Date!.Value;
             var slotStart = request.SlotStart!.Value;
             var phoneVariants = PhoneNumberHelper.GetLookupVariants(phone);
@@ -122,10 +123,19 @@ namespace OZE.Application.Services
                     AppointmentDate = date,
                     TimeSlotStart = chosen.SlotStart,
                     TimeSlotEnd = chosen.SlotEnd,
-                    // The reception desk confirms it later
-                    Status = AppointmentConstants.PendingStatus,
+                    // The slot was checked again inside this transaction, so the booking is confirmed at once
+                    Status = AppointmentConstants.ConfirmedStatus,
                     Notes = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    // Saved together with the appointment in the same transaction
+                    ServiceItems = services.Select(s => new AppointmentServiceItem
+                    {
+                        ServiceId = s.Id,
+                        DurationMinutes = GetServiceMinutes(s, slotMinutes),
+                        PriceAtBooking = s.ReferencePrice,
+                        Status = AppointmentConstants.ServiceRequestedStatus,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    }).ToList()
                 };
                 await _appointmentRepository.AddAsync(appointment);
                 await _appointmentRepository.SaveChangesAsync();
@@ -133,9 +143,8 @@ namespace OZE.Application.Services
                 return (appointment, patient, chosen);
             });
 
-            // TODO step 5: pass the whole service list
-            await SendBookingNotificationAsync(phone, email, appointment, services[0]);
-            return ToResponse(appointment, patient, slot, services[0]);
+            await SendBookingNotificationAsync(phone, email, appointment, services);
+            return ToResponse(appointment, patient, slot, services);
         }
 
         // Splits each doctor shift into slots and keeps the ones that are free and not too soon
@@ -267,11 +276,12 @@ namespace OZE.Application.Services
         }
 
         // A failed notification must not undo the booking, so errors are only logged
-        private async Task SendBookingNotificationAsync(string phone, string? email, Appointment appointment, Service service)
+        private async Task SendBookingNotificationAsync(string phone, string? email, Appointment appointment, List<Service> services)
         {
-            var message = $"OZE Dental: Da nhan yeu cau dat lich {service.ServiceName} " +
-                          $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy}. " +
-                          "Le tan se goi xac nhan som.";
+            var serviceNames = string.Join(", ", services.Select(s => s.ServiceName));
+            var message = $"OZE Dental: Lich hen {serviceNames} " +
+                          $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy} " +
+                          "da duoc xac nhan.";
             try
             {
                 await _smsSender.SendSmsAsync(phone, message);
@@ -293,7 +303,7 @@ namespace OZE.Application.Services
         }
 
         private static AppointmentResponse ToResponse(Appointment appointment, Patient patient,
-            AvailableSlotResponse slot, Service service)
+            AvailableSlotResponse slot, List<Service> services)
         {
             return new AppointmentResponse
             {
@@ -304,8 +314,17 @@ namespace OZE.Application.Services
                 PatientPhoneNumber = PhoneNumberHelper.Mask(patient.PhoneNumber ?? string.Empty),
                 DoctorId = slot.DoctorId,
                 DoctorName = slot.DoctorName,
-                ServiceId = service.Id,
-                ServiceName = service.ServiceName,
+                // Kept for the current frontend: the first service (the general exam)
+                ServiceId = services[0].Id,
+                ServiceName = services[0].ServiceName,
+                Services = appointment.ServiceItems.Select(item => new AppointmentServiceResponse
+                {
+                    ServiceId = item.ServiceId,
+                    ServiceName = services.First(s => s.Id == item.ServiceId).ServiceName,
+                    DurationMinutes = item.DurationMinutes,
+                    PriceAtBooking = item.PriceAtBooking,
+                    Status = item.Status
+                }).ToList(),
                 AppointmentType = appointment.AppointmentType,
                 AppointmentDate = appointment.AppointmentDate,
                 TimeSlotStart = slot.SlotStart,

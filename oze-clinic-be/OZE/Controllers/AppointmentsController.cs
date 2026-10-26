@@ -38,7 +38,7 @@ namespace OZE.Controllers
         {
             var appointment = await _appointmentService.BookAsGuestAsync(request);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment,
-                "Appointment request sent. The reception desk will confirm it soon"));
+                "Appointment booked successfully"));
         }
     }
 }
