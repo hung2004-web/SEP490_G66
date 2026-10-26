@@ -36,6 +36,32 @@ namespace OZE.Application.Services
             _logger = logger;
         }
 
+        public async Task<List<BookableCategoryResponse>> GetBookableServicesAsync()
+        {
+            var examServiceCode = await GetStringConfigAsync(ConfigKeyConstants.GeneralExamServiceCode);
+            var categories = await _appointmentRepository.GetBookableCategoriesAsync();
+
+            return categories
+                // A category with no active service is hidden from the booking screen
+                .Where(c => c.Services.Count > 0)
+                .Select(c => new BookableCategoryResponse
+                {
+                    CategoryId = c.Id,
+                    CategoryName = c.CategoryName,
+                    AllowMultipleSelection = c.AllowMultipleSelection,
+                    Services = c.Services.Select(s => new BookableServiceResponse
+                    {
+                        ServiceId = s.Id,
+                        ServiceName = s.ServiceName,
+                        Description = s.Description,
+                        ReferencePrice = s.ReferencePrice,
+                        EstimatedMinutes = s.EstimatedMinutes,
+                        IsMandatory = s.ServiceCode == examServiceCode
+                    }).ToList()
+                })
+                .ToList();
+        }
+
         public async Task<List<AvailableSlotResponse>> GetAvailableSlotsAsync(AvailableSlotRequest request)
         {
             var service = await GetBookableServiceAsync(request.ServiceId!.Value);
@@ -185,6 +211,14 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<NotFoundException>(service != null, ErrorConstants.AppointmentMessage.ServiceNotFound);
             ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
             return service;
+        }
+
+        private async Task<string> GetStringConfigAsync(string configKey)
+        {
+            var value = await _appointmentRepository.GetConfigValueAsync(configKey);
+            ConditionGuard.Ensure(!string.IsNullOrWhiteSpace(value),
+                string.Format(ErrorConstants.AppointmentMessage.ConfigMissing, configKey));
+            return value!;
         }
 
         private async Task<int> GetIntConfigAsync(string configKey)

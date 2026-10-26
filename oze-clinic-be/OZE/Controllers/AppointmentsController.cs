@@ -17,6 +17,14 @@ namespace OZE.Controllers
         {
             _appointmentService = appointmentService;
         }
+        // GET api/appointments/bookable-services
+        [HttpGet("bookable-services")]
+        public async Task<ActionResult<ApiResponse<List<BookableCategoryResponse>>>> GetBookableServicesAsync()
+        {
+            var categories = await _appointmentService.GetBookableServicesAsync();
+            return Ok(ApiResponse<List<BookableCategoryResponse>>.SuccessResult(categories));
+        }
+
         [HttpGet("available-slots")]
         public async Task<ActionResult<ApiResponse<List<AvailableSlotResponse>>>> GetAvailableSlotsAsync([FromQuery] AvailableSlotRequest request)
         {

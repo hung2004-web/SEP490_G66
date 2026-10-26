@@ -11,5 +11,7 @@ namespace OZE.Common.Constants
         public const string BookingMaxDaysAhead = "Booking.MaxDaysAhead";
         public const string BookingMinHoursAhead = "Booking.MinHoursAhead";
         public const string SlotDurationMinutes = "Clinic.SlotDurationMinutes";
+        // Code of the service that every appointment starts with
+        public const string GeneralExamServiceCode = "Booking.GeneralExamServiceCode";
     }
 }
