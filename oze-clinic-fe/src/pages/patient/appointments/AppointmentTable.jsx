@@ -58,8 +58,8 @@ const AppointmentTable = ({ appointments = [], labelledBy, loading = false }) =>
                         : appointments.map((appointment) => (
                               <tr key={appointment.id}>
                                   <td className="cell-primary">{appointment.appointmentCode}</td>
-                                  <td className="whitespace-nowrap">{formatDate(appointment.appointmentDate)}</td>
-                                  <td className="whitespace-nowrap">{formatTimeRange(appointment.timeSlotStart, appointment.timeSlotEnd)}</td>
+                                  <td>{formatDate(appointment.appointmentDate)}</td>
+                                  <td>{formatTimeRange(appointment.timeSlotStart, appointment.timeSlotEnd)}</td>
                                   <td>{appointment.serviceName}</td>
                                   <td>{appointment.doctorName}</td>
                                   <td>
