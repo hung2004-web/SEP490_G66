@@ -1,7 +1,8 @@
 import { CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardSection from "@/components/dashboard/DashboardSection";
-import { cx } from "@/utils/cx";
+import DetailLink from "@/components/ui/DetailLink";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { formatDate, formatTimeRange } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE, PATIENT_APPOINTMENT_STATUS } from "@/utils/messages";
 import { ROUTES, getAppointmentDetailRoute } from "@/utils/routes";
@@ -9,19 +10,9 @@ import NextVisitCard from "./NextVisitCard";
 
 const TITLE_ID = "patient-dashboard-upcoming";
 
-const StatusBadge = ({ status }) => {
-    const meta = PATIENT_APPOINTMENT_STATUS[status];
-    return meta ? <span className={cx("badge", meta.badge)}>{meta.label}</span> : null;
-};
-
-const DetailLink = ({ appointment, className }) => {
+const getDetailContext = (appointment) => {
     const date = formatDate(appointment.appointmentDate);
-    return (
-        <Link to={getAppointmentDetailRoute(appointment.id)} className={cx("btn btn-link", className)}>
-            Xem chi tiết
-            {date && <span className="sr-only"> lịch hẹn ngày {date}</span>}
-        </Link>
-    );
+    return date && `lịch hẹn ngày ${date}`;
 };
 
 const UpcomingAppointmentsSection = ({ highlighted = null, highlightedIsToday = false, nextAppointments = [], loading = false, failed = false }) => {
@@ -79,10 +70,12 @@ const UpcomingAppointmentsSection = ({ highlighted = null, highlightedIsToday = 
                                         <td className="cell-primary">{appointment.serviceName}</td>
                                         <td>{appointment.doctorName}</td>
                                         <td>
-                                            <StatusBadge status={appointment.status} />
+                                            <StatusBadge status={appointment.status} labels={PATIENT_APPOINTMENT_STATUS} />
                                         </td>
                                         <td className="text-right">
-                                            <DetailLink appointment={appointment} />
+                                            <DetailLink to={getAppointmentDetailRoute(appointment.id)} context={getDetailContext(appointment)}>
+                                                Xem chi tiết
+                                            </DetailLink>
                                         </td>
                                     </tr>
                                 ))}
@@ -99,8 +92,10 @@ const UpcomingAppointmentsSection = ({ highlighted = null, highlightedIsToday = 
                                 </p>
                                 <p className="text-body-sm text-ink">{appointment.serviceName}</p>
                                 <p className="text-caption text-muted">{appointment.doctorName}</p>
-                                <StatusBadge status={appointment.status} />
-                                <DetailLink appointment={appointment} className="min-h-11" />
+                                <StatusBadge status={appointment.status} labels={PATIENT_APPOINTMENT_STATUS} />
+                                <DetailLink to={getAppointmentDetailRoute(appointment.id)} context={getDetailContext(appointment)} className="min-h-11">
+                                    Xem chi tiết
+                                </DetailLink>
                             </li>
                         ))}
                     </ul>

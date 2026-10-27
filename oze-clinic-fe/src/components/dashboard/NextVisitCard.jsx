@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { cx } from "@/utils/cx";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { formatDate, formatMonthShort, formatTimeRange, formatWeekday, parseDateOnly } from "@/utils/format";
 import { APPOINTMENT_STATUS, MESSAGES, PATIENT_APPOINTMENT_STATUS, QUEUE_STATUS } from "@/utils/messages";
 import { getAppointmentDetailRoute } from "@/utils/routes";
@@ -37,7 +37,6 @@ const QueueTicket = ({ queue }) => {
 };
 
 const NextVisitCard = ({ appointment, isToday = false }) => {
-    const status = PATIENT_APPOINTMENT_STATUS[appointment.status];
     const date = formatDate(appointment.appointmentDate);
     const details = [
         formatTimeRange(appointment.timeSlotStart, appointment.timeSlotEnd),
@@ -61,7 +60,7 @@ const NextVisitCard = ({ appointment, isToday = false }) => {
                             {appointment.serviceName}
                             {date && <span className="sr-only"> {date}</span>}
                         </h3>
-                        {status && <span className={cx("badge", status.badge)}>{status.label}</span>}
+                        <StatusBadge status={appointment.status} labels={PATIENT_APPOINTMENT_STATUS} />
                     </div>
                     {details && <p className="num mt-1 text-body-sm text-body">{details}</p>}
                 </div>

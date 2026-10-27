@@ -1,22 +1,15 @@
 import { FileText } from "lucide-react";
-import { Link } from "react-router-dom";
 import DashboardSection from "@/components/dashboard/DashboardSection";
-import { cx } from "@/utils/cx";
+import DetailLink from "@/components/ui/DetailLink";
 import { formatDate } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE, MESSAGES } from "@/utils/messages";
 import { ROUTES, getMedicalRecordDetailRoute } from "@/utils/routes";
 
 const TITLE_ID = "patient-dashboard-visits";
 
-const DetailLink = ({ visit, className }) => {
-    if (visit.examinationId == null) return null;
+const getDetailContext = (visit) => {
     const date = formatDate(visit.appointmentDate);
-    return (
-        <Link to={getMedicalRecordDetailRoute(visit.examinationId)} className={cx("btn btn-link", className)}>
-            Xem chi tiết
-            {date && <span className="sr-only"> lần khám ngày {date}</span>}
-        </Link>
-    );
+    return date && `lần khám ngày ${date}`;
 };
 
 const RecentVisitsSection = ({ visits = [], loading = false, failed = false }) => {
@@ -59,7 +52,11 @@ const RecentVisitsSection = ({ visits = [], loading = false, failed = false }) =
                                         <td className="cell-primary">{visit.serviceName}</td>
                                         <td>{visit.doctorName}</td>
                                         <td className="text-right">
-                                            <DetailLink visit={visit} />
+                                            {visit.examinationId != null && (
+                                                <DetailLink to={getMedicalRecordDetailRoute(visit.examinationId)} context={getDetailContext(visit)}>
+                                                    Xem chi tiết
+                                                </DetailLink>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -72,7 +69,11 @@ const RecentVisitsSection = ({ visits = [], loading = false, failed = false }) =
                                 <p className="num text-title text-ink">{formatDate(visit.appointmentDate)}</p>
                                 <p className="text-body-sm text-ink">{visit.serviceName}</p>
                                 <p className="text-caption text-muted">{visit.doctorName}</p>
-                                <DetailLink visit={visit} className="min-h-11" />
+                                {visit.examinationId != null && (
+                                    <DetailLink to={getMedicalRecordDetailRoute(visit.examinationId)} context={getDetailContext(visit)} className="min-h-11">
+                                        Xem chi tiết
+                                    </DetailLink>
+                                )}
                             </li>
                         ))}
                     </ul>

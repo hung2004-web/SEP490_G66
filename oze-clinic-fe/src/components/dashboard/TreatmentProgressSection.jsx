@@ -1,5 +1,6 @@
 import { Stethoscope } from "lucide-react";
 import DashboardSection from "@/components/dashboard/DashboardSection";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { cx } from "@/utils/cx";
 import { formatDate } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE, TREATMENT_STAGE_STATUS } from "@/utils/messages";
@@ -7,11 +8,6 @@ import { ROUTES } from "@/utils/routes";
 
 const TITLE_ID = "patient-dashboard-progress";
 const PLAN_TITLE_ID = "patient-dashboard-progress-plan";
-
-const StageBadge = ({ status }) => {
-    const meta = TREATMENT_STAGE_STATUS[status];
-    return meta ? <span className={cx("badge", meta.badge)}>{meta.label}</span> : null;
-};
 
 const TreatmentProgressSection = ({ plan = null, progress = null, loading = false, failed = false }) => {
     const loaded = !loading && !failed;
@@ -90,7 +86,7 @@ const TreatmentProgressSection = ({ plan = null, progress = null, loading = fals
                                                 <td className="cell-primary">{stage.stageName}</td>
                                                 <td>{formatDate(stage.scheduledDate)}</td>
                                                 <td>
-                                                    <StageBadge status={stage.stageStatus} />
+                                                    <StatusBadge status={stage.stageStatus} labels={TREATMENT_STAGE_STATUS} />
                                                 </td>
                                             </tr>
                                         ))}
@@ -108,7 +104,7 @@ const TreatmentProgressSection = ({ plan = null, progress = null, loading = fals
                                             {[`Giai đoạn ${stage.stageNumber}`, formatDate(stage.scheduledDate)].filter(Boolean).join(" · ")}
                                         </p>
                                         <p className="text-body-sm text-ink">{stage.stageName}</p>
-                                        <StageBadge status={stage.stageStatus} />
+                                        <StatusBadge status={stage.stageStatus} labels={TREATMENT_STAGE_STATUS} />
                                     </li>
                                 ))}
                             </ul>
