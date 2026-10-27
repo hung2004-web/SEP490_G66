@@ -1,15 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 
 namespace OZE.Controllers
 {
     [ApiController]
-    [AllowAnonymous]
     [Route("api/[controller]")]
-    public class AppointmentsController : ControllerBase
+    public class AppointmentsController : BaseApiController
     {
         private readonly IAppointmentService _appointmentService;
 
@@ -17,7 +17,18 @@ namespace OZE.Controllers
         {
             _appointmentService = appointmentService;
         }
+
+        // GET api/appointments/bookable-services
+        [HttpGet("bookable-services")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<List<BookableCategoryResponse>>>> GetBookableServicesAsync()
+        {
+            var categories = await _appointmentService.GetBookableServicesAsync();
+            return Ok(ApiResponse<List<BookableCategoryResponse>>.SuccessResult(categories));
+        }
+
         [HttpGet("available-slots")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<List<AvailableSlotResponse>>>> GetAvailableSlotsAsync([FromQuery] AvailableSlotRequest request)
         {
             var slots = await _appointmentService.GetAvailableSlotsAsync(request);
@@ -26,11 +37,65 @@ namespace OZE.Controllers
 
         // POST api/appointments/guest-booking
         [HttpPost("guest-booking")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<AppointmentResponse>>> BookAsGuestAsync([FromBody] GuestBookingRequest request)
         {
             var appointment = await _appointmentService.BookAsGuestAsync(request);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment,
-                "Appointment request sent. The reception desk will confirm it soon"));
+                "Appointment booked successfully"));
+        }
+
+        /// <summary>
+        /// Retrieves a paginated list of appointments with optional filtering by date, doctor, patient, status, and search keyword.
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.DoctorRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<PagedResult<AppointmentResponse>>>> GetAppointmentsAsync(
+            [FromQuery] AppointmentQueryParameters query,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.GetAppointmentsAsync(query, cancellationToken);
+            return Ok(ApiResponse<PagedResult<AppointmentResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
+        /// Retrieves appointment details by appointment ID.
+        /// </summary>
+        [HttpGet("{id:long}")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.DoctorRole},{RoleConstants.ClinicManagerRole},{RoleConstants.PatientRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> GetAppointmentByIdAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.GetAppointmentByIdAsync(id, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result));
+        }
+
+        /// <summary>
+        /// Cancels an appointment with a specified reason.
+        /// </summary>
+        [HttpPost("{id:long}/cancel")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.DoctorRole},{RoleConstants.ClinicManagerRole},{RoleConstants.PatientRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> CancelAppointmentAsync(
+            [FromRoute] long id,
+            [FromBody] CancelAppointmentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.CancelAppointmentAsync(id, request, CurrentUserId, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Hủy lịch hẹn thành công"));
+        }
+
+        /// <summary>
+        /// Checks in an appointment upon patient arrival at the clinic.
+        /// </summary>
+        [HttpPost("{id:long}/check-in")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> CheckInAppointmentAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.CheckInAppointmentAsync(id, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Tiếp đón bệnh nhân thành công"));
         }
     }
 }

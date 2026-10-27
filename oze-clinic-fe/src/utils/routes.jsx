@@ -22,6 +22,10 @@ export const ROUTES = {
     TREATMENT_PLANS: "/treatment-plans",
     MEDICAL_RECORD: "/medical-record",
     INVOICES: "/invoices",
+    APPOINTMENT_DETAIL: "/appointments/:appointmentId",
+    TREATMENT_PLAN_DETAIL: "/treatment-plans/:planId",
+    INVOICE_DETAIL: "/invoices/:invoiceId",
+    MEDICAL_RECORD_DETAIL: "/medical-record/:examinationId",
     // Staff pages use a prefix per role so they never clash with the patient pages above.
     WORK_SCHEDULE: "/work-schedule",
     DOCTOR_APPOINTMENTS: "/doctor/appointments",
@@ -73,6 +77,14 @@ export const ROLE_ROUTES = [
 ];
 
 export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_DETAIL, { serviceId: String(serviceId) });
+
+export const getAppointmentDetailRoute = (appointmentId) => generatePath(ROUTES.APPOINTMENT_DETAIL, { appointmentId: String(appointmentId) });
+
+export const getTreatmentPlanDetailRoute = (planId) => generatePath(ROUTES.TREATMENT_PLAN_DETAIL, { planId: String(planId) });
+
+export const getInvoiceDetailRoute = (invoiceId) => generatePath(ROUTES.INVOICE_DETAIL, { invoiceId: String(invoiceId) });
+
+export const getMedicalRecordDetailRoute = (examinationId) => generatePath(ROUTES.MEDICAL_RECORD_DETAIL, { examinationId: String(examinationId) });
 
 export const getErrorRoute = (code) => generatePath(ROUTES.ERROR, { code: String(code) });
 

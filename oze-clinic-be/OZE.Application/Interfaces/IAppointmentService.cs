@@ -1,15 +1,20 @@
-﻿using OZE.Common.Models;
-using System;
+using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OZE.Application.Interfaces
 {
     public interface IAppointmentService
     {
+        Task<List<BookableCategoryResponse>> GetBookableServicesAsync();
         Task<List<AvailableSlotResponse>> GetAvailableSlotsAsync(AvailableSlotRequest request);
         Task<AppointmentResponse> BookAsGuestAsync(GuestBookingRequest request);
+
+        Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentQueryParameters query, CancellationToken cancellationToken = default);
+        Task<AppointmentResponse> GetAppointmentByIdAsync(long id, CancellationToken cancellationToken = default);
+        Task<AppointmentResponse> CancelAppointmentAsync(long id, CancelAppointmentRequest request, string? userId, CancellationToken cancellationToken = default);
+        Task<AppointmentResponse> CheckInAppointmentAsync(long id, CancellationToken cancellationToken = default);
     }
 }

@@ -3,6 +3,8 @@ namespace OZE.Domain.Entities
     public class Service
     {
         public int Id { get; set; }
+        // Nullable so existing services stay valid until they are assigned a category
+        public int? CategoryId { get; set; }
         public string ServiceCode { get; set; } = string.Empty;
         public string ServiceName { get; set; } = string.Empty;
         public string? Description { get; set; }
@@ -12,5 +14,7 @@ namespace OZE.Domain.Entities
         public bool IsActive { get; set; } = true;
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
+
+        public virtual ServiceCategory? Category { get; set; }
     }
 }
