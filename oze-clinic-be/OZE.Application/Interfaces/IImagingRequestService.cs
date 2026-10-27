@@ -9,5 +9,10 @@ namespace OZE.Application.Interfaces
             long examinationId,
             CreateImagingRequest request,
             CancellationToken cancellationToken = default);
+
+        Task<List<ImagingRequestResponse>> GetByExaminationAsync(
+            string userId,
+            long examinationId,
+            CancellationToken cancellationToken = default);
     }
 }
