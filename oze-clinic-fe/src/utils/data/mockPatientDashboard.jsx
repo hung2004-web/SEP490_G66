@@ -12,6 +12,8 @@ const CANAL_FILLING = { serviceId: 3, serviceName: "Trám bít ống tủy răng
 const CROWN = { serviceId: 4, serviceName: "Bọc mão sứ răng 46" };
 const CROWN_CHECK = { serviceId: 5, serviceName: "Tái khám kiểm tra mão sứ răng 46" };
 const BRACES_CONSULTATION = { serviceId: 6, serviceName: "Tư vấn niềng răng" };
+const GENERAL_CHECKUP = { serviceId: 7, serviceName: "Khám tổng quát" };
+const TOOTH_14_FILLING = { serviceId: 8, serviceName: "Trám răng 14" };
 
 const ACTIVE_PLAN_ID = 31;
 
@@ -86,6 +88,12 @@ export const buildPatientDashboardData = (today, mode) => {
         : { status: APPOINTMENT_STATUS.CONFIRMED };
 
     const appointments = [
+        appointment({ id: 143, date: day(-274), start: "09:00:00", end: "09:30:00", service: GENERAL_CHECKUP, doctor: HA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9009, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
+        appointment({ id: 160, date: day(-213), start: "09:00:00", end: "09:30:00", service: GENERAL_CHECKUP, doctor: HA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9008, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
+        appointment({ id: 172, date: day(-160), start: "14:00:00", end: "14:30:00", service: TOOTH_14_FILLING, doctor: HA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9007, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
+        appointment({ id: 186, date: day(-78), start: "09:00:00", end: "09:30:00", service: GENERAL_CHECKUP, doctor: HA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9006, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
+        appointment({ id: 209, date: day(-39), start: "15:00:00", end: "15:30:00", service: GENERAL_CHECKUP, doctor: HA, status: APPOINTMENT_STATUS.CANCELLED }),
+        appointment({ id: 218, date: day(-25), start: "10:00:00", end: "10:30:00", service: SCALING, doctor: HA, status: APPOINTMENT_STATUS.NO_SHOW }),
         appointment({ id: 231, date: day(-21), start: "08:30:00", end: "09:00:00", service: SCALING, doctor: HA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9001, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
         appointment({ id: 238, date: day(-18), start: "09:00:00", end: "09:30:00", service: ROOT_CANAL, doctor: KHOA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9002, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
         appointment({ id: 240, date: day(-11), start: "09:00:00", end: "09:30:00", service: CANAL_FILLING, doctor: KHOA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9003, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
