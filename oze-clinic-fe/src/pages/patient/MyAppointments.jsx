@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import AppointmentTable from "@/components/appointment/AppointmentTable";
+import AppointmentTabs from "@/components/appointment/AppointmentTabs";
 import Pagination from "@/components/ui/Pagination";
 import useAsync from "@/hooks/useAsync";
 import { getMyAppointments } from "@/services/patientDashboardService";
 import { APPOINTMENT_STATUS, GENERIC_ERROR_MESSAGE } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
-import AppointmentTable from "./appointments/AppointmentTable";
-import AppointmentTabs from "./appointments/AppointmentTabs";
 
 const ID_PREFIX = "my-appointments";
 const TITLE_ID = `${ID_PREFIX}-title`;
