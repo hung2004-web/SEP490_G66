@@ -36,6 +36,30 @@ export const getServices = async ({ keyword = "", group = "", status = "", page 
     return success({ items, page: currentPage, pageSize, totalItems, totalPages });
 };
 
+// request: { name, code, group, price, description }. A new service is active and has a fixed price.
+export const createService = async (request) => {
+    await wait(MOCK_DELAY_MS);
+
+    const code = request.code.trim().toUpperCase();
+    if (services.some((service) => service.code === code)) {
+        return { ...failure("Mã dịch vụ đã tồn tại."), errors: { code: "Mã dịch vụ đã tồn tại." } };
+    }
+
+    const service = {
+        id: Math.max(0, ...services.map((item) => item.id)) + 1,
+        code,
+        name: request.name.trim(),
+        description: request.description.trim(),
+        group: request.group,
+        price: request.price,
+        priceFrom: false,
+        isActive: true,
+    };
+    services.unshift(service);
+
+    return success({ ...service }, `Đã thêm dịch vụ ${service.code}.`);
+};
+
 export const setServiceActive = async (id, isActive) => {
     await wait(MOCK_DELAY_MS);
 

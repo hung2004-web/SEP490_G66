@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Pencil, Plus, Search, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
+import FormField from "@/components/ui/FormField";
+import Modal from "@/components/ui/Modal";
 import Pagination from "@/components/ui/Pagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
-import { getServices, setServiceActive } from "@/services/serviceManagementService";
+import { createService, getServices, setServiceActive } from "@/services/serviceManagementService";
 import { cx } from "@/utils/cx";
 import { SERVICE_GROUPS } from "@/utils/data/mockServicesAdmin";
+import { isRequiredEmpty, requiredMessage } from "@/utils/validation";
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 5;
 const COLUMN_COUNT = 7;
+// Same limits as CreateServiceRequest in the backend; the price cap keeps typing sane (999.999.999 ₫).
+const SERVICE_LIMITS = { NAME_MAX: 200, CODE_MAX: 20, DESCRIPTION_MAX: 500, PRICE_DIGITS_MAX: 9 };
+const CODE_PATTERN = /^[A-Za-z0-9_-]+$/;
+const EMPTY_SERVICE_FORM = { name: "", code: "", group: "", price: "", description: "" };
 
 const GROUP_OPTIONS = [
     { value: SERVICE_GROUPS.EXAMINATION, label: "Khám" },
@@ -38,6 +45,133 @@ const PriceCell = ({ service }) => {
             {service.priceFrom && "Từ "}
             {priceFormatter.format(service.price)} ₫
         </span>
+    );
+};
+
+const validateService = (form) => {
+    const errors = {};
+    if (isRequiredEmpty(form.name)) errors.name = requiredMessage("tên dịch vụ");
+    if (isRequiredEmpty(form.code)) errors.code = requiredMessage("mã dịch vụ");
+    else if (!CODE_PATTERN.test(form.code.trim())) errors.code = "Mã dịch vụ chỉ gồm chữ, số, dấu gạch ngang hoặc gạch dưới.";
+    if (!form.group) errors.group = "Vui lòng chọn nhóm dịch vụ.";
+    if (form.price === "") errors.price = requiredMessage("giá tham khảo");
+    return errors;
+};
+
+// Price is kept as digits ("18000000") and shown with dots ("18.000.000") while typing.
+const formatPriceInput = (digits) => (digits === "" ? "" : priceFormatter.format(Number(digits)));
+
+const ServiceFormModal = ({ onClose, onSaved }) => {
+    const [form, setForm] = useState(EMPTY_SERVICE_FORM);
+    const [errors, setErrors] = useState({});
+    const [saving, setSaving] = useState(false);
+
+    const setField = (name, value) => {
+        setForm((current) => ({ ...current, [name]: value }));
+        setErrors((current) => ({ ...current, [name]: undefined }));
+    };
+
+    const fieldProps = (name) => ({
+        id: `service-form-${name}`,
+        name,
+        "aria-invalid": Boolean(errors[name]),
+        "aria-describedby": errors[name] ? `service-form-${name}-error` : undefined,
+    });
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        const nextErrors = validateService(form);
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length > 0) {
+            event.currentTarget.querySelector('[aria-invalid="true"]')?.focus();
+            return;
+        }
+
+        setSaving(true);
+        const response = await createService({ ...form, price: Number(form.price) });
+        setSaving(false);
+        if (!response.success) {
+            setErrors(response.errors ?? {});
+            if (!response.errors) toast.error(response.message);
+            return;
+        }
+        onSaved(response.message);
+    };
+
+    return (
+        <Modal title="Thêm dịch vụ" onClose={onClose} closeDisabled={saving}>
+            <form noValidate onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField id="service-form-name" label="Tên dịch vụ" required error={errors.name}>
+                        <input
+                            {...fieldProps("name")}
+                            className="input"
+                            placeholder="VD: Niềng răng thẩm mỹ"
+                            maxLength={SERVICE_LIMITS.NAME_MAX}
+                            value={form.name}
+                            onChange={(event) => setField("name", event.target.value)}
+                        />
+                    </FormField>
+                    <FormField id="service-form-code" label="Mã dịch vụ" required error={errors.code}>
+                        <input
+                            {...fieldProps("code")}
+                            className="input uppercase"
+                            placeholder="VD: DV050"
+                            maxLength={SERVICE_LIMITS.CODE_MAX}
+                            value={form.code}
+                            onChange={(event) => setField("code", event.target.value)}
+                        />
+                    </FormField>
+                    <FormField id="service-form-group" label="Nhóm dịch vụ" required error={errors.group}>
+                        <select
+                            {...fieldProps("group")}
+                            className={cx("input", !form.group && "text-placeholder")}
+                            value={form.group}
+                            onChange={(event) => setField("group", event.target.value)}
+                        >
+                            <option value="">Chọn nhóm</option>
+                            {GROUP_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value} className="text-ink">
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </FormField>
+                    <FormField id="service-form-price" label="Giá tham khảo (₫)" required error={errors.price}>
+                        <input
+                            {...fieldProps("price")}
+                            className="input num"
+                            inputMode="numeric"
+                            placeholder="VD: 18.000.000"
+                            value={formatPriceInput(form.price)}
+                            onChange={(event) =>
+                                setField("price", event.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, SERVICE_LIMITS.PRICE_DIGITS_MAX))
+                            }
+                        />
+                    </FormField>
+                </div>
+                <FormField id="service-form-description" label="Mô tả ngắn">
+                    <textarea
+                        {...fieldProps("description")}
+                        className="input"
+                        rows={3}
+                        placeholder="Hiển thị trên website và khi bệnh nhân đặt lịch"
+                        maxLength={SERVICE_LIMITS.DESCRIPTION_MAX}
+                        value={form.description}
+                        onChange={(event) => setField("description", event.target.value)}
+                    />
+                </FormField>
+                <div className="modal-actions -mx-6 mt-2 border-t border-border px-6 pt-4">
+                    <button type="button" className="btn btn-secondary" disabled={saving} onClick={onClose}>
+                        Huỷ
+                    </button>
+                    <button type="submit" className="btn btn-primary" disabled={saving}>
+                        {saving && <span className="btn-spinner" aria-hidden="true" />}
+                        Lưu dịch vụ
+                    </button>
+                </div>
+            </form>
+        </Modal>
     );
 };
 
@@ -107,6 +241,7 @@ const ServiceManagement = () => {
     const [status, setStatus] = useState("");
     const [page, setPage] = useState(1);
     const [reloadKey, setReloadKey] = useState(0);
+    const [creating, setCreating] = useState(false);
 
     const { loading, value: result } = useAsync(
         () => getServices({ keyword, group, status, page }),
@@ -134,8 +269,21 @@ const ServiceManagement = () => {
         setPage(1);
     };
 
-    // TODO: open the popups (add / edit / service types) once their designs are ready.
-    const openCreate = () => {};
+    const openCreate = () => setCreating(true);
+
+    // A new service goes to the top of the list, so show page 1 without filters.
+    const handleCreated = (message) => {
+        setCreating(false);
+        toast.success(message);
+        setSearchInput("");
+        setKeyword("");
+        setGroup("");
+        setStatus("");
+        setPage(1);
+        setReloadKey((current) => current + 1);
+    };
+
+    // TODO: open the popups (edit / service types) once their designs are ready.
     const openEdit = () => {};
     const openDetail = () => {};
 
@@ -280,6 +428,8 @@ const ServiceManagement = () => {
                     </div>
                 )}
             </div>
+
+            {creating && <ServiceFormModal onClose={() => setCreating(false)} onSaved={handleCreated} />}
         </div>
     );
 };
