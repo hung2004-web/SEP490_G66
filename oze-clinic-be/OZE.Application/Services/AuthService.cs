@@ -636,6 +636,54 @@ namespace OZE.Application.Services
             });
         }
 
+        // Step 2 of password recovery: a correct OTP unlocks ResetPasswordAsync for this session
+        public async Task<ApiResponse> VerifyResetOtpAsync(VerifyResetOtpRequest request)
+        {
+            var session = _passwordResetStore.Get(request.SessionId);
+            if (session == null || session.ExpiresAt <= DateTime.UtcNow)
+            {
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.ResetSessionInvalid);
+            }
+
+            var maxAttempts = _otpSettings.MaxAttempts > 0 ? _otpSettings.MaxAttempts : 5;
+            if (session.FailedAttempts >= maxAttempts)
+            {
+                _passwordResetStore.Remove(session.SessionId);
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.ResetSessionInvalid);
+            }
+
+            if (!OtpHelper.Matches(session.OtpHash, session.SessionId, request.Otp.Trim()))
+            {
+                session.FailedAttempts++;
+                if (session.FailedAttempts >= maxAttempts)
+                {
+                    _passwordResetStore.Remove(session.SessionId);
+                }
+                else
+                {
+                    _passwordResetStore.Save(session, session.ExpiresAt - DateTime.UtcNow);
+                }
+
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.InvalidOtp);
+            }
+
+            var user = await _userManager.FindByIdAsync(session.UserId);
+            if (user == null)
+            {
+                _passwordResetStore.Remove(session.SessionId);
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
+            }
+
+            var now = DateTime.UtcNow;
+            session.IsOtpVerified = true;
+            session.ResetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            // Give the user a fresh time window to type the new password
+            session.ExpiresAt = now.AddMinutes(OtpExpiresInMinutes);
+            _passwordResetStore.Save(session, session.ExpiresAt - now);
+
+            return ApiResponse.SuccessResult("OTP verified. You can now set a new password");
+        }
+
         public async Task<ApiResponse> ChangePasswordAsync(string userId, ChangePasswordRequest request)
         {
             var user = await _userManager.FindByIdAsync(userId);

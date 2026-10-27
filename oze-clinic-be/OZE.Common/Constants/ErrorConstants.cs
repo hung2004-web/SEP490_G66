@@ -196,6 +196,11 @@ namespace OZE.Common.Constants
             public const string SlotNotAvailable = "This time slot is no longer available. Please choose another time";
             public const string PhoneHasAccount = "This phone number already has an account. Please sign in to book";
             public const string ConfigMissing = "System configuration {0} is missing";
+            public const string AppointmentNotFound = "Appointment not found in system";
+            public const string CannotCancelCompleted = "Cannot cancel an appointment that is already completed or cancelled";
+            public const string ReasonRequired = "Cancellation reason is required";
+            public const string CannotCheckInCancelled = "Cannot check in an appointment that is cancelled";
+            public const string CannotCheckInCompleted = "Cannot check in an appointment that is already completed";
         }
         public static class PatientMessage
         {
@@ -221,6 +226,27 @@ namespace OZE.Common.Constants
             public const string PatientNotFound = "Patient not found";
             public const string ExaminationNotFound = "Examination not found";
             public const string AccessDenied = "You do not have permission to view this patient's medical record";
+        }
+
+        // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.
+        public static class ImagingRequestMessage
+        {
+            // MSG07
+            public const string ImagingTypeRequired = "Please enter imaging type.";
+            public const string TargetAreaRequired = "Please enter target area.";
+            public const string ClinicalIndicationRequired = "Please enter clinical indication.";
+            // MSG66
+            public const string ImagingTypeInvalid = "Imaging type is invalid. Please check again.";
+            public const string TargetAreaInvalid = "Target area is invalid. Please check again.";
+            public const string ClinicalIndicationInvalid = "Clinical indication is invalid. Please check again.";
+            // MSG70
+            public const string ExaminationNotInProgress = "Cannot request imaging because the examination is {0}.";
+            // MSG71
+            public const string RequestSubmitted = "Imaging request has been submitted.";
+            public const string NotExaminingDoctor = "You do not have permission to request imaging for this examination.";
+            public const string CannotViewRequests = "You do not have permission to view imaging requests for this examination.";
+            public const string TechnicianNotificationTitle = "New imaging request";
+            public const string TechnicianNotificationMessage = "Imaging request ({0}) for {1} has been submitted.";
         }
     }
 }

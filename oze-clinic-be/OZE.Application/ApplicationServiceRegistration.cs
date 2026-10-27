@@ -40,6 +40,7 @@ namespace OZE.Application
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+            services.AddScoped<IImagingRequestService, ImagingRequestService>();
             return services;
         }
     }

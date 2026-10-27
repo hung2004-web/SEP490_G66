@@ -1,8 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
+using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 using OZE.Persistence.DbContexts;
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -124,6 +127,96 @@ namespace OZE.Persistence.Repositories
                 .Include(c => c.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName))
                 .OrderBy(c => c.DisplayOrder)
                 .ToListAsync();
+        }
+
+        public async Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Service)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        public async Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Service)
+                .AsQueryable();
+
+            if (parameters.Date.HasValue)
+            {
+                query = query.Where(x => x.AppointmentDate == parameters.Date.Value);
+            }
+            else
+            {
+                if (parameters.FromDate.HasValue)
+                {
+                    query = query.Where(x => x.AppointmentDate >= parameters.FromDate.Value);
+                }
+                if (parameters.ToDate.HasValue)
+                {
+                    query = query.Where(x => x.AppointmentDate <= parameters.ToDate.Value);
+                }
+            }
+
+            if (parameters.DoctorId.HasValue)
+            {
+                query = query.Where(x => x.DoctorId == parameters.DoctorId.Value);
+            }
+
+            if (parameters.PatientId.HasValue)
+            {
+                query = query.Where(x => x.PatientId == parameters.PatientId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters.Status))
+            {
+                var status = parameters.Status.Trim().ToUpperInvariant();
+                query = query.Where(x => x.Status == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters.SearchKeyword))
+            {
+                var kw = parameters.SearchKeyword.Trim();
+                query = query.Where(x => x.Patient.FullName.Contains(kw)
+                    || x.Patient.PatientCode.Contains(kw)
+                    || (x.Patient.PhoneNumber != null && x.Patient.PhoneNumber.Contains(kw)));
+            }
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            if (totalCount == 0)
+            {
+                return new PagedResult<Appointment>(new List<Appointment>(), 0, parameters.PageNumber, parameters.PageSize);
+            }
+
+            query = parameters.SortBy?.Trim().ToLowerInvariant() switch
+            {
+                "patientname" => parameters.SortDescending ? query.OrderByDescending(x => x.Patient.FullName) : query.OrderBy(x => x.Patient.FullName),
+                "status" => parameters.SortDescending ? query.OrderByDescending(x => x.Status) : query.OrderBy(x => x.Status),
+                "createdat" => parameters.SortDescending ? query.OrderByDescending(x => x.CreatedAt) : query.OrderBy(x => x.CreatedAt),
+                _ => parameters.SortDescending
+                    ? query.OrderByDescending(x => x.AppointmentDate).ThenByDescending(x => x.TimeSlotStart)
+                    : query.OrderBy(x => x.AppointmentDate).ThenBy(x => x.TimeSlotStart)
+            };
+
+            var items = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<Appointment>(items, totalCount, parameters.PageNumber, parameters.PageSize);
+        }
+
+        public async Task UpdateAsync(Appointment appointment)
+        {
+            _context.Appointments.Update(appointment);
+            await _context.SaveChangesAsync();
         }
     }
 }
