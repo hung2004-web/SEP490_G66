@@ -20,6 +20,22 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Returns the imaging requests of one examination for the examining doctor (UC-82).
+        /// </summary>
+        [HttpGet("examinations/{examinationId:long}/imaging-requests")]
+        public async Task<ActionResult<ApiResponse<List<ImagingRequestResponse>>>> GetByExaminationAsync(
+            long examinationId,
+            CancellationToken cancellationToken)
+        {
+            var requests = await _imagingRequestService.GetByExaminationAsync(
+                CurrentUserId ?? string.Empty,
+                examinationId,
+                cancellationToken);
+
+            return Ok(ApiResponse<List<ImagingRequestResponse>>.SuccessResult(requests));
+        }
+
+        /// <summary>
         /// Creates a Pending imaging request for an in-progress examination and notifies active imaging technicians (UC-82).
         /// </summary>
         [HttpPost("examinations/{examinationId:long}/imaging-requests")]
