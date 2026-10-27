@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -771,6 +772,81 @@ namespace OZE.UnitTest.Services
             result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
             VerifyNoTokenIssued();
             _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
+        }
+
+        #endregion
+
+        #region ConfirmEmailAsync
+
+        private const string RawEmailToken = "identity-email-token";
+
+        // The confirmation link carries the Identity token encoded as Base64Url, like VerifyOtpAsync builds it
+        private static string EncodeForLink(string token) =>
+            WebEncoders.Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(token));
+
+        [Fact]
+        public async Task ConfirmEmailAsync_WithValidCode_ShouldConfirmEmail()
+        {
+            // Arrange
+            var user = ActiveUser();
+            SetupFindById(user);
+            _userManagerMock.Setup(m => m.ConfirmEmailAsync(user, RawEmailToken)).ReturnsAsync(IdentityResult.Success);
+
+            // Act
+            var result = await _authService.ConfirmEmailAsync(UserId, EncodeForLink(RawEmailToken));
+
+            // Assert: the code from the link is decoded before it reaches Identity
+            result.Success.Should().BeTrue();
+            _userManagerMock.Verify(m => m.ConfirmEmailAsync(user, RawEmailToken), Times.Once);
+        }
+
+        [Fact]
+        public async Task ConfirmEmailAsync_WhenUserNotFound_ShouldFail()
+        {
+            // Arrange
+            SetupFindById(null);
+
+            // Act
+            var result = await _authService.ConfirmEmailAsync(UserId, EncodeForLink(RawEmailToken));
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
+            _userManagerMock.Verify(m => m.ConfirmEmailAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ConfirmEmailAsync_WhenIdentityRejectsCode_ShouldReturnIdentityErrors()
+        {
+            // Arrange: the code is well formed but wrong or already used
+            var user = ActiveUser();
+            SetupFindById(user);
+            _userManagerMock
+                .Setup(m => m.ConfirmEmailAsync(user, RawEmailToken))
+                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "InvalidToken", Description = "Invalid token." }));
+
+            // Act
+            var result = await _authService.ConfirmEmailAsync(UserId, EncodeForLink(RawEmailToken));
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be("Email confirmation failed");
+            result.Errors.Should().Contain("Invalid token.");
+        }
+
+        [Fact]
+        public async Task ConfirmEmailAsync_WithCodeThatCannotBeDecoded_ShouldFailWithoutCrashing()
+        {
+            // Arrange: a damaged link, e.g. cut off when copied
+            SetupFindById(ActiveUser());
+
+            // Act: "a" is not valid Base64Url (a single character cannot be decoded)
+            var result = await _authService.ConfirmEmailAsync(UserId, "a");
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().StartWith("Invalid confirmation token");
+            _userManagerMock.Verify(m => m.ConfirmEmailAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
         }
 
         #endregion
