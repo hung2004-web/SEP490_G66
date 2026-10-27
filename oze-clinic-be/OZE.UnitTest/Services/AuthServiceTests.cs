@@ -385,5 +385,170 @@ namespace OZE.UnitTest.Services
         }
 
         #endregion
+
+        #region ChangePasswordAsync
+
+        private const string UserId = "user-1";
+        private const string CurrentPassword = "Old@1234";
+        private const string NewPassword = "New@1234";
+
+        private static ChangePasswordRequest ValidChangeRequest() => new()
+        {
+            CurrentPassword = CurrentPassword,
+            NewPassword = NewPassword,
+            ConfirmPassword = NewPassword
+        };
+
+        private void SetupFindById(ApplicationUser? user)
+        {
+            _userManagerMock.Setup(m => m.FindByIdAsync(UserId)).ReturnsAsync(user);
+        }
+
+        private void SetupIdentityChangePassword(ApplicationUser user, IdentityResult result)
+        {
+            _userManagerMock
+                .Setup(m => m.ChangePasswordAsync(user, CurrentPassword, NewPassword))
+                .ReturnsAsync(result);
+        }
+
+        private void VerifyPasswordNeverChanged()
+        {
+            _userManagerMock.Verify(
+                m => m.ChangePasswordAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        private void VerifyDevicesNeverSignedOut()
+        {
+            _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WithValidRequest_ShouldChangePasswordAndSignOutAllDevices()
+        {
+            // Arrange
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Success);
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, ValidChangeRequest());
+
+            // Assert: old refresh tokens are revoked so other devices must sign in again
+            result.Success.Should().BeTrue();
+            _userManagerMock.Verify(m => m.ChangePasswordAsync(user, CurrentPassword, NewPassword), Times.Once);
+            _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(UserId), Times.Once);
+            _refreshTokenRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WithoutConfirmPassword_ShouldSkipMatchCheckAndSucceed()
+        {
+            // Arrange: the service only compares the confirmation when it is sent
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Success);
+            var request = ValidChangeRequest();
+            request.ConfirmPassword = string.Empty;
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, request);
+
+            // Assert
+            result.Success.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WhenUserNotFound_ShouldFail()
+        {
+            // Arrange
+            SetupFindById(null);
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, ValidChangeRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
+            VerifyPasswordNeverChanged();
+            VerifyDevicesNeverSignedOut();
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WhenNewPasswordSameAsCurrent_ShouldFail()
+        {
+            // Arrange
+            SetupFindById(ActiveUser());
+            var request = new ChangePasswordRequest
+            {
+                CurrentPassword = CurrentPassword,
+                NewPassword = CurrentPassword,
+                ConfirmPassword = CurrentPassword
+            };
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, request);
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.SamePassword);
+            VerifyPasswordNeverChanged();
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WhenConfirmPasswordDoesNotMatch_ShouldFail()
+        {
+            // Arrange
+            SetupFindById(ActiveUser());
+            var request = ValidChangeRequest();
+            request.ConfirmPassword = "Other@1234";
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, request);
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.PasswordMismatch);
+            VerifyPasswordNeverChanged();
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WhenCurrentPasswordIsWrong_ShouldReturnIdentityErrors()
+        {
+            // Arrange: Identity rejects the current password
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Failed(
+                new IdentityError { Code = "PasswordMismatch", Description = "Incorrect password." }));
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, ValidChangeRequest());
+
+            // Assert: no device is signed out when nothing changed
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be("Change password failed");
+            result.Errors.Should().Contain("Incorrect password.");
+            VerifyDevicesNeverSignedOut();
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WhenNewPasswordBreaksPolicy_ShouldReturnIdentityErrors()
+        {
+            // Arrange: Identity rejects a weak new password
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Failed(
+                new IdentityError { Code = "PasswordRequiresDigit", Description = "Passwords must have at least one digit." }));
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, ValidChangeRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Errors.Should().Contain("Passwords must have at least one digit.");
+            VerifyDevicesNeverSignedOut();
+        }
+
+        #endregion
     }
 }
