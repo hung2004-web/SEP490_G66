@@ -198,6 +198,7 @@ namespace OZE.Common.Constants
             public const string ConfigMissing = "System configuration {0} is missing";
             public const string AppointmentNotFound = "Appointment not found in system";
             public const string OnlyOpenCanBeCancelled = "Only an appointment that is pending or confirmed can be cancelled";
+            public const string CancelDeadlinePassed = "It is too close to the appointment time to cancel online. Please call the clinic";
             public const string ReasonRequired = "Cancellation reason is required";
             public const string OnlyOpenCanBeCheckedIn = "Only an appointment that is pending or confirmed can be checked in";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
