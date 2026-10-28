@@ -128,7 +128,9 @@ namespace OZE.Persistence.Repositories
             if (inInvoice) return true;
 
             var inTreatment = await _context.TreatmentPlanStages.AnyAsync(t => t.ServiceId == serviceId, cancellationToken);
-            return inTreatment;
+            if (inTreatment) return true;
+
+            return await _context.AppointmentServiceItems.AnyAsync(a => a.ServiceId == serviceId, cancellationToken);
         }
 
         public async Task AddAsync(Service service, CancellationToken cancellationToken = default)
