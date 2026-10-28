@@ -15,6 +15,7 @@ namespace OZE.Application.Interfaces
         Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentQueryParameters query, CancellationToken cancellationToken = default);
         Task<AppointmentResponse> GetAppointmentByIdAsync(long id, CancellationToken cancellationToken = default);
         Task<AppointmentResponse> CancelAppointmentAsync(long id, CancelAppointmentRequest request, string? userId, CancellationToken cancellationToken = default);
+        Task<AppointmentResponse> ConfirmAppointmentAsync(long id, CancellationToken cancellationToken = default);
         Task<AppointmentResponse> CheckInAppointmentAsync(long id, CancellationToken cancellationToken = default);
     }
 }

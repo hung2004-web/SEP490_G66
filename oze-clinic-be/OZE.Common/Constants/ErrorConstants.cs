@@ -201,6 +201,7 @@ namespace OZE.Common.Constants
             public const string ReasonRequired = "Cancellation reason is required";
             public const string CannotCheckInCancelled = "Cannot check in an appointment that is cancelled";
             public const string CannotCheckInCompleted = "Cannot check in an appointment that is already completed";
+            public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
         }
         public static class PatientMessage
         {

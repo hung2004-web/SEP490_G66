@@ -268,6 +268,30 @@ namespace OZE.Application.Services
             return value!;
         }
 
+        // A failed notification must not undo the confirmation, so errors are only logged
+        private async Task SendConfirmationNotificationAsync(Appointment appointment)
+        {
+            var serviceNames = string.Join(", ", appointment.ServiceItems.Select(i => i.Service?.ServiceName));
+            var message = $"OZE Dental: Lich hen {serviceNames} " +
+                          $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy} " +
+                          "da duoc xac nhan.";
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(appointment.Patient?.PhoneNumber))
+                {
+                    await _smsSender.SendSmsAsync(appointment.Patient.PhoneNumber, message);
+                }
+                if (!string.IsNullOrWhiteSpace(appointment.Patient?.Email))
+                {
+                    await _emailSender.SendEmailAsync(appointment.Patient.Email, "OZE Dental - Appointment confirmed", message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not send the confirmation notification for appointment {AppointmentId}", appointment.Id);
+            }
+        }
+
         private async Task<int> GetIntConfigAsync(string configKey)
         {
             var value = await _appointmentRepository.GetConfigValueAsync(configKey);
@@ -369,6 +393,26 @@ namespace OZE.Application.Services
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
+
+            return MapToResponse(appointment);
+        }
+
+        public async Task<AppointmentResponse> ConfirmAppointmentAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.PendingStatus, ErrorConstants.AppointmentMessage.OnlyPendingCanBeConfirmed);
+
+            appointment.Status = AppointmentConstants.ConfirmedStatus;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+            foreach (var item in appointment.ServiceItems.Where(i => i.Status == AppointmentConstants.ServiceRequestedStatus))
+            {
+                item.Status = AppointmentConstants.ServiceConfirmedStatus;
+            }
+
+            await _appointmentRepository.UpdateAsync(appointment);
+            await SendConfirmationNotificationAsync(appointment);
 
             return MapToResponse(appointment);
         }
