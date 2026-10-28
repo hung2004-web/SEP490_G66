@@ -245,6 +245,9 @@ namespace OZE.Common.Constants
             public const string RequestSubmitted = "Imaging request has been submitted.";
             public const string NotExaminingDoctor = "You do not have permission to request imaging for this examination.";
             public const string CannotViewRequests = "You do not have permission to view imaging requests for this examination.";
+            // MSG67
+            public const string RequestNotFound = "Imaging request not found.";
+            public const string CannotViewRequest = "You do not have permission to view this imaging request.";
             public const string TechnicianNotificationTitle = "New imaging request";
             public const string TechnicianNotificationMessage = "Imaging request ({0}) for {1} has been submitted.";
         }
