@@ -37,11 +37,16 @@ namespace OZE.UnitTest.Services
             {
                 Id = 100,
                 Status = status,
+                AppointmentDate = DateOnly.FromDateTime(DateTime.Now.AddDays(10)),
+                TimeSlotStart = new TimeOnly(9, 0),
                 Patient = new Patient { UserId = OwnerUserId, FullName = "Tran Thi B" }
             };
             _appointmentRepositoryMock
                 .Setup(r => r.GetByIdWithDetailsAsync(100, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(appointment);
+            _appointmentRepositoryMock
+                .Setup(r => r.GetConfigValueAsync(ConfigKeyConstants.BookingCancelCutoffHours))
+                .ReturnsAsync("24");
             return appointment;
         }
 
