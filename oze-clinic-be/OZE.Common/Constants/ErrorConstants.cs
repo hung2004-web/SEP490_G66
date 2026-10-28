@@ -248,6 +248,11 @@ namespace OZE.Common.Constants
             // MSG67
             public const string RequestNotFound = "Imaging request not found.";
             public const string CannotViewRequest = "You do not have permission to view this imaging request.";
+            public const string CancelReasonRequired = "Please enter cancel reason.";
+            public const string CancelReasonInvalid = "Cancel reason is invalid. Please check again.";
+            public const string CannotCancelRequest = "You do not have permission to cancel this imaging request.";
+            public const string RequestNotPending = "Cannot cancel imaging request because the imaging request is {0}.";
+            public const string RequestCancelled = "Cancel imaging request success!";
             public const string TechnicianNotificationTitle = "New imaging request";
             public const string TechnicianNotificationMessage = "Imaging request ({0}) for {1} has been submitted.";
         }
