@@ -35,7 +35,8 @@ namespace OZE.Persistence.Configurations
                 new SystemConfiguration { Id = 5, ConfigKey = "Queue.AutoExpireMinutes", ConfigValue = "60", DataType = "Int", Description = "Số phút chờ tối đa trong hàng chờ trước khi tự hủy" },
                 new SystemConfiguration { Id = 6, ConfigKey = "Clinic.WorkStartTime", ConfigValue = "08:00", DataType = "String", Description = "Giờ bắt đầu làm việc" },
                 new SystemConfiguration { Id = 7, ConfigKey = "Clinic.WorkEndTime", ConfigValue = "17:00", DataType = "String", Description = "Giờ kết thúc làm việc" },
-                new SystemConfiguration { Id = 8, ConfigKey = "Clinic.SlotDurationMinutes", ConfigValue = "30", DataType = "Int", Description = "Thời lượng mỗi slot hẹn (phút)" });
+                new SystemConfiguration { Id = 8, ConfigKey = "Clinic.SlotDurationMinutes", ConfigValue = "30", DataType = "Int", Description = "Thời lượng mỗi slot hẹn (phút)" },
+                new SystemConfiguration { Id = 9, ConfigKey = "Booking.CancelCutoffHours", ConfigValue = "24", DataType = "Int", Description = "Số giờ tối thiểu trước giờ hẹn để bệnh nhân tự hủy lịch" });
         }
     }
 }

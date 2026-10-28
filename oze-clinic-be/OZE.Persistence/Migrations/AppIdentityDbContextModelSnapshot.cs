@@ -2082,6 +2082,14 @@ namespace OZE.Persistence.Migrations
                             ConfigValue = "30",
                             DataType = "Int",
                             Description = "Thời lượng mỗi slot hẹn (phút)"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            ConfigKey = "Booking.CancelCutoffHours",
+                            ConfigValue = "24",
+                            DataType = "Int",
+                            Description = "Số giờ tối thiểu trước giờ hẹn để bệnh nhân tự hủy lịch"
                         });
                 });
 

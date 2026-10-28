@@ -86,7 +86,7 @@ namespace OZE.UnitTest.Controllers
             };
 
             _appointmentServiceMock
-                .Setup(s => s.GetAppointmentByIdAsync(100, It.IsAny<CancellationToken>()))
+                .Setup(s => s.GetAppointmentByIdAsync(100, null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(appointment);
 
             // Act
@@ -115,7 +115,7 @@ namespace OZE.UnitTest.Controllers
             };
 
             _appointmentServiceMock
-                .Setup(s => s.CancelAppointmentAsync(100, request, "staff-user-123", It.IsAny<CancellationToken>()))
+                .Setup(s => s.CancelAppointmentAsync(100, request, "staff-user-123", null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(cancelled);
 
             // Act
@@ -129,6 +129,70 @@ namespace OZE.UnitTest.Controllers
             response!.Success.Should().BeTrue();
             response.Data!.Status.Should().Be(AppointmentConstants.CancelledStatus);
             response.Data.CancellationReason.Should().Be("Khách bận đột xuất");
+        }
+
+        private void SignInAsPatient(string? userId)
+        {
+            var claims = new List<Claim> { new(ClaimTypes.Role, RoleConstants.PatientRole) };
+            if (userId != null)
+            {
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+            }
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth")) }
+            };
+        }
+
+        [Fact]
+        public async Task GetAppointmentByIdAsync_ShouldPassOwnUserId_WhenPatient()
+        {
+            // Arrange
+            SignInAsPatient("patient-user-1");
+            _appointmentServiceMock
+                .Setup(s => s.GetAppointmentByIdAsync(100, "patient-user-1", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppointmentResponse { Id = 100 });
+
+            // Act
+            await _controller.GetAppointmentByIdAsync(100, CancellationToken.None);
+
+            // Assert
+            _appointmentServiceMock.Verify(s => s.GetAppointmentByIdAsync(100, "patient-user-1", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CancelAppointmentAsync_ShouldPassOwnUserId_WhenPatient()
+        {
+            // Arrange
+            SignInAsPatient("patient-user-1");
+            var request = new CancelAppointmentRequest { Reason = "Bận việc" };
+            _appointmentServiceMock
+                .Setup(s => s.CancelAppointmentAsync(100, request, "patient-user-1", "patient-user-1", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppointmentResponse { Id = 100 });
+
+            // Act
+            await _controller.CancelAppointmentAsync(100, request, CancellationToken.None);
+
+            // Assert
+            _appointmentServiceMock.Verify(
+                s => s.CancelAppointmentAsync(100, request, "patient-user-1", "patient-user-1", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetAppointmentByIdAsync_ShouldNeverWidenAccess_WhenPatientHasNoUserId()
+        {
+            // Arrange
+            SignInAsPatient(null);
+            _appointmentServiceMock
+                .Setup(s => s.GetAppointmentByIdAsync(100, string.Empty, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppointmentResponse { Id = 100 });
+
+            // Act
+            await _controller.GetAppointmentByIdAsync(100, CancellationToken.None);
+
+            // Assert: an empty owner (not null) is passed, so the service matches no appointment
+            _appointmentServiceMock.Verify(s => s.GetAppointmentByIdAsync(100, string.Empty, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

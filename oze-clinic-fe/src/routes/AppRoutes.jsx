@@ -14,6 +14,7 @@ import DashboardPage from "../pages/common/DashboardPage";
 import ProfilePage from "../pages/common/ProfilePage";
 import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
+import MyAppointments from "../pages/patient/MyAppointments";
 import RoomManagement from "../pages/admin/RoomManagement";
 import ServiceManagement from "../pages/admin/ServiceManagement";
 import GlobalException from "../pages/globalException/GlobalException";
@@ -104,8 +105,18 @@ const sharedRoutes = [
 
 // Role pages (ROLE_ROUTES) that are built so far.
 const ROLE_PAGES = {
+<<<<<<< HEAD
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />
+=======
+    [ROUTES.APPOINTMENTS]: (
+        <Routes>
+            <Route index element={<MyAppointments />} />
+            <Route path="*" element={<ComingSoonPage title="Lịch hẹn của tôi" />} />
+        </Routes>
+    ),
+    [ROUTES.ADMIN_ROOMS]: <RoomManagement />
+>>>>>>> main
 }
 
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
