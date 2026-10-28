@@ -102,6 +102,30 @@ namespace OZE.Application.Services
                 .ToList();
         }
 
+        public async Task<ImagingRequestResponse> GetByIdAsync(
+            string userId,
+            long id,
+            CancellationToken cancellationToken = default)
+        {
+            var doctor = await _staffRepository.GetByUserIdAsync(userId);
+            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.MedicalRecordMessage.DoctorNotFound);
+
+            var imagingRequest = await _imagingRequestRepository.GetByIdAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(imagingRequest != null, ErrorConstants.ImagingRequestMessage.RequestNotFound);
+            var found = imagingRequest!;
+
+            ConditionGuard.Ensure<ForbiddenException>(
+                found.RequestedByDoctorId == doctor!.Id,
+                ErrorConstants.ImagingRequestMessage.CannotViewRequest);
+            var examination = found.Examination;
+            if (examination == null)
+            {
+                throw new NotFoundException(ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
+            }
+
+            return ToResponse(found, examination.PatientId);
+        }
+
         private static string RequireValue(string? value, string missingMessage)
         {
             var trimmed = value?.Trim() ?? string.Empty;

@@ -14,5 +14,10 @@ namespace OZE.Application.Interfaces
             string userId,
             long examinationId,
             CancellationToken cancellationToken = default);
+
+        Task<ImagingRequestResponse> GetByIdAsync(
+            string userId,
+            long id,
+            CancellationToken cancellationToken = default);
     }
 }
