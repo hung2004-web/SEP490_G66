@@ -126,6 +126,45 @@ namespace OZE.Application.Services
             return ToResponse(found, examination.PatientId);
         }
 
+        public async Task<ImagingRequestResponse> CancelAsync(
+            string userId,
+            long id,
+            CancelImagingRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var doctor = await _staffRepository.GetByUserIdAsync(userId);
+            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.MedicalRecordMessage.DoctorNotFound);
+
+            var imagingRequest = await _imagingRequestRepository.GetTrackedByIdAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(imagingRequest != null, ErrorConstants.ImagingRequestMessage.RequestNotFound);
+            var found = imagingRequest!;
+
+            ConditionGuard.Ensure<ForbiddenException>(
+                found.RequestedByDoctorId == doctor!.Id,
+                ErrorConstants.ImagingRequestMessage.CannotCancelRequest);
+            ConditionGuard.Ensure(
+                found.RequestStatus == ImagingRequestConstants.Pending,
+                string.Format(ErrorConstants.ImagingRequestMessage.RequestNotPending, found.RequestStatus));
+
+            var cancelReason = RequireValue(request.CancelReason, ErrorConstants.ImagingRequestMessage.CancelReasonRequired);
+            ConditionGuard.Ensure(
+                cancelReason.Length <= ImagingRequestConstants.CancelReasonMaxLength,
+                ErrorConstants.ImagingRequestMessage.CancelReasonInvalid);
+
+            var examination = found.Examination;
+            if (examination == null)
+            {
+                throw new NotFoundException(ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
+            }
+
+            found.RequestStatus = ImagingRequestConstants.Cancelled;
+            found.CancelReason = cancelReason;
+            found.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _imagingRequestRepository.SaveChangesAsync(cancellationToken);
+            return ToResponse(found, examination.PatientId);
+        }
+
         private static string RequireValue(string? value, string missingMessage)
         {
             var trimmed = value?.Trim() ?? string.Empty;
@@ -144,6 +183,7 @@ namespace OZE.Application.Services
                 TargetArea = request.TargetArea ?? string.Empty,
                 ClinicalIndication = request.ClinicalIndication ?? string.Empty,
                 RequestStatus = request.RequestStatus,
+                CancelReason = request.CancelReason,
                 CreatedAt = request.CreatedAt
             };
         }
