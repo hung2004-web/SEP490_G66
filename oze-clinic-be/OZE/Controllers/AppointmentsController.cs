@@ -86,6 +86,19 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Confirms an appointment that is waiting for the receptionist's confirmation.
+        /// </summary>
+        [HttpPost("{id:long}/confirm")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> ConfirmAppointmentAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.ConfirmAppointmentAsync(id, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Xác nhận lịch hẹn thành công"));
+        }
+
+        /// <summary>
         /// Checks in an appointment upon patient arrival at the clinic.
         /// </summary>
         [HttpPost("{id:long}/check-in")]
