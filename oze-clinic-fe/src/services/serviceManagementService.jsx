@@ -18,6 +18,7 @@ const normalize = (value) => value.trim().toLowerCase();
 // status: "" (all), "active" or "inactive".
 export const getServices = async ({ keyword = "", group = "", status = "", page = 1, pageSize = SERVICE_PAGE_SIZE } = {}) => {
     await wait(MOCK_DELAY_MS);
+    applyScheduledStops();
 
     const search = normalize(keyword);
     const filtered = services.filter(
@@ -83,15 +84,53 @@ export const updateService = async (id, request) => {
     return success({ ...service }, `Đã cập nhật dịch vụ ${service.code}.`);
 };
 
-export const setServiceActive = async (id, isActive) => {
+// Local date as YYYY-MM-DD.
+const today = () => new Date().toLocaleDateString("en-CA");
+
+// "2026-10-20" -> "20/10/2026"
+const formatDate = (value) => value.split("-").reverse().join("/");
+
+// Services whose stop date has come are switched off (the backend would do this with a daily job).
+const applyScheduledStops = () => {
+    services.forEach((service) => {
+        if (service.deactivateFrom && service.deactivateFrom <= today()) {
+            service.isActive = false;
+            service.deactivateFrom = null;
+        }
+    });
+};
+
+// Turning a service back on also cancels a scheduled stop.
+export const activateService = async (id) => {
     await wait(MOCK_DELAY_MS);
 
     const service = services.find((item) => item.id === id);
     if (!service) return failure("Dịch vụ không còn tồn tại.");
 
-    service.isActive = isActive;
+    Object.assign(service, { isActive: true, deactivateFrom: null, deactivateReason: null });
+    return success({ ...service }, `Đã kích hoạt lại ${service.code}.`);
+};
+
+// Booked appointments not yet done for this service. TODO(api): read from the appointments.
+export const getUpcomingAppointmentCount = async (id) => {
+    await wait(MOCK_DELAY_MS);
+    return success({ count: (id * 7) % 5 });
+};
+
+// Stops a service from effectiveFrom (today = now, a later date = scheduled). Existing appointments stay.
+export const deactivateService = async (id, { effectiveFrom, reason }) => {
+    await wait(MOCK_DELAY_MS);
+
+    const service = services.find((item) => item.id === id);
+    if (!service) return failure("Dịch vụ không còn tồn tại.");
+
+    Object.assign(service, { deactivateFrom: effectiveFrom, deactivateReason: reason.trim() });
+    applyScheduledStops();
+
     return success(
         { ...service },
-        isActive ? `Đã kích hoạt lại ${service.code}.` : `Đã ngừng hoạt động ${service.code}.`,
+        service.isActive
+            ? `${service.code} sẽ ngừng hoạt động từ ${formatDate(effectiveFrom)}.`
+            : `Đã ngừng hoạt động ${service.code}.`,
     );
 };

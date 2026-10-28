@@ -105,18 +105,14 @@ const sharedRoutes = [
 
 // Role pages (ROLE_ROUTES) that are built so far.
 const ROLE_PAGES = {
-<<<<<<< HEAD
-    [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
-    [ROUTES.ADMIN_SERVICES]: <ServiceManagement />
-=======
     [ROUTES.APPOINTMENTS]: (
         <Routes>
             <Route index element={<MyAppointments />} />
             <Route path="*" element={<ComingSoonPage title="Lịch hẹn của tôi" />} />
         </Routes>
     ),
-    [ROUTES.ADMIN_ROOMS]: <RoomManagement />
->>>>>>> main
+    [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
+    [ROUTES.ADMIN_SERVICES]: <ServiceManagement />
 }
 
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.

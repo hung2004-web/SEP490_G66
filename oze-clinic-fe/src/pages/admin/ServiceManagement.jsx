@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Pencil, Plus, Search, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
+import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
 import ServiceFormPopup from "@/components/popup/ServiceFormPopup";
 import Pagination from "@/components/ui/Pagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
-import { getServices, setServiceActive } from "@/services/serviceManagementService";
+import { activateService, getServices } from "@/services/serviceManagementService";
 import { cx } from "@/utils/cx";
 import { SERVICE_GROUP_OPTIONS } from "@/utils/data/mockServicesAdmin";
 
@@ -20,7 +21,10 @@ const STATUS_OPTIONS = [
 
 const priceFormatter = new Intl.NumberFormat("vi-VN");
 
-const groupLabel = (group) => SERVICE_GROUP_OPTIONS.find((option) => option.value === group)?.label ?? group;
+// "2026-10-20" -> "20/10/2026"
+const formatDate = (value) => value.split("-").reverse().join("/");
+
+const groupLabel =(group) => SERVICE_GROUP_OPTIONS.find((option) => option.value === group)?.label ?? group;
 
 const PriceCell = ({ service }) => {
     if (service.price === 0) return <span className="font-semibold text-success">Miễn phí</span>;
@@ -47,9 +51,15 @@ const ServiceRow = ({ service, onOpen, onEdit, onToggleActive }) => {
                 <PriceCell service={service} />
             </td>
             <td>
-                <span className={cx("badge", service.isActive ? "badge-success" : "badge-neutral")}>
-                    {service.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
-                </span>
+                {service.isActive && service.deactivateFrom ? (
+                    <span className="badge badge-warning num" title={service.deactivateReason ?? undefined}>
+                        Ngừng từ {formatDate(service.deactivateFrom)}
+                    </span>
+                ) : (
+                    <span className={cx("badge", service.isActive ? "badge-success" : "badge-neutral")}>
+                        {service.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
+                    </span>
+                )}
             </td>
             <td>
                 <div className="flex items-center gap-3">
@@ -100,6 +110,7 @@ const ServiceManagement = () => {
     const [reloadKey, setReloadKey] = useState(0);
     // null = closed; { service: null } = add; { service } = update.
     const [editor, setEditor] = useState(null);
+    const [deactivating, setDeactivating] = useState(null);
 
     const { loading, value: result } = useAsync(
         () => getServices({ keyword, group, status, page }),
@@ -148,9 +159,14 @@ const ServiceManagement = () => {
     // TODO: open the service types popup once its design is ready.
     const openDetail = () => {};
 
-    // Returns false when the change failed, so the Toggle flips back.
+    // Turning off asks for the date and reason first, so the Toggle stays on (return false) until the popup is saved.
+    // Turning on happens straight away; false when it failed, so the Toggle flips back.
     const handleToggleActive = async (service, isActive) => {
-        const response = await setServiceActive(service.id, isActive);
+        if (!isActive) {
+            setDeactivating(service);
+            return false;
+        }
+        const response = await activateService(service.id);
         if (!response.success) {
             toast.error(response.message);
             return false;
@@ -296,6 +312,18 @@ const ServiceManagement = () => {
                     service={editor.service}
                     onClose={() => setEditor(null)}
                     onSaved={handleSaved}
+                />
+            )}
+            {deactivating && (
+                <DeactivateServicePopup
+                    key={deactivating.id}
+                    service={deactivating}
+                    onClose={() => setDeactivating(null)}
+                    onSaved={(message) => {
+                        setDeactivating(null);
+                        toast.success(message);
+                        setReloadKey((current) => current + 1);
+                    }}
                 />
             )}
         </div>
