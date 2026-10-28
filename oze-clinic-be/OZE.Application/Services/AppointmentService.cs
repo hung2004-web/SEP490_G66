@@ -384,9 +384,7 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
             EnsureOwnedBy(appointment!, ownerUserId);
 
-            ConditionGuard.ThrowIf(
-                appointment!.Status == AppointmentConstants.CompletedStatus || appointment.Status == AppointmentConstants.CancelledStatus,
-                ErrorConstants.AppointmentMessage.CannotCancelCompleted);
+            ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeCancelled);
 
             appointment.Status = AppointmentConstants.CancelledStatus;
             appointment.CancellationReason = request!.Reason.Trim();
@@ -424,8 +422,7 @@ namespace OZE.Application.Services
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
 
-            ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.CancelledStatus, ErrorConstants.AppointmentMessage.CannotCheckInCancelled);
-            ConditionGuard.ThrowIf(appointment.Status == AppointmentConstants.CompletedStatus, ErrorConstants.AppointmentMessage.CannotCheckInCompleted);
+            ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeCheckedIn);
 
             appointment.Status = AppointmentConstants.CheckedInStatus;
             appointment.CheckInAt = DateTimeOffset.UtcNow;
@@ -435,6 +432,10 @@ namespace OZE.Application.Services
 
             return MapToResponse(appointment);
         }
+
+        // Only an appointment that has not started yet can be cancelled or checked in
+        private static bool IsOpen(Appointment appointment) =>
+            appointment.Status == AppointmentConstants.PendingStatus || appointment.Status == AppointmentConstants.ConfirmedStatus;
 
         // A null owner means staff access. A patient only reaches their own appointments; anyone else's looks like "not found"
         private static void EnsureOwnedBy(Appointment appointment, string? ownerUserId)
