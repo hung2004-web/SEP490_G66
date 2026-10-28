@@ -6,7 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Pagination from "@/components/ui/Pagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
-import { createService, getServices, setServiceActive } from "@/services/serviceManagementService";
+import { createService, getServices, setServiceActive, updateService } from "@/services/serviceManagementService";
 import { cx } from "@/utils/cx";
 import { SERVICE_GROUPS } from "@/utils/data/mockServicesAdmin";
 import { isRequiredEmpty, requiredMessage } from "@/utils/validation";
@@ -61,8 +61,27 @@ const validateService = (form) => {
 // Price is kept as digits ("18000000") and shown with dots ("18.000.000") while typing.
 const formatPriceInput = (digits) => (digits === "" ? "" : priceFormatter.format(Number(digits)));
 
-const ServiceFormModal = ({ onClose, onSaved }) => {
-    const [form, setForm] = useState(EMPTY_SERVICE_FORM);
+// Form values as they are sent and compared: trimmed, code in capitals, price as a number.
+const toServiceRequest = (form) => ({
+    name: form.name.trim(),
+    code: form.code.trim().toUpperCase(),
+    group: form.group,
+    price: Number(form.price),
+    description: form.description.trim(),
+});
+
+const toServiceForm = (service) => ({
+    name: service.name,
+    code: service.code,
+    group: service.group,
+    price: String(service.price),
+    description: service.description ?? "",
+});
+
+// Add a service (service = null) or update one.
+const ServiceFormModal = ({ service, onClose, onSaved }) => {
+    const editing = Boolean(service);
+    const [form, setForm] = useState(() => (editing ? toServiceForm(service) : EMPTY_SERVICE_FORM));
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
 
@@ -87,8 +106,15 @@ const ServiceFormModal = ({ onClose, onSaved }) => {
             return;
         }
 
+        const request = toServiceRequest(form);
+        if (editing && JSON.stringify(request) === JSON.stringify(toServiceRequest(toServiceForm(service)))) {
+            toast.info("Không có thông tin nào thay đổi.");
+            onClose();
+            return;
+        }
+
         setSaving(true);
-        const response = await createService({ ...form, price: Number(form.price) });
+        const response = editing ? await updateService(service.id, request) : await createService(request);
         setSaving(false);
         if (!response.success) {
             setErrors(response.errors ?? {});
@@ -99,7 +125,7 @@ const ServiceFormModal = ({ onClose, onSaved }) => {
     };
 
     return (
-        <Modal title="Thêm dịch vụ" onClose={onClose} closeDisabled={saving}>
+        <Modal title={editing ? "Cập nhật dịch vụ" : "Thêm dịch vụ"} onClose={onClose} closeDisabled={saving}>
             <form noValidate onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                     <FormField id="service-form-name" label="Tên dịch vụ" required error={errors.name}>
@@ -167,7 +193,7 @@ const ServiceFormModal = ({ onClose, onSaved }) => {
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={saving}>
                         {saving && <span className="btn-spinner" aria-hidden="true" />}
-                        Lưu dịch vụ
+                        {editing ? "Lưu thay đổi" : "Lưu dịch vụ"}
                     </button>
                 </div>
             </form>
@@ -241,7 +267,8 @@ const ServiceManagement = () => {
     const [status, setStatus] = useState("");
     const [page, setPage] = useState(1);
     const [reloadKey, setReloadKey] = useState(0);
-    const [creating, setCreating] = useState(false);
+    // null = closed; { service: null } = add; { service } = update.
+    const [editor, setEditor] = useState(null);
 
     const { loading, value: result } = useAsync(
         () => getServices({ keyword, group, status, page }),
@@ -269,22 +296,25 @@ const ServiceManagement = () => {
         setPage(1);
     };
 
-    const openCreate = () => setCreating(true);
+    const openCreate = () => setEditor({ service: null });
+    const openEdit = (service) => setEditor({ service });
 
     // A new service goes to the top of the list, so show page 1 without filters.
-    const handleCreated = (message) => {
-        setCreating(false);
+    // After an update, keep the filters and page so the edited row stays in view.
+    const handleSaved = (message) => {
+        const created = !editor?.service;
+        setEditor(null);
         toast.success(message);
+        setReloadKey((current) => current + 1);
+        if (!created) return;
         setSearchInput("");
         setKeyword("");
         setGroup("");
         setStatus("");
         setPage(1);
-        setReloadKey((current) => current + 1);
     };
 
-    // TODO: open the popups (edit / service types) once their designs are ready.
-    const openEdit = () => {};
+    // TODO: open the service types popup once its design is ready.
     const openDetail = () => {};
 
     // Returns false when the change failed, so the Toggle flips back.
@@ -429,7 +459,14 @@ const ServiceManagement = () => {
                 )}
             </div>
 
-            {creating && <ServiceFormModal onClose={() => setCreating(false)} onSaved={handleCreated} />}
+            {editor && (
+                <ServiceFormModal
+                    key={editor.service?.id ?? "new"}
+                    service={editor.service}
+                    onClose={() => setEditor(null)}
+                    onSaved={handleSaved}
+                />
+            )}
         </div>
     );
 };

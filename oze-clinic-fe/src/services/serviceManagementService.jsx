@@ -60,6 +60,29 @@ export const createService = async (request) => {
     return success({ ...service }, `Đã thêm dịch vụ ${service.code}.`);
 };
 
+// Same fields as createService; status and "price from" stay as they are.
+export const updateService = async (id, request) => {
+    await wait(MOCK_DELAY_MS);
+
+    const service = services.find((item) => item.id === id);
+    if (!service) return failure("Dịch vụ không còn tồn tại.");
+
+    const code = request.code.trim().toUpperCase();
+    if (services.some((item) => item.id !== id && item.code === code)) {
+        return { ...failure("Mã dịch vụ đã tồn tại."), errors: { code: "Mã dịch vụ đã tồn tại." } };
+    }
+
+    Object.assign(service, {
+        code,
+        name: request.name.trim(),
+        description: request.description.trim(),
+        group: request.group,
+        price: request.price,
+    });
+
+    return success({ ...service }, `Đã cập nhật dịch vụ ${service.code}.`);
+};
+
 export const setServiceActive = async (id, isActive) => {
     await wait(MOCK_DELAY_MS);
 
