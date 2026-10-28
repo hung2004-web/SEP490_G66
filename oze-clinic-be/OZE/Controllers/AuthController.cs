@@ -107,6 +107,14 @@ namespace OZE.ProjectBase.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        [HttpPost("verify-reset-otp")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse>> VerifyResetOtpAsync([FromBody] VerifyResetOtpRequest request)
+        {
+            var result = await _authService.VerifyResetOtpAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost("reset-password")]
         [AllowAnonymous]
         public async Task<ActionResult<ApiResponse>> ResetPasswordAsync([FromBody] ResetPasswordRequest request)

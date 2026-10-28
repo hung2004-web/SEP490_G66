@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { CalendarDays, ReceiptText, Stethoscope } from "lucide-react";
 import { Link } from "react-router-dom";
+import RecentVisitsSection from "@/components/dashboard/RecentVisitsSection";
 import StatCard from "@/components/dashboard/StatCard";
+import TasksSection from "@/components/dashboard/TasksSection";
+import TreatmentProgressSection from "@/components/dashboard/TreatmentProgressSection";
+import UpcomingAppointmentsSection from "@/components/dashboard/UpcomingAppointmentsSection";
 import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
 import { getMyAppointments, getMyInvoices, getMyTreatmentPlans } from "@/services/patientDashboardService";
 import { formatCurrency, formatDate, formatTime, formatWeekday, toDateOnly } from "@/utils/format";
 import { APPOINTMENT_STATUS, EXAMINATION_STATUS, PAYMENT_STATUS, PLAN_STATUS, STAGE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
-import RecentVisitsSection from "./dashboard/RecentVisitsSection";
-import TasksSection from "./dashboard/TasksSection";
-import TreatmentProgressSection from "./dashboard/TreatmentProgressSection";
-import UpcomingAppointmentsSection from "./dashboard/UpcomingAppointmentsSection";
 
 const EMPTY_VALUE = "—";
 const NEXT_APPOINTMENTS_LIMIT = 3;
