@@ -11,16 +11,18 @@ const niceStep = (max) => {
     return step * magnitude;
 };
 
-// One-series column chart. data: [{ label, sublabel?, value }]; formatValue formats the numbers on bars and in the tooltip.
+// One-series column chart. data: [{ label, sublabel?, value }]; value null = no data yet (no bar).
+// formatValue formats the numbers on bars and in the tooltip.
 // title names what is measured (used for screen readers; the card around the chart shows it on screen).
 const BarChart = ({ data, title, formatValue = String, height = 224 }) => {
     const [active, setActive] = useState(null);
 
-    const max = Math.max(0, ...data.map((item) => item.value));
+    const max = Math.max(0, ...data.map((item) => item.value ?? 0));
     const step = max > 0 ? niceStep(max) : 1;
     const top = step * TICK_COUNT;
     const ticks = Array.from({ length: TICK_COUNT + 1 }, (_, index) => index * step);
-    const percent = (value) => (value / top) * 100;
+    const percent = (value) => ((value ?? 0) / top) * 100;
+    const show = (value) => (value === null ? "Chưa có số liệu" : formatValue(value));
 
     return (
         <figure className="m-0">
@@ -71,15 +73,17 @@ const BarChart = ({ data, title, formatValue = String, height = 224 }) => {
                                                 {item.label}
                                                 {item.sublabel && ` · ${item.sublabel}`}
                                             </span>
-                                            <span className="num ml-2 font-semibold">{formatValue(item.value)}</span>
+                                            <span className="num ml-2 font-semibold">{show(item.value)}</span>
                                         </div>
                                     ) : (
-                                        <span
-                                            className="num absolute mb-1 text-caption font-semibold text-ink"
-                                            style={{ bottom: `${percent(item.value)}%` }}
-                                        >
-                                            {formatValue(item.value)}
-                                        </span>
+                                        item.value !== null && (
+                                            <span
+                                                className="num absolute mb-1 text-caption font-semibold text-ink"
+                                                style={{ bottom: `${percent(item.value)}%` }}
+                                            >
+                                                {formatValue(item.value)}
+                                            </span>
+                                        )
                                     )}
                                 </div>
                             ))}
@@ -107,7 +111,7 @@ const BarChart = ({ data, title, formatValue = String, height = 224 }) => {
                             <th scope="row">
                                 {item.label} {item.sublabel}
                             </th>
-                            <td>{formatValue(item.value)}</td>
+                            <td>{show(item.value)}</td>
                         </tr>
                     ))}
                 </tbody>
