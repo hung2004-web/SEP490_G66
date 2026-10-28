@@ -367,20 +367,22 @@ namespace OZE.Application.Services
             return new PagedResult<AppointmentResponse>(mappedItems, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
         }
 
-        public async Task<AppointmentResponse> GetAppointmentByIdAsync(long id, CancellationToken cancellationToken = default)
+        public async Task<AppointmentResponse> GetAppointmentByIdAsync(long id, string? ownerUserId, CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+            EnsureOwnedBy(appointment!, ownerUserId);
 
             return MapToResponse(appointment!);
         }
 
-        public async Task<AppointmentResponse> CancelAppointmentAsync(long id, CancelAppointmentRequest request, string? userId, CancellationToken cancellationToken = default)
+        public async Task<AppointmentResponse> CancelAppointmentAsync(long id, CancelAppointmentRequest request, string? userId, string? ownerUserId, CancellationToken cancellationToken = default)
         {
             ConditionGuard.Ensure(!string.IsNullOrWhiteSpace(request?.Reason), ErrorConstants.AppointmentMessage.ReasonRequired);
 
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+            EnsureOwnedBy(appointment!, ownerUserId);
 
             ConditionGuard.ThrowIf(
                 appointment!.Status == AppointmentConstants.CompletedStatus || appointment.Status == AppointmentConstants.CancelledStatus,
@@ -432,6 +434,17 @@ namespace OZE.Application.Services
             await _appointmentRepository.UpdateAsync(appointment);
 
             return MapToResponse(appointment);
+        }
+
+        // A null owner means staff access. A patient only reaches their own appointments; anyone else's looks like "not found"
+        private static void EnsureOwnedBy(Appointment appointment, string? ownerUserId)
+        {
+            if (ownerUserId == null)
+            {
+                return;
+            }
+
+            ConditionGuard.Ensure<NotFoundException>(appointment.Patient?.UserId == ownerUserId, ErrorConstants.AppointmentMessage.AppointmentNotFound);
         }
 
         private static AppointmentResponse MapToResponse(Appointment appointment)
