@@ -16,6 +16,7 @@ import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
 import MyAppointments from "../pages/patient/MyAppointments";
 import RoomManagement from "../pages/admin/RoomManagement";
+import ServiceManagement from "../pages/admin/ServiceManagement";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
@@ -110,7 +111,8 @@ const ROLE_PAGES = {
             <Route path="*" element={<ComingSoonPage title="Lịch hẹn của tôi" />} />
         </Routes>
     ),
-    [ROUTES.ADMIN_ROOMS]: <RoomManagement />
+    [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
+    [ROUTES.ADMIN_SERVICES]: <ServiceManagement />
 }
 
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
@@ -135,7 +137,6 @@ const COMING_SOON_TITLES = {
     [ROUTES.ADMIN_STAFF]: "Nhân viên",
     [ROUTES.ADMIN_ROLES]: "Vai trò",
     [ROUTES.ADMIN_WORK_SHIFTS]: "Ca làm việc",
-    [ROUTES.ADMIN_SERVICES]: "Dịch vụ",
 }
 
 const getRolePage = (path) =>
