@@ -197,10 +197,10 @@ namespace OZE.Common.Constants
             public const string PhoneHasAccount = "This phone number already has an account. Please sign in to book";
             public const string ConfigMissing = "System configuration {0} is missing";
             public const string AppointmentNotFound = "Appointment not found in system";
-            public const string CannotCancelCompleted = "Cannot cancel an appointment that is already completed or cancelled";
+            public const string OnlyOpenCanBeCancelled = "Only an appointment that is pending or confirmed can be cancelled";
             public const string ReasonRequired = "Cancellation reason is required";
-            public const string CannotCheckInCancelled = "Cannot check in an appointment that is cancelled";
-            public const string CannotCheckInCompleted = "Cannot check in an appointment that is already completed";
+            public const string OnlyOpenCanBeCheckedIn = "Only an appointment that is pending or confirmed can be checked in";
+            public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
         }
         public static class PatientMessage
         {

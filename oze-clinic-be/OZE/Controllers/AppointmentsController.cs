@@ -18,6 +18,12 @@ namespace OZE.Controllers
             _appointmentService = appointmentService;
         }
 
+        // Staff see every appointment (null). A patient is limited to their own; the empty fallback matches no one, so a missing user id never widens access
+        private string? OwnerRestriction =>
+            IsInRole(RoleConstants.ReceptionistRole) || IsInRole(RoleConstants.DoctorRole) || IsInRole(RoleConstants.ClinicManagerRole)
+                ? null
+                : CurrentUserId ?? string.Empty;
+
         // GET api/appointments/bookable-services
         [HttpGet("bookable-services")]
         [AllowAnonymous]
@@ -42,7 +48,7 @@ namespace OZE.Controllers
         {
             var appointment = await _appointmentService.BookAsGuestAsync(request);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment,
-                "Appointment booked successfully"));
+                "Appointment request received. The receptionist will call to confirm."));
         }
 
         /// <summary>
@@ -67,7 +73,7 @@ namespace OZE.Controllers
             [FromRoute] long id,
             CancellationToken cancellationToken)
         {
-            var result = await _appointmentService.GetAppointmentByIdAsync(id, cancellationToken);
+            var result = await _appointmentService.GetAppointmentByIdAsync(id, OwnerRestriction, cancellationToken);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result));
         }
 
@@ -81,8 +87,21 @@ namespace OZE.Controllers
             [FromBody] CancelAppointmentRequest request,
             CancellationToken cancellationToken)
         {
-            var result = await _appointmentService.CancelAppointmentAsync(id, request, CurrentUserId, cancellationToken);
+            var result = await _appointmentService.CancelAppointmentAsync(id, request, CurrentUserId, OwnerRestriction, cancellationToken);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Hủy lịch hẹn thành công"));
+        }
+
+        /// <summary>
+        /// Confirms an appointment that is waiting for the receptionist's confirmation.
+        /// </summary>
+        [HttpPost("{id:long}/confirm")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> ConfirmAppointmentAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.ConfirmAppointmentAsync(id, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Xác nhận lịch hẹn thành công"));
         }
 
         /// <summary>

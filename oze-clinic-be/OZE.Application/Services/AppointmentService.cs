@@ -124,8 +124,8 @@ namespace OZE.Application.Services
                     AppointmentDate = date,
                     TimeSlotStart = chosen.SlotStart,
                     TimeSlotEnd = chosen.SlotEnd,
-                    // The slot was checked again inside this transaction, so the booking is confirmed at once
-                    Status = AppointmentConstants.ConfirmedStatus,
+                    // The slot is held, but the receptionist must confirm the booking before it is approved
+                    Status = AppointmentConstants.PendingStatus,
                     Notes = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
                     CreatedAt = DateTimeOffset.UtcNow,
                     // Saved together with the appointment in the same transaction
@@ -268,6 +268,30 @@ namespace OZE.Application.Services
             return value!;
         }
 
+        // A failed notification must not undo the confirmation, so errors are only logged
+        private async Task SendConfirmationNotificationAsync(Appointment appointment)
+        {
+            var serviceNames = string.Join(", ", appointment.ServiceItems.Select(i => i.Service?.ServiceName));
+            var message = $"OZE Dental: Lich hen {serviceNames} " +
+                          $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy} " +
+                          "da duoc xac nhan.";
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(appointment.Patient?.PhoneNumber))
+                {
+                    await _smsSender.SendSmsAsync(appointment.Patient.PhoneNumber, message);
+                }
+                if (!string.IsNullOrWhiteSpace(appointment.Patient?.Email))
+                {
+                    await _emailSender.SendEmailAsync(appointment.Patient.Email, "OZE Dental - Appointment confirmed", message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not send the confirmation notification for appointment {AppointmentId}", appointment.Id);
+            }
+        }
+
         private async Task<int> GetIntConfigAsync(string configKey)
         {
             var value = await _appointmentRepository.GetConfigValueAsync(configKey);
@@ -282,7 +306,7 @@ namespace OZE.Application.Services
             var serviceNames = string.Join(", ", services.Select(s => s.ServiceName));
             var message = $"OZE Dental: Lich hen {serviceNames} " +
                           $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy} " +
-                          "da duoc xac nhan.";
+                          "da duoc ghi nhan. Le tan se goi dien de xac nhan.";
             try
             {
                 await _smsSender.SendSmsAsync(phone, message);
@@ -343,24 +367,24 @@ namespace OZE.Application.Services
             return new PagedResult<AppointmentResponse>(mappedItems, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
         }
 
-        public async Task<AppointmentResponse> GetAppointmentByIdAsync(long id, CancellationToken cancellationToken = default)
+        public async Task<AppointmentResponse> GetAppointmentByIdAsync(long id, string? ownerUserId, CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+            EnsureOwnedBy(appointment!, ownerUserId);
 
             return MapToResponse(appointment!);
         }
 
-        public async Task<AppointmentResponse> CancelAppointmentAsync(long id, CancelAppointmentRequest request, string? userId, CancellationToken cancellationToken = default)
+        public async Task<AppointmentResponse> CancelAppointmentAsync(long id, CancelAppointmentRequest request, string? userId, string? ownerUserId, CancellationToken cancellationToken = default)
         {
             ConditionGuard.Ensure(!string.IsNullOrWhiteSpace(request?.Reason), ErrorConstants.AppointmentMessage.ReasonRequired);
 
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+            EnsureOwnedBy(appointment!, ownerUserId);
 
-            ConditionGuard.ThrowIf(
-                appointment!.Status == AppointmentConstants.CompletedStatus || appointment.Status == AppointmentConstants.CancelledStatus,
-                ErrorConstants.AppointmentMessage.CannotCancelCompleted);
+            ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeCancelled);
 
             appointment.Status = AppointmentConstants.CancelledStatus;
             appointment.CancellationReason = request!.Reason.Trim();
@@ -373,13 +397,32 @@ namespace OZE.Application.Services
             return MapToResponse(appointment);
         }
 
+        public async Task<AppointmentResponse> ConfirmAppointmentAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.PendingStatus, ErrorConstants.AppointmentMessage.OnlyPendingCanBeConfirmed);
+
+            appointment.Status = AppointmentConstants.ConfirmedStatus;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+            foreach (var item in appointment.ServiceItems.Where(i => i.Status == AppointmentConstants.ServiceRequestedStatus))
+            {
+                item.Status = AppointmentConstants.ServiceConfirmedStatus;
+            }
+
+            await _appointmentRepository.UpdateAsync(appointment);
+            await SendConfirmationNotificationAsync(appointment);
+
+            return MapToResponse(appointment);
+        }
+
         public async Task<AppointmentResponse> CheckInAppointmentAsync(long id, CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
 
-            ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.CancelledStatus, ErrorConstants.AppointmentMessage.CannotCheckInCancelled);
-            ConditionGuard.ThrowIf(appointment.Status == AppointmentConstants.CompletedStatus, ErrorConstants.AppointmentMessage.CannotCheckInCompleted);
+            ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeCheckedIn);
 
             appointment.Status = AppointmentConstants.CheckedInStatus;
             appointment.CheckInAt = DateTimeOffset.UtcNow;
@@ -388,6 +431,21 @@ namespace OZE.Application.Services
             await _appointmentRepository.UpdateAsync(appointment);
 
             return MapToResponse(appointment);
+        }
+
+        // Only an appointment that has not started yet can be cancelled or checked in
+        private static bool IsOpen(Appointment appointment) =>
+            appointment.Status == AppointmentConstants.PendingStatus || appointment.Status == AppointmentConstants.ConfirmedStatus;
+
+        // A null owner means staff access. A patient only reaches their own appointments; anyone else's looks like "not found"
+        private static void EnsureOwnedBy(Appointment appointment, string? ownerUserId)
+        {
+            if (ownerUserId == null)
+            {
+                return;
+            }
+
+            ConditionGuard.Ensure<NotFoundException>(appointment.Patient?.UserId == ownerUserId, ErrorConstants.AppointmentMessage.AppointmentNotFound);
         }
 
         private static AppointmentResponse MapToResponse(Appointment appointment)
