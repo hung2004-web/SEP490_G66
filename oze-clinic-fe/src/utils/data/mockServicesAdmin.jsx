@@ -11,6 +11,17 @@ export const SERVICE_GROUPS = {
     IMAGING: "imaging",
 };
 
+// Group labels for dropdowns and the table.
+export const SERVICE_GROUP_OPTIONS = [
+    { value: SERVICE_GROUPS.EXAMINATION, label: "Khám" },
+    { value: SERVICE_GROUPS.ORTHODONTICS, label: "Chỉnh nha" },
+    { value: SERVICE_GROUPS.PROSTHODONTICS, label: "Phục hình" },
+    { value: SERVICE_GROUPS.PERIODONTICS, label: "Nha chu" },
+    { value: SERVICE_GROUPS.SURGERY, label: "Phẫu thuật" },
+    { value: SERVICE_GROUPS.COSMETIC, label: "Thẩm mỹ" },
+    { value: SERVICE_GROUPS.IMAGING, label: "Hình ảnh" },
+];
+
 const group = SERVICE_GROUPS;
 
 // price: reference price in VND (0 = free); priceFrom: true when the price is a starting price ("Từ ...").
