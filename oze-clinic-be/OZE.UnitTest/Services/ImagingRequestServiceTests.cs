@@ -264,6 +264,193 @@ namespace OZE.UnitTest.Services
             error.Which.Message.Should().Be(ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
         }
 
+        [Fact]
+        public async Task GetByIdAsync_ShouldReturnTheRequestCreatedByTheDoctor()
+        {
+            var createdAt = new DateTimeOffset(2026, 10, 26, 3, 0, 0, TimeSpan.Zero);
+            _staffRepository
+                .Setup(r => r.GetByUserIdAsync(DoctorUserId))
+                .ReturnsAsync(new StaffProfile { Id = 5, UserId = DoctorUserId });
+            _imagingRequestRepository
+                .Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ImagingRequest
+                {
+                    Id = 99,
+                    ExaminationId = ExaminationId,
+                    RequestedByDoctorId = 5,
+                    ImagingType = ImagingRequestConstants.PeriapicalXRay,
+                    TargetArea = "Tooth 36",
+                    ClinicalIndication = "Check the root",
+                    RequestStatus = ImagingRequestConstants.Pending,
+                    CreatedAt = createdAt,
+                    Examination = ExaminationInProgress()
+                });
+
+            var result = await _service.GetByIdAsync(DoctorUserId, 99);
+
+            result.Id.Should().Be(99);
+            result.ExaminationId.Should().Be(ExaminationId);
+            result.PatientId.Should().Be(3);
+            result.ImagingType.Should().Be(ImagingRequestConstants.PeriapicalXRay);
+            result.TargetArea.Should().Be("Tooth 36");
+            result.ClinicalIndication.Should().Be("Check the root");
+            result.RequestStatus.Should().Be(ImagingRequestConstants.Pending);
+            result.CreatedAt.Should().Be(createdAt);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_ShouldReturnNotFound_WhenRequestDoesNotExist()
+        {
+            _staffRepository
+                .Setup(r => r.GetByUserIdAsync(DoctorUserId))
+                .ReturnsAsync(new StaffProfile { Id = 5, UserId = DoctorUserId });
+            _imagingRequestRepository
+                .Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ImagingRequest?)null);
+
+            var act = () => _service.GetByIdAsync(DoctorUserId, 99);
+
+            var error = await act.Should().ThrowAsync<NotFoundException>();
+            error.Which.Message.Should().Be(ErrorConstants.ImagingRequestMessage.RequestNotFound);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_ShouldRejectDoctorWhoDidNotCreateTheRequest()
+        {
+            _staffRepository
+                .Setup(r => r.GetByUserIdAsync(DoctorUserId))
+                .ReturnsAsync(new StaffProfile { Id = 5, UserId = DoctorUserId });
+            _imagingRequestRepository
+                .Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ImagingRequest
+                {
+                    Id = 99,
+                    RequestedByDoctorId = 8,
+                    Examination = ExaminationInProgress()
+                });
+
+            var act = () => _service.GetByIdAsync(DoctorUserId, 99);
+
+            var error = await act.Should().ThrowAsync<ForbiddenException>();
+            error.Which.Message.Should().Be(ErrorConstants.ImagingRequestMessage.CannotViewRequest);
+        }
+
+        [Fact]
+        public async Task CancelAsync_ShouldCancelPendingRequest_AndKeepClinicalNotes()
+        {
+            var imagingRequest = PendingRequest();
+            imagingRequest.Notes = "Clinical note";
+            _staffRepository
+                .Setup(r => r.GetByUserIdAsync(DoctorUserId))
+                .ReturnsAsync(new StaffProfile { Id = 5, UserId = DoctorUserId });
+            _imagingRequestRepository
+                .Setup(r => r.GetTrackedByIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(imagingRequest);
+            _imagingRequestRepository
+                .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var result = await _service.CancelAsync(DoctorUserId, 99, new CancelImagingRequest
+            {
+                CancelReason = "  Patient left  "
+            });
+
+            imagingRequest.RequestStatus.Should().Be(ImagingRequestConstants.Cancelled);
+            imagingRequest.CancelReason.Should().Be("Patient left");
+            imagingRequest.Notes.Should().Be("Clinical note");
+            imagingRequest.UpdatedAt.Should().NotBeNull();
+            result.RequestStatus.Should().Be(ImagingRequestConstants.Cancelled);
+            result.CancelReason.Should().Be("Patient left");
+            result.PatientId.Should().Be(3);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task CancelAsync_ShouldRejectMissingReason(string? reason)
+        {
+            SetupPendingRequest();
+
+            var act = () => _service.CancelAsync(DoctorUserId, 99, new CancelImagingRequest { CancelReason = reason });
+
+            var error = await act.Should().ThrowAsync<BadRequestException>();
+            error.Which.Message.Should().Be(ErrorConstants.ImagingRequestMessage.CancelReasonRequired);
+            _imagingRequestRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData("InProgress")]
+        [InlineData("Completed")]
+        [InlineData("Cancelled")]
+        public async Task CancelAsync_ShouldRejectRequestThatIsNotPending(string status)
+        {
+            var imagingRequest = PendingRequest();
+            imagingRequest.RequestStatus = status;
+            SetupPendingRequest(imagingRequest);
+
+            var act = () => _service.CancelAsync(DoctorUserId, 99, new CancelImagingRequest { CancelReason = "No longer needed" });
+
+            var error = await act.Should().ThrowAsync<BadRequestException>();
+            error.Which.Message.Should().Be($"Cannot cancel imaging request because the imaging request is {status}.");
+            imagingRequest.CancelReason.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task CancelAsync_ShouldRejectDoctorWhoDidNotCreateTheRequest()
+        {
+            var imagingRequest = PendingRequest();
+            imagingRequest.RequestedByDoctorId = 8;
+            SetupPendingRequest(imagingRequest);
+
+            var act = () => _service.CancelAsync(DoctorUserId, 99, new CancelImagingRequest { CancelReason = "No longer needed" });
+
+            var error = await act.Should().ThrowAsync<ForbiddenException>();
+            error.Which.Message.Should().Be(ErrorConstants.ImagingRequestMessage.CannotCancelRequest);
+        }
+
+        [Fact]
+        public async Task CancelAsync_ShouldReturnNotFound_WhenRequestDoesNotExist()
+        {
+            _staffRepository
+                .Setup(r => r.GetByUserIdAsync(DoctorUserId))
+                .ReturnsAsync(new StaffProfile { Id = 5, UserId = DoctorUserId });
+            _imagingRequestRepository
+                .Setup(r => r.GetTrackedByIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ImagingRequest?)null);
+
+            var act = () => _service.CancelAsync(DoctorUserId, 99, new CancelImagingRequest { CancelReason = "No longer needed" });
+
+            var error = await act.Should().ThrowAsync<NotFoundException>();
+            error.Which.Message.Should().Be(ErrorConstants.ImagingRequestMessage.RequestNotFound);
+        }
+
+        private void SetupPendingRequest(ImagingRequest? imagingRequest = null)
+        {
+            _staffRepository
+                .Setup(r => r.GetByUserIdAsync(DoctorUserId))
+                .ReturnsAsync(new StaffProfile { Id = 5, UserId = DoctorUserId });
+            _imagingRequestRepository
+                .Setup(r => r.GetTrackedByIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(imagingRequest ?? PendingRequest());
+        }
+
+        private static ImagingRequest PendingRequest()
+        {
+            return new ImagingRequest
+            {
+                Id = 99,
+                ExaminationId = ExaminationId,
+                RequestedByDoctorId = 5,
+                ImagingType = ImagingRequestConstants.Panoramic,
+                TargetArea = "Tooth 36",
+                ClinicalIndication = "Check the root",
+                RequestStatus = ImagingRequestConstants.Pending,
+                CreatedAt = new DateTimeOffset(2026, 10, 26, 3, 0, 0, TimeSpan.Zero),
+                Examination = ExaminationInProgress()
+            };
+        }
+
         private void SetupReadyExamination(Examination? examination = null)
         {
             _staffRepository

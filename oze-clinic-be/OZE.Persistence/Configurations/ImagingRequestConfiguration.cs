@@ -18,6 +18,7 @@ namespace OZE.Persistence.Configurations
             builder.Property(x => x.TargetArea).HasMaxLength(200);
             builder.Property(x => x.RequestStatus).HasMaxLength(20).HasDefaultValue("Pending");
             builder.Property(x => x.ClinicalIndication).HasMaxLength(500);
+            builder.Property(x => x.CancelReason).HasMaxLength(500);
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
             builder.HasOne(x => x.Examination)

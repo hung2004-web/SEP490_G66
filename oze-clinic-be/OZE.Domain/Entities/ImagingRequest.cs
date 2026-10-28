@@ -9,6 +9,7 @@ namespace OZE.Domain.Entities
         public string? TargetArea { get; set; }
         public string RequestStatus { get; set; } = "Pending";
         public string? ClinicalIndication { get; set; }
+        public string? CancelReason { get; set; }
         public string? Notes { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }

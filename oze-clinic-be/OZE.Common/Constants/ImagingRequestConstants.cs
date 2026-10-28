@@ -23,6 +23,7 @@ namespace OZE.Common.Constants
         public const int ImagingTypeMaxLength = 50;
         public const int TargetAreaMaxLength = 200;
         public const int ClinicalIndicationMaxLength = 500;
+        public const int CancelReasonMaxLength = 500;
 
         public const string InProgressExaminationStatus = "InProgress";
 
