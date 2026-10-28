@@ -1,14 +1,16 @@
 // Mock data for the clinic manager's report page.
 // TODO(api): the backend has no report endpoints yet.
 
-// Share of revenue per service, biggest first; "Khác" (other: true) is the rest.
+// Share of revenue per service, biggest first (the chart has 8 colours, so at most 8 items; "Khác" is the rest).
 export const MOCK_REVENUE_SHARES = [
     { label: "Niềng răng", share: 0.33 },
     { label: "Bọc răng sứ", share: 0.23 },
     { label: "Điều trị tuỷ", share: 0.14 },
     { label: "Cấy ghép Implant", share: 0.12 },
+    { label: "Tẩy trắng răng", share: 0.06 },
+    { label: "Nhổ răng", share: 0.05 },
     { label: "Khám tổng quát", share: 0.04 },
-    { label: "Khác", share: 0.14, other: true },
+    { label: "Khác", share: 0.03 },
 ];
 
 export const MOCK_TODAY_APPOINTMENTS = { total: 8, checkedIn: 7, notArrived: 1 };

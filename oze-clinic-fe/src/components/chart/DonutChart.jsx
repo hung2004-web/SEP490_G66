@@ -1,19 +1,18 @@
 import { useState } from "react";
 import { cx } from "@/utils/cx";
 
-const MAX_COLORED = 5;
+const MAX_COLORED = 8;
 const RADIUS = 40;
 const STROKE = 16;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 // Surface gap between slices, in the same units as the circle.
 const GAP = 1.2;
 
-// Slice colour by position, never cycled. Pass data biggest first; from the 6th item on, and any item with
-// other: true ("Khác"), the slice is grey. Fold the small ones into "Khác" before passing them in.
-const colorOf = (item, index) =>
-    item.other || index >= MAX_COLORED ? "var(--color-chart-other)" : `var(--color-chart-${index + 1})`;
+// Slice colour by position, never cycled: up to 8 items each get their own colour. Pass data biggest first;
+// from the 9th item on the slice is grey, so fold the small ones into "Khác" before passing them in.
+const colorOf = (index) => (index < MAX_COLORED ? `var(--color-chart-${index + 1})` : "var(--color-chart-other)");
 
-// Share of a whole: ring + legend (name, value, %). data: [{ label, value, other? }].
+// Share of a whole: ring + legend (name, value, %). data: [{ label, value }].
 // centerValue / centerLabel go in the hole, e.g. "186,5 tr" / "Tổng".
 const DonutChart = ({ data, title, formatValue = String, centerValue, centerLabel }) => {
     const [active, setActive] = useState(null);
@@ -42,7 +41,7 @@ const DonutChart = ({ data, title, formatValue = String, centerValue, centerLabe
                             cy="50"
                             r={RADIUS}
                             fill="none"
-                            stroke={colorOf(item, index)}
+                            stroke={colorOf(index)}
                             strokeWidth={active === index ? STROKE + 3 : STROKE}
                             strokeDasharray={`${Math.max(0, length - GAP)} ${CIRCUMFERENCE}`}
                             strokeDashoffset={-start}
@@ -76,7 +75,7 @@ const DonutChart = ({ data, title, formatValue = String, centerValue, centerLabe
                                 <span className="flex items-center gap-2">
                                     <span
                                         className="size-2.5 shrink-0 rounded-full"
-                                        style={{ backgroundColor: colorOf(item, index) }}
+                                        style={{ backgroundColor: colorOf(index) }}
                                         aria-hidden="true"
                                     />
                                     {item.label}

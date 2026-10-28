@@ -151,7 +151,7 @@ export const getReport = async ({ period = REPORT_PERIODS.WEEK, offset = 0 } = {
         newPatients: { value: newPatients, change: newPatients - total(previousDays, "newPatients") },
         todayAppointments: { ...MOCK_TODAY_APPOINTMENTS },
         revenueBars: buildBars(period, range, today),
-        revenueByService: MOCK_REVENUE_SHARES.map(({ label, share, other }) => ({ label, other, value: round1(revenue * share) })),
+        revenueByService: MOCK_REVENUE_SHARES.map(({ label, share }) => ({ label, value: round1(revenue * share) })),
     });
 };
 
