@@ -59,6 +59,14 @@
   --color-neutral-soft: #EEF1F5;
   --color-rating: #F5B301;
 
+  /* Charts: categories take chart-1..5 in this order (checked for colour blindness); the rest folds into chart-other */
+  --color-chart-1: #2A78D6;
+  --color-chart-2: #EB6834;
+  --color-chart-3: #1BAF7A;
+  --color-chart-4: #EDA100;
+  --color-chart-5: #E87BA4;
+  --color-chart-other: #CBD5E1;
+
   /* Fonts (load them in index.html, see docs/SHARED_UI.md) */
   --font-sans: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   --font-heading: Montserrat, Inter, "Segoe UI", sans-serif;
