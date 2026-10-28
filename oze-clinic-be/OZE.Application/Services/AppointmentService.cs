@@ -386,9 +386,13 @@ namespace OZE.Application.Services
 
             ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeCancelled);
 
-            // Staff can cancel at any time (a patient may phone just before the visit); a patient has a cutoff
+            // Staff can cancel at any time (a patient may phone just before the visit).
+            // A patient can only cancel a pending appointment, and only before the cutoff
             if (ownerUserId != null)
             {
+                ConditionGuard.ThrowIf(appointment.Status == AppointmentConstants.ConfirmedStatus,
+                    ErrorConstants.AppointmentMessage.ConfirmedNeedsReceptionistToCancel);
+
                 var cutoffHours = await GetIntConfigAsync(ConfigKeyConstants.BookingCancelCutoffHours);
                 var startsAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart ?? default);
                 ConditionGuard.ThrowIf(startsAt - DateTime.Now < TimeSpan.FromHours(cutoffHours),
