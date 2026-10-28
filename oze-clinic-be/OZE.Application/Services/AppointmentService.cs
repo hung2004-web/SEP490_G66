@@ -124,8 +124,8 @@ namespace OZE.Application.Services
                     AppointmentDate = date,
                     TimeSlotStart = chosen.SlotStart,
                     TimeSlotEnd = chosen.SlotEnd,
-                    // The slot was checked again inside this transaction, so the booking is confirmed at once
-                    Status = AppointmentConstants.ConfirmedStatus,
+                    // The slot is held, but the receptionist must confirm the booking before it is approved
+                    Status = AppointmentConstants.PendingStatus,
                     Notes = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
                     CreatedAt = DateTimeOffset.UtcNow,
                     // Saved together with the appointment in the same transaction
@@ -282,7 +282,7 @@ namespace OZE.Application.Services
             var serviceNames = string.Join(", ", services.Select(s => s.ServiceName));
             var message = $"OZE Dental: Lich hen {serviceNames} " +
                           $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy} " +
-                          "da duoc xac nhan.";
+                          "da duoc ghi nhan. Le tan se goi dien de xac nhan.";
             try
             {
                 await _smsSender.SendSmsAsync(phone, message);
