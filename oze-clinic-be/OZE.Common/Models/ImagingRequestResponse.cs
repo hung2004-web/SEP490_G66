@@ -9,6 +9,7 @@ namespace OZE.Common.Models
         public string TargetArea { get; set; } = string.Empty;
         public string ClinicalIndication { get; set; } = string.Empty;
         public string RequestStatus { get; set; } = string.Empty;
+        public string? CancelReason { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
     }
 }
