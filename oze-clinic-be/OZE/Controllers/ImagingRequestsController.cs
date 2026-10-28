@@ -52,6 +52,26 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Cancels a Pending imaging request and stores the doctor's reason (UC-82).
+        /// </summary>
+        [HttpPost("imaging-requests/{id:long}/cancel")]
+        public async Task<ActionResult<ApiResponse<ImagingRequestResponse>>> CancelAsync(
+            long id,
+            [FromBody] CancelImagingRequest request,
+            CancellationToken cancellationToken)
+        {
+            var cancelled = await _imagingRequestService.CancelAsync(
+                CurrentUserId ?? string.Empty,
+                id,
+                request,
+                cancellationToken);
+
+            return Ok(ApiResponse<ImagingRequestResponse>.SuccessResult(
+                cancelled,
+                ErrorConstants.ImagingRequestMessage.RequestCancelled));
+        }
+
+        /// <summary>
         /// Creates a Pending imaging request for an in-progress examination and notifies active imaging technicians (UC-82).
         /// </summary>
         [HttpPost("examinations/{examinationId:long}/imaging-requests")]
