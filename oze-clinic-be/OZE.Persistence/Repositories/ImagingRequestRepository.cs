@@ -41,6 +41,18 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
+        public Task<ImagingRequest?> GetTrackedByIdAsync(long id, CancellationToken cancellationToken = default)
+        {
+            return _context.ImagingRequests
+                .Include(x => x.Examination)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return _context.SaveChangesAsync(cancellationToken);
+        }
+
         public Task<List<string>> GetActiveTechnicianUserIdsAsync(CancellationToken cancellationToken = default)
         {
             return (
