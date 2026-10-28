@@ -4,7 +4,12 @@ import { toast } from "react-toastify";
 import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import useAsync from "@/hooks/useAsync";
-import { deactivateService, getUpcomingAppointmentCount } from "@/services/serviceManagementService";
+import {
+    deactivateService,
+    deactivateServiceType,
+    getDeactivationImpact,
+    getServiceTypeDeactivationImpact,
+} from "@/services/serviceManagementService";
 import { isRequiredEmpty, requiredMessage } from "@/utils/validation";
 
 const REASON_MAX = 500;
@@ -12,15 +17,34 @@ const REASON_MAX = 500;
 // Local date as YYYY-MM-DD, the format of <input type="date">.
 const today = () => new Date().toLocaleDateString("en-CA");
 
-// "Ngưng hoạt động dịch vụ" popup: from which date, and why. onSaved(message) runs after a successful save.
-const DeactivateServicePopup = ({ service, onClose, onSaved }) => {
-    const { value: countResult } = useAsync(() => getUpcomingAppointmentCount(service.id), [service.id]);
-    const [effectiveFrom, setEffectiveFrom] = useState(service.deactivateFrom ?? today());
-    const [reason, setReason] = useState(service.deactivateReason ?? "");
+// Service or service type, by the props given.
+const TARGETS = {
+    service: {
+        title: "Ngưng hoạt động dịch vụ",
+        noun: "dịch vụ",
+        getImpact: getDeactivationImpact,
+        deactivate: deactivateService,
+    },
+    type: {
+        title: "Ngưng hoạt động loại dịch vụ",
+        noun: "loại dịch vụ",
+        getImpact: getServiceTypeDeactivationImpact,
+        deactivate: deactivateServiceType,
+    },
+};
+
+// "Ngưng hoạt động" popup: from which date, and why. Pass serviceType to stop one type of the service instead.
+// onSaved(message) runs after a successful save.
+const DeactivateServicePopup = ({ service, serviceType, onClose, onSaved }) => {
+    const item = serviceType ?? service;
+    const target = serviceType ? TARGETS.type : TARGETS.service;
+    const { value: impactResult } = useAsync(() => target.getImpact(item.id), [target, item.id]);
+    const [effectiveFrom, setEffectiveFrom] = useState(item.deactivateFrom ?? today());
+    const [reason, setReason] = useState(item.deactivateReason ?? "");
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
 
-    const upcomingCount = countResult?.success ? countResult.data.count : 0;
+    const { activeTypes = 0, upcomingAppointments = 0 } = impactResult?.success ? impactResult.data : {};
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -35,7 +59,7 @@ const DeactivateServicePopup = ({ service, onClose, onSaved }) => {
         }
 
         setSaving(true);
-        const response = await deactivateService(service.id, { effectiveFrom, reason });
+        const response = await target.deactivate(item.id, { effectiveFrom, reason });
         setSaving(false);
         if (!response.success) {
             toast.error(response.message);
@@ -45,15 +69,27 @@ const DeactivateServicePopup = ({ service, onClose, onSaved }) => {
     };
 
     return (
-        <Modal title="Ngưng hoạt động dịch vụ" onClose={onClose} closeDisabled={saving}>
+        <Modal
+            title={target.title}
+            description={serviceType && `${serviceType.code} · ${serviceType.name}`}
+            onClose={onClose}
+            closeDisabled={saving}
+        >
             <form noValidate onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
                 <div className="alert alert-warning border-0">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                    <p>
-                        Dịch vụ sẽ không còn hiển thị khi đặt lịch.
-                        {upcomingCount > 0 &&
-                            ` ${upcomingCount} lịch hẹn sắp tới với dịch vụ này vẫn được giữ nguyên.`}
-                    </p>
+                    <div className="flex flex-col gap-1">
+                        <p>
+                            {serviceType ? "Loại dịch vụ" : "Dịch vụ"} sẽ không còn hiển thị khi đặt lịch.
+                            {upcomingAppointments > 0 &&
+                                ` ${upcomingAppointments} lịch hẹn sắp tới với ${target.noun} này vẫn được giữ nguyên.`}
+                        </p>
+                        {activeTypes > 0 && (
+                            <p className="font-semibold">
+                                {activeTypes} loại dịch vụ đang hoạt động thuộc dịch vụ này cũng sẽ không thể đặt lịch.
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 <FormField id="deactivate-from" label="Ngưng áp dụng từ" required error={errors.effectiveFrom}>

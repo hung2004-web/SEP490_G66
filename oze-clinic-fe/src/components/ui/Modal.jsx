@@ -14,11 +14,13 @@ const Modal = ({ title, description, size, onClose, initialFocusRef, closeDisabl
 
     useEffect(() => {
         const returnTarget = document.activeElement;
+        // Opened over a Drawer: leave the lock for the Drawer to remove.
+        const alreadyLocked = document.body.classList.contains(SCROLL_LOCK_CLASS);
         document.body.classList.add(SCROLL_LOCK_CLASS);
         const firstField = dialogRef.current?.querySelector("input, select, textarea");
         (initialFocusRef?.current ?? firstField ?? dialogRef.current)?.focus();
         return () => {
-            document.body.classList.remove(SCROLL_LOCK_CLASS);
+            if (!alreadyLocked) document.body.classList.remove(SCROLL_LOCK_CLASS);
             returnTarget?.focus?.();
         };
     }, [initialFocusRef]);

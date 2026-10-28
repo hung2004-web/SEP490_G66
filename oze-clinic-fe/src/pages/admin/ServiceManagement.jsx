@@ -3,6 +3,7 @@ import { ChevronRight, Pencil, Plus, Search, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
 import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
 import ServiceFormPopup from "@/components/popup/ServiceFormPopup";
+import ServiceTypesDrawer from "@/components/popup/ServiceTypesDrawer";
 import Pagination from "@/components/ui/Pagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
@@ -36,16 +37,17 @@ const PriceCell = ({ service }) => {
     );
 };
 
-const ServiceRow = ({ service, onOpen, onEdit, onToggleActive }) => {
+const ServiceRow = ({ service, selected, onOpen, onEdit, onToggleActive }) => {
     const dimmed = !service.isActive;
 
     return (
-        <tr className="cursor-pointer" onClick={() => onOpen(service)}>
+        <tr
+            className={cx("cursor-pointer", selected && "shadow-[inset_3px_0_0_var(--color-primary)]")}
+            aria-selected={selected}
+            onClick={() => onOpen(service)}
+        >
             <td className={cx("cell-primary whitespace-nowrap", dimmed && "opacity-60")}>{service.code}</td>
-            <td className={cx("min-w-56", dimmed && "opacity-60")}>
-                <p className="text-label text-ink">{service.name}</p>
-                <p className="text-caption text-muted">{service.description}</p>
-            </td>
+            <td className={cx("min-w-56 text-label text-ink", dimmed && "opacity-60")}>{service.name}</td>
             <td className={cx("whitespace-nowrap", dimmed && "opacity-60")}>{groupLabel(service.group)}</td>
             <td className={cx("whitespace-nowrap text-right", dimmed && "opacity-60")}>
                 <PriceCell service={service} />
@@ -111,6 +113,8 @@ const ServiceManagement = () => {
     // null = closed; { service: null } = add; { service } = update.
     const [editor, setEditor] = useState(null);
     const [deactivating, setDeactivating] = useState(null);
+    // Service whose types are shown in the drawer.
+    const [viewing, setViewing] = useState(null);
 
     const { loading, value: result } = useAsync(
         () => getServices({ keyword, group, status, page }),
@@ -156,8 +160,7 @@ const ServiceManagement = () => {
         setPage(1);
     };
 
-    // TODO: open the service types popup once its design is ready.
-    const openDetail = () => {};
+    const openDetail = (service) => setViewing(service);
 
     // Turning off asks for the date and reason first, so the Toggle stays on (return false) until the popup is saved.
     // Turning on happens straight away; false when it failed, so the Toggle flips back.
@@ -288,6 +291,7 @@ const ServiceManagement = () => {
                                     <ServiceRow
                                         key={service.id}
                                         service={service}
+                                        selected={viewing?.id === service.id}
                                         onOpen={openDetail}
                                         onEdit={openEdit}
                                         onToggleActive={handleToggleActive}
@@ -314,6 +318,7 @@ const ServiceManagement = () => {
                     onSaved={handleSaved}
                 />
             )}
+            {viewing && <ServiceTypesDrawer key={viewing.id} service={viewing} onClose={() => setViewing(null)} />}
             {deactivating && (
                 <DeactivateServicePopup
                     key={deactivating.id}

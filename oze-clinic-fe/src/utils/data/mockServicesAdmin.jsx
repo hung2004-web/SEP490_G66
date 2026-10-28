@@ -51,3 +51,23 @@ export const MOCK_ADMIN_SERVICES = [
     { id: 48, code: "DV048", name: "Cạo vôi & đánh bóng", description: "Làm sạch, đánh bóng bề mặt răng", group: group.COSMETIC, price: 200000, priceFrom: false, isActive: true },
     { id: 13, code: "DV013", name: "Chụp phim cắn cánh", description: "Phát hiện sâu kẽ răng", group: group.IMAGING, price: 100000, priceFrom: false, isActive: true },
 ];
+
+// Service types (the options a patient actually books). serviceId points to MOCK_ADMIN_SERVICES; price in VND;
+// durationMinutes: time for one visit. Some services (e.g. DV004 Lấy cao răng) have no types.
+export const MOCK_SERVICE_TYPES = [
+    { id: 1, serviceId: 50, code: "DV050-01", name: "Mắc cài kim loại", price: 25000000, durationMinutes: 60, description: "Mắc cài kim loại truyền thống, chi phí thấp, hiệu quả ổn định.", isActive: true },
+    { id: 2, serviceId: 50, code: "DV050-02", name: "Mắc cài sứ", price: 35000000, durationMinutes: 60, description: "Mắc cài cùng màu răng, khó nhận thấy khi giao tiếp.", isActive: true },
+    { id: 3, serviceId: 50, code: "DV050-03", name: "Niềng răng trẻ em", price: 18000000, durationMinutes: 45, description: "Chỉnh nha sớm cho trẻ từ 7 đến 12 tuổi.", isActive: true },
+    { id: 4, serviceId: 50, code: "DV050-04", name: "Khay trong suốt", price: 60000000, durationMinutes: 30, description: "Khay nhựa trong suốt tháo lắp, thay khay định kỳ.", isActive: false },
+    { id: 5, serviceId: 60, code: "DV060-01", name: "Implant Hàn Quốc", price: 18000000, durationMinutes: 90, description: "Trụ Implant Hàn Quốc, bảo hành 10 năm.", isActive: true },
+    { id: 6, serviceId: 60, code: "DV060-02", name: "Implant Mỹ", price: 25000000, durationMinutes: 90, description: "Trụ Implant Mỹ, bảo hành 15 năm.", isActive: true },
+    { id: 7, serviceId: 60, code: "DV060-03", name: "Implant Thụy Sĩ", price: 32000000, durationMinutes: 90, description: "Trụ Implant Thụy Sĩ, bảo hành trọn đời.", isActive: true },
+    { id: 11, serviceId: 6, code: "DV006-01", name: "Răng khôn mọc lệch", price: 1500000, durationMinutes: 45, description: "Nhổ răng khôn mọc lệch, đã trồi khỏi nướu.", isActive: true },
+    { id: 12, serviceId: 6, code: "DV006-02", name: "Răng khôn mọc ngầm", price: 2500000, durationMinutes: 60, description: "Tiểu phẫu răng khôn mọc ngầm trong xương hàm.", isActive: true },
+    { id: 13, serviceId: 45, code: "DV045-01", name: "Tẩy trắng tại phòng khám", price: 1500000, durationMinutes: 60, description: "Tẩy trắng bằng đèn chiếu, thấy kết quả sau một lần hẹn.", isActive: true },
+    { id: 14, serviceId: 45, code: "DV045-02", name: "Tẩy trắng tại nhà", price: 900000, durationMinutes: 30, description: "Lấy dấu làm máng, bệnh nhân tự tẩy trắng tại nhà.", isActive: true },
+    { id: 15, serviceId: 31, code: "DV031-01", name: "Sứ Zirconia", price: 5000000, durationMinutes: 60, description: "Sườn Zirconia chịu lực tốt, màu tự nhiên.", isActive: true },
+    { id: 16, serviceId: 31, code: "DV031-02", name: "Sứ Emax", price: 6500000, durationMinutes: 60, description: "Sứ Emax trong, thẩm mỹ cao cho răng cửa.", isActive: true },
+    { id: 17, serviceId: 51, code: "DV051-01", name: "Invisalign Lite", price: 45000000, durationMinutes: 30, description: "Cho ca lệch nhẹ, tối đa 14 khay.", isActive: true },
+    { id: 18, serviceId: 51, code: "DV051-02", name: "Invisalign Comprehensive", price: 90000000, durationMinutes: 30, description: "Cho ca phức tạp, không giới hạn số khay.", isActive: true },
+];
