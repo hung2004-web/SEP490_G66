@@ -209,6 +209,7 @@ const Register = () => {
                 id="password"
                 name="password"
                 type="password"
+                passwordToggle
                 placeholder="Ít nhất 8 ký tự"
                 label={<>Mật khẩu <span className="text-danger-solid">*</span></>}
                 value={values.password}
@@ -223,6 +224,7 @@ const Register = () => {
                 id="confirm_password"
                 name="confirm_password"
                 type="password"
+                passwordToggle
                 placeholder="Nhập lại mật khẩu"
                 label={<>Xác nhận mật khẩu <span className="text-danger-solid">*</span></>}
                 value={values.confirm_password}
