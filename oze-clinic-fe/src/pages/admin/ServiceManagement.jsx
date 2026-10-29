@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Pencil, Plus, Search, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
-import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
-import ServiceFormPopup from "@/components/popup/ServiceFormPopup";
-import ServiceTypesDrawer from "@/components/popup/ServiceTypesDrawer";
+import DeactivateServicePopup from "@/components/popup/service/DeactivateServicePopup";
+import ServiceFormPopup from "@/components/popup/service/ServiceFormPopup";
+import ServiceTypesDrawer from "@/components/popup/service/ServiceTypesDrawer";
 import Pagination from "@/components/ui/Pagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";

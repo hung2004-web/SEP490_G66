@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Eye, Layers, Pencil, Plus } from "lucide-react";
 import { toast } from "react-toastify";
-import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
-import ServiceTypeDetailPopup from "@/components/popup/ServiceTypeDetailPopup";
+import DeactivateServicePopup from "@/components/popup/service/DeactivateServicePopup";
+import ServiceTypeDetailPopup from "@/components/popup/service/ServiceTypeDetailPopup";
 import Drawer from "@/components/ui/Drawer";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";

@@ -5,6 +5,12 @@ export const ROOM_TYPES = {
     IMAGING: "imaging",
 };
 
+export const ROOM_TYPE_OPTIONS = [
+    { value: ROOM_TYPES.EXAMINATION, label: "Khám" },
+    { value: ROOM_TYPES.TREATMENT, label: "Điều trị" },
+    { value: ROOM_TYPES.IMAGING, label: "Chẩn đoán hình ảnh" },
+];
+
 export const ROOM_STATUSES = {
     IN_USE: "in_use",
     AVAILABLE: "available",
