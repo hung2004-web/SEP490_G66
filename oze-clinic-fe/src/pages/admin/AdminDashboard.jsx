@@ -111,7 +111,7 @@ const AdminDashboard = () => {
         <div className="flex flex-col gap-6">
             <div className="page-header mb-0 items-center">
                 <div>
-                    <h1 className="page-title">Báo cáo &amp; cảnh báo</h1>
+                    <h1 className="page-title">Tổng quan</h1>
                     <p className="num mt-1 text-caption text-muted">
                         {updatedAt
                             ? `Cập nhật lúc ${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}, ${formatDate(toDateOnly(updatedAt))}`

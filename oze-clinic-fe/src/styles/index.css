@@ -305,6 +305,12 @@
   .sidebar-item > svg { @apply size-5 text-muted; }
   .sidebar-item-active, .sidebar-item[aria-current="page"] { @apply bg-primary-soft text-primary hover:bg-primary-soft; }
   .sidebar-item-active > svg, .sidebar-item[aria-current="page"] > svg { @apply text-primary; }
+  /* Tree: group head (opens / closes) and its children without icons */
+  .sidebar-group { @apply w-full cursor-pointer font-semibold text-ink; }
+  .sidebar-group > svg { @apply text-ink; }
+  .sidebar-subitem { @apply flex h-9 items-center gap-2 rounded-md px-3 text-label text-body hover:bg-surface-tint; }
+  .sidebar-subitem[aria-current="page"] { @apply bg-primary-soft text-primary hover:bg-primary-soft; }
+  .sidebar-count { @apply num rounded-full bg-warning-soft px-2 text-caption text-warning; }
   .topbar { @apply sticky top-0 z-30 flex h-topbar items-center justify-between gap-4 border-b border-border bg-canvas px-6 text-ink; }
 
   /* ---------- Public site ---------- */

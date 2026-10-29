@@ -1,121 +1,73 @@
-import { useEffect, useId, useRef } from "react";
-import { NavLink } from "react-router-dom";
-import {
-    CalendarClock,
-    CalendarDays,
-    CalendarPlus,
-    ChartColumn,
-    ClipboardList,
-    DoorOpen,
-    FileText,
-    Images,
-    KeyRound,
-    LayoutDashboard,
-    MessageSquareText,
-    Receipt,
-    ScanLine,
-    ShieldCheck,
-    Stethoscope,
-    User,
-    UserCheck,
-    UserCog,
-    Users,
-    X,
-} from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { NavLink, matchPath, useLocation } from "react-router-dom";
+import { ChevronDown, X } from "lucide-react";
+import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
+import { getPendingRequests } from "@/services/adminReportService";
 import { cx } from "@/utils/cx";
+import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
 import { USER_ROLES } from "@/utils/messages";
-import { ROUTES } from "@/utils/routes";
+import { SIDEBAR_BADGES, getSidebarMenu } from "@/utils/sidebarMenu";
 
 const FOCUSABLE_SELECTOR = "a[href], button:not([disabled])";
 const SCROLL_LOCK_CLASS = "overflow-hidden";
+// Groups the user closed, remembered per browser.
+const CLOSED_GROUPS_KEY = "sidebar_closed_groups";
 
-const ACCOUNT_GROUP = {
-    key: "account",
-    label: "Tài khoản",
-    items: [
-        { key: "profile", label: "Hồ sơ cá nhân", icon: User, to: ROUTES.PROFILE },
-        { key: "change-password", label: "Đổi mật khẩu", icon: KeyRound, to: ROUTES.CHANGE_PASSWORD },
-    ],
+const readClosedGroups = () => {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(CLOSED_GROUPS_KEY)) ?? []);
+    } catch {
+        return new Set();
+    }
 };
 
-const DASHBOARD_ITEM = { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard, to: ROUTES.DASHBOARD };
-const WORK_SCHEDULE_ITEM = { key: "work-schedule", label: "Lịch làm việc", icon: CalendarClock, to: ROUTES.WORK_SCHEDULE };
+const saveClosedGroups = (closed) => {
+    try {
+        localStorage.setItem(CLOSED_GROUPS_KEY, JSON.stringify([...closed]));
+    } catch {
+        // Storage blocked (private window): the groups just open again next time.
+    }
+};
 
-const ROLE_GROUPS = {
-    [USER_ROLES.DOCTOR]: [
-        {
-            key: "main",
-            items: [
-                DASHBOARD_ITEM,
-                { key: "appointments", label: "Lịch hẹn khám", icon: CalendarDays, to: ROUTES.DOCTOR_APPOINTMENTS },
-                { key: "patients", label: "Bệnh nhân", icon: Users, to: ROUTES.DOCTOR_PATIENTS },
-                { key: "treatment-plans", label: "Kế hoạch điều trị", icon: ClipboardList, to: ROUTES.DOCTOR_TREATMENT_PLANS },
-                { key: "imaging-requests", label: "Yêu cầu chụp phim", icon: ScanLine, to: ROUTES.DOCTOR_IMAGING_REQUESTS },
-                WORK_SCHEDULE_ITEM,
-            ],
-        },
-        ACCOUNT_GROUP,
-    ],
-    [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: [
-        {
-            key: "main",
-            items: [
-                DASHBOARD_ITEM,
-                { key: "imaging-requests", label: "Yêu cầu chụp phim", icon: ScanLine, to: ROUTES.TECHNICIAN_IMAGING_REQUESTS },
-                { key: "imaging-results", label: "Kết quả hình ảnh", icon: Images, to: ROUTES.TECHNICIAN_IMAGING_RESULTS },
-                WORK_SCHEDULE_ITEM,
-            ],
-        },
-        ACCOUNT_GROUP,
-    ],
-    [USER_ROLES.RECEPTIONIST]: [
-        {
-            key: "main",
-            items: [
-                DASHBOARD_ITEM,
-                { key: "appointments", label: "Quản lý lịch hẹn", icon: CalendarDays, to: ROUTES.RECEPTION_APPOINTMENTS },
-                { key: "check-in", label: "Tiếp đón bệnh nhân", icon: UserCheck, to: ROUTES.RECEPTION_CHECK_IN },
-                { key: "patients", label: "Bệnh nhân", icon: Users, to: ROUTES.RECEPTION_PATIENTS },
-                { key: "consultations", label: "Yêu cầu tư vấn", icon: MessageSquareText, to: ROUTES.RECEPTION_CONSULTATIONS },
-                { key: "invoices", label: "Thanh toán", icon: Receipt, to: ROUTES.RECEPTION_INVOICES },
-                WORK_SCHEDULE_ITEM,
-            ],
-        },
-        ACCOUNT_GROUP,
-    ],
-    [USER_ROLES.CLINIC_MANAGER]: [
-        {
-            key: "main",
-            items: [DASHBOARD_ITEM, { key: "reports", label: "Báo cáo", icon: ChartColumn, to: ROUTES.ADMIN_REPORTS }],
-        },
-        {
-            key: "management",
-            label: "Quản lý",
-            items: [
-                { key: "staff", label: "Nhân viên", icon: UserCog, to: ROUTES.ADMIN_STAFF },
-                { key: "roles", label: "Vai trò", icon: ShieldCheck, to: ROUTES.ADMIN_ROLES },
-                { key: "work-shifts", label: "Ca làm việc", icon: CalendarClock, to: ROUTES.ADMIN_WORK_SHIFTS },
-                { key: "rooms", label: "Phòng khám", icon: DoorOpen, to: ROUTES.ADMIN_ROOMS },
-                { key: "services", label: "Dịch vụ", icon: Stethoscope, to: ROUTES.ADMIN_SERVICES },
-            ],
-        },
-        ACCOUNT_GROUP,
-    ],
-    [USER_ROLES.PATIENT]: [
-        {
-            key: "main",
-            items: [
-                DASHBOARD_ITEM,
-                { key: "book-appointment", label: "Đặt lịch hẹn", icon: CalendarPlus, to: ROUTES.BOOK_APPOINTMENT },
-                { key: "appointments", label: "Lịch hẹn của tôi", icon: CalendarDays, to: ROUTES.APPOINTMENTS },
-                { key: "treatment-plans", label: "Kế hoạch điều trị", icon: ClipboardList, to: ROUTES.TREATMENT_PLANS },
-                { key: "medical-record", label: "Hồ sơ bệnh án", icon: FileText, to: ROUTES.MEDICAL_RECORD },
-                { key: "invoices", label: "Hóa đơn", icon: Receipt, to: ROUTES.INVOICES },
-            ],
-        },
-        ACCOUNT_GROUP,
-    ],
+// True when the page is one of the group's children (or below it, e.g. a detail page).
+const containsPath = (group, pathname) => group.children.some((child) => matchPath({ path: child.to, end: false }, pathname));
+
+// Counts shown next to children with a `badge` (see SIDEBAR_BADGES). Only the clinic manager has any so far.
+const useSidebarBadges = (role) => {
+    const isManager = role === USER_ROLES.CLINIC_MANAGER;
+    const { value: result } = useAsync(() => (isManager ? getPendingRequests() : Promise.resolve(null)), [isManager]);
+    const requests = result?.success ? result.data : [];
+    const countOf = (type) => requests.filter((request) => request.type === type).length;
+
+    return {
+        [SIDEBAR_BADGES.PENDING_LEAVES]: countOf(REQUEST_TYPES.LEAVE),
+        [SIDEBAR_BADGES.PENDING_REFUNDS]: countOf(REQUEST_TYPES.REFUND),
+    };
+};
+
+// Open / closed groups. The group holding the current page opens again whenever the page changes.
+const useOpenGroups = (menu) => {
+    const { pathname } = useLocation();
+    const activeKeys = () => menu.filter((node) => node.children && containsPath(node, pathname)).map((node) => node.key);
+    const withoutActive = (closed) => new Set([...closed].filter((key) => !activeKeys().includes(key)));
+
+    const [closed, setClosed] = useState(() => withoutActive(readClosedGroups()));
+    const [seenPath, setSeenPath] = useState(pathname);
+    if (seenPath !== pathname) {
+        setSeenPath(pathname);
+        setClosed(withoutActive(closed));
+    }
+
+    const toggle = (key) => {
+        const next = new Set(closed);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        setClosed(next);
+        saveClosedGroups(next);
+    };
+
+    return { isOpen: (key) => !closed.has(key), toggle, pathname };
 };
 
 const Brand = ({ collapsed }) =>
@@ -128,11 +80,20 @@ const Brand = ({ collapsed }) =>
         </div>
     );
 
-const SidebarLink = ({ item, collapsed, drawer }) => {
+// Icon link: a top-level link, or a whole group when the sidebar is collapsed (active = the page is inside it).
+const SidebarLink = ({ item, collapsed, drawer, active = false }) => {
     const Icon = item.icon;
 
     return (
-        <NavLink to={item.to} className={cx("sidebar-item group relative", drawer && "h-11", collapsed && "justify-center px-0")}>
+        <NavLink
+            to={item.to}
+            className={cx(
+                "sidebar-item group relative",
+                active && "sidebar-item-active",
+                drawer && "h-11",
+                collapsed && "justify-center px-0",
+            )}
+        >
             <Icon aria-hidden="true" />
             <span className={cx("truncate", collapsed && "sr-only")}>{item.label}</span>
             {collapsed && (
@@ -147,40 +108,89 @@ const SidebarLink = ({ item, collapsed, drawer }) => {
     );
 };
 
-const SidebarNav = ({ groups, collapsed = false, drawer = false }) => {
-    const labelPrefix = useId();
+// Group head (icon, name, chevron) that opens / closes its children, which hang on a guide line.
+const SidebarGroup = ({ group, open, onToggle, badges, drawer }) => {
+    const listId = useId();
+    const Icon = group.icon;
+
+    return (
+        <>
+            <button
+                type="button"
+                className={cx("sidebar-item sidebar-group", drawer && "h-11")}
+                aria-expanded={open}
+                aria-controls={listId}
+                onClick={onToggle}
+            >
+                <Icon aria-hidden="true" />
+                <span className="flex-1 truncate text-left">{group.label}</span>
+                <ChevronDown
+                    className={cx("size-4 transition-transform duration-200", !open && "-rotate-90")}
+                    aria-hidden="true"
+                />
+            </button>
+            {open && (
+                <ul id={listId} className="mb-1 ml-[21px] flex flex-col gap-0.5 border-l border-border pl-2">
+                    {group.children.map((child) => {
+                        const count = child.badge ? badges[child.badge] : 0;
+                        return (
+                            <li key={child.key}>
+                                <NavLink to={child.to} className={cx("sidebar-subitem", drawer && "h-11")}>
+                                    <span className="flex-1 truncate">{child.label}</span>
+                                    {count > 0 && (
+                                        <span className="sidebar-count">
+                                            {count}
+                                            <span className="sr-only"> đang chờ</span>
+                                        </span>
+                                    )}
+                                </NavLink>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </>
+    );
+};
+
+const SidebarNav = ({ menu, collapsed = false, drawer = false }) => {
+    const { role } = useSession();
+    const badges = useSidebarBadges(role);
+    const { isOpen, toggle, pathname } = useOpenGroups(menu);
 
     return (
         <nav
             aria-label="Thanh bên"
             className={cx("flex min-h-0 flex-1 flex-col p-3", collapsed ? "overflow-visible" : "overflow-y-auto")}
         >
-            {groups.map((group, index) => {
-                const labelId = `${labelPrefix}-${group.key}`;
-
-                return (
-                    <div key={group.key}>
-                        {index > 0 && <hr className="my-3 border-border" />}
-                        {group.label && (
-                            <p id={labelId} className={cx("text-caption text-muted", collapsed ? "sr-only" : "px-3 pb-1")}>
-                                {group.label}
-                            </p>
+            <ul className="flex flex-col gap-1">
+                {menu.map((node) => (
+                    <li key={node.key}>
+                        {!node.children && <SidebarLink item={node} collapsed={collapsed} drawer={drawer} />}
+                        {node.children && collapsed && (
+                            <SidebarLink
+                                item={{ label: node.label, icon: node.icon, to: node.children[0].to }}
+                                collapsed
+                                active={containsPath(node, pathname)}
+                            />
                         )}
-                        <ul aria-labelledby={group.label ? labelId : undefined} className="flex flex-col gap-1">
-                            {group.items.map((item) => (
-                                <li key={item.key}>
-                                    <SidebarLink item={item} collapsed={collapsed} drawer={drawer} />
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                );
-            })}
+                        {node.children && !collapsed && (
+                            <SidebarGroup
+                                group={node}
+                                open={isOpen(node.key)}
+                                onToggle={() => toggle(node.key)}
+                                badges={badges}
+                                drawer={drawer}
+                            />
+                        )}
+                    </li>
+                ))}
+            </ul>
         </nav>
     );
 };
 
-const SidebarDrawer = ({ id, groups, onClose, returnFocusRef }) => {
+const SidebarDrawer = ({ id, menu, onClose, returnFocusRef }) => {
     const dialogRef = useRef(null);
     const closeButtonRef = useRef(null);
 
@@ -249,7 +259,7 @@ const SidebarDrawer = ({ id, groups, onClose, returnFocusRef }) => {
                         <X className="size-5" aria-hidden="true" />
                     </button>
                 </div>
-                {groups.length > 0 && <SidebarNav groups={groups} drawer />}
+                {menu.length > 0 && <SidebarNav menu={menu} drawer />}
             </div>
         </div>
     );
@@ -257,9 +267,9 @@ const SidebarDrawer = ({ id, groups, onClose, returnFocusRef }) => {
 
 const Sidebar = ({ id, drawer = false, collapsed = false, onClose, returnFocusRef }) => {
     const { role } = useSession();
-    const groups = Object.hasOwn(ROLE_GROUPS, role) ? ROLE_GROUPS[role] : [];
+    const menu = getSidebarMenu(role);
 
-    if (drawer) return <SidebarDrawer id={id} groups={groups} onClose={onClose} returnFocusRef={returnFocusRef} />;
+    if (drawer) return <SidebarDrawer id={id} menu={menu} onClose={onClose} returnFocusRef={returnFocusRef} />;
 
     return (
         <div
@@ -277,7 +287,7 @@ const Sidebar = ({ id, drawer = false, collapsed = false, onClose, returnFocusRe
             >
                 <Brand collapsed={collapsed} />
             </div>
-            {groups.length > 0 && <SidebarNav groups={groups} collapsed={collapsed} />}
+            {menu.length > 0 && <SidebarNav menu={menu} collapsed={collapsed} />}
         </div>
     );
 };
