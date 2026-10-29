@@ -7,8 +7,6 @@ import { deleteCertificate, saveCertificate } from "@/services/profileService";
 import { cx } from "@/utils/cx";
 import { isRequiredEmpty, requiredMessage } from "@/utils/validation";
 
-const EXPIRING_SOON_DAYS = 60;
-const DAY_MS = 24 * 60 * 60 * 1000;
 const TEXT_MAX = 200;
 const EMPTY_CERTIFICATE = { name: "", issuer: "", number: "", issuedAt: "", expiresAt: "" };
 const ICON_BUTTON_CLASS = "btn btn-icon size-8 hover:bg-surface-tint";
@@ -18,14 +16,6 @@ const today = () => new Date().toLocaleDateString("en-CA");
 
 // "2020-06-15" -> "15/06/2020"
 const formatDate = (value) => (value ? value.split("-").reverse().join("/") : "");
-
-const getValidity = (expiresAt) => {
-    if (!expiresAt) return { label: "Không thời hạn", badge: "badge-success" };
-    const daysLeft = (Date.parse(expiresAt) - Date.parse(today())) / DAY_MS;
-    if (daysLeft < 0) return { label: "Hết hạn", badge: "badge-danger" };
-    if (daysLeft <= EXPIRING_SOON_DAYS) return { label: "Sắp hết hạn", badge: "badge-warning" };
-    return { label: "Còn hiệu lực", badge: "badge-success" };
-};
 
 const validate = (values) => {
     const errors = {};
@@ -148,7 +138,7 @@ const DeleteCertificateModal = ({ certificate, onClose, onDeleted }) => {
     );
 };
 
-// Doctor only: practising certificates and training certificates, with their validity.
+// Doctor only: practising certificates and training certificates.
 const CertificatesCard = ({ certificates, onChange }) => {
     const [dialog, setDialog] = useState(null);
 
@@ -177,44 +167,40 @@ const CertificatesCard = ({ certificates, onChange }) => {
                 </div>
             ) : (
                 <ul className="divide-y divide-border">
-                    {certificates.map((certificate) => {
-                        const validity = getValidity(certificate.expiresAt);
-                        return (
-                            <li key={certificate.id} className="flex gap-3 px-5 py-4">
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-label text-ink">{certificate.name}</p>
-                                    <p className="mt-0.5 text-caption text-muted">
-                                        {certificate.issuer} · Số <span className="num">{certificate.number}</span>
-                                    </p>
-                                    <p className="num mt-0.5 text-caption text-muted">
-                                        Cấp ngày {formatDate(certificate.issuedAt)}
-                                        {certificate.expiresAt && ` · Hết hạn ${formatDate(certificate.expiresAt)}`}
-                                    </p>
-                                    <span className={cx("badge mt-2", validity.badge)}>{validity.label}</span>
-                                </div>
-                                <div className="flex shrink-0 items-start gap-1">
-                                    <button
-                                        type="button"
-                                        className={ICON_BUTTON_CLASS}
-                                        aria-label={`Chỉnh sửa ${certificate.name}`}
-                                        title="Chỉnh sửa"
-                                        onClick={() => setDialog({ kind: "form", certificate })}
-                                    >
-                                        <Pencil className="size-4" aria-hidden="true" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={cx(ICON_BUTTON_CLASS, "hover:text-danger")}
-                                        aria-label={`Xoá ${certificate.name}`}
-                                        title="Xoá"
-                                        onClick={() => setDialog({ kind: "delete", certificate })}
-                                    >
-                                        <Trash2 className="size-4" aria-hidden="true" />
-                                    </button>
-                                </div>
-                            </li>
-                        );
-                    })}
+                    {certificates.map((certificate) => (
+                        <li key={certificate.id} className="flex gap-3 px-5 py-4">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-label text-ink">{certificate.name}</p>
+                                <p className="mt-0.5 text-caption text-muted">
+                                    {certificate.issuer} · Số <span className="num">{certificate.number}</span>
+                                </p>
+                                <p className="num mt-0.5 text-caption text-muted">
+                                    Cấp ngày {formatDate(certificate.issuedAt)}
+                                    {certificate.expiresAt && ` · Hết hạn ${formatDate(certificate.expiresAt)}`}
+                                </p>
+                            </div>
+                            <div className="flex shrink-0 items-start gap-1">
+                                <button
+                                    type="button"
+                                    className={ICON_BUTTON_CLASS}
+                                    aria-label={`Chỉnh sửa ${certificate.name}`}
+                                    title="Chỉnh sửa"
+                                    onClick={() => setDialog({ kind: "form", certificate })}
+                                >
+                                    <Pencil className="size-4" aria-hidden="true" />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={cx(ICON_BUTTON_CLASS, "hover:text-danger")}
+                                    aria-label={`Xoá ${certificate.name}`}
+                                    title="Xoá"
+                                    onClick={() => setDialog({ kind: "delete", certificate })}
+                                >
+                                    <Trash2 className="size-4" aria-hidden="true" />
+                                </button>
+                            </div>
+                        </li>
+                    ))}
                 </ul>
             )}
 
