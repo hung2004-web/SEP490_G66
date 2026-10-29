@@ -255,6 +255,8 @@ namespace OZE.Common.Constants
             public const string CannotCancelRequest = "You do not have permission to cancel this imaging request.";
             public const string RequestNotPending = "Cannot cancel imaging request because the imaging request is {0}.";
             public const string RequestCancelled = "Cancel imaging request success!";
+            // MSG02
+            public const string QueueEmpty = "No Data.";
             public const string TechnicianNotificationTitle = "New imaging request";
             public const string TechnicianNotificationMessage = "Imaging request ({0}) for {1} has been submitted.";
         }
