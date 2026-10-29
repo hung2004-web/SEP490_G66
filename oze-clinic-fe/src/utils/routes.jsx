@@ -44,7 +44,10 @@ export const ROUTES = {
     ADMIN_ROOMS: "/admin/rooms",
     ADMIN_SERVICES: "/admin/services",
     ADMIN_WORK_SHIFTS: "/admin/work-shifts",
-    ADMIN_REPORTS: "/admin/reports",
+    ADMIN_LEAVE_REQUESTS: "/admin/leave-requests",
+    ADMIN_REFUNDS: "/admin/refunds",
+    ADMIN_SYSTEM_LOGS: "/admin/system-logs",
+    ADMIN_SETTINGS: "/admin/settings",
     ERROR: "/error/:code",
 };
 
@@ -68,7 +71,17 @@ export const ROLE_ROUTES = [
     },
     {
         roles: [USER_ROLES.CLINIC_MANAGER],
-        paths: [ROUTES.ADMIN_REPORTS, ROUTES.ADMIN_STAFF, ROUTES.ADMIN_ROLES, ROUTES.ADMIN_WORK_SHIFTS, ROUTES.ADMIN_ROOMS, ROUTES.ADMIN_SERVICES]
+        paths: [
+            ROUTES.ADMIN_STAFF,
+            ROUTES.ADMIN_ROLES,
+            ROUTES.ADMIN_WORK_SHIFTS,
+            ROUTES.ADMIN_LEAVE_REQUESTS,
+            ROUTES.ADMIN_ROOMS,
+            ROUTES.ADMIN_SERVICES,
+            ROUTES.ADMIN_REFUNDS,
+            ROUTES.ADMIN_SYSTEM_LOGS,
+            ROUTES.ADMIN_SETTINGS,
+        ]
     },
     {
         roles: [USER_ROLES.DOCTOR, USER_ROLES.DENTAL_IMAGING_TECHNICIAN, USER_ROLES.RECEPTIONIST],

@@ -133,10 +133,13 @@ const COMING_SOON_TITLES = {
     [ROUTES.RECEPTION_CONSULTATIONS]: "Yêu cầu tư vấn",
     [ROUTES.RECEPTION_INVOICES]: "Thanh toán",
     [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
-    [ROUTES.ADMIN_REPORTS]: "Báo cáo",
-    [ROUTES.ADMIN_STAFF]: "Nhân viên",
+    [ROUTES.ADMIN_STAFF]: "Tài khoản & nhân sự",
     [ROUTES.ADMIN_ROLES]: "Vai trò",
     [ROUTES.ADMIN_WORK_SHIFTS]: "Ca làm việc",
+    [ROUTES.ADMIN_LEAVE_REQUESTS]: "Đơn xin nghỉ",
+    [ROUTES.ADMIN_REFUNDS]: "Duyệt hoàn tiền",
+    [ROUTES.ADMIN_SYSTEM_LOGS]: "Nhật ký hệ thống",
+    [ROUTES.ADMIN_SETTINGS]: "Cài đặt",
 }
 
 const getRolePage = (path) =>

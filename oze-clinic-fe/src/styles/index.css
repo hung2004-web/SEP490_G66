@@ -143,6 +143,20 @@
   }
 }
 
+/* Charts: categories take chart-1..8 in this order (checked for colour blindness); a 9th+ folds into chart-other.
+   "static" keeps every variable in the CSS: the charts read them in inline styles, which Tailwind cannot see. */
+@theme static {
+  --color-chart-1: #2A78D6;
+  --color-chart-2: #EB6834;
+  --color-chart-3: #1BAF7A;
+  --color-chart-4: #EDA100;
+  --color-chart-5: #E87BA4;
+  --color-chart-6: #008300;
+  --color-chart-7: #6250D6;
+  --color-chart-8: #E34948;
+  --color-chart-other: #CBD5E1;
+}
+
 /* ===================== 2. BASE ===================== */
 /* Global element defaults. Keep this file small. */
 @layer base {
@@ -291,6 +305,12 @@
   .sidebar-item > svg { @apply size-5 text-muted; }
   .sidebar-item-active, .sidebar-item[aria-current="page"] { @apply bg-primary-soft text-primary hover:bg-primary-soft; }
   .sidebar-item-active > svg, .sidebar-item[aria-current="page"] > svg { @apply text-primary; }
+  /* Tree: group head (opens / closes) and its children without icons */
+  .sidebar-group { @apply w-full cursor-pointer font-semibold text-ink; }
+  .sidebar-group > svg { @apply text-ink; }
+  .sidebar-subitem { @apply flex h-9 items-center gap-2 rounded-md px-3 text-label text-body hover:bg-surface-tint; }
+  .sidebar-subitem[aria-current="page"] { @apply bg-primary-soft text-primary hover:bg-primary-soft; }
+  .sidebar-count { @apply num rounded-full bg-warning-soft px-2 text-caption text-warning; }
   .topbar { @apply sticky top-0 z-30 flex h-topbar items-center justify-between gap-4 border-b border-border bg-canvas px-6 text-ink; }
 
   /* ---------- Public site ---------- */
