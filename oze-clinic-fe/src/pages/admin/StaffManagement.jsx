@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Eye, Lock, LockOpen, Pencil, Users } from "lucide-react";
 import { toast } from "react-toastify";
+import LockAccountPopup from "@/components/popup/staff/LockAccountPopup";
+import StaffDetailPopup from "@/components/popup/staff/StaffDetailPopup";
+import StaffFormPopup from "@/components/popup/staff/StaffFormPopup";
 import FilterSelect from "@/components/ui/FilterSelect";
 import PersonCell from "@/components/ui/PersonCell";
 import SearchInput from "@/components/ui/SearchInput";
@@ -10,11 +13,10 @@ import useAsync from "@/hooks/useAsync";
 import { getStaffAccounts, unlockStaffAccount } from "@/services/staffService";
 import { cx } from "@/utils/cx";
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_LABELS, ACCOUNT_STATUS_OPTIONS, STAFF_ROLE_OPTIONS } from "@/utils/data/mockStaff";
-import { formatDate } from "@/utils/format";
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 5;
-const COLUMN_COUNT = 7;
+const COLUMN_COUNT = 6;
 const ACTION_CLASS = "btn btn-secondary btn-icon size-8";
 
 const roleLabel = (role) => STAFF_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role;
@@ -35,9 +37,8 @@ const StaffRow = ({ member, onView, onEdit, onLock, onUnlock }) => {
                 <span className="chip-queue whitespace-nowrap">{roleLabel(member.role)}</span>
             </td>
             <td className="num whitespace-nowrap">{formatPhone(member.phone)}</td>
-            <td className="num whitespace-nowrap">{formatDate(member.startDate)}</td>
             <td>
-                <span title={locked ? member.lockReason ?? undefined : undefined}>
+                <span title={locked ? member.lock?.note : undefined}>
                     <StatusBadge status={member.status} labels={ACCOUNT_STATUS_LABELS} />
                 </span>
             </td>
@@ -87,6 +88,8 @@ const StaffManagement = () => {
     const [status, setStatus] = useState("");
     const [page, setPage] = useState(1);
     const [reloadKey, setReloadKey] = useState(0);
+    // null = closed; { kind: "form" | "detail" | "lock", member }. A form with member = null creates an account.
+    const [dialog, setDialog] = useState(null);
 
     const { loading, value: result } = useAsync(
         () => getStaffAccounts({ keyword, role, status, page }),
@@ -112,11 +115,30 @@ const StaffManagement = () => {
         setPage(1);
     };
 
-    // TODO(design): create / view / edit / lock popups are not built yet.
-    const openCreate = () => {};
-    const openView = () => {};
-    const openEdit = () => {};
-    const openLock = () => {};
+    const openCreate = () => setDialog({ kind: "form", member: null });
+    const openView = (member) => setDialog({ kind: "detail", member });
+    const openEdit = (member) => setDialog({ kind: "form", member });
+    const openLock = (member) => setDialog({ kind: "lock", member });
+    const closeDialog = () => setDialog(null);
+
+    const reload = (message) => {
+        toast.success(message);
+        setReloadKey((current) => current + 1);
+    };
+
+    // A new account goes to the top of the list, so show page 1 without filters.
+    // After an update or lock, keep the filters and page so the row stays in view.
+    const handleSaved = (message) => {
+        const created = dialog?.kind === "form" && !dialog.member;
+        setDialog(null);
+        reload(message);
+        if (!created) return;
+        setSearchInput("");
+        setKeyword("");
+        setRole("");
+        setStatus("");
+        setPage(1);
+    };
 
     const handleUnlock = async (member) => {
         const response = await unlockStaffAccount(member.id);
@@ -124,8 +146,7 @@ const StaffManagement = () => {
             toast.error(response.message);
             return;
         }
-        toast.success(response.message);
-        setReloadKey((current) => current + 1);
+        reload(response.message);
     };
 
     return (
@@ -165,7 +186,6 @@ const StaffManagement = () => {
                                 <th scope="col">Nhân viên</th>
                                 <th scope="col">Vai trò</th>
                                 <th scope="col">Số điện thoại</th>
-                                <th scope="col">Ngày vào làm</th>
                                 <th scope="col">Trạng thái</th>
                                 <th scope="col">
                                     <span className="sr-only">Thao tác</span>
@@ -214,6 +234,12 @@ const StaffManagement = () => {
                 </div>
                 <TablePagination data={data} itemCount={staff.length} onChange={setPage} label="Phân trang danh sách nhân viên" />
             </div>
+
+            {dialog?.kind === "form" && (
+                <StaffFormPopup key={dialog.member?.id ?? "new"} member={dialog.member} onClose={closeDialog} onSaved={handleSaved} />
+            )}
+            {dialog?.kind === "detail" && <StaffDetailPopup member={dialog.member} onClose={closeDialog} onEdit={openEdit} />}
+            {dialog?.kind === "lock" && <LockAccountPopup member={dialog.member} onClose={closeDialog} onSaved={handleSaved} />}
         </div>
     );
 };
