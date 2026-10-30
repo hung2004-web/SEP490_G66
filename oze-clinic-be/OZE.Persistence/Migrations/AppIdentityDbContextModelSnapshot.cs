@@ -441,29 +441,26 @@ namespace OZE.Persistence.Migrations
                     b.Property<int>("ServiceId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("REQUESTED");
+                    b.Property<int?>("VariantId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ServiceId")
                         .HasDatabaseName("IX_AppointmentServices_ServiceId");
 
-                    b.HasIndex("AppointmentId", "ServiceId")
+                    b.HasIndex("VariantId")
+                        .HasDatabaseName("IX_AppointmentServices_VariantId");
+
+                    b.HasIndex("AppointmentId", "ServiceId", "VariantId")
                         .IsUnique()
-                        .HasDatabaseName("UX_AppointmentServices_Appointment_Service");
+                        .HasDatabaseName("UX_AppointmentServices_Appointment_Service_Variant");
 
                     b.ToTable("AppointmentServices", null, t =>
                         {
                             t.HasCheckConstraint("CK_AppointmentServices_Duration", "[DurationMinutes] > 0");
 
                             t.HasCheckConstraint("CK_AppointmentServices_Price", "[PriceAtBooking] >= 0");
-
-                            t.HasCheckConstraint("CK_AppointmentServices_Status", "[Status] IN ('REQUESTED', 'CONFIRMED', 'PERFORMED', 'POSTPONED', 'CANCELLED')");
                         });
                 });
 
@@ -1719,9 +1716,6 @@ namespace OZE.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("CategoryId")
-                        .HasColumnType("int");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetimeoffset")
@@ -1763,9 +1757,6 @@ namespace OZE.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId")
-                        .HasDatabaseName("IX_Services_CategoryId");
-
                     b.HasIndex("IsActive")
                         .HasDatabaseName("IX_Services_IsActive");
 
@@ -1783,28 +1774,13 @@ namespace OZE.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("OZE.Domain.Entities.ServiceCategory", b =>
+            modelBuilder.Entity("OZE.Domain.Entities.ServiceVariant", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("AllowMultipleSelection")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("CategoryCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("CategoryName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1820,21 +1796,49 @@ namespace OZE.Persistence.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
+                    b.Property<int?>("EstimatedMinutes")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<decimal>("ReferencePrice")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("VariantCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("VariantName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryCode")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ServiceCategories_CategoryCode");
+                    b.HasIndex("ServiceId")
+                        .HasDatabaseName("IX_ServiceVariants_ServiceId");
 
-                    b.ToTable("ServiceCategories", (string)null);
+                    b.HasIndex("VariantCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ServiceVariants_VariantCode");
+
+                    b.ToTable("ServiceVariants", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ServiceVariants_ReferencePrice", "[ReferencePrice] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.StaffProfile", b =>
@@ -2404,9 +2408,17 @@ namespace OZE.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_AppointmentServices_Services");
 
+                    b.HasOne("OZE.Domain.Entities.ServiceVariant", "Variant")
+                        .WithMany()
+                        .HasForeignKey("VariantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_AppointmentServices_ServiceVariants");
+
                     b.Navigation("Appointment");
 
                     b.Navigation("Service");
+
+                    b.Navigation("Variant");
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.ClinicalDiagnosis", b =>
@@ -2798,15 +2810,16 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Payment");
                 });
 
-            modelBuilder.Entity("OZE.Domain.Entities.Service", b =>
+            modelBuilder.Entity("OZE.Domain.Entities.ServiceVariant", b =>
                 {
-                    b.HasOne("OZE.Domain.Entities.ServiceCategory", "Category")
-                        .WithMany("Services")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("FK_Services_ServiceCategories");
+                    b.HasOne("OZE.Domain.Entities.Service", "Service")
+                        .WithMany("Variants")
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ServiceVariants_Services");
 
-                    b.Navigation("Category");
+                    b.Navigation("Service");
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.StaffProfile", b =>
@@ -2979,9 +2992,9 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("OZE.Domain.Entities.ServiceCategory", b =>
+            modelBuilder.Entity("OZE.Domain.Entities.Service", b =>
                 {
-                    b.Navigation("Services");
+                    b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.StaffProfile", b =>

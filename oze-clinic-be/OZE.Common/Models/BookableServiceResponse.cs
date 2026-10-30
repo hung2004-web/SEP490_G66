@@ -9,5 +9,6 @@ namespace OZE.Common.Models
         public int? EstimatedMinutes { get; set; }
         // The general exam is added to every booking, so the screen shows it ticked and locked
         public bool IsMandatory { get; set; }
+        public List<BookableVariantResponse> Variants { get; set; } = new();
     }
 }

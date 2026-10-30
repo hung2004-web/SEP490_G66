@@ -8,7 +8,7 @@ namespace OZE.Application.Interfaces
 {
     public interface IAppointmentService
     {
-        Task<List<BookableCategoryResponse>> GetBookableServicesAsync();
+        Task<List<BookableServiceResponse>> GetBookableServicesAsync();
         Task<List<AvailableSlotResponse>> GetAvailableSlotsAsync(AvailableSlotRequest request);
         Task<AppointmentResponse> BookAsGuestAsync(GuestBookingRequest request);
 
