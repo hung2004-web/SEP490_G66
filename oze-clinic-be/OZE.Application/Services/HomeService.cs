@@ -49,5 +49,16 @@ namespace OZE.Application.Services
                 EstimatedMinutes = service.EstimatedMinutes
             };
         }
+        private static HomeServiceResponse CheckToServiceResponse(Service service)
+        {
+            return new HomeServiceResponse
+            {
+                Id = service.Id,
+                ServiceName = service.ServiceName,
+                Description = service.Description,
+                ReferencePrice = service.ReferencePrice,
+                EstimatedMinutes = service.EstimatedMinutes
+            };
+        }
     }
 }
