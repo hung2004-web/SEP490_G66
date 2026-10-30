@@ -80,5 +80,18 @@ namespace OZE.Application.Services
                 UpdatedAt = role.UpdatedAt
             };
         }
+        private static RoleResponse TestToResponse(ApplicationRole role, int userCount)
+        {
+            return new RoleResponse
+            {
+                Id = role.Id,
+                Name = role.Name ?? string.Empty,
+                Description = role.Description,
+                IsActive = role.IsActive,
+                UserCount = userCount,
+                CreatedAt = role.CreatedAt,
+                UpdatedAt = role.UpdatedAt
+            };
+        }
     }
 }
