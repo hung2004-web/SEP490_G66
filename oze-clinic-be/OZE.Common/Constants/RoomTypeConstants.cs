@@ -5,8 +5,10 @@ namespace OZE.Common.Constants
         public const string General = "General";
         public const string Imaging = "Imaging";
         public const string Treatment = "Treatment";
+        // Minor surgery: invasive procedures that need a sterile room, e.g. wisdom tooth extraction, implant
+        public const string Surgery = "Surgery";
 
-        public static readonly string[] AllowedTypes = { General, Imaging, Treatment };
+        public static readonly string[] AllowedTypes = { General, Imaging, Treatment, Surgery };
 
         public static bool IsValid(string? roomType)
         {
