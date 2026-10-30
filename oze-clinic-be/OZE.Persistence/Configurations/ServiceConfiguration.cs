@@ -10,7 +10,7 @@ namespace OZE.Persistence.Configurations
         {
             builder.ToTable("Services", t =>
             {
-                t.HasCheckConstraint("CK_Services_RequiredRoomType", "[RequiredRoomType] IN ('General', 'Imaging', 'Treatment')");
+                t.HasCheckConstraint("CK_Services_RequiredRoomType", "[RequiredRoomType] IN ('General', 'Imaging', 'Treatment', 'Surgery')");
                 t.HasCheckConstraint("CK_Services_ReferencePrice", "[ReferencePrice] >= 0");
             });
             builder.HasKey(x => x.Id);

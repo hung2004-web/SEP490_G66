@@ -63,7 +63,7 @@ namespace OZE.Common.Constants
         {
             public const string RoomNotFound = "Room not found";
             public const string RoomNameExist = "Room name already exists";
-            public const string InvalidRoomType = "Room type must be one of: General, Imaging, Treatment";
+            public const string InvalidRoomType = "Room type must be one of: General, Imaging, Treatment, Surgery";
             public const string InvalidStatus = "Room status must be one of: Active, Maintenance, Inactive";
             public const string RoomInUse = "Room is used by schedules or queue entries and cannot be deleted. Set its status to Inactive instead";
         }
@@ -159,7 +159,7 @@ namespace OZE.Common.Constants
             public const string ServiceNotFound = "Service not found in system";
             public const string ServiceCodeExist = "Service code already exists in system";
             public const string ServiceInUse = "Cannot delete service because it is currently linked to existing invoices or treatment plan stages. Please deactivate the service instead.";
-            public const string InvalidRoomType = "Required room type must be one of: General, Imaging, Treatment";
+            public const string InvalidRoomType = "Required room type must be one of: General, Imaging, Treatment, Surgery";
             public const string InvalidPrice = "Reference price must be greater than or equal to 0";
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
         }
@@ -188,6 +188,7 @@ namespace OZE.Common.Constants
         {
             public const string ServiceNotFound = "Service not found";
             public const string ServiceInactive = "This service is not available for booking";
+            public const string PatientProfileNotFound = "No patient profile is linked to this account";
             public const string VariantNotFound = "Service variant not found";
             public const string VariantInactive = "This service variant is not available for booking";
             public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";

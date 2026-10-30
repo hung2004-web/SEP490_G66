@@ -1702,7 +1702,7 @@ namespace OZE.Persistence.Migrations
 
                     b.ToTable("Rooms", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Rooms_RoomType", "[RoomType] IN ('General', 'Imaging', 'Treatment')");
+                            t.HasCheckConstraint("CK_Rooms_RoomType", "[RoomType] IN ('General', 'Imaging', 'Treatment', 'Surgery')");
 
                             t.HasCheckConstraint("CK_Rooms_Status", "[Status] IN ('Active', 'Maintenance', 'Inactive')");
                         });
@@ -1770,7 +1770,7 @@ namespace OZE.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_Services_ReferencePrice", "[ReferencePrice] >= 0");
 
-                            t.HasCheckConstraint("CK_Services_RequiredRoomType", "[RequiredRoomType] IN ('General', 'Imaging', 'Treatment')");
+                            t.HasCheckConstraint("CK_Services_RequiredRoomType", "[RequiredRoomType] IN ('General', 'Imaging', 'Treatment', 'Surgery')");
                         });
                 });
 
