@@ -62,3 +62,31 @@ export const getMyTreatmentPlans = () => loadMock((data) => data.treatmentPlans)
 export const getMyInvoices = () => loadMock((data) => data.invoices);
 
 export const getMyAppointmentDetail = (appointmentId) => loadMock((data) => buildDetail(data, appointmentId), null);
+
+const actionFailure = (code) => ({ success: false, message: null, data: null, errors: null, code });
+
+const recordPatch = (appointmentId, patch) => appointmentPatches.set(appointmentId, { ...appointmentPatches.get(appointmentId), ...patch });
+
+const runChange = async (appointmentId, buildPatch) => {
+    await wait(MOCK_DELAY_MS);
+    const mode = readMockMode();
+    const data = getMockCurrentUser()?.id === MOCK_DASHBOARD_PATIENT_ID && mode !== "empty" ? buildPatientDashboardData(new Date(), mode) : null;
+    const appointment = data && findAppointment(data.appointments, Number(appointmentId));
+    if (!appointment) return actionFailure("NOT_FOUND");
+    if (mode === "action-not-allowed") {
+        recordPatch(appointment.id, { status: APPOINTMENT_STATUS.CONFIRMED, confirmedAt: new Date().toISOString() });
+        return actionFailure("NOT_ALLOWED");
+    }
+    if (appointment.status !== APPOINTMENT_STATUS.PENDING) return actionFailure("NOT_ALLOWED");
+    if (mode === "action-deadline" || !isChangeAllowed(appointment)) return actionFailure("DEADLINE");
+    if (mode === "action-error") return failure(GENERIC_ERROR_MESSAGE);
+    recordPatch(appointment.id, buildPatch(appointment));
+    return success(buildDetail(data, appointment.id));
+};
+
+export const cancelMyAppointment = (appointmentId, { reason }) =>
+    runChange(appointmentId, () => ({
+        status: APPOINTMENT_STATUS.CANCELLED,
+        cancelledAt: new Date().toISOString(),
+        cancellationReason: reason.trim(),
+    }));
