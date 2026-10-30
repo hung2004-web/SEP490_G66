@@ -109,23 +109,31 @@ namespace OZE.Persistence.Repositories
          await _context.SaveChangesAsync();
         }
 
-        public async Task<List<Service>> GetServicesWithCategoryAsync(IReadOnlyCollection<int> serviceIds)
+        public async Task<List<Service>> GetServicesByIdsAsync(IReadOnlyCollection<int> serviceIds)
         {
             return await _context.Services
                 .AsNoTracking()
-                .Include(s => s.Category)
                 .Where(s => serviceIds.Contains(s.Id))
                 .ToListAsync();
         }
 
-        // Active categories with their active services, in display order
-        public async Task<List<ServiceCategory>> GetBookableCategoriesAsync()
+        public async Task<List<ServiceVariant>> GetVariantsByIdsAsync(IReadOnlyCollection<int> variantIds)
         {
-            return await _context.ServiceCategories
+            return await _context.ServiceVariants
                 .AsNoTracking()
-                .Where(c => c.IsActive)
-                .Include(c => c.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName))
-                .OrderBy(c => c.DisplayOrder)
+                .Include(v => v.Service)
+                .Where(v => variantIds.Contains(v.Id))
+                .ToListAsync();
+        }
+
+        // Active services with their active variants, in display order
+        public async Task<List<Service>> GetBookableServicesAsync()
+        {
+            return await _context.Services
+                .AsNoTracking()
+                .Where(s => s.IsActive)
+                .Include(s => s.Variants.Where(v => v.IsActive).OrderBy(v => v.DisplayOrder))
+                .OrderBy(s => s.ServiceName)
                 .ToListAsync();
         }
 
@@ -136,6 +144,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Doctor)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Variant)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
@@ -147,6 +157,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Doctor)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Variant)
                 .AsQueryable();
 
             if (parameters.Date.HasValue)

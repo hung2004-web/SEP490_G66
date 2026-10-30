@@ -20,8 +20,9 @@ namespace OZE.Application.Interfaces
 
         Task<List<Appointment>> GetDoctorAppointmentsAsync(int doctorId, DateOnly fromDate, DateOnly toDate);
 
-        Task<List<Service>> GetServicesWithCategoryAsync(IReadOnlyCollection<int> serviceIds);
-        Task<List<ServiceCategory>> GetBookableCategoriesAsync();
+        Task<List<Service>> GetServicesByIdsAsync(IReadOnlyCollection<int> serviceIds);
+        Task<List<ServiceVariant>> GetVariantsByIdsAsync(IReadOnlyCollection<int> variantIds);
+        Task<List<Service>> GetBookableServicesAsync();
 
         Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default);
         Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default);
