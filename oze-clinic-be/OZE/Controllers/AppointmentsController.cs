@@ -76,6 +76,20 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Retrieves the signed-in patient's own appointments, filtered by date range and status.
+        /// </summary>
+        [HttpGet("my")]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<PagedResult<AppointmentResponse>>>> GetMyAppointmentsAsync(
+            [FromQuery] AppointmentQueryParameters query,
+            CancellationToken cancellationToken)
+        {
+            // The empty fallback matches no patient, so a missing user id never lists someone else's appointments
+            var result = await _appointmentService.GetMyAppointmentsAsync(query, CurrentUserId ?? string.Empty, cancellationToken);
+            return Ok(ApiResponse<PagedResult<AppointmentResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
         /// Retrieves appointment details by appointment ID.
         /// </summary>
         [HttpGet("{id:long}")]
