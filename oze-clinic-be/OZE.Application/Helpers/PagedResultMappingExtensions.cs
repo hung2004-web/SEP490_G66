@@ -70,5 +70,11 @@ namespace OZE.Application.Helpers
         {
             return ApiResponse<PagedResult<T>>.SuccessResult(source, message);
         }
+        public static ApiResponse<PagedResult<T>> TestToPagedApiResponse<T>(
+            this PagedResult<T> source,
+            string message = "Success")
+        {
+            return ApiResponse<PagedResult<T>>.SuccessResult(source, message);
+        }
     }
 }
