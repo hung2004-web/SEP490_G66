@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace OZE.Common.Models
 {
-    // Booking by a signed-in patient: name, phone and email come from the patient record, not from the request
-    public class PatientBookingRequest
+    // What every booking needs, whether a guest or a signed-in patient makes it
+    public class BookingRequest
     {
         // Services the patient picked; the general exam is added by the system, so this may be empty
         public List<int> ServiceId { get; set; } = new();
