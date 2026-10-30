@@ -49,20 +49,7 @@ namespace OZE.Application.Services
                 EstimatedMinutes = service.EstimatedMinutes
             };
         }
- feat/A/Home/CheckToServiceResponse
-        private static HomeServiceResponse CheckToServiceResponse(Service service)
-
-        private static HomeServiceResponse TestToServiceResponse(Service service)
-> main
-        {
-            return new HomeServiceResponse
-            {
-                Id = service.Id,
-                ServiceName = service.ServiceName,
-                Description = service.Description,
-                ReferencePrice = service.ReferencePrice,
-                EstimatedMinutes = service.EstimatedMinutes
-            };
+ 
         }
     }
-}
+
