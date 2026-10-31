@@ -188,7 +188,6 @@ namespace OZE.Common.Constants
         {
             public const string ServiceNotFound = "Service not found";
             public const string ServiceInactive = "This service is not available for booking";
-            public const string PatientProfileNotFound = "No patient profile is linked to this account";
             public const string VariantNotFound = "Service variant not found";
             public const string VariantInactive = "This service variant is not available for booking";
             public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";
@@ -201,8 +200,7 @@ namespace OZE.Common.Constants
             public const string AppointmentNotFound = "Appointment not found in system";
             public const string OnlyOpenCanBeCancelled = "Only an appointment that is pending or confirmed can be cancelled";
             public const string ConfirmedNeedsReceptionistToCancel = "This appointment is already confirmed. Please call the clinic to cancel it";
-            public const string CancelDeadlinePassed = "It is too close to the appointment time to cancel online. Please call the clinic";
-            public const string ReasonRequired = "Cancellation reason is required";
+            public const string CancelDeadlinePassed = "It is too close to the appointment time to cancel online. Please call the clinic";            public const string ReasonRequired = "Cancellation reason is required";
             public const string OnlyOpenCanBeCheckedIn = "Only an appointment that is pending or confirmed can be checked in";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
         }

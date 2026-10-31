@@ -33,12 +33,6 @@ namespace OZE.Persistence.Repositories
             await _context.Patients.AddAsync(patient);
         }
 
-        public async Task<Patient?> GetPatientByUserIdAsync(string userId)
-        {
-            return await _context.Patients
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.DeletedAt == null);
-        }
-
         public async Task<T> ExecuteSerializableAsync<T>(Func<Task<T>> action)
         {
             var strategy = _context.Database.CreateExecutionStrategy();
