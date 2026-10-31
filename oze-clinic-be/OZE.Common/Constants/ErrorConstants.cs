@@ -202,7 +202,9 @@ namespace OZE.Common.Constants
             public const string OnlyOpenCanBeCancelled = "Only an appointment that is pending or confirmed can be cancelled";
             public const string ConfirmedNeedsReceptionistToCancel = "This appointment is already confirmed. Please call the clinic to cancel it";
             public const string CancelDeadlinePassed = "It is too close to the appointment time to cancel online. Please call the clinic";
-            public const string ReasonRequired = "Cancellation reason is required";
+            public const string OnlyOpenCanBeRescheduled = "Only an appointment that is pending or confirmed can be rescheduled";
+            public const string ConfirmedNeedsReceptionistToReschedule = "This appointment is already confirmed. Please call the clinic to reschedule it";
+            public const string RescheduleDeadlinePassed = "It is too close to the appointment time to reschedule online. Please call the clinic";            public const string ReasonRequired = "Cancellation reason is required";
             public const string OnlyOpenCanBeCheckedIn = "Only an appointment that is pending or confirmed can be checked in";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
         }

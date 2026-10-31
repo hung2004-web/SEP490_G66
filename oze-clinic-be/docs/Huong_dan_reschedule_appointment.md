@@ -23,12 +23,13 @@ Dời một lịch hẹn đã đặt sang **giờ khác** (và có thể **bác 
 | Bệnh nhân | `PENDING`, quá hạn | Không, báo gọi phòng khám | - |
 | Bệnh nhân | `CONFIRMED` | **Không**, phải liên hệ lễ tân | - |
 | Lễ tân, quản lý | `PENDING` hoặc `CONFIRMED` | Được, không bị hạn | `CONFIRMED` |
+| Khách vãng lai (không có tài khoản) | Bất kỳ | **Không tự đổi được**, phải gọi điện nhờ lễ tân đổi giúp | - |
 | Ai cũng vậy | `CHECKED_IN`, `IN_SERVICE`, `COMPLETED`, `CANCELLED`, `NO_SHOW` | Không | - |
 
 - **Hạn** dùng chung config `Booking.CancelCutoffHours` (mặc định 24 giờ), tính từ **giờ khám hiện tại** (giờ cũ) đến bây giờ.
 - Bệnh nhân chỉ đổi **lịch của chính mình**. Lịch của người khác trả 404.
 - Bác sĩ (role Doctor) **không** được đổi lịch.
-- Khách vãng lai (chưa có tài khoản) không tự đổi được, phải gọi lễ tân.
+- Khách vãng lai (chưa có tài khoản) **không tự đổi được**, vì không có token để gọi API. Khách tự gọi điện nhờ lễ tân, lễ tân đổi giúp bằng API này. Lịch đổi xong thành `CONFIRMED` và hệ thống gửi SMS, email báo giờ mới cho khách. Hủy lịch cũng làm theo cách này.
 - Giai đoạn 1 chỉ đổi **ngày, giờ, bác sĩ**. Đổi **dịch vụ** để giai đoạn sau (liên quan phòng và thời lượng).
 
 ## 3. Các file cần sửa

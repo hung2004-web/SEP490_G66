@@ -14,8 +14,7 @@ namespace OZE.Application.Interfaces
         Task<List<Appointment>> GetActiveAppointmentsAsync(DateOnly date, IReadOnlyCollection<int> doctorIds);
         Task<string?> GetConfigValueAsync(string configKey);
         Task AddPatientAsync(Patient patient);
-        Task<Patient?> GetPatientByUserIdAsync(string userId);
-        Task AddAsync(Appointment appointment);
+        Task<Patient?> GetPatientByUserIdAsync(string userId);        Task AddAsync(Appointment appointment);
         Task SaveChangesAsync();
         Task<T> ExecuteSerializableAsync<T>(Func<Task<T>> action);
 

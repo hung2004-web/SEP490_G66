@@ -117,6 +117,20 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Moves an appointment to a new time and/or doctor. A patient can only move their own pending appointment.
+        /// </summary>
+        [HttpPost("{id:long}/reschedule")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.PatientRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> RescheduleAppointmentAsync(
+            [FromRoute] long id,
+            [FromBody] RescheduleAppointmentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.RescheduleAppointmentAsync(id, request, OwnerRestriction, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Đổi lịch hẹn thành công"));
+        }
+
+        /// <summary>
         /// Confirms an appointment that is waiting for the receptionist's confirmation.
         /// </summary>
         [HttpPost("{id:long}/confirm")]

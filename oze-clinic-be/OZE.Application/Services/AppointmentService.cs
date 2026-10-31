@@ -180,7 +180,8 @@ namespace OZE.Application.Services
         }
 
         // Splits each doctor shift into slots and keeps the ones that are free and not too soon
-        private async Task<List<AvailableSlotResponse>> FindSlotsAsync(List<BookingLine> lines, DateOnly date, int? doctorId)
+        // excludeAppointmentId: the appointment being rescheduled, so it does not block its own new time
+        private async Task<List<AvailableSlotResponse>> FindSlotsAsync(List<BookingLine> lines, DateOnly date, int? doctorId, long? excludeAppointmentId = null)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var maxDaysAhead = await GetIntConfigAsync(ConfigKeyConstants.BookingMaxDaysAhead);
@@ -203,7 +204,9 @@ namespace OZE.Application.Services
             }
 
             var doctorIds = shifts.Select(x => x.StaffProfileId).Distinct().ToList();
-            var booked = await _appointmentRepository.GetActiveAppointmentsAsync(date, doctorIds);
+            var booked = (await _appointmentRepository.GetActiveAppointmentsAsync(date, doctorIds))
+                .Where(a => a.Id != excludeAppointmentId)
+                .ToList();
 
             var slots = new List<AvailableSlotResponse>();
             foreach (var shift in shifts)
@@ -452,10 +455,7 @@ namespace OZE.Application.Services
                 ConditionGuard.ThrowIf(appointment.Status == AppointmentConstants.ConfirmedStatus,
                     ErrorConstants.AppointmentMessage.ConfirmedNeedsReceptionistToCancel);
 
-                var cutoffHours = await GetIntConfigAsync(ConfigKeyConstants.BookingCancelCutoffHours);
-                var startsAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart ?? default);
-                ConditionGuard.ThrowIf(startsAt - DateTime.Now < TimeSpan.FromHours(cutoffHours),
-                    ErrorConstants.AppointmentMessage.CancelDeadlinePassed);
+                await EnsureBeforeCutoffAsync(appointment, ErrorConstants.AppointmentMessage.CancelDeadlinePassed);
             }
 
             appointment.Status = AppointmentConstants.CancelledStatus;
@@ -465,6 +465,64 @@ namespace OZE.Application.Services
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
+
+            return MapToResponse(appointment);
+        }
+
+        public async Task<AppointmentResponse> RescheduleAppointmentAsync(long id, RescheduleAppointmentRequest request, string? ownerUserId, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+            EnsureOwnedBy(appointment!, ownerUserId);
+
+            ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeRescheduled);
+
+            var isPatient = ownerUserId != null;
+            if (isPatient)
+            {
+                // A confirmed appointment was agreed with the receptionist, so changing it also goes through them
+                ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.ConfirmedStatus,
+                    ErrorConstants.AppointmentMessage.ConfirmedNeedsReceptionistToReschedule);
+                await EnsureBeforeCutoffAsync(appointment, ErrorConstants.AppointmentMessage.RescheduleDeadlinePassed);
+            }
+
+            // The services stay the same, so the new slot must fit the same total time and room type
+            var lines = appointment!.ServiceItems.Select(i => new BookingLine(i.Service, i.Variant)).ToList();
+            ConditionGuard.Ensure(lines.Count > 0, ErrorConstants.AppointmentMessage.ServiceNotFound);
+
+            var date = request.Date!.Value;
+            var slotStart = request.SlotStart!.Value;
+
+            await _appointmentRepository.ExecuteSerializableAsync(async () =>
+            {
+                // Re-check inside the transaction; never trust the slot sent by the client
+                var candidates = (await FindSlotsAsync(lines, date, request.DoctorId, excludeAppointmentId: appointment.Id))
+                    .Where(x => x.SlotStart == slotStart)
+                    .ToList();
+                ConditionGuard.Ensure(candidates.Count > 0, ErrorConstants.AppointmentMessage.SlotNotAvailable);
+
+                // No doctor sent: keep the current doctor when free, otherwise take the least busy one
+                var slot = request.DoctorId.HasValue
+                    ? candidates[0]
+                    : candidates.FirstOrDefault(c => c.DoctorId == appointment.DoctorId)
+                        ?? await PickLeastBusyAsync(candidates, date);
+
+                appointment.AppointmentDate = date;
+                appointment.TimeSlotStart = slot.SlotStart;
+                appointment.TimeSlotEnd = slot.SlotEnd;
+                appointment.DoctorId = slot.DoctorId;
+                // A patient's change still needs the receptionist's call; staff changed it after talking to the patient
+                appointment.Status = isPatient ? AppointmentConstants.PendingStatus : AppointmentConstants.ConfirmedStatus;
+                appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
+                await _appointmentRepository.UpdateAsync(appointment);
+                return slot;
+            });
+
+            if (!isPatient)
+            {
+                await SendConfirmationNotificationAsync(appointment);
+            }
 
             return MapToResponse(appointment);
         }
@@ -499,6 +557,14 @@ namespace OZE.Application.Services
             await _appointmentRepository.UpdateAsync(appointment);
 
             return MapToResponse(appointment);
+        }
+
+        // A patient can only cancel or reschedule while the appointment is further away than the cutoff
+        private async Task EnsureBeforeCutoffAsync(Appointment appointment, string errorMessage)
+        {
+            var cutoffHours = await GetIntConfigAsync(ConfigKeyConstants.BookingCancelCutoffHours);
+            var startsAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart ?? default);
+            ConditionGuard.ThrowIf(startsAt - DateTime.Now < TimeSpan.FromHours(cutoffHours), errorMessage);
         }
 
         // Only an appointment that has not started yet can be cancelled or checked in
