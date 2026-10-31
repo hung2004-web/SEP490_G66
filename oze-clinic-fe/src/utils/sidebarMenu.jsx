@@ -25,6 +25,9 @@ import { ROUTES } from "./routes";
 export const SIDEBAR_BADGES = {
     PENDING_LEAVES: "pendingLeaves",
     PENDING_REFUNDS: "pendingRefunds",
+    WAITING_PATIENTS: "waitingPatients",
+    PENDING_IMAGING_REVIEWS: "pendingImagingReviews",
+    PENDING_REFUND_REVIEWS: "pendingRefundReviews",
 };
 
 const DASHBOARD_LINK = { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard, to: ROUTES.DASHBOARD };
@@ -89,17 +92,16 @@ const SIDEBAR_MENU = {
         DASHBOARD_LINK,
         {
             key: "clinical",
-            label: "Khám chữa bệnh",
+            label: "Khám bệnh",
             icon: Stethoscope,
             children: [
-                { key: "appointments", label: "Lịch hẹn khám", to: ROUTES.DOCTOR_APPOINTMENTS },
-                { key: "patients", label: "Bệnh nhân", to: ROUTES.DOCTOR_PATIENTS },
-                { key: "treatment-plans", label: "Kế hoạch điều trị", to: ROUTES.DOCTOR_TREATMENT_PLANS },
-                { key: "imaging-requests", label: "Yêu cầu chụp phim", to: ROUTES.DOCTOR_IMAGING_REQUESTS },
+                { key: "queue", label: "Hàng chờ khám", to: ROUTES.DOCTOR_QUEUE, badge: SIDEBAR_BADGES.WAITING_PATIENTS },
+                { key: "imaging-reviews", label: "Duyệt kết quả chụp", to: ROUTES.DOCTOR_IMAGING_REVIEWS, badge: SIDEBAR_BADGES.PENDING_IMAGING_REVIEWS },
+                { key: "refund-reviews", label: "Duyệt hoàn tiền", to: ROUTES.DOCTOR_REFUND_REVIEWS, badge: SIDEBAR_BADGES.PENDING_REFUND_REVIEWS },
             ],
         },
-        WORK_GROUP,
-        ACCOUNT_GROUP,
+        // Hồ sơ cá nhân / Đổi mật khẩu stay in the avatar menu.
+        { ...ACCOUNT_GROUP, children: WORK_GROUP.children },
     ],
     [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: [
         DASHBOARD_LINK,
