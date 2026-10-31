@@ -6,6 +6,8 @@ export const MOCK_DASHBOARD_PATIENT_ID = "mock-patient";
 const KHOA = { doctorId: 7, doctorName: "BS. Trần Minh Khoa" };
 const HA = { doctorId: 9, doctorName: "BS. Lê Thu Hà" };
 
+export const MOCK_DOCTORS = [KHOA, HA];
+
 const SCALING = { serviceId: 1, serviceName: "Lấy cao răng" };
 const ROOT_CANAL = { serviceId: 2, serviceName: "Lấy tủy, làm sạch ống tủy răng 46" };
 const CANAL_FILLING = { serviceId: 3, serviceName: "Trám bít ống tủy răng 46" };

@@ -39,6 +39,7 @@ export const VALIDATION_MESSAGES = {
     ADDRESS_TOO_LONG: `Địa chỉ không được vượt quá ${PROFILE_LIMITS.ADDRESS_MAX} ký tự.`,
     PHONE_IN_USE: "Số điện thoại đã được sử dụng bởi tài khoản khác.",
     EMAIL_IN_USE: "Email đã được sử dụng bởi tài khoản khác.",
+    SLOT_REQUIRED: "Vui lòng chọn ca khám mới.",
 };
 
 // TODO(spec): not in the SRS System Messages table yet.
@@ -80,6 +81,8 @@ export const CONSULTATION_NOTE_MAX_LENGTH = 500;
 export const APPOINTMENT_CHANGE_DEADLINE_HOURS = 24;
 
 export const CANCEL_REASON_MAX_LENGTH = 500;
+
+export const RESCHEDULE_REASON_MAX_LENGTH = 500;
 
 export const BOOKING_MAX_DAYS_AHEAD = 30;
 
