@@ -79,42 +79,75 @@ namespace OZE.Application.Services
                 ErrorConstants.AuthMessage.EmailInvalid);
 
             var lines = await ResolveBookingLinesAsync(request.ServiceId, request.VariantId);
-            var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
-            var date = request.Date!.Value;
-            var slotStart = request.SlotStart!.Value;
             var phoneVariants = PhoneNumberHelper.GetLookupVariants(phone);
 
             // AC4: a phone that belongs to an account must sign in instead
             var user = await _registrationRepository.FindUserByPhoneAsync(phoneVariants);
             ConditionGuard.ThrowIf(user != null, ErrorConstants.AppointmentMessage.PhoneHasAccount);
 
-            var (appointment, patient, slot) = await _appointmentRepository.ExecuteSerializableAsync(async () =>
+            var (appointment, patient, slot) = await CreateBookingAsync(lines, request.Date!.Value, request.SlotStart!.Value,
+                request.DoctorId, request.Note, null, async () =>
+                {
+                    // AC6: reuse the walk-in record of this phone, or create a new one
+                    var patients = await _registrationRepository.FindUnlinkedPatientsByPhoneAsync(phoneVariants);
+                    ConditionGuard.ThrowIf(patients.Count > 1, ErrorConstants.AuthMessage.MultiplePatientRecords);
+
+                    var patient = patients.FirstOrDefault();
+                    if (patient == null)
+                    {
+                        patient = new Patient
+                        {
+                            PatientCode = GeneratePatientCode(),
+                            FullName = request.FullName.Trim(),
+                            PhoneNumber = phone,
+                            Email = email,
+                            CreatedAt = DateTimeOffset.UtcNow
+                        };
+                        await _appointmentRepository.AddPatientAsync(patient);
+                    }
+
+                    return patient;
+                });
+
+            await SendBookingNotificationAsync(phone, email, appointment, lines);
+            return ToResponse(appointment, patient, slot, lines);
+        }
+
+        public async Task<AppointmentResponse> BookAsPatientAsync(BookingRequest request, string userId)
+        {
+            var lines = await ResolveBookingLinesAsync(request.ServiceId, request.VariantId);
+
+            var (appointment, patient, slot) = await CreateBookingAsync(lines, request.Date!.Value, request.SlotStart!.Value,
+                request.DoctorId, request.Note, userId, async () =>
+                {
+                    // The patient comes from the token, never from the request
+                    var existing = await _appointmentRepository.GetPatientByUserIdAsync(userId);
+                    ConditionGuard.Ensure<NotFoundException>(existing != null, ErrorConstants.AppointmentMessage.PatientProfileNotFound);
+                    return existing!;
+                });
+
+            await SendBookingNotificationAsync(patient.PhoneNumber, patient.Email, appointment, lines);
+            return ToResponse(appointment, patient, slot, lines);
+        }
+
+        // Re-checks the slot and saves the appointment in one serializable transaction;
+        // getPatientAsync runs inside it so a new patient record is saved together with the appointment
+        private async Task<(Appointment Appointment, Patient Patient, AvailableSlotResponse Slot)> CreateBookingAsync(
+            List<BookingLine> lines, DateOnly date, TimeOnly slotStart, int? doctorId, string? note,
+            string? createdByUserId, Func<Task<Patient>> getPatientAsync)
+        {
+            var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
+
+            return await _appointmentRepository.ExecuteSerializableAsync(async () =>
             {
                 // Re-check inside the transaction; never trust the slot sent by the client
-                var candidates = (await FindSlotsAsync(lines, date, request.DoctorId))
+                var candidates = (await FindSlotsAsync(lines, date, doctorId))
                     .Where(x => x.SlotStart == slotStart)
                     .ToList();
                 ConditionGuard.Ensure(candidates.Count > 0, ErrorConstants.AppointmentMessage.SlotNotAvailable);
 
-                var chosen = request.DoctorId.HasValue ? candidates[0] : await PickLeastBusyAsync(candidates, date);
-
-                // AC6: reuse the walk-in record of this phone, or create a new one
-                var patients = await _registrationRepository.FindUnlinkedPatientsByPhoneAsync(phoneVariants);
-                ConditionGuard.ThrowIf(patients.Count > 1, ErrorConstants.AuthMessage.MultiplePatientRecords);
-
-                var patient = patients.FirstOrDefault();
-                if (patient == null)
-                {
-                    patient = new Patient
-                    {
-                        PatientCode = GeneratePatientCode(),
-                        FullName = request.FullName.Trim(),
-                        PhoneNumber = phone,
-                        Email = email,
-                        CreatedAt = DateTimeOffset.UtcNow
-                    };
-                    await _appointmentRepository.AddPatientAsync(patient);
-                }
+                var chosen = doctorId.HasValue ? candidates[0] : await PickLeastBusyAsync(candidates, date);
+                var patient = await getPatientAsync();
 
                 var appointment = new Appointment
                 {
@@ -126,8 +159,9 @@ namespace OZE.Application.Services
                     TimeSlotEnd = chosen.SlotEnd,
                     // The slot is held, but the receptionist must confirm the booking before it is approved
                     Status = AppointmentConstants.PendingStatus,
-                    Notes = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+                    Notes = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
                     CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedByUserId = createdByUserId,
                     // Saved together with the appointment in the same transaction
                     ServiceItems = lines.Select(l => new AppointmentServiceItem
                     {
@@ -143,9 +177,6 @@ namespace OZE.Application.Services
 
                 return (appointment, patient, chosen);
             });
-
-            await SendBookingNotificationAsync(phone, email, appointment, lines);
-            return ToResponse(appointment, patient, slot, lines);
         }
 
         // Splits each doctor shift into slots and keeps the ones that are free and not too soon
@@ -315,7 +346,7 @@ namespace OZE.Application.Services
         }
 
         // A failed notification must not undo the booking, so errors are only logged
-        private async Task SendBookingNotificationAsync(string phone, string? email, Appointment appointment, List<BookingLine> lines)
+        private async Task SendBookingNotificationAsync(string? phone, string? email, Appointment appointment, List<BookingLine> lines)
         {
             var serviceNames = string.Join(", ", lines.Select(l => l.DisplayName));
             var message = $"OZE Dental: Lich hen {serviceNames} " +
@@ -323,8 +354,11 @@ namespace OZE.Application.Services
                           "da duoc ghi nhan. Le tan se goi dien de xac nhan.";
             try
             {
-                await _smsSender.SendSmsAsync(phone, message);
-                if (email != null)
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    await _smsSender.SendSmsAsync(phone, message);
+                }
+                if (!string.IsNullOrWhiteSpace(email))
                 {
                     await _emailSender.SendEmailAsync(email, "OZE Dental - Appointment request", message);
                 }

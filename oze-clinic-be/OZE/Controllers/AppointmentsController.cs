@@ -51,6 +51,17 @@ namespace OZE.Controllers
                 "Appointment request received. The receptionist will call to confirm."));
         }
 
+        // POST api/appointments
+        [HttpPost]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> BookAsPatientAsync([FromBody] BookingRequest request)
+        {
+            // The empty fallback matches no patient, so a missing user id never books for someone else
+            var appointment = await _appointmentService.BookAsPatientAsync(request, CurrentUserId ?? string.Empty);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment,
+                "Appointment request received. The receptionist will call to confirm."));
+        }
+
         /// <summary>
         /// Retrieves a paginated list of appointments with optional filtering by date, doctor, patient, status, and search keyword.
         /// </summary>
