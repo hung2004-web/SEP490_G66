@@ -26,7 +26,7 @@ namespace OZE.Persistence.DbContexts
 
         // Configuration
         public DbSet<Room> Rooms => Set<Room>();
-        public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
+        public DbSet<ServiceVariant> ServiceVariants => Set<ServiceVariant>();
         public DbSet<Service> Services => Set<Service>();
         public DbSet<SystemConfiguration> SystemConfigurations => Set<SystemConfiguration>();
 

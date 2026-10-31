@@ -27,10 +27,10 @@ namespace OZE.Controllers
         // GET api/appointments/bookable-services
         [HttpGet("bookable-services")]
         [AllowAnonymous]
-        public async Task<ActionResult<ApiResponse<List<BookableCategoryResponse>>>> GetBookableServicesAsync()
+        public async Task<ActionResult<ApiResponse<List<BookableServiceResponse>>>> GetBookableServicesAsync()
         {
-            var categories = await _appointmentService.GetBookableServicesAsync();
-            return Ok(ApiResponse<List<BookableCategoryResponse>>.SuccessResult(categories));
+            var services = await _appointmentService.GetBookableServicesAsync();
+            return Ok(ApiResponse<List<BookableServiceResponse>>.SuccessResult(services));
         }
 
         [HttpGet("available-slots")]
@@ -51,6 +51,17 @@ namespace OZE.Controllers
                 "Appointment request received. The receptionist will call to confirm."));
         }
 
+        // POST api/appointments
+        [HttpPost]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> BookAsPatientAsync([FromBody] BookingRequest request)
+        {
+            // The empty fallback matches no patient, so a missing user id never books for someone else
+            var appointment = await _appointmentService.BookAsPatientAsync(request, CurrentUserId ?? string.Empty);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment,
+                "Appointment request received. The receptionist will call to confirm."));
+        }
+
         /// <summary>
         /// Retrieves a paginated list of appointments with optional filtering by date, doctor, patient, status, and search keyword.
         /// </summary>
@@ -61,6 +72,20 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.GetAppointmentsAsync(query, cancellationToken);
+            return Ok(ApiResponse<PagedResult<AppointmentResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
+        /// Retrieves the signed-in patient's own appointments, filtered by date range and status.
+        /// </summary>
+        [HttpGet("my")]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<PagedResult<AppointmentResponse>>>> GetMyAppointmentsAsync(
+            [FromQuery] AppointmentQueryParameters query,
+            CancellationToken cancellationToken)
+        {
+            // The empty fallback matches no patient, so a missing user id never lists someone else's appointments
+            var result = await _appointmentService.GetMyAppointmentsAsync(query, CurrentUserId ?? string.Empty, cancellationToken);
             return Ok(ApiResponse<PagedResult<AppointmentResponse>>.SuccessResult(result));
         }
 
@@ -89,6 +114,20 @@ namespace OZE.Controllers
         {
             var result = await _appointmentService.CancelAppointmentAsync(id, request, CurrentUserId, OwnerRestriction, cancellationToken);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Hủy lịch hẹn thành công"));
+        }
+
+        /// <summary>
+        /// Moves an appointment to a new time and/or doctor. A patient can only move their own pending appointment.
+        /// </summary>
+        [HttpPost("{id:long}/reschedule")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.PatientRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> RescheduleAppointmentAsync(
+            [FromRoute] long id,
+            [FromBody] RescheduleAppointmentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.RescheduleAppointmentAsync(id, request, OwnerRestriction, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Đổi lịch hẹn thành công"));
         }
 
         /// <summary>

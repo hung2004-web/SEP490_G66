@@ -297,7 +297,7 @@ namespace OZE.UnitTest.Services
 
         [Fact]
         public async Task LoginAsync_WhenPhoneNotFound_ShouldReturnInvalidLogin()
-        {
+        {   
             // Arrange
             _registrationRepositoryMock
                 .Setup(r => r.FindUserByPhoneAsync(It.IsAny<IReadOnlyCollection<string>>()))
@@ -1877,7 +1877,7 @@ namespace OZE.UnitTest.Services
 
             // Act
             var result = await _authService.ResendOtpAsync(ResendRequest());
-
+                
             // Assert
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.OtpResendTooSoon);
