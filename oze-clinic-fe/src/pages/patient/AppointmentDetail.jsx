@@ -213,9 +213,10 @@ const AppointmentDetail = () => {
     const detail = localDetail ?? resource.detail;
 
     useEffect(() => {
-        if (!notFound || redirectedRef.current) return;
-        redirectedRef.current = true;
+        if (!notFound) return;
         toast.error(MESSAGES.MSG23, { toastId: NOT_FOUND_TOAST_ID });
+        if (redirectedRef.current) return;
+        redirectedRef.current = true;
         navigate(ROUTES.APPOINTMENTS, { replace: true });
     }, [notFound, navigate]);
 
