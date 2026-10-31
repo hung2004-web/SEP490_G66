@@ -213,6 +213,12 @@ namespace OZE.Common.Constants
             public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
             public const string PriorityOnlyForWaiting = "The priority can only be changed while the patient is checked in and waiting";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
+            public const string OnlyCheckedInCanStartExamination = "Only a patient who is checked in can be examined";
+            public const string ExaminationWrongDay = "An examination can only be started on the day of the appointment";
+            public const string DoctorAlreadyExamining = "You are already examining another patient. Complete that examination first";
+            public const string OnlyInServiceCanBeCompleted = "Only an examination that is in progress can be completed";
+            public const string ExaminationNotFound = "No examination was found for this appointment";
+            public const string ExaminationAlreadyLocked = "This examination is already completed and locked";
         }
         public static class PatientMessage
         {
