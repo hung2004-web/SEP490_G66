@@ -100,8 +100,7 @@ const SIDEBAR_MENU = {
                 { key: "refund-reviews", label: "Duyệt hoàn tiền", to: ROUTES.DOCTOR_REFUND_REVIEWS, badge: SIDEBAR_BADGES.PENDING_REFUND_REVIEWS },
             ],
         },
-        // Hồ sơ cá nhân / Đổi mật khẩu stay in the avatar menu.
-        { ...ACCOUNT_GROUP, children: WORK_GROUP.children },
+        { ...ACCOUNT_GROUP, children: [...WORK_GROUP.children, ...ACCOUNT_GROUP.children] },
     ],
     [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: [
         DASHBOARD_LINK,

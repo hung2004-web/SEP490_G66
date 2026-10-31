@@ -359,6 +359,8 @@
   /* ---------- Avatar ---------- */
   .avatar { @apply inline-flex size-8 shrink-0 select-none items-center justify-center rounded-full bg-primary font-heading text-title leading-none text-on-primary shadow-sm ring-2 ring-canvas; }
   .avatar-lg { @apply size-10 text-body-md font-semibold; }
+  /* [EXT] Light avatar for table rows (Tài khoản & nhân sự) */
+  .avatar-soft { @apply bg-primary-soft text-label font-semibold text-primary shadow-none; }
 }
 
 .root{
