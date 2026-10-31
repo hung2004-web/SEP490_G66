@@ -12,8 +12,8 @@ using OZE.Persistence.DbContexts;
 namespace OZE.Persistence.Migrations
 {
     [DbContext(typeof(AppIdentityDbContext))]
-    [Migration("20261030161521_AddSurgeryRoomType")]
-    partial class AddSurgeryRoomType
+    [Migration("20261031030026_UpdateRoomTypes")]
+    partial class UpdateRoomTypes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1701,7 +1701,7 @@ namespace OZE.Persistence.Migrations
 
                     b.ToTable("Rooms", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Rooms_RoomType", "[RoomType] IN ('General', 'Imaging', 'Treatment', 'Surgery')");
+                            t.HasCheckConstraint("CK_Rooms_RoomType", "[RoomType] IN ('GeneralTreatment', 'MinorSurgery', 'XRay')");
 
                             t.HasCheckConstraint("CK_Rooms_Status", "[Status] IN ('Active', 'Maintenance', 'Inactive')");
                         });
@@ -1769,7 +1769,7 @@ namespace OZE.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_Services_ReferencePrice", "[ReferencePrice] >= 0");
 
-                            t.HasCheckConstraint("CK_Services_RequiredRoomType", "[RequiredRoomType] IN ('General', 'Imaging', 'Treatment', 'Surgery')");
+                            t.HasCheckConstraint("CK_Services_RequiredRoomType", "[RequiredRoomType] IN ('GeneralTreatment', 'MinorSurgery', 'XRay')");
                         });
                 });
 
