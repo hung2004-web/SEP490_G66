@@ -32,6 +32,8 @@ export const ROUTES = {
     DOCTOR_PATIENTS: "/doctor/patients",
     DOCTOR_TREATMENT_PLANS: "/doctor/treatment-plans",
     DOCTOR_IMAGING_REQUESTS: "/doctor/imaging-requests",
+    DOCTOR_QUEUE: "/doctor/queue",
+    DOCTOR_IMAGING_REVIEWS: "/doctor/imaging-reviews",
     TECHNICIAN_IMAGING_REQUESTS: "/technician/imaging-requests",
     TECHNICIAN_IMAGING_RESULTS: "/technician/imaging-results",
     RECEPTION_APPOINTMENTS: "/reception/appointments",
@@ -59,7 +61,14 @@ export const ROLE_ROUTES = [
     },
     {
         roles: [USER_ROLES.DOCTOR],
-        paths: [ROUTES.DOCTOR_APPOINTMENTS, ROUTES.DOCTOR_PATIENTS, ROUTES.DOCTOR_TREATMENT_PLANS, ROUTES.DOCTOR_IMAGING_REQUESTS]
+        paths: [
+            ROUTES.DOCTOR_QUEUE,
+            ROUTES.DOCTOR_IMAGING_REVIEWS,
+            ROUTES.DOCTOR_APPOINTMENTS,
+            ROUTES.DOCTOR_PATIENTS,
+            ROUTES.DOCTOR_TREATMENT_PLANS,
+            ROUTES.DOCTOR_IMAGING_REQUESTS,
+        ]
     },
     {
         roles: [USER_ROLES.DENTAL_IMAGING_TECHNICIAN],

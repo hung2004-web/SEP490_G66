@@ -1,6 +1,6 @@
 import { MOCK_ROOMS, ROOM_STATUSES } from "../utils/data/mockRooms";
 
-// TODO(api): mock only, swap for /api/rooms once the backend has code, equipment and "in use by".
+// TODO(api): mock only, swap for /api/rooms once the backend has code and "in use by".
 const MOCK_DELAY_MS = 300;
 
 export const ROOM_PAGE_SIZE = 10;
@@ -29,7 +29,6 @@ const toRoomFields = (request) => ({
     code: request.code.trim().toUpperCase(),
     name: request.name.trim(),
     type: request.type,
-    equipment: request.equipment.trim(),
 });
 
 export const getRooms = async ({ keyword = "", type = "", status = "", page = 1, pageSize = ROOM_PAGE_SIZE } = {}) => {
@@ -38,7 +37,7 @@ export const getRooms = async ({ keyword = "", type = "", status = "", page = 1,
     const search = normalize(keyword);
     const filtered = rooms.filter(
         (room) =>
-            (!search || [room.code, room.name, room.equipment, room.usedBy ?? ""].some((field) => normalize(field).includes(search))) &&
+            (!search || [room.code, room.name, room.usedBy ?? ""].some((field) => normalize(field).includes(search))) &&
             (!type || room.type === type) &&
             (!status || room.status === status),
     );

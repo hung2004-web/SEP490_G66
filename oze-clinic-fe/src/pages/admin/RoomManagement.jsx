@@ -1,25 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, DoorOpen, Pencil, ScanLine, Search, Stethoscope, Syringe, Wrench } from "lucide-react";
-import FormField from "@/components/ui/FormField";
-import Modal from "@/components/ui/Modal";
+import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
+import RoomMaintenancePopup from "@/components/popup/room/RoomMaintenancePopup";
 import Pagination from "@/components/ui/Pagination";
 import StatCard from "@/components/ui/StatCard";
 import useAsync from "@/hooks/useAsync";
-import { createRoom, getRooms, setRoomMaintenance, updateRoom } from "@/services/roomService";
+import { getRooms } from "@/services/roomService";
 import { cx } from "@/utils/cx";
-import { ROOM_STATUSES, ROOM_TYPES } from "@/utils/data/mockRooms";
-import { isRequiredEmpty, requiredMessage } from "@/utils/validation";
+import { ROOM_STATUSES, ROOM_TYPES, ROOM_TYPE_OPTIONS } from "@/utils/data/mockRooms";
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 3;
-const COLUMN_COUNT = 7;
-const ROOM_LIMITS = { CODE_MAX: 10, NAME_MAX: 100, EQUIPMENT_MAX: 200 };
+const COLUMN_COUNT = 6;
 
-const TYPE_OPTIONS = [
-    { value: ROOM_TYPES.EXAMINATION, label: "Khám", icon: Stethoscope },
-    { value: ROOM_TYPES.TREATMENT, label: "Điều trị", icon: Syringe },
-    { value: ROOM_TYPES.IMAGING, label: "Chẩn đoán hình ảnh", icon: ScanLine },
-];
+const TYPE_ICONS = {
+    [ROOM_TYPES.EXAMINATION]: Stethoscope,
+    [ROOM_TYPES.TREATMENT]: Syringe,
+    [ROOM_TYPES.IMAGING]: ScanLine,
+};
 
 const STATUS_OPTIONS = [
     { value: ROOM_STATUSES.IN_USE, label: "Đang sử dụng", badge: "badge-info" },
@@ -34,28 +32,14 @@ const STAT_CARDS = [
     { key: "maintenance", label: "Bảo trì", status: ROOM_STATUSES.MAINTENANCE },
 ];
 
-const EMPTY_FORM = { code: "", name: "", type: "", equipment: "" };
-
 const ICON_BUTTON_CLASS = "btn btn-secondary btn-icon size-8";
 
 const findOption = (options, value) => options.find((option) => option.value === value);
 
-const validateRoom = (form) => {
-    const errors = {};
-    if (isRequiredEmpty(form.code)) errors.code = requiredMessage("mã phòng");
-    else if (form.code.trim().length > ROOM_LIMITS.CODE_MAX) errors.code = `Mã phòng không được vượt quá ${ROOM_LIMITS.CODE_MAX} ký tự.`;
-    if (isRequiredEmpty(form.name)) errors.name = requiredMessage("tên phòng");
-    else if (form.name.trim().length > ROOM_LIMITS.NAME_MAX) errors.name = `Tên phòng không được vượt quá ${ROOM_LIMITS.NAME_MAX} ký tự.`;
-    if (!form.type) errors.type = "Vui lòng chọn loại phòng.";
-    if (form.equipment.trim().length > ROOM_LIMITS.EQUIPMENT_MAX)
-        errors.equipment = `Thiết bị chính không được vượt quá ${ROOM_LIMITS.EQUIPMENT_MAX} ký tự.`;
-    return errors;
-};
-
 const TypeChip = ({ type }) => {
-    const option = findOption(TYPE_OPTIONS, type);
+    const option = findOption(ROOM_TYPE_OPTIONS, type);
     if (!option) return null;
-    const Icon = option.icon;
+    const Icon = TYPE_ICONS[type];
 
     return (
         <span className="chip-queue whitespace-nowrap">
@@ -68,155 +52,6 @@ const TypeChip = ({ type }) => {
 const StatusBadge = ({ status }) => {
     const option = findOption(STATUS_OPTIONS, status);
     return option ? <span className={cx("badge", option.badge)}>{option.label}</span> : null;
-};
-
-const RoomFormModal = ({ room, onClose, onSaved }) => {
-    const editing = Boolean(room);
-    const [form, setForm] = useState(() =>
-        editing ? { code: room.code, name: room.name, type: room.type, equipment: room.equipment } : EMPTY_FORM,
-    );
-    const [errors, setErrors] = useState({});
-    const [saving, setSaving] = useState(false);
-
-    const fieldProps = (name) => ({
-        id: `room-${name}`,
-        name,
-        value: form[name],
-        "aria-invalid": Boolean(errors[name]),
-        "aria-describedby": errors[name] ? `room-${name}-error` : undefined,
-        onChange: (event) => {
-            setForm((current) => ({ ...current, [name]: event.target.value }));
-            setErrors((current) => ({ ...current, [name]: undefined, form: undefined }));
-        },
-    });
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        const nextErrors = validateRoom(form);
-        setErrors(nextErrors);
-        if (Object.keys(nextErrors).length > 0) {
-            event.currentTarget.querySelector('[aria-invalid="true"]')?.focus();
-            return;
-        }
-
-        setSaving(true);
-        const result = editing ? await updateRoom(room.id, form) : await createRoom(form);
-        setSaving(false);
-
-        if (!result.success) {
-            setErrors(result.errors ?? {});
-            return;
-        }
-        onSaved(result.message);
-    };
-
-    return (
-        <Modal
-            title={editing ? `Chỉnh sửa phòng ${room.code}` : "Thêm phòng"}
-            description={editing ? undefined : "Phòng mới sẽ ở trạng thái Sẵn sàng."}
-            onClose={onClose}
-            closeDisabled={saving}
-        >
-            <form noValidate onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-                {errors.form && (
-                    <p role="alert" className="alert alert-danger">
-                        {errors.form}
-                    </p>
-                )}
-                <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
-                    <FormField id="room-code" label="Mã phòng" required error={errors.code}>
-                        <input {...fieldProps("code")} className="input uppercase" placeholder="VD: P101" maxLength={ROOM_LIMITS.CODE_MAX} />
-                    </FormField>
-                    <FormField id="room-name" label="Tên phòng" required error={errors.name}>
-                        <input {...fieldProps("name")} className="input" placeholder="VD: Phòng khám" maxLength={ROOM_LIMITS.NAME_MAX} />
-                    </FormField>
-                </div>
-                <FormField id="room-type" label="Loại phòng" required error={errors.type}>
-                    <select {...fieldProps("type")} className="input">
-                        <option value="">Chọn loại phòng</option>
-                        {TYPE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </FormField>
-                <FormField id="room-equipment" label="Thiết bị chính" error={errors.equipment}>
-                    <textarea
-                        {...fieldProps("equipment")}
-                        className="input"
-                        rows={3}
-                        placeholder="VD: Ghế nha khoa A-dec 300"
-                        maxLength={ROOM_LIMITS.EQUIPMENT_MAX}
-                    />
-                </FormField>
-                <div className="modal-actions">
-                    <button type="button" className="btn btn-secondary" disabled={saving} onClick={onClose}>
-                        Hủy
-                    </button>
-                    <button type="submit" className="btn btn-primary" disabled={saving}>
-                        {saving && <span className="btn-spinner" aria-hidden="true" />}
-                        {editing ? "Lưu thay đổi" : "Thêm phòng"}
-                    </button>
-                </div>
-            </form>
-        </Modal>
-    );
-};
-
-const MaintenanceModal = ({ room, onClose, onSaved }) => {
-    const confirmRef = useRef(null);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState(null);
-    const startMaintenance = room.status !== ROOM_STATUSES.MAINTENANCE;
-
-    const handleConfirm = async () => {
-        setSaving(true);
-        const result = await setRoomMaintenance(room.id, startMaintenance);
-        setSaving(false);
-        if (!result.success) {
-            setError(result.errors?.form);
-            return;
-        }
-        onSaved(result.message);
-    };
-
-    return (
-        <Modal
-            size="sm"
-            title={startMaintenance ? "Chuyển sang bảo trì?" : "Kết thúc bảo trì?"}
-            onClose={onClose}
-            initialFocusRef={confirmRef}
-            closeDisabled={saving}
-        >
-            <p className="mt-3">
-                {startMaintenance ? (
-                    <>
-                        Phòng <strong className="text-ink">{room.code} – {room.name}</strong> sẽ không được xếp lịch cho đến khi
-                        kết thúc bảo trì.
-                    </>
-                ) : (
-                    <>
-                        Phòng <strong className="text-ink">{room.code} – {room.name}</strong> sẽ chuyển về trạng thái Sẵn sàng.
-                    </>
-                )}
-            </p>
-            {error && (
-                <p role="alert" className="alert alert-danger mt-4">
-                    {error}
-                </p>
-            )}
-            <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" disabled={saving} onClick={onClose}>
-                    Hủy
-                </button>
-                <button ref={confirmRef} type="button" className="btn btn-primary" disabled={saving} onClick={handleConfirm}>
-                    {saving && <span className="btn-spinner" aria-hidden="true" />}
-                    {startMaintenance ? "Chuyển sang bảo trì" : "Kết thúc bảo trì"}
-                </button>
-            </div>
-        </Modal>
-    );
 };
 
 const RoomRow = ({ room, onEdit, onMaintenance }) => {
@@ -235,7 +70,6 @@ const RoomRow = ({ room, onEdit, onMaintenance }) => {
             <td>
                 <TypeChip type={room.type} />
             </td>
-            <td className="min-w-48">{room.equipment || <span className="text-muted">—</span>}</td>
             <td className="whitespace-nowrap">
                 {room.usedBy ? <span className="font-medium text-ink">{room.usedBy}</span> : <span className="text-muted">—</span>}
             </td>
@@ -379,7 +213,7 @@ const RoomManagement = () => {
                 </label>
                 <select id="room-type-filter" className="input w-auto" value={type} onChange={changeFilter(setType)}>
                     <option value="">Loại phòng: Tất cả</option>
-                    {TYPE_OPTIONS.map((option) => (
+                    {ROOM_TYPE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                             Loại phòng: {option.label}
                         </option>
@@ -408,10 +242,9 @@ const RoomManagement = () => {
                     <table className="table" aria-busy={loading}>
                         <thead>
                             <tr>
-                                <th scope="col">Mã</th>
+                                <th scope="col">STT</th>
                                 <th scope="col">Tên phòng</th>
                                 <th scope="col">Loại</th>
-                                <th scope="col">Thiết bị chính</th>
                                 <th scope="col">Đang dùng bởi</th>
                                 <th scope="col">Trạng thái</th>
                                 <th scope="col">
@@ -468,10 +301,10 @@ const RoomManagement = () => {
             </div>
 
             {dialog?.kind === "form" && (
-                <RoomFormModal room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
+                <RoomFormPopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
             )}
             {dialog?.kind === "maintenance" && (
-                <MaintenanceModal room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
+                <RoomMaintenancePopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
             )}
         </div>
     );

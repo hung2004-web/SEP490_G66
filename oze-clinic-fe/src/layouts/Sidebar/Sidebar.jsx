@@ -4,6 +4,7 @@ import { ChevronDown, X } from "lucide-react";
 import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
 import { getPendingRequests } from "@/services/adminReportService";
+import { getDoctorPendingCounts } from "@/services/doctorWorkService";
 import { cx } from "@/utils/cx";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
 import { USER_ROLES } from "@/utils/messages";
@@ -33,17 +34,31 @@ const saveClosedGroups = (closed) => {
 // True when the page is one of the group's children (or below it, e.g. a detail page).
 const containsPath = (group, pathname) => group.children.some((child) => matchPath({ path: child.to, end: false }, pathname));
 
-// Counts shown next to children with a `badge` (see SIDEBAR_BADGES). Only the clinic manager has any so far.
-const useSidebarBadges = (role) => {
-    const isManager = role === USER_ROLES.CLINIC_MANAGER;
-    const { value: result } = useAsync(() => (isManager ? getPendingRequests() : Promise.resolve(null)), [isManager]);
-    const requests = result?.success ? result.data : [];
-    const countOf = (type) => requests.filter((request) => request.type === type).length;
+// Loads the counts of one role, keyed by SIDEBAR_BADGES values. Roles without badges are left out.
+const BADGE_LOADERS = {
+    [USER_ROLES.CLINIC_MANAGER]: async () => {
+        const result = await getPendingRequests();
+        if (!result.success) return {};
+        const countOf = (type) => result.data.filter((request) => request.type === type).length;
+        return {
+            [SIDEBAR_BADGES.PENDING_LEAVES]: countOf(REQUEST_TYPES.LEAVE),
+            [SIDEBAR_BADGES.PENDING_REFUNDS]: countOf(REQUEST_TYPES.REFUND),
+        };
+    },
+    [USER_ROLES.DOCTOR]: async () => {
+        const result = await getDoctorPendingCounts();
+        if (!result.success) return {};
+        return {
+            [SIDEBAR_BADGES.WAITING_PATIENTS]: result.data.waitingPatients,
+            [SIDEBAR_BADGES.PENDING_IMAGING_REVIEWS]: result.data.pendingImagingReviews,
+        };
+    },
+};
 
-    return {
-        [SIDEBAR_BADGES.PENDING_LEAVES]: countOf(REQUEST_TYPES.LEAVE),
-        [SIDEBAR_BADGES.PENDING_REFUNDS]: countOf(REQUEST_TYPES.REFUND),
-    };
+// Counts shown next to children with a `badge` (see SIDEBAR_BADGES).
+const useSidebarBadges = (role) => {
+    const { value } = useAsync(() => BADGE_LOADERS[role]?.() ?? Promise.resolve({}), [role]);
+    return value ?? {};
 };
 
 // Open / closed groups. The group holding the current page opens again whenever the page changes.
