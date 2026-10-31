@@ -42,7 +42,7 @@ Các trường: `fullName`, `email`, `phoneNumber`, `role` = `Doctor`, `speciali
 
 **Bước 2. Lấy Id phòng:** `GET api/rooms`, chọn phòng `GeneralTreatment`.
 
-**Bước 3. Tạo ca làm:** `POST api/workshift` (vai trò `ClinicManager`)
+**Bước 3. Tạo ca làm:** `POST api/work-shifts` (vai trò `ClinicManager`)
 
 Các trường: `staffUserId` (userId ở bước 1), `scheduleDate` (ngày từ hôm nay đến `Booking.MaxDaysAhead`), `shiftStart`, `shiftEnd`, `roomId`. Ví dụ ca 08:00 đến 12:00 ở Phòng khám 1.
 
