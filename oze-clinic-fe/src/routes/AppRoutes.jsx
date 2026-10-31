@@ -15,6 +15,7 @@ import ProfilePage from "../pages/common/ProfilePage";
 import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
 import MyAppointments from "../pages/patient/MyAppointments";
+import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import RoomManagement from "../pages/admin/RoomManagement";
 import ServiceManagement from "../pages/admin/ServiceManagement";
 import GlobalException from "../pages/globalException/GlobalException";
@@ -108,7 +109,8 @@ const ROLE_PAGES = {
     [ROUTES.APPOINTMENTS]: (
         <Routes>
             <Route index element={<MyAppointments />} />
-            <Route path="*" element={<ComingSoonPage title="Lịch hẹn của tôi" />} />
+            <Route path=":appointmentId" element={<AppointmentDetail />} />
+            <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
