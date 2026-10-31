@@ -207,11 +207,11 @@ namespace OZE.UnitTest.Controllers
             };
 
             _appointmentServiceMock
-                .Setup(s => s.CheckInAppointmentAsync(100, It.IsAny<CancellationToken>()))
+                .Setup(s => s.CheckInAppointmentAsync(100, It.IsAny<CheckInRequest?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(checkedIn);
 
             // Act
-            var actionResult = await _controller.CheckInAppointmentAsync(100, CancellationToken.None);
+            var actionResult = await _controller.CheckInAppointmentAsync(100, null, CancellationToken.None);
 
             // Assert
             var okResult = actionResult.Result as OkObjectResult;

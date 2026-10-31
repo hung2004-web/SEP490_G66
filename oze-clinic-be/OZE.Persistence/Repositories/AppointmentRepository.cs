@@ -143,6 +143,34 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Appointment>> GetWaitingAppointmentsAsync(DateOnly date, int? doctorId, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Service)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Variant)
+                .Where(x => x.AppointmentDate == date && x.Status == AppointmentConstants.CheckedInStatus);
+
+            if (doctorId.HasValue)
+            {
+                query = query.Where(x => x.DoctorId == doctorId.Value);
+            }
+
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        public async Task<int?> GetStaffProfileIdByUserIdAsync(string userId)
+        {
+            return await _context.StaffProfiles
+                .Where(x => x.UserId == userId)
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default)
         {
             return await _context.Appointments

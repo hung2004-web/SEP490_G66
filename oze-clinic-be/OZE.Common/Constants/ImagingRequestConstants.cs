@@ -8,6 +8,9 @@ namespace OZE.Common.Constants
         public const string Completed = "Completed";
         public const string Cancelled = "Cancelled";
 
+        // BR-081: the technician queue shows these statuses in request-time order.
+        public static readonly string[] QueueStatuses = { Pending, InProgress };
+
         // BR-190
         public const string PeriapicalXRay = "Periapical X-ray";
         public const string Panoramic = "Panoramic";

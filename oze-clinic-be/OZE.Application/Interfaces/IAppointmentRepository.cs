@@ -24,6 +24,9 @@ namespace OZE.Application.Interfaces
         Task<List<ServiceVariant>> GetVariantsByIdsAsync(IReadOnlyCollection<int> variantIds);
         Task<List<Service>> GetBookableServicesAsync();
 
+        // Checked-in appointments of one day, all doctors when doctorId is null
+        Task<List<Appointment>> GetWaitingAppointmentsAsync(DateOnly date, int? doctorId, CancellationToken cancellationToken = default);
+        Task<int?> GetStaffProfileIdByUserIdAsync(string userId);
         Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default);
         Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default);
         Task UpdateAsync(Appointment appointment);

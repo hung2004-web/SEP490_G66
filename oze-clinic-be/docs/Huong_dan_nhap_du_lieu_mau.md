@@ -22,10 +22,10 @@ Vì sao `KHAM-TQ` để trống loại phòng: khám tổng quát luôn có tron
 File chạy lặp lại được: dòng nào đã có thì bỏ qua, không tạo trùng. Từ thư mục gốc `oze-clinic-be`:
 
 ```bash
-sqlcmd -S "(local)" -U sa -d OzeDatabase -C -f 65001 -i docs/Du_lieu_mau.sql
+sqlcmd -S "(local)" -U sa -d OzeDatabase -C -I -f 65001 -i docs/Du_lieu_mau.sql
 ```
 
-- `-f 65001` để đọc đúng tiếng Việt (UTF-8).
+- `-f 65001` để đọc đúng tiếng Việt (UTF-8). `-I` bật `QUOTED_IDENTIFIER`, bắt buộc với các bảng có index lọc (nếu thiếu, lệnh ghi bị SQL Server từ chối).
 - Lệnh sẽ hỏi hoặc dùng biến môi trường `SQLCMDPASSWORD` cho mật khẩu `sa` (xem `appsettings.Development.json`). Đừng dán mật khẩu vào tài liệu hay commit.
 - Kết quả cuối in ra số dòng mỗi bảng: 1, 4, 4, 5.
 - Cửa sổ terminal Windows có thể hiện chữ tiếng Việt bị lỗi, nhưng dữ liệu trong database vẫn đúng. Kiểm tra bằng `SELECT UNICODE(...)` hoặc mở bằng SSMS.
@@ -42,7 +42,7 @@ Các trường: `fullName`, `email`, `phoneNumber`, `role` = `Doctor`, `speciali
 
 **Bước 2. Lấy Id phòng:** `GET api/rooms`, chọn phòng `GeneralTreatment`.
 
-**Bước 3. Tạo ca làm:** `POST api/workshift` (vai trò `ClinicManager`)
+**Bước 3. Tạo ca làm:** `POST api/work-shifts` (vai trò `ClinicManager`)
 
 Các trường: `staffUserId` (userId ở bước 1), `scheduleDate` (ngày từ hôm nay đến `Booking.MaxDaysAhead`), `shiftStart`, `shiftEnd`, `roomId`. Ví dụ ca 08:00 đến 12:00 ở Phòng khám 1.
 

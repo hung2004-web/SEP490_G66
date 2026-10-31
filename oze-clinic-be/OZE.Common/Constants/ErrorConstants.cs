@@ -205,7 +205,13 @@ namespace OZE.Common.Constants
             public const string OnlyOpenCanBeRescheduled = "Only an appointment that is pending or confirmed can be rescheduled";
             public const string ConfirmedNeedsReceptionistToReschedule = "This appointment is already confirmed. Please call the clinic to reschedule it";
             public const string RescheduleDeadlinePassed = "It is too close to the appointment time to reschedule online. Please call the clinic";            public const string ReasonRequired = "Cancellation reason is required";
-            public const string OnlyOpenCanBeCheckedIn = "Only an appointment that is pending or confirmed can be checked in";
+            public const string OnlyConfirmedCanBeCheckedIn = "Only a confirmed appointment can be checked in";
+            public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
+            public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
+            public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
+            public const string PriorityInvalid = "Priority must be 0 (normal), 1 (high) or 2 (urgent)";
+            public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
+            public const string PriorityOnlyForWaiting = "The priority can only be changed while the patient is checked in and waiting";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
         }
         public static class PatientMessage
@@ -259,6 +265,8 @@ namespace OZE.Common.Constants
             public const string CannotCancelRequest = "You do not have permission to cancel this imaging request.";
             public const string RequestNotPending = "Cannot cancel imaging request because the imaging request is {0}.";
             public const string RequestCancelled = "Cancel imaging request success!";
+            // MSG02
+            public const string QueueEmpty = "No Data.";
             public const string TechnicianNotificationTitle = "New imaging request";
             public const string TechnicianNotificationMessage = "Imaging request ({0}) for {1} has been submitted.";
         }
