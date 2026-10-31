@@ -208,6 +208,7 @@ namespace OZE.Common.Constants
             public const string OnlyConfirmedCanBeCheckedIn = "Only a confirmed appointment can be checked in";
             public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
+            public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
         }
         public static class PatientMessage
