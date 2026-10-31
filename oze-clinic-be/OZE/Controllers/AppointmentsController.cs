@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
 using OZE.Common.Models;
@@ -165,10 +166,25 @@ namespace OZE.Controllers
         [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
         public async Task<ActionResult<ApiResponse<AppointmentResponse>>> CheckInAppointmentAsync(
             [FromRoute] long id,
+            [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] CheckInRequest? request,
             CancellationToken cancellationToken)
         {
-            var result = await _appointmentService.CheckInAppointmentAsync(id, cancellationToken);
+            var result = await _appointmentService.CheckInAppointmentAsync(id, request, cancellationToken);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Tiếp đón bệnh nhân thành công"));
+        }
+
+        /// <summary>
+        /// Changes the waiting-list priority of a patient who is checked in and still waiting.
+        /// </summary>
+        [HttpPost("{id:long}/priority")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> SetPriorityAsync(
+            [FromRoute] long id,
+            [FromBody] SetPriorityRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.SetPriorityAsync(id, request, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Cập nhật mức ưu tiên thành công"));
         }
     }
 }

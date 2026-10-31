@@ -441,7 +441,8 @@ namespace OZE.Application.Services
 
             return waiting
                 .Select(a => (Appointment: a, Group: GetWaitingGroup(a, lateMinutes)))
-                .OrderBy(x => x.Group)
+                .OrderByDescending(x => x.Appointment.Priority)
+                .ThenBy(x => x.Group)
                 .ThenBy(x => x.Group == OnTimeGroup ? x.Appointment.TimeSlotStart : null)
                 .ThenBy(x => x.Appointment.CheckInAt)
                 .Select((x, index) => new WaitingListItemResponse
@@ -456,6 +457,7 @@ namespace OZE.Application.Services
                     AppointmentType = x.Appointment.AppointmentType,
                     TimeSlotStart = x.Appointment.TimeSlotStart,
                     CheckInAt = x.Appointment.CheckInAt,
+                    Priority = x.Appointment.Priority,
                     IsLate = x.Group == LateGroup,
                     Services = x.Appointment.ServiceItems
                         .Select(i => i.Variant == null ? i.Service.ServiceName : $"{i.Service.ServiceName} - {i.Variant.VariantName}")
@@ -624,7 +626,7 @@ namespace OZE.Application.Services
             return MapToResponse(appointment);
         }
 
-        public async Task<AppointmentResponse> CheckInAppointmentAsync(long id, CancellationToken cancellationToken = default)
+        public async Task<AppointmentResponse> CheckInAppointmentAsync(long id, CheckInRequest? request, CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
@@ -635,16 +637,50 @@ namespace OZE.Application.Services
             // A patient may arrive at any time of that day, early or late; the waiting order decides who is seen first
             ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.CheckInWrongDay);
 
+            var priority = request?.Priority ?? PriorityConstants.Normal;
+            EnsureValidPriority(priority, request?.Reason);
+
             var oldStatus = appointment.Status;
             appointment.Status = AppointmentConstants.CheckedInStatus;
+            appointment.Priority = priority;
             appointment.CheckInAt = DateTimeOffset.UtcNow;
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
             await _auditLogService.LogAsync(AuditConstants.AppointmentCheckedIn, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
-                new { Status = oldStatus }, new { appointment.Status });
+                new { Status = oldStatus }, new { appointment.Status, appointment.Priority }, request?.Reason?.Trim());
 
             return MapToResponse(appointment);
+        }
+
+        public async Task<AppointmentResponse> SetPriorityAsync(long id, SetPriorityRequest request, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            // Only someone who is checked in and still waiting has a place in the waiting list to change
+            ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.PriorityOnlyForWaiting);
+
+            var priority = request.Priority!.Value;
+            EnsureValidPriority(priority, request.Reason);
+
+            var oldPriority = appointment.Priority;
+            appointment.Priority = priority;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _appointmentRepository.UpdateAsync(appointment);
+            await _auditLogService.LogAsync(AuditConstants.AppointmentPriorityChanged, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Priority = oldPriority }, new { appointment.Priority }, request.Reason?.Trim());
+
+            return MapToResponse(appointment);
+        }
+
+        // Anything above normal needs a reason, so the order of the waiting list can be explained later
+        private static void EnsureValidPriority(int priority, string? reason)
+        {
+            ConditionGuard.Ensure(PriorityConstants.AllowedLevels.Contains(priority), ErrorConstants.AppointmentMessage.PriorityInvalid);
+            ConditionGuard.Ensure(priority == PriorityConstants.Normal || !string.IsNullOrWhiteSpace(reason),
+                ErrorConstants.AppointmentMessage.PriorityReasonRequired);
         }
 
         private Task LogCreatedAsync(Appointment appointment, List<BookingLine> lines) =>

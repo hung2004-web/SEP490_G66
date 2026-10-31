@@ -38,11 +38,11 @@ namespace OZE.UnitTest.Services
                 .ReturnsAsync(LateMinutes.ToString());
         }
 
-        private static Appointment Booked(long id, string slot, string checkIn) => Make(id, AppointmentConstants.BookedType, slot, checkIn);
+        private static Appointment Booked(long id, string slot, string checkIn, int priority = 0) => Make(id, AppointmentConstants.BookedType, slot, checkIn, priority);
 
-        private static Appointment WalkIn(long id, string checkIn) => Make(id, AppointmentConstants.WalkInType, null, checkIn);
+        private static Appointment WalkIn(long id, string checkIn, int priority = 0) => Make(id, AppointmentConstants.WalkInType, null, checkIn, priority);
 
-        private static Appointment Make(long id, string type, string? slot, string checkIn) => new()
+        private static Appointment Make(long id, string type, string? slot, string checkIn, int priority = 0) => new()
         {
             Id = id,
             PatientId = (int)id,
@@ -52,6 +52,7 @@ namespace OZE.UnitTest.Services
             AppointmentDate = Today,
             TimeSlotStart = slot == null ? null : TimeOnly.Parse(slot),
             Status = AppointmentConstants.CheckedInStatus,
+            Priority = priority,
             CheckInAt = new DateTimeOffset(DateTime.Today.Add(TimeSpan.Parse(checkIn)))
         };
 
@@ -124,6 +125,32 @@ namespace OZE.UnitTest.Services
             result.Select(x => x.Position).Should().Equal(1, 2);
             result[1].IsLate.Should().BeFalse();
             result[1].TimeSlotStart.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetWaitingListAsync_ShouldPutAnUrgentWalkInBeforeOnTimeBookedPatients()
+        {
+            ArrangeWaiting(Booked(1, "08:00", "08:00"), WalkIn(2, "08:20", PriorityConstants.Urgent));
+
+            (await OrderOf()).Should().Equal(2, 1);
+        }
+
+        [Fact]
+        public async Task GetWaitingListAsync_ShouldOrderByPriorityFirst_ThenByTheUsualGroups()
+        {
+            // Urgent beats high beats normal; inside one level the usual order still applies
+            ArrangeWaiting(
+                Booked(1, "08:00", "08:00"),
+                WalkIn(2, "08:05"),
+                Booked(3, "09:00", "08:50", PriorityConstants.High),
+                WalkIn(4, "08:30", PriorityConstants.High),
+                Booked(5, "10:00", "09:00", PriorityConstants.Urgent));
+
+            var result = await _service.GetWaitingListAsync(null, null);
+
+            result.Select(x => x.AppointmentId).Should().Equal(5, 3, 4, 1, 2);
+            result.Select(x => x.Priority).Should().Equal(PriorityConstants.Urgent, PriorityConstants.High,
+                PriorityConstants.High, PriorityConstants.Normal, PriorityConstants.Normal);
         }
 
         [Fact]
