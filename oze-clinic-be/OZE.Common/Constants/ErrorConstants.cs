@@ -205,7 +205,10 @@ namespace OZE.Common.Constants
             public const string OnlyOpenCanBeRescheduled = "Only an appointment that is pending or confirmed can be rescheduled";
             public const string ConfirmedNeedsReceptionistToReschedule = "This appointment is already confirmed. Please call the clinic to reschedule it";
             public const string RescheduleDeadlinePassed = "It is too close to the appointment time to reschedule online. Please call the clinic";            public const string ReasonRequired = "Cancellation reason is required";
-            public const string OnlyOpenCanBeCheckedIn = "Only an appointment that is pending or confirmed can be checked in";
+            public const string OnlyConfirmedCanBeCheckedIn = "Only a confirmed appointment can be checked in";
+            public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
+            public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
+            public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
         }
         public static class PatientMessage

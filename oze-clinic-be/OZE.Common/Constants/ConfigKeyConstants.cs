@@ -15,5 +15,7 @@ namespace OZE.Common.Constants
         public const string SlotDurationMinutes = "Clinic.SlotDurationMinutes";
         // Code of the service that every appointment starts with
         public const string GeneralExamServiceCode = "Booking.GeneralExamServiceCode";
+        // A booked patient who checks in more than this many minutes after the slot start is "late" in the waiting list
+        public const string CheckInLateMinutes = "CheckIn.LateMinutes";
     }
 }
