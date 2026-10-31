@@ -30,5 +30,8 @@ namespace OZE.Application.Interfaces
         Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default);
         Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default);
         Task UpdateAsync(Appointment appointment);
+
+        // The appointment is already tracked. The examination insert and the status change are one save.
+        Task SaveStartedExaminationAsync(Appointment appointment, Examination examination, CancellationToken cancellationToken = default);
     }
 }

@@ -1,6 +1,8 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
+using OZE.Common.Exceptions;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
@@ -263,6 +265,30 @@ namespace OZE.Persistence.Repositories
         {
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task SaveStartedExaminationAsync(Appointment appointment, Examination examination, CancellationToken cancellationToken = default)
+        {
+            // The appointment was loaded without AsNoTracking, so the status change is already tracked
+            examination.AppointmentId = appointment.Id;
+            await _context.Examinations.AddAsync(examination, cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (IsDuplicateExamination(ex))
+            {
+                // One appointment has one examination. This failed save keeps neither the row nor the status change.
+                _context.Entry(examination).State = EntityState.Detached;
+                throw new BadRequestException(ErrorConstants.AppointmentMessage.ExaminationAlreadyStarted);
+            }
+        }
+
+        private static bool IsDuplicateExamination(DbUpdateException exception)
+        {
+            return exception.InnerException is SqlException sql
+                && (sql.Number == 2601 || sql.Number == 2627)
+                && sql.Message.Contains("IX_Examinations_AppointmentId", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
