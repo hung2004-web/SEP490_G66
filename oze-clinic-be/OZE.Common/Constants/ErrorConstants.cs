@@ -188,6 +188,7 @@ namespace OZE.Common.Constants
         {
             public const string ServiceNotFound = "Service not found";
             public const string ServiceInactive = "This service is not available for booking";
+            public const string PatientProfileNotFound = "No patient profile is linked to this account";
             public const string VariantNotFound = "Service variant not found";
             public const string VariantInactive = "This service variant is not available for booking";
             public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";
