@@ -424,6 +424,72 @@ namespace OZE.Application.Services
             return new PagedResult<AppointmentResponse>(mappedItems, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
         }
 
+        // Waiting order: booked patients on time (by booked time), then booked patients who came late (by check-in time),
+        // then walk-ins (by check-in time). Only the order of people who are waiting; nobody who is already being seen moves
+        public async Task<List<WaitingListItemResponse>> GetWaitingListAsync(int? doctorId, string? doctorUserId, CancellationToken cancellationToken = default)
+        {
+            if (doctorUserId != null)
+            {
+                var ownDoctorId = await _appointmentRepository.GetStaffProfileIdByUserIdAsync(doctorUserId);
+                ConditionGuard.Ensure<NotFoundException>(ownDoctorId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
+                doctorId = ownDoctorId;
+            }
+
+            var lateMinutes = await GetIntConfigAsync(ConfigKeyConstants.CheckInLateMinutes);
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var waiting = await _appointmentRepository.GetWaitingAppointmentsAsync(today, doctorId, cancellationToken);
+
+            return waiting
+                .Select(a => (Appointment: a, Group: GetWaitingGroup(a, lateMinutes)))
+                .OrderBy(x => x.Group)
+                .ThenBy(x => x.Group == OnTimeGroup ? x.Appointment.TimeSlotStart : null)
+                .ThenBy(x => x.Appointment.CheckInAt)
+                .Select((x, index) => new WaitingListItemResponse
+                {
+                    Position = index + 1,
+                    AppointmentId = x.Appointment.Id,
+                    PatientId = x.Appointment.PatientId,
+                    PatientCode = x.Appointment.Patient?.PatientCode ?? string.Empty,
+                    PatientName = x.Appointment.Patient?.FullName ?? string.Empty,
+                    DoctorId = x.Appointment.DoctorId,
+                    DoctorName = x.Appointment.Doctor?.FullName,
+                    AppointmentType = x.Appointment.AppointmentType,
+                    TimeSlotStart = x.Appointment.TimeSlotStart,
+                    CheckInAt = x.Appointment.CheckInAt,
+                    IsLate = x.Group == LateGroup,
+                    Services = x.Appointment.ServiceItems
+                        .Select(i => i.Variant == null ? i.Service.ServiceName : $"{i.Service.ServiceName} - {i.Variant.VariantName}")
+                        .ToList()
+                })
+                .ToList();
+        }
+
+        private const int OnTimeGroup = 1;
+        private const int LateGroup = 2;
+        private const int WalkInGroup = 3;
+
+        private static int GetWaitingGroup(Appointment appointment, int lateMinutes)
+        {
+            if (appointment.AppointmentType == AppointmentConstants.WalkInType)
+            {
+                return WalkInGroup;
+            }
+
+            return IsLateCheckIn(appointment, lateMinutes) ? LateGroup : OnTimeGroup;
+        }
+
+        // Arriving early is never late; only a check-in after the booked time plus the allowed delay is
+        private static bool IsLateCheckIn(Appointment appointment, int lateMinutes)
+        {
+            if (appointment.CheckInAt == null || appointment.TimeSlotStart == null)
+            {
+                return false;
+            }
+
+            var bookedAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart.Value);
+            return appointment.CheckInAt.Value.LocalDateTime > bookedAt.AddMinutes(lateMinutes);
+        }
+
         public async Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(AppointmentQueryParameters query, string userId, CancellationToken cancellationToken = default)
         {
             var patient = await _appointmentRepository.GetPatientByUserIdAsync(userId);

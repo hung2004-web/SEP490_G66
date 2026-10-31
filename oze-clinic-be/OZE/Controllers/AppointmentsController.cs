@@ -76,6 +76,21 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Today's waiting list: checked-in patients in the order they will be seen. A doctor sees only their own list.
+        /// </summary>
+        [HttpGet("waiting-list")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.DoctorRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<List<WaitingListItemResponse>>>> GetWaitingListAsync(
+            [FromQuery] int? doctorId,
+            CancellationToken cancellationToken)
+        {
+            // Staff may pick any doctor; a doctor is limited to their own account, the empty fallback matches no doctor
+            var doctorUserId = IsInRole(RoleConstants.DoctorRole) ? CurrentUserId ?? string.Empty : null;
+            var result = await _appointmentService.GetWaitingListAsync(doctorId, doctorUserId, cancellationToken);
+            return Ok(ApiResponse<List<WaitingListItemResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
         /// Retrieves the signed-in patient's own appointments, filtered by date range and status.
         /// </summary>
         [HttpGet("my")]
