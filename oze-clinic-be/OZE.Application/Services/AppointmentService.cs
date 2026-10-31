@@ -19,6 +19,7 @@ namespace OZE.Application.Services
         private readonly IServiceRepository _serviceRepository;
         private readonly ISmsSender _smsSender;
         private readonly IEmailSender _emailSender;
+        private readonly IAuditLogService _auditLogService;
         private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
@@ -27,6 +28,7 @@ namespace OZE.Application.Services
             IServiceRepository serviceRepository,
             ISmsSender smsSender,
             IEmailSender emailSender,
+            IAuditLogService auditLogService,
             ILogger<AppointmentService> logger)
         {
             _appointmentRepository = appointmentRepository;
@@ -34,6 +36,7 @@ namespace OZE.Application.Services
             _serviceRepository = serviceRepository;
             _smsSender = smsSender;
             _emailSender = emailSender;
+            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -110,6 +113,7 @@ namespace OZE.Application.Services
                 });
 
             await SendBookingNotificationAsync(phone, email, appointment, lines);
+            await LogCreatedAsync(appointment, lines);
             return ToResponse(appointment, patient, slot, lines);
         }
 
@@ -127,6 +131,7 @@ namespace OZE.Application.Services
                 });
 
             await SendBookingNotificationAsync(patient.PhoneNumber, patient.Email, appointment, lines);
+            await LogCreatedAsync(appointment, lines);
             return ToResponse(appointment, patient, slot, lines);
         }
 
@@ -458,6 +463,7 @@ namespace OZE.Application.Services
                 await EnsureBeforeCutoffAsync(appointment, ErrorConstants.AppointmentMessage.CancelDeadlinePassed);
             }
 
+            var oldStatus = appointment.Status;
             appointment.Status = AppointmentConstants.CancelledStatus;
             appointment.CancellationReason = request!.Reason.Trim();
             appointment.CancelledAt = DateTimeOffset.UtcNow;
@@ -465,6 +471,8 @@ namespace OZE.Application.Services
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
+            await _auditLogService.LogAsync(AuditConstants.AppointmentCancelled, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Status = oldStatus }, new { appointment.Status }, appointment.CancellationReason);
 
             return MapToResponse(appointment);
         }
@@ -492,6 +500,7 @@ namespace OZE.Application.Services
 
             var date = request.Date!.Value;
             var slotStart = request.SlotStart!.Value;
+            var before = new { appointment.Status, appointment.AppointmentDate, appointment.TimeSlotStart, appointment.TimeSlotEnd, appointment.DoctorId };
 
             await _appointmentRepository.ExecuteSerializableAsync(async () =>
             {
@@ -519,6 +528,9 @@ namespace OZE.Application.Services
                 return slot;
             });
 
+            await _auditLogService.LogAsync(AuditConstants.AppointmentRescheduled, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                before, new { appointment.Status, appointment.AppointmentDate, appointment.TimeSlotStart, appointment.TimeSlotEnd, appointment.DoctorId });
+
             if (!isPatient)
             {
                 await SendConfirmationNotificationAsync(appointment);
@@ -534,10 +546,13 @@ namespace OZE.Application.Services
 
             ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.PendingStatus, ErrorConstants.AppointmentMessage.OnlyPendingCanBeConfirmed);
 
+            var oldStatus = appointment.Status;
             appointment.Status = AppointmentConstants.ConfirmedStatus;
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
+            await _auditLogService.LogAsync(AuditConstants.AppointmentConfirmed, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Status = oldStatus }, new { appointment.Status });
             await SendConfirmationNotificationAsync(appointment);
 
             return MapToResponse(appointment);
@@ -550,14 +565,29 @@ namespace OZE.Application.Services
 
             ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeCheckedIn);
 
+            var oldStatus = appointment.Status;
             appointment.Status = AppointmentConstants.CheckedInStatus;
             appointment.CheckInAt = DateTimeOffset.UtcNow;
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
+            await _auditLogService.LogAsync(AuditConstants.AppointmentCheckedIn, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Status = oldStatus }, new { appointment.Status });
 
             return MapToResponse(appointment);
         }
+
+        private Task LogCreatedAsync(Appointment appointment, List<BookingLine> lines) =>
+            _auditLogService.LogAsync(AuditConstants.AppointmentCreated, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                newValues: new
+                {
+                    appointment.Status,
+                    appointment.AppointmentDate,
+                    appointment.TimeSlotStart,
+                    appointment.TimeSlotEnd,
+                    appointment.DoctorId,
+                    Services = lines.Select(l => l.DisplayName)
+                });
 
         // A patient can only cancel or reschedule while the appointment is further away than the cutoff
         private async Task EnsureBeforeCutoffAsync(Appointment appointment, string errorMessage)
