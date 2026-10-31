@@ -87,28 +87,6 @@ namespace OZE.Controllers
         }
 
         /// <summary>
-        /// Updates an existing patient record.
-        /// </summary>
-        [HttpPut("{id:int}")]
-        public async Task<ActionResult<ApiResponse<PatientDto>>> UpdatePatientAsync(
-            [FromRoute] int id,
-            [FromBody] UpdatePatientRequest request,
-            CancellationToken cancellationToken)
-        {
-            var result = await _patientService.UpdatePatientAsync(id, request, cancellationToken);
-            if (!result.Success)
-            {
-                if (result.Message == ErrorConstants.PatientMessage.PatientNotFound)
-                {
-                    return NotFound(result);
-                }
-                return BadRequest(result);
-            }
-
-            return Ok(result);
-        }
-
-        /// <summary>
         /// Soft-deletes a patient record.
         /// </summary>
         [HttpDelete("{id:int}")]

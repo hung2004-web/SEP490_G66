@@ -155,28 +155,6 @@ namespace OZE.UnitTest.Controllers
         }
 
         [Fact]
-        public async Task UpdatePatientAsync_ShouldReturnOk_WhenSuccessful()
-        {
-            // Arrange
-            var request = new UpdatePatientRequest { FullName = "Nguyen Van A Updated" };
-            var updatedPatient = new PatientDto { Id = 1, FullName = "Nguyen Van A Updated" };
-
-            _patientServiceMock
-                .Setup(s => s.UpdatePatientAsync(1, request, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ApiResponse<PatientDto>.SuccessResult(updatedPatient, "Patient updated successfully"));
-
-            // Act
-            var actionResult = await _controller.UpdatePatientAsync(1, request, CancellationToken.None);
-
-            // Assert
-            var okResult = actionResult.Result as OkObjectResult;
-            okResult.Should().NotBeNull();
-            var response = okResult!.Value as ApiResponse<PatientDto>;
-            response!.Success.Should().BeTrue();
-            response.Data!.FullName.Should().Be("Nguyen Van A Updated");
-        }
-
-        [Fact]
         public async Task DeletePatientAsync_ShouldReturnOk_WhenDeleted()
         {
             // Arrange
