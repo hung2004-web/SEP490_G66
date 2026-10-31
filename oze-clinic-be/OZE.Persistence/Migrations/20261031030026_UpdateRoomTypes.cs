@@ -5,7 +5,7 @@
 namespace OZE.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSurgeryRoomType : Migration
+    public partial class UpdateRoomTypes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,12 +21,12 @@ namespace OZE.Persistence.Migrations
             migrationBuilder.AddCheckConstraint(
                 name: "CK_Services_RequiredRoomType",
                 table: "Services",
-                sql: "[RequiredRoomType] IN ('General', 'Imaging', 'Treatment', 'Surgery')");
+                sql: "[RequiredRoomType] IN ('GeneralTreatment', 'MinorSurgery', 'XRay')");
 
             migrationBuilder.AddCheckConstraint(
                 name: "CK_Rooms_RoomType",
                 table: "Rooms",
-                sql: "[RoomType] IN ('General', 'Imaging', 'Treatment', 'Surgery')");
+                sql: "[RoomType] IN ('GeneralTreatment', 'MinorSurgery', 'XRay')");
         }
 
         /// <inheritdoc />

@@ -2,13 +2,14 @@ namespace OZE.Common.Constants
 {
     public static class RoomTypeConstants
     {
-        public const string General = "General";
-        public const string Imaging = "Imaging";
-        public const string Treatment = "Treatment";
-        // Minor surgery: invasive procedures that need a sterile room, e.g. wisdom tooth extraction, implant
-        public const string Surgery = "Surgery";
+        // General examination and treatment room: check-ups and simple treatments
+        public const string GeneralTreatment = "GeneralTreatment";
+        // Minor surgery room: invasive procedures that need a sterile room, e.g. wisdom tooth extraction, implant
+        public const string MinorSurgery = "MinorSurgery";
+        // X-ray room: imaging
+        public const string XRay = "XRay";
 
-        public static readonly string[] AllowedTypes = { General, Imaging, Treatment, Surgery };
+        public static readonly string[] AllowedTypes = { GeneralTreatment, MinorSurgery, XRay };
 
         public static bool IsValid(string? roomType)
         {
