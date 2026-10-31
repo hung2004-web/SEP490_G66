@@ -52,7 +52,7 @@ namespace OZE.UnitTest.Services
         {
             ArrangeAppointment(AppointmentConstants.ConfirmedStatus, Today, new TimeOnly(8, 0));
 
-            var result = await _service.CheckInAppointmentAsync(100);
+            var result = await _service.CheckInAppointmentAsync(100, null);
 
             result.Status.Should().Be(AppointmentConstants.CheckedInStatus);
             result.CheckInAt.Should().NotBeNull();
@@ -66,7 +66,7 @@ namespace OZE.UnitTest.Services
         {
             ArrangeAppointment(AppointmentConstants.PendingStatus, Today, new TimeOnly(8, 0));
 
-            var act = () => _service.CheckInAppointmentAsync(100);
+            var act = () => _service.CheckInAppointmentAsync(100, null);
 
             (await act.Should().ThrowAsync<BadRequestException>())
                 .WithMessage(ErrorConstants.AppointmentMessage.CheckInNeedsConfirmation);
@@ -80,7 +80,7 @@ namespace OZE.UnitTest.Services
         {
             ArrangeAppointment(AppointmentConstants.ConfirmedStatus, Today.AddDays(dayOffset), new TimeOnly(8, 0));
 
-            var act = () => _service.CheckInAppointmentAsync(100);
+            var act = () => _service.CheckInAppointmentAsync(100, null);
 
             (await act.Should().ThrowAsync<BadRequestException>())
                 .WithMessage(ErrorConstants.AppointmentMessage.CheckInWrongDay);
@@ -96,7 +96,7 @@ namespace OZE.UnitTest.Services
         {
             ArrangeAppointment(status, Today, new TimeOnly(8, 0));
 
-            var act = () => _service.CheckInAppointmentAsync(100);
+            var act = () => _service.CheckInAppointmentAsync(100, null);
 
             (await act.Should().ThrowAsync<BadRequestException>())
                 .WithMessage(ErrorConstants.AppointmentMessage.OnlyConfirmedCanBeCheckedIn);
@@ -109,7 +109,7 @@ namespace OZE.UnitTest.Services
                 .Setup(r => r.GetByIdWithDetailsAsync(100, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Appointment?)null);
 
-            var act = () => _service.CheckInAppointmentAsync(100);
+            var act = () => _service.CheckInAppointmentAsync(100, null);
 
             await act.Should().ThrowAsync<NotFoundException>();
         }

@@ -370,6 +370,11 @@ namespace OZE.Persistence.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -409,6 +414,8 @@ namespace OZE.Persistence.Migrations
 
                     b.ToTable("Appointments", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Appointments_Priority", "[Priority] IN (0, 1, 2)");
+
                             t.HasCheckConstraint("CK_Appointments_Status", "[Status] IN ('PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'COMPLETED', 'CANCELLED', 'NO_SHOW')");
 
                             t.HasCheckConstraint("CK_Appointments_Type", "[AppointmentType] IN ('BOOKED', 'WALK_IN')");

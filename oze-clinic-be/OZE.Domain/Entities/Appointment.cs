@@ -10,6 +10,8 @@ namespace OZE.Domain.Entities
         public TimeOnly? TimeSlotStart { get; set; }
         public TimeOnly? TimeSlotEnd { get; set; }
         public string Status { get; set; } = "PENDING";
+        // Waiting-list priority, set by the receptionist: 0 normal, 1 high, 2 urgent
+        public int Priority { get; set; }
         public DateTimeOffset? CheckInAt { get; set; }
         public string? Notes { get; set; }
         public string? CancellationReason { get; set; }
