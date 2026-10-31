@@ -12,8 +12,8 @@ import { isRequiredEmpty, requiredMessage } from "@/utils/validation";
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 3;
-const COLUMN_COUNT = 7;
-const ROOM_LIMITS = { CODE_MAX: 10, NAME_MAX: 100, EQUIPMENT_MAX: 200 };
+const COLUMN_COUNT = 6;
+const ROOM_LIMITS = { CODE_MAX: 10, NAME_MAX: 100 };
 
 const TYPE_OPTIONS = [
     { value: ROOM_TYPES.EXAMINATION, label: "Khám", icon: Stethoscope },
@@ -34,7 +34,7 @@ const STAT_CARDS = [
     { key: "maintenance", label: "Bảo trì", status: ROOM_STATUSES.MAINTENANCE },
 ];
 
-const EMPTY_FORM = { code: "", name: "", type: "", equipment: "" };
+const EMPTY_FORM = { code: "", name: "", type: "" };
 
 const ICON_BUTTON_CLASS = "btn btn-secondary btn-icon size-8";
 
@@ -47,8 +47,6 @@ const validateRoom = (form) => {
     if (isRequiredEmpty(form.name)) errors.name = requiredMessage("tên phòng");
     else if (form.name.trim().length > ROOM_LIMITS.NAME_MAX) errors.name = `Tên phòng không được vượt quá ${ROOM_LIMITS.NAME_MAX} ký tự.`;
     if (!form.type) errors.type = "Vui lòng chọn loại phòng.";
-    if (form.equipment.trim().length > ROOM_LIMITS.EQUIPMENT_MAX)
-        errors.equipment = `Thiết bị chính không được vượt quá ${ROOM_LIMITS.EQUIPMENT_MAX} ký tự.`;
     return errors;
 };
 
@@ -73,7 +71,7 @@ const StatusBadge = ({ status }) => {
 const RoomFormModal = ({ room, onClose, onSaved }) => {
     const editing = Boolean(room);
     const [form, setForm] = useState(() =>
-        editing ? { code: room.code, name: room.name, type: room.type, equipment: room.equipment } : EMPTY_FORM,
+        editing ? { code: room.code, name: room.name, type: room.type } : EMPTY_FORM,
     );
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
@@ -140,15 +138,6 @@ const RoomFormModal = ({ room, onClose, onSaved }) => {
                             </option>
                         ))}
                     </select>
-                </FormField>
-                <FormField id="room-equipment" label="Thiết bị chính" error={errors.equipment}>
-                    <textarea
-                        {...fieldProps("equipment")}
-                        className="input"
-                        rows={3}
-                        placeholder="VD: Ghế nha khoa A-dec 300"
-                        maxLength={ROOM_LIMITS.EQUIPMENT_MAX}
-                    />
                 </FormField>
                 <div className="modal-actions">
                     <button type="button" className="btn btn-secondary" disabled={saving} onClick={onClose}>
@@ -235,7 +224,6 @@ const RoomRow = ({ room, onEdit, onMaintenance }) => {
             <td>
                 <TypeChip type={room.type} />
             </td>
-            <td className="min-w-48">{room.equipment || <span className="text-muted">—</span>}</td>
             <td className="whitespace-nowrap">
                 {room.usedBy ? <span className="font-medium text-ink">{room.usedBy}</span> : <span className="text-muted">—</span>}
             </td>
@@ -411,7 +399,6 @@ const RoomManagement = () => {
                                 <th scope="col">Mã</th>
                                 <th scope="col">Tên phòng</th>
                                 <th scope="col">Loại</th>
-                                <th scope="col">Thiết bị chính</th>
                                 <th scope="col">Đang dùng bởi</th>
                                 <th scope="col">Trạng thái</th>
                                 <th scope="col">
