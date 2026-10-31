@@ -27,7 +27,6 @@ export const SIDEBAR_BADGES = {
     PENDING_REFUNDS: "pendingRefunds",
     WAITING_PATIENTS: "waitingPatients",
     PENDING_IMAGING_REVIEWS: "pendingImagingReviews",
-    PENDING_REFUND_REVIEWS: "pendingRefundReviews",
 };
 
 const DASHBOARD_LINK = { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard, to: ROUTES.DASHBOARD };
@@ -97,7 +96,6 @@ const SIDEBAR_MENU = {
             children: [
                 { key: "queue", label: "Hàng chờ khám", to: ROUTES.DOCTOR_QUEUE, badge: SIDEBAR_BADGES.WAITING_PATIENTS },
                 { key: "imaging-reviews", label: "Duyệt kết quả chụp", to: ROUTES.DOCTOR_IMAGING_REVIEWS, badge: SIDEBAR_BADGES.PENDING_IMAGING_REVIEWS },
-                { key: "refund-reviews", label: "Duyệt hoàn tiền", to: ROUTES.DOCTOR_REFUND_REVIEWS, badge: SIDEBAR_BADGES.PENDING_REFUND_REVIEWS },
             ],
         },
         { ...ACCOUNT_GROUP, children: [...WORK_GROUP.children, ...ACCOUNT_GROUP.children] },

@@ -51,7 +51,6 @@ const BADGE_LOADERS = {
         return {
             [SIDEBAR_BADGES.WAITING_PATIENTS]: result.data.waitingPatients,
             [SIDEBAR_BADGES.PENDING_IMAGING_REVIEWS]: result.data.pendingImagingReviews,
-            [SIDEBAR_BADGES.PENDING_REFUND_REVIEWS]: result.data.pendingRefundReviews,
         };
     },
 };

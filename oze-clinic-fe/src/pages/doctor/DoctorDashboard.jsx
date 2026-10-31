@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock,FileText, ListChecks, ScanLine, Stethoscope, Users } from "lucide-react";
+import { Clock, ListChecks, ScanLine, Stethoscope, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSection from "@/components/dashboard/DashboardSection";
@@ -11,7 +11,7 @@ import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
 import { callNextPatient, getDoctorDashboard } from "@/services/doctorWorkService";
 import { DOCTOR_TASK_TYPES } from "@/utils/data/mockDoctorDashboard";
-import { formatDate, formatTimeRange, formatWeekday, getGreeting, toDateOnly } from "@/utils/format";
+import { formatDate, formatWeekday, toDateOnly } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
 
@@ -21,7 +21,6 @@ const QUEUE_SKELETON_ROWS = 4;
 
 const TASK_META = {
     [DOCTOR_TASK_TYPES.IMAGING_REVIEW]: { icon: ScanLine, to: ROUTES.DOCTOR_IMAGING_REVIEWS },
-    [DOCTOR_TASK_TYPES.REFUND_REVIEW]: { icon: FileText, to: ROUTES.DOCTOR_REFUND_REVIEWS },
 };
 
 const joinParts = (parts) => parts.filter(Boolean).join(" · ");
@@ -122,11 +121,7 @@ const DoctorDashboard = () => {
     const shift = data?.shift;
 
     const todayDate = toDateOnly(new Date());
-    const subtitle = joinParts([
-        `${formatWeekday(todayDate)}, ${formatDate(todayDate)}`,
-        shift && `${shift.name} ${formatTimeRange(shift.start, shift.end)}`,
-        shift?.roomName,
-    ]);
+    const subtitle = `${formatWeekday(todayDate)}, ${formatDate(todayDate)}`;
 
     const handleCallNext = async () => {
         setCalling(true);
@@ -140,20 +135,9 @@ const DoctorDashboard = () => {
         setReloadKey((current) => current + 1);
     };
 
-    // TODO(design): the leave request popup is not designed yet.
-    const openLeaveRequest = () => {};
-
     return (
         <div className="flex flex-col gap-6">
-            <DashboardHeader
-                title={`${getGreeting()}${userName ? `, ${userName}` : ""}`}
-                subtitle={subtitle}
-                actions={
-                    <button type="button" className="btn btn-secondary" onClick={openLeaveRequest}>
-                        Xin nghỉ
-                    </button>
-                }
-            />
+            <DashboardHeader title={`Chào mừng${userName ? `, ${userName}` : ""}`} subtitle={subtitle} />
 
             {failed && (
                 <p role="alert" className="alert alert-danger">

@@ -53,13 +53,12 @@ export const callNextPatient = async () => {
     return success({ ...next }, `Đã gọi số ${next.queueNumber} – ${next.patientName} vào ${MOCK_DOCTOR_SHIFT.roomName}.`);
 };
 
-// Counts for the doctor's sidebar: patients waiting, imaging results and refund requests to review.
+// Counts for the doctor's sidebar: patients waiting and imaging results to review.
 export const getDoctorPendingCounts = async () => {
     await wait(MOCK_DELAY_MS);
 
     return success({
         waitingPatients: queue.length,
         pendingImagingReviews: countTasks(DOCTOR_TASK_TYPES.IMAGING_REVIEW),
-        pendingRefundReviews: countTasks(DOCTOR_TASK_TYPES.REFUND_REVIEW),
     });
 };

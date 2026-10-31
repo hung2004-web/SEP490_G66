@@ -3,7 +3,6 @@
 
 export const DOCTOR_TASK_TYPES = {
     IMAGING_REVIEW: "imaging_review",
-    REFUND_REVIEW: "refund_review",
 };
 
 // Today's shift. start / end: HH:mm.
@@ -22,6 +21,4 @@ export const MOCK_DOCTOR_QUEUE = [
 
 export const MOCK_DOCTOR_TASKS = [
     { id: 1, type: DOCTOR_TASK_TYPES.IMAGING_REVIEW, title: "Duyệt kết quả chụp", detail: "Đỗ Mai Khanh · X-quang toàn cảnh", status: "Chờ duyệt" },
-    { id: 2, type: DOCTOR_TASK_TYPES.IMAGING_REVIEW, title: "Duyệt kết quả chụp", detail: "Phan Gia Bảo · X-quang toàn cảnh", status: "Chờ duyệt" },
-    { id: 3, type: DOCTOR_TASK_TYPES.REFUND_REVIEW, title: "Duyệt hoàn tiền", detail: "Nguyễn Văn A · HD000165 · 300.000 ₫", status: "Chờ bạn duyệt" },
-];
+    { id: 2, type: DOCTOR_TASK_TYPES.IMAGING_REVIEW, title: "Duyệt kết quả chụp", detail: "Phan Gia Bảo · X-quang toàn cảnh", status: "Chờ duyệt" },];
