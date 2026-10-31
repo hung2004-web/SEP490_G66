@@ -675,6 +675,46 @@ namespace OZE.Application.Services
             return MapToResponse(appointment);
         }
 
+        public async Task<StartExaminationResponse> StartExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default)
+        {
+            var doctorId = await _appointmentRepository.GetStaffProfileIdByUserIdAsync(doctorUserId);
+            ConditionGuard.Ensure<NotFoundException>(doctorId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
+
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            // The waiting list of a doctor contains only that doctor's checked-in patients
+            ConditionGuard.Ensure<ForbiddenException>(appointment!.DoctorId == doctorId, ErrorConstants.AppointmentMessage.NotAssignedDoctor);
+            ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.OnlyCheckedInCanBeStarted);
+
+            var now = DateTimeOffset.UtcNow;
+            var oldStatus = appointment.Status;
+            appointment.Status = AppointmentConstants.InServiceStatus;
+            appointment.UpdatedAt = now;
+
+            var examination = new Examination
+            {
+                PatientId = appointment.PatientId,
+                DoctorId = doctorId!.Value,
+                ExaminationStatus = ExaminationConstants.InProgress,
+                CreatedAt = now
+            };
+
+            await _appointmentRepository.SaveStartedExaminationAsync(appointment, examination, cancellationToken);
+            await _auditLogService.LogAsync(AuditConstants.AppointmentExaminationStarted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Status = oldStatus }, new { appointment.Status, ExaminationId = examination.Id, examination.ExaminationStatus });
+
+            return new StartExaminationResponse
+            {
+                ExaminationId = examination.Id,
+                AppointmentId = appointment.Id,
+                PatientId = appointment.PatientId,
+                DoctorId = examination.DoctorId,
+                ExaminationStatus = examination.ExaminationStatus,
+                AppointmentStatus = appointment.Status
+            };
+        }
+
         // Anything above normal needs a reason, so the order of the waiting list can be explained later
         private static void EnsureValidPriority(int priority, string? reason)
         {
