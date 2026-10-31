@@ -563,7 +563,11 @@ namespace OZE.Application.Services
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
 
-            ConditionGuard.ThrowIf(!IsOpen(appointment!), ErrorConstants.AppointmentMessage.OnlyOpenCanBeCheckedIn);
+            // The receptionist confirms the booking first (this is also what filters out fake bookings)
+            ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.PendingStatus, ErrorConstants.AppointmentMessage.CheckInNeedsConfirmation);
+            ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.ConfirmedStatus, ErrorConstants.AppointmentMessage.OnlyConfirmedCanBeCheckedIn);
+            // A patient may arrive at any time of that day, early or late; the waiting order decides who is seen first
+            ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.CheckInWrongDay);
 
             var oldStatus = appointment.Status;
             appointment.Status = AppointmentConstants.CheckedInStatus;
