@@ -416,6 +416,16 @@ namespace OZE.Application.Services
             return new PagedResult<AppointmentResponse>(mappedItems, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize);
         }
 
+        public async Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(AppointmentQueryParameters query, string userId, CancellationToken cancellationToken = default)
+        {
+            var patient = await _appointmentRepository.GetPatientByUserIdAsync(userId);
+            ConditionGuard.Ensure<NotFoundException>(patient != null, ErrorConstants.AppointmentMessage.PatientProfileNotFound);
+
+            // Always the signed-in patient's own id; a PatientId sent by the client is overwritten
+            query.PatientId = patient!.Id;
+            return await GetAppointmentsAsync(query, cancellationToken);
+        }
+
         public async Task<AppointmentResponse> GetAppointmentByIdAsync(long id, string? ownerUserId, CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
