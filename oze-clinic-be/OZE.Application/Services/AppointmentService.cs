@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using OZE.Application.Helpers;
@@ -686,6 +686,11 @@ namespace OZE.Application.Services
             // The waiting list of a doctor contains only that doctor's checked-in patients
             ConditionGuard.Ensure<ForbiddenException>(appointment!.DoctorId == doctorId, ErrorConstants.AppointmentMessage.NotAssignedDoctor);
             ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.OnlyCheckedInCanBeStarted);
+            ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.ExaminationWrongDay);
+
+            // One patient at a time: the doctor must finish the current examination first
+            var isExamining = await _appointmentRepository.HasAppointmentInServiceAsync(doctorId!.Value, appointment.AppointmentDate);
+            ConditionGuard.ThrowIf(isExamining, ErrorConstants.AppointmentMessage.DoctorAlreadyExamining);
 
             var now = DateTimeOffset.UtcNow;
             var oldStatus = appointment.Status;
@@ -696,6 +701,8 @@ namespace OZE.Application.Services
             {
                 PatientId = appointment.PatientId,
                 DoctorId = doctorId!.Value,
+                // The reason left when booking; the doctor corrects it during the examination
+                ChiefComplaint = appointment.Notes,
                 ExaminationStatus = ExaminationConstants.InProgress,
                 CreatedAt = now
             };
@@ -711,7 +718,8 @@ namespace OZE.Application.Services
                 PatientId = appointment.PatientId,
                 DoctorId = examination.DoctorId,
                 ExaminationStatus = examination.ExaminationStatus,
-                AppointmentStatus = appointment.Status
+                AppointmentStatus = appointment.Status,
+                ChiefComplaint = examination.ChiefComplaint
             };
         }
 

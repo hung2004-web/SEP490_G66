@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OZE.Application.Interfaces;
@@ -40,7 +40,7 @@ namespace OZE.UnitTest.Services
                 .Returns(Task.CompletedTask);
         }
 
-        private void ArrangeAppointment(string status, int? doctorId = DoctorId)
+        private void ArrangeAppointment(string status, int? doctorId = DoctorId, DateOnly? date = null, string? notes = null)
         {
             var appointment = new Appointment
             {
@@ -48,6 +48,8 @@ namespace OZE.UnitTest.Services
                 PatientId = 20,
                 DoctorId = doctorId,
                 Status = status,
+                AppointmentDate = date ?? DateOnly.FromDateTime(DateTime.Today),
+                Notes = notes,
                 Patient = new Patient { FullName = "Tran Thi B" }
             };
             _appointmentRepositoryMock
@@ -107,6 +109,53 @@ namespace OZE.UnitTest.Services
             _appointmentRepositoryMock.Verify(
                 r => r.SaveStartedExaminationAsync(It.IsAny<Appointment>(), It.IsAny<Examination>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+        }
+
+        [Fact]
+        public async Task StartExaminationAsync_ShouldReject_WhenTheAppointmentIsNotToday()
+        {
+            ArrangeAppointment(AppointmentConstants.CheckedInStatus, date: DateOnly.FromDateTime(DateTime.Today).AddDays(1));
+
+            var act = () => _service.StartExaminationAsync(100, DoctorUserId);
+
+            (await act.Should().ThrowAsync<BadRequestException>())
+                .WithMessage(ErrorConstants.AppointmentMessage.ExaminationWrongDay);
+            _appointmentRepositoryMock.Verify(
+                r => r.SaveStartedExaminationAsync(It.IsAny<Appointment>(), It.IsAny<Examination>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task StartExaminationAsync_ShouldReject_WhenTheDoctorIsAlreadyExamining()
+        {
+            ArrangeAppointment(AppointmentConstants.CheckedInStatus);
+            _appointmentRepositoryMock
+                .Setup(r => r.HasAppointmentInServiceAsync(DoctorId, DateOnly.FromDateTime(DateTime.Today)))
+                .ReturnsAsync(true);
+
+            var act = () => _service.StartExaminationAsync(100, DoctorUserId);
+
+            (await act.Should().ThrowAsync<BadRequestException>())
+                .WithMessage(ErrorConstants.AppointmentMessage.DoctorAlreadyExamining);
+            _appointmentRepositoryMock.Verify(
+                r => r.SaveStartedExaminationAsync(It.IsAny<Appointment>(), It.IsAny<Examination>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task StartExaminationAsync_ShouldCopyTheBookingNoteToTheChiefComplaint()
+        {
+            ArrangeAppointment(AppointmentConstants.CheckedInStatus, notes: "Dau rang ham duoi");
+            Examination? saved = null;
+            _appointmentRepositoryMock
+                .Setup(r => r.SaveStartedExaminationAsync(It.IsAny<Appointment>(), It.IsAny<Examination>(), It.IsAny<CancellationToken>()))
+                .Callback<Appointment, Examination, CancellationToken>((_, examination, _) => saved = examination)
+                .Returns(Task.CompletedTask);
+
+            var result = await _service.StartExaminationAsync(100, DoctorUserId);
+
+            saved!.ChiefComplaint.Should().Be("Dau rang ham duoi");
+            result.ChiefComplaint.Should().Be("Dau rang ham duoi");
         }
 
         [Fact]

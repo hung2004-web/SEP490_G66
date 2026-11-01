@@ -5,6 +5,7 @@ using OZE.Application.Interfaces;
 using OZE.Application.Services;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
+using OZE.Common.Models;
 using OZE.Domain.Entities;
 using Xunit;
 
@@ -110,6 +111,120 @@ namespace OZE.UnitTest.Services
                 .ReturnsAsync((Appointment?)null);
 
             var act = () => _service.CheckInAppointmentAsync(100, null);
+
+            await act.Should().ThrowAsync<NotFoundException>();
+        }
+
+        [Fact]
+        public async Task CheckInAppointmentAsync_ShouldUseNormalPriority_WhenNoRequestIsSent()
+        {
+            ArrangeAppointment(AppointmentConstants.ConfirmedStatus, Today, new TimeOnly(8, 0));
+
+            await _service.CheckInAppointmentAsync(100, null);
+
+            _appointmentRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Appointment>(a => a.Priority == PriorityConstants.Normal)), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(PriorityConstants.High)]
+        [InlineData(PriorityConstants.Urgent)]
+        public async Task CheckInAppointmentAsync_ShouldSetPriority_WhenAReasonIsGiven(int priority)
+        {
+            ArrangeAppointment(AppointmentConstants.ConfirmedStatus, Today, new TimeOnly(8, 0));
+
+            await _service.CheckInAppointmentAsync(100, new CheckInRequest { Priority = priority, Reason = "Elderly" });
+
+            _appointmentRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Appointment>(a => a.Priority == priority)), Times.Once);
+            _auditLogServiceMock.Verify(a => a.LogAsync(AuditConstants.AppointmentCheckedIn, AuditConstants.AppointmentEntity,
+                "100", It.IsAny<object?>(), It.IsAny<object?>(), "Elderly"), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task CheckInAppointmentAsync_ShouldReject_WhenPriorityIsAboveNormalWithoutAReason(string? reason)
+        {
+            ArrangeAppointment(AppointmentConstants.ConfirmedStatus, Today, new TimeOnly(8, 0));
+
+            var act = () => _service.CheckInAppointmentAsync(100, new CheckInRequest { Priority = PriorityConstants.Urgent, Reason = reason });
+
+            (await act.Should().ThrowAsync<BadRequestException>())
+                .WithMessage(ErrorConstants.AppointmentMessage.PriorityReasonRequired);
+            _appointmentRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Appointment>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(3)]
+        public async Task CheckInAppointmentAsync_ShouldReject_WhenPriorityIsNotAKnownLevel(int priority)
+        {
+            ArrangeAppointment(AppointmentConstants.ConfirmedStatus, Today, new TimeOnly(8, 0));
+
+            var act = () => _service.CheckInAppointmentAsync(100, new CheckInRequest { Priority = priority, Reason = "x" });
+
+            (await act.Should().ThrowAsync<BadRequestException>())
+                .WithMessage(ErrorConstants.AppointmentMessage.PriorityInvalid);
+        }
+
+        [Fact]
+        public async Task SetPriorityAsync_ShouldChangeThePriority_OfAWaitingPatient()
+        {
+            ArrangeAppointment(AppointmentConstants.CheckedInStatus, Today, new TimeOnly(8, 0));
+
+            await _service.SetPriorityAsync(100, new SetPriorityRequest { Priority = PriorityConstants.Urgent, Reason = "Bleeding" });
+
+            _appointmentRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Appointment>(a => a.Priority == PriorityConstants.Urgent)), Times.Once);
+            _auditLogServiceMock.Verify(a => a.LogAsync(AuditConstants.AppointmentPriorityChanged, AuditConstants.AppointmentEntity,
+                "100", It.IsAny<object?>(), It.IsAny<object?>(), "Bleeding"), Times.Once);
+        }
+
+        [Fact]
+        public async Task SetPriorityAsync_ShouldAllowLoweringToNormal_WithoutAReason()
+        {
+            ArrangeAppointment(AppointmentConstants.CheckedInStatus, Today, new TimeOnly(8, 0));
+
+            await _service.SetPriorityAsync(100, new SetPriorityRequest { Priority = PriorityConstants.Normal });
+
+            _appointmentRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Appointment>(a => a.Priority == PriorityConstants.Normal)), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(AppointmentConstants.PendingStatus)]
+        [InlineData(AppointmentConstants.ConfirmedStatus)]
+        [InlineData(AppointmentConstants.InServiceStatus)]
+        [InlineData(AppointmentConstants.CompletedStatus)]
+        [InlineData(AppointmentConstants.CancelledStatus)]
+        [InlineData(AppointmentConstants.NoShowStatus)]
+        public async Task SetPriorityAsync_ShouldReject_WhenThePatientIsNotWaiting(string status)
+        {
+            ArrangeAppointment(status, Today, new TimeOnly(8, 0));
+
+            var act = () => _service.SetPriorityAsync(100, new SetPriorityRequest { Priority = PriorityConstants.High, Reason = "x" });
+
+            (await act.Should().ThrowAsync<BadRequestException>())
+                .WithMessage(ErrorConstants.AppointmentMessage.PriorityOnlyForWaiting);
+        }
+
+        [Fact]
+        public async Task SetPriorityAsync_ShouldRequireAReason_WhenRaisingThePriority()
+        {
+            ArrangeAppointment(AppointmentConstants.CheckedInStatus, Today, new TimeOnly(8, 0));
+
+            var act = () => _service.SetPriorityAsync(100, new SetPriorityRequest { Priority = PriorityConstants.High });
+
+            (await act.Should().ThrowAsync<BadRequestException>())
+                .WithMessage(ErrorConstants.AppointmentMessage.PriorityReasonRequired);
+        }
+
+        [Fact]
+        public async Task SetPriorityAsync_ShouldReturnNotFound_WhenAppointmentDoesNotExist()
+        {
+            _appointmentRepositoryMock
+                .Setup(r => r.GetByIdWithDetailsAsync(100, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Appointment?)null);
+
+            var act = () => _service.SetPriorityAsync(100, new SetPriorityRequest { Priority = PriorityConstants.High, Reason = "x" });
 
             await act.Should().ThrowAsync<NotFoundException>();
         }

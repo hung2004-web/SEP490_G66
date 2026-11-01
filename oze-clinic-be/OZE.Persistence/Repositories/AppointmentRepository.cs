@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
@@ -183,6 +183,27 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Variant)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        public async Task<Appointment?> GetByIdWithExaminationAsync(long id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Examination)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Service)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Variant)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        public async Task<bool> HasAppointmentInServiceAsync(int doctorId, DateOnly date)
+        {
+            return await _context.Appointments
+                .AnyAsync(x => x.DoctorId == doctorId
+                    && x.AppointmentDate == date
+                    && x.Status == AppointmentConstants.InServiceStatus);
         }
 
         public async Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default)
