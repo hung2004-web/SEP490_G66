@@ -1,0 +1,31 @@
+services:
+  xray-simulator:
+    container_name: oze-xray-simulator
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Simulator__ApiKey=oze-xray-sim-secret-key-2026
+      - Simulator__EnableDemoControls=true
+      - Simulator__CaptureSeconds=3
+      - Simulator__ProcessingSeconds=3
+      - Webhook__Url=http://mock-webhook:5055/callback
+      - Webhook__Secret=oze-sim-webhook-secret-2026
+    depends_on:
+      - mock-webhook
+
+  mock-webhook:
+    container_name: oze-mock-webhook
+    build:
+      context: .
+      dockerfile: tools/MockWebhookReceiver/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5055:5055"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - WebhookSecret=oze-sim-webhook-secret-2026
