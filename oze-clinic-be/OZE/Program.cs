@@ -62,9 +62,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "OZE Boilerplate API",
+        Title = "OZE API",
         Version = "v1",
-        Description = "Enterprise Clean Architecture Web API Boilerplate"
+        Description = "OZE API"
     });
 
     var jwtSecurityScheme = new OpenApiSecurityScheme

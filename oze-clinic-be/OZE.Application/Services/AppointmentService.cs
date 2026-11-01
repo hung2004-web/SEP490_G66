@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using OZE.Application.Helpers;
@@ -21,6 +21,7 @@ namespace OZE.Application.Services
         private readonly IEmailSender _emailSender;
         private readonly IAuditLogService _auditLogService;
         private readonly ILogger<AppointmentService> _logger;
+        private readonly IQueueService? _queueService;
 
         public AppointmentService(
             IAppointmentRepository appointmentRepository,
@@ -29,7 +30,8 @@ namespace OZE.Application.Services
             ISmsSender smsSender,
             IEmailSender emailSender,
             IAuditLogService auditLogService,
-            ILogger<AppointmentService> logger)
+            ILogger<AppointmentService> logger,
+            IQueueService? queueService = null)
         {
             _appointmentRepository = appointmentRepository;
             _registrationRepository = registrationRepository;
@@ -38,6 +40,7 @@ namespace OZE.Application.Services
             _emailSender = emailSender;
             _auditLogService = auditLogService;
             _logger = logger;
+            _queueService = queueService;
         }
 
         public async Task<List<BookableServiceResponse>> GetBookableServicesAsync()
@@ -459,6 +462,7 @@ namespace OZE.Application.Services
                     CheckInAt = x.Appointment.CheckInAt,
                     Priority = x.Appointment.Priority,
                     IsLate = x.Group == LateGroup,
+                    IsPriorityReturn = x.Group == PriorityReturnGroup,
                     Services = x.Appointment.ServiceItems
                         .Select(i => i.Variant == null ? i.Service.ServiceName : $"{i.Service.ServiceName} - {i.Variant.VariantName}")
                         .ToList()
@@ -466,12 +470,18 @@ namespace OZE.Application.Services
                 .ToList();
         }
 
+        private const int PriorityReturnGroup = 0;
         private const int OnTimeGroup = 1;
         private const int LateGroup = 2;
         private const int WalkInGroup = 3;
 
         private static int GetWaitingGroup(Appointment appointment, int lateMinutes)
         {
+            if (appointment.Examination != null)
+            {
+                return PriorityReturnGroup;
+            }
+
             if (appointment.AppointmentType == AppointmentConstants.WalkInType)
             {
                 return WalkInGroup;
@@ -647,6 +657,19 @@ namespace OZE.Application.Services
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
+
+            if (_queueService != null)
+            {
+                await _queueService.EnqueueAsync(
+                    appointment.Id,
+                    "Examination",
+                    null,
+                    appointment.DoctorId,
+                    appointment.Priority,
+                    request?.Reason,
+                    cancellationToken);
+            }
+
             await _auditLogService.LogAsync(AuditConstants.AppointmentCheckedIn, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status, appointment.Priority }, request?.Reason?.Trim());
 
@@ -680,7 +703,8 @@ namespace OZE.Application.Services
             var doctorId = await _appointmentRepository.GetStaffProfileIdByUserIdAsync(doctorUserId);
             ConditionGuard.Ensure<NotFoundException>(doctorId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
 
-            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            var appointment = await _appointmentRepository.GetByIdWithExaminationAsync(id, cancellationToken)
+                ?? await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
 
             // The waiting list of a doctor contains only that doctor's checked-in patients
@@ -697,17 +721,34 @@ namespace OZE.Application.Services
             appointment.Status = AppointmentConstants.InServiceStatus;
             appointment.UpdatedAt = now;
 
-            var examination = new Examination
+            Examination examination;
+            if (appointment.Examination != null)
             {
-                PatientId = appointment.PatientId,
-                DoctorId = doctorId!.Value,
-                // The reason left when booking; the doctor corrects it during the examination
-                ChiefComplaint = appointment.Notes,
-                ExaminationStatus = ExaminationConstants.InProgress,
-                CreatedAt = now
-            };
+                // Resuming an existing examination (e.g. returning from X-ray / lab)
+                examination = appointment.Examination;
+                examination.UpdatedAt = now;
+                await _appointmentRepository.UpdateAsync(appointment);
+            }
+            else
+            {
+                examination = new Examination
+                {
+                    PatientId = appointment.PatientId,
+                    DoctorId = doctorId!.Value,
+                    // The reason left when booking; the doctor corrects it during the examination
+                    ChiefComplaint = appointment.Notes,
+                    ExaminationStatus = ExaminationConstants.InProgress,
+                    CreatedAt = now
+                };
 
-            await _appointmentRepository.SaveStartedExaminationAsync(appointment, examination, cancellationToken);
+                await _appointmentRepository.SaveStartedExaminationAsync(appointment, examination, cancellationToken);
+            }
+
+            if (_queueService != null)
+            {
+                await _queueService.UpdateStatusAsync(appointment.Id, "Examination", "IN_PROGRESS", cancellationToken);
+            }
+
             await _auditLogService.LogAsync(AuditConstants.AppointmentExaminationStarted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status, ExaminationId = examination.Id, examination.ExaminationStatus });
 
@@ -721,6 +762,45 @@ namespace OZE.Application.Services
                 AppointmentStatus = appointment.Status,
                 ChiefComplaint = examination.ChiefComplaint
             };
+        }
+
+        public async Task<AppointmentResponse> CompleteExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default)
+        {
+            var doctorId = await _appointmentRepository.GetStaffProfileIdByUserIdAsync(doctorUserId);
+            ConditionGuard.Ensure<NotFoundException>(doctorId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
+
+            var appointment = await _appointmentRepository.GetByIdWithExaminationAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null && appointment.DoctorId == doctorId,
+                ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.InServiceStatus,
+                ErrorConstants.AppointmentMessage.OnlyInServiceCanBeCompleted);
+            var examination = appointment.Examination;
+            ConditionGuard.ThrowIf(examination == null, ErrorConstants.AppointmentMessage.ExaminationNotFound);
+            ConditionGuard.ThrowIf(examination!.ExaminationStatus != ExaminationConstants.InProgress,
+                ErrorConstants.AppointmentMessage.ExaminationAlreadyLocked);
+
+            var now = DateTimeOffset.UtcNow;
+            var oldStatus = appointment.Status;
+            examination.ExaminationStatus = "Locked";
+            examination.LockedAt = now;
+            examination.LockedByUserId = doctorUserId;
+            examination.UpdatedAt = now;
+
+            appointment.Status = AppointmentConstants.CompletedStatus;
+            appointment.UpdatedAt = now;
+
+            await _appointmentRepository.UpdateAsync(appointment);
+
+            if (_queueService != null)
+            {
+                await _queueService.UpdateStatusAsync(appointment.Id, "Examination", "COMPLETED", cancellationToken);
+            }
+
+            await _auditLogService.LogAsync(AuditConstants.AppointmentCompleted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Status = oldStatus }, new { appointment.Status, ExaminationId = examination.Id, examination.ExaminationStatus });
+
+            return MapToResponse(appointment);
         }
 
         // Anything above normal needs a reason, so the order of the waiting list can be explained later
