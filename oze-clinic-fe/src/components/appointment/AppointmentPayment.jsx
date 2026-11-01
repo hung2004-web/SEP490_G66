@@ -16,7 +16,7 @@ const getPaymentLine = (payment) => {
 const AppointmentPayment = ({ invoice }) => {
     const known = KNOWN_STATUSES.includes(invoice.paymentStatus);
     const paid = invoice.paymentStatus === PAYMENT_STATUS.PAID;
-    const amount = paid ? invoice.finalAmount : invoice.finalAmount - invoice.paidAmount;
+    const amount = paid ? invoice.finalAmount : Math.max(0, (invoice.finalAmount ?? 0) - (invoice.paidAmount ?? 0));
     const paymentLine = paid ? getPaymentLine(invoice.payment) : "";
     const lines = Array.isArray(invoice.lines) ? invoice.lines : [];
 
