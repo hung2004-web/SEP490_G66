@@ -186,5 +186,19 @@ namespace OZE.Controllers
             var result = await _appointmentService.SetPriorityAsync(id, request, cancellationToken);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Cập nhật mức ưu tiên thành công"));
         }
+
+        /// <summary>
+        /// Starts the visit: creates the examination and moves a checked-in appointment to in service.
+        /// </summary>
+        [HttpPost("{id:long}/start-examination")]
+        [Authorize(Roles = RoleConstants.DoctorRole)]
+        public async Task<ActionResult<ApiResponse<StartExaminationResponse>>> StartExaminationAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            // The empty fallback matches no doctor, so a missing user id never starts someone else's visit
+            var result = await _appointmentService.StartExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
+            return Ok(ApiResponse<StartExaminationResponse>.SuccessResult(result, "Bắt đầu khám thành công"));
+        }
     }
 }

@@ -25,5 +25,7 @@ namespace OZE.Application.Interfaces
         Task<AppointmentResponse> CheckInAppointmentAsync(long id, CheckInRequest? request, CancellationToken cancellationToken = default);
         // Changes the waiting-list priority of a patient who is checked in and still waiting
         Task<AppointmentResponse> SetPriorityAsync(long id, SetPriorityRequest request, CancellationToken cancellationToken = default);
+        // The signed-in doctor opens the visit for one of their checked-in appointments
+        Task<StartExaminationResponse> StartExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default);
     }
 }

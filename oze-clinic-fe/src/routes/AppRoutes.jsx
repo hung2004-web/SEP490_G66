@@ -121,6 +121,8 @@ const COMING_SOON_TITLES = {
     [ROUTES.TREATMENT_PLANS]: "Kế hoạch điều trị",
     [ROUTES.MEDICAL_RECORD]: "Hồ sơ bệnh án",
     [ROUTES.INVOICES]: "Hóa đơn",
+    [ROUTES.DOCTOR_QUEUE]: "Hàng chờ khám",
+    [ROUTES.DOCTOR_IMAGING_REVIEWS]: "Duyệt kết quả chụp",
     [ROUTES.DOCTOR_APPOINTMENTS]: "Lịch hẹn khám",
     [ROUTES.DOCTOR_PATIENTS]: "Bệnh nhân",
     [ROUTES.DOCTOR_TREATMENT_PLANS]: "Kế hoạch điều trị",

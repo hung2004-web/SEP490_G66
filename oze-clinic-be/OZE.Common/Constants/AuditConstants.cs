@@ -9,6 +9,7 @@ namespace OZE.Common.Constants
         public const string AppointmentCheckedIn = "APPOINTMENT_CHECKED_IN";
         public const string AppointmentRescheduled = "APPOINTMENT_RESCHEDULED";
         public const string AppointmentPriorityChanged = "APPOINTMENT_PRIORITY_CHANGED";
+        public const string AppointmentExaminationStarted = "APPOINTMENT_EXAMINATION_STARTED";
 
         public const string AppointmentEntity = "Appointment";
     }

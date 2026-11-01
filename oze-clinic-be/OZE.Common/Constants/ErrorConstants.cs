@@ -219,6 +219,9 @@ namespace OZE.Common.Constants
             public const string OnlyInServiceCanBeCompleted = "Only an examination that is in progress can be completed";
             public const string ExaminationNotFound = "No examination was found for this appointment";
             public const string ExaminationAlreadyLocked = "This examination is already completed and locked";
+            public const string OnlyCheckedInCanBeStarted = "Only a checked-in appointment can be started";
+            public const string NotAssignedDoctor = "You can only start an examination for your own appointment";
+            public const string ExaminationAlreadyStarted = "This appointment already has an examination";
         }
         public static class PatientMessage
         {

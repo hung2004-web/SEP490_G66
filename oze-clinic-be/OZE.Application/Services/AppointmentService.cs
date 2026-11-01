@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using OZE.Application.Helpers;
@@ -673,6 +673,54 @@ namespace OZE.Application.Services
                 new { Priority = oldPriority }, new { appointment.Priority }, request.Reason?.Trim());
 
             return MapToResponse(appointment);
+        }
+
+        public async Task<StartExaminationResponse> StartExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default)
+        {
+            var doctorId = await _appointmentRepository.GetStaffProfileIdByUserIdAsync(doctorUserId);
+            ConditionGuard.Ensure<NotFoundException>(doctorId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
+
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            // The waiting list of a doctor contains only that doctor's checked-in patients
+            ConditionGuard.Ensure<ForbiddenException>(appointment!.DoctorId == doctorId, ErrorConstants.AppointmentMessage.NotAssignedDoctor);
+            ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.OnlyCheckedInCanBeStarted);
+            ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.ExaminationWrongDay);
+
+            // One patient at a time: the doctor must finish the current examination first
+            var isExamining = await _appointmentRepository.HasAppointmentInServiceAsync(doctorId!.Value, appointment.AppointmentDate);
+            ConditionGuard.ThrowIf(isExamining, ErrorConstants.AppointmentMessage.DoctorAlreadyExamining);
+
+            var now = DateTimeOffset.UtcNow;
+            var oldStatus = appointment.Status;
+            appointment.Status = AppointmentConstants.InServiceStatus;
+            appointment.UpdatedAt = now;
+
+            var examination = new Examination
+            {
+                PatientId = appointment.PatientId,
+                DoctorId = doctorId!.Value,
+                // The reason left when booking; the doctor corrects it during the examination
+                ChiefComplaint = appointment.Notes,
+                ExaminationStatus = ExaminationConstants.InProgress,
+                CreatedAt = now
+            };
+
+            await _appointmentRepository.SaveStartedExaminationAsync(appointment, examination, cancellationToken);
+            await _auditLogService.LogAsync(AuditConstants.AppointmentExaminationStarted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Status = oldStatus }, new { appointment.Status, ExaminationId = examination.Id, examination.ExaminationStatus });
+
+            return new StartExaminationResponse
+            {
+                ExaminationId = examination.Id,
+                AppointmentId = appointment.Id,
+                PatientId = appointment.PatientId,
+                DoctorId = examination.DoctorId,
+                ExaminationStatus = examination.ExaminationStatus,
+                AppointmentStatus = appointment.Status,
+                ChiefComplaint = examination.ChiefComplaint
+            };
         }
 
         // Anything above normal needs a reason, so the order of the waiting list can be explained later

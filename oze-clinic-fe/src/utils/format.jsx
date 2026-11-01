@@ -33,3 +33,11 @@ export const formatTime = (value) => (value ? value.slice(0, 5) : "");
 export const formatTimeRange = (start, end) => [formatTime(start), formatTime(end)].filter(Boolean).join(" – ");
 
 export const formatCurrency = (amount) => (Number.isFinite(amount) ? currencyFormatter.format(amount) : "");
+
+// Greeting by time of day: "Chào buổi sáng" before 12h, "Chào buổi chiều" before 18h, then "Chào buổi tối".
+export const getGreeting = (date = new Date()) => {
+    const hour = date.getHours();
+    if (hour < 12) return "Chào buổi sáng";
+    if (hour < 18) return "Chào buổi chiều";
+    return "Chào buổi tối";
+};
