@@ -1,15 +1,25 @@
 // System Messages (SRS Report 3), Vietnamese texts from the Sign In spec (section 3b), word for word.
 export const MESSAGES = {
+    MSG01: "Lịch hẹn đang ở trạng thái [trạng thái]. Thời gian hẹn: [thời gian].",
     MSG07: "Vui lòng nhập [tên trường].",
+    MSG13: "Không thể hủy lịch hẹn trong vòng [số giờ] giờ trước giờ hẹn.",
+    MSG23: "Bạn không có quyền truy cập.",
     MSG24: "Sai mật khẩu.",
     MSG25: "Mật khẩu mới không được trùng với mật khẩu cũ.",
     MSG26: "Tài khoản đã bị tạm khóa do đăng nhập sai 5 lần liên tiếp.",
+    MSG29: "Lịch hẹn ngày [ngày] lúc [giờ] của bạn đã được hủy thành công.",
+    MSG30: "Vui lòng nhập lý do hủy lịch hẹn.",
+    MSG31: "Lịch hẹn này không thể hủy trực tuyến nữa. Vui lòng liên hệ phòng khám qua số [số điện thoại].",
+    MSG32: "Lịch hẹn của bạn đã được đổi sang ngày [ngày] lúc [giờ] với [bác sĩ].",
+    MSG33: "Lịch hẹn này không thể đổi trực tuyến nữa. Vui lòng liên hệ phòng khám qua số [số điện thoại].",
+    MSG34: "Khung giờ đã chọn không còn trống. Vui lòng chọn thời gian khác.",
     MSG37: "Đến lượt bạn, mời vào [phòng khám]",
     MSG38: "Bạn chưa có lần khám nào.",
     MSG55: "Bạn chưa có thông báo nào.",
     MSG56: "Thông tin liên quan không còn tồn tại.",
     MSG64: "Cập nhật mật khẩu thành công!",
     MSG66: "[Tên trường] không hợp lệ. Vui lòng kiểm tra lại.",
+    MSG76: "[Mục] không khả dụng vào [thời gian].",
 };
 
 // Agreed by the team on 07/10/2026 for Register / Reset / Change Password (not used by Sign In).
@@ -29,6 +39,7 @@ export const VALIDATION_MESSAGES = {
     ADDRESS_TOO_LONG: `Địa chỉ không được vượt quá ${PROFILE_LIMITS.ADDRESS_MAX} ký tự.`,
     PHONE_IN_USE: "Số điện thoại đã được sử dụng bởi tài khoản khác.",
     EMAIL_IN_USE: "Email đã được sử dụng bởi tài khoản khác.",
+    SLOT_REQUIRED: "Vui lòng chọn ca khám mới.",
 };
 
 // TODO(spec): not in the SRS System Messages table yet.
@@ -66,6 +77,14 @@ export const CLINIC_OPENING_HOURS = "Thứ 2 - Chủ nhật";
 export const CLINIC_MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(`Nha khoa OZE, ${CLINIC_ADDRESS}`)}&output=embed`;
 
 export const CONSULTATION_NOTE_MAX_LENGTH = 500;
+
+export const APPOINTMENT_CHANGE_DEADLINE_HOURS = 24;
+
+export const CANCEL_REASON_MAX_LENGTH = 500;
+
+export const RESCHEDULE_REASON_MAX_LENGTH = 500;
+
+export const BOOKING_MAX_DAYS_AHEAD = 30;
 
 export const USER_ROLES = {
     PATIENT: "patient",
@@ -122,7 +141,7 @@ export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress",
 
 export const PLAN_STATUS = { PROPOSED: "Proposed", IN_PROGRESS: "InProgress" };
 
-export const PAYMENT_STATUS = { UNPAID: "UNPAID", PARTIALLY_PAID: "PARTIALLY_PAID" };
+export const PAYMENT_STATUS = { UNPAID: "UNPAID", PARTIALLY_PAID: "PARTIALLY_PAID", PAID: "PAID" };
 
 export const EXAMINATION_STATUS = { COMPLETED: "Completed", LOCKED: "Locked" };
 
@@ -148,4 +167,7 @@ export const TREATMENT_PLAN_STATUS = { [PLAN_STATUS.PROPOSED]: { label: "Chờ c
 export const INVOICE_PAYMENT_STATUS = {
     [PAYMENT_STATUS.UNPAID]: { label: "Chưa thanh toán", badge: "badge-warning" },
     [PAYMENT_STATUS.PARTIALLY_PAID]: { label: "Chưa thanh toán", badge: "badge-warning" },
+    [PAYMENT_STATUS.PAID]: { label: "Đã thanh toán", badge: "badge-success" },
 };
+
+export const PAYMENT_METHOD_LABELS = { CASH: "Tiền mặt", BANK_TRANSFER: "Chuyển khoản", QR_TRANSFER: "Chuyển khoản QR" };
