@@ -165,6 +165,17 @@ namespace OZE.Application.Services
             return ToResponse(found, examination.PatientId);
         }
 
+        public async Task<List<ImagingRequestQueueResponse>> GetQueueAsync(CancellationToken cancellationToken = default)
+        {
+            var requests = await _imagingRequestRepository.GetQueueAsync(cancellationToken);
+            return requests
+                .Where(request => ImagingRequestConstants.QueueStatuses.Contains(request.RequestStatus))
+                .OrderBy(request => request.CreatedAt)
+                .ThenBy(request => request.Id)
+                .Select(ToQueueResponse)
+                .ToList();
+        }
+
         private static string RequireValue(string? value, string missingMessage)
         {
             var trimmed = value?.Trim() ?? string.Empty;
@@ -184,6 +195,22 @@ namespace OZE.Application.Services
                 ClinicalIndication = request.ClinicalIndication ?? string.Empty,
                 RequestStatus = request.RequestStatus,
                 CancelReason = request.CancelReason,
+                CreatedAt = request.CreatedAt
+            };
+        }
+
+        private static ImagingRequestQueueResponse ToQueueResponse(ImagingRequest request)
+        {
+            return new ImagingRequestQueueResponse
+            {
+                Id = request.Id,
+                PatientId = request.Examination?.PatientId ?? 0,
+                PatientName = request.Examination?.Patient?.FullName?.Trim() ?? string.Empty,
+                DoctorName = request.RequestedByDoctor?.FullName?.Trim() ?? string.Empty,
+                ImagingType = request.ImagingType,
+                TargetArea = request.TargetArea ?? string.Empty,
+                ClinicalIndication = request.ClinicalIndication ?? string.Empty,
+                RequestStatus = request.RequestStatus,
                 CreatedAt = request.CreatedAt
             };
         }

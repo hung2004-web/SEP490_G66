@@ -1,6 +1,8 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
+using OZE.Common.Exceptions;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
@@ -31,6 +33,12 @@ namespace OZE.Persistence.Repositories
         public async Task AddPatientAsync(Patient patient)
         {
             await _context.Patients.AddAsync(patient);
+        }
+
+        public async Task<Patient?> GetPatientByUserIdAsync(string userId)
+        {
+            return await _context.Patients
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.DeletedAt == null);
         }
 
         public async Task<T> ExecuteSerializableAsync<T>(Func<Task<T>> action)
@@ -109,24 +117,60 @@ namespace OZE.Persistence.Repositories
          await _context.SaveChangesAsync();
         }
 
-        public async Task<List<Service>> GetServicesWithCategoryAsync(IReadOnlyCollection<int> serviceIds)
+        public async Task<List<Service>> GetServicesByIdsAsync(IReadOnlyCollection<int> serviceIds)
         {
             return await _context.Services
                 .AsNoTracking()
-                .Include(s => s.Category)
                 .Where(s => serviceIds.Contains(s.Id))
                 .ToListAsync();
         }
 
-        // Active categories with their active services, in display order
-        public async Task<List<ServiceCategory>> GetBookableCategoriesAsync()
+        public async Task<List<ServiceVariant>> GetVariantsByIdsAsync(IReadOnlyCollection<int> variantIds)
         {
-            return await _context.ServiceCategories
+            return await _context.ServiceVariants
                 .AsNoTracking()
-                .Where(c => c.IsActive)
-                .Include(c => c.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceName))
-                .OrderBy(c => c.DisplayOrder)
+                .Include(v => v.Service)
+                .Where(v => variantIds.Contains(v.Id))
                 .ToListAsync();
+        }
+
+        // Active services with their active variants, in display order
+        public async Task<List<Service>> GetBookableServicesAsync()
+        {
+            return await _context.Services
+                .AsNoTracking()
+                .Where(s => s.IsActive)
+                .Include(s => s.Variants.Where(v => v.IsActive).OrderBy(v => v.DisplayOrder))
+                .OrderBy(s => s.ServiceName)
+                .ToListAsync();
+        }
+
+        public async Task<List<Appointment>> GetWaitingAppointmentsAsync(DateOnly date, int? doctorId, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Service)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Variant)
+                .Where(x => x.AppointmentDate == date && x.Status == AppointmentConstants.CheckedInStatus);
+
+            if (doctorId.HasValue)
+            {
+                query = query.Where(x => x.DoctorId == doctorId.Value);
+            }
+
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        public async Task<int?> GetStaffProfileIdByUserIdAsync(string userId)
+        {
+            return await _context.StaffProfiles
+                .Where(x => x.UserId == userId)
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default)
@@ -136,6 +180,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Doctor)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Variant)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
@@ -147,6 +193,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Doctor)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
+                .Include(x => x.ServiceItems)
+                    .ThenInclude(x => x.Variant)
                 .AsQueryable();
 
             if (parameters.Date.HasValue)
@@ -217,6 +265,30 @@ namespace OZE.Persistence.Repositories
         {
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task SaveStartedExaminationAsync(Appointment appointment, Examination examination, CancellationToken cancellationToken = default)
+        {
+            // The appointment was loaded without AsNoTracking, so the status change is already tracked
+            examination.AppointmentId = appointment.Id;
+            await _context.Examinations.AddAsync(examination, cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (IsDuplicateExamination(ex))
+            {
+                // One appointment has one examination. This failed save keeps neither the row nor the status change.
+                _context.Entry(examination).State = EntityState.Detached;
+                throw new BadRequestException(ErrorConstants.AppointmentMessage.ExaminationAlreadyStarted);
+            }
+        }
+
+        private static bool IsDuplicateExamination(DbUpdateException exception)
+        {
+            return exception.InnerException is SqlException sql
+                && (sql.Number == 2601 || sql.Number == 2627)
+                && sql.Message.Contains("IX_Examinations_AppointmentId", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

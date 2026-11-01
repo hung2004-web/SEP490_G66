@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
 using OZE.Common.Models;
@@ -27,10 +28,10 @@ namespace OZE.Controllers
         // GET api/appointments/bookable-services
         [HttpGet("bookable-services")]
         [AllowAnonymous]
-        public async Task<ActionResult<ApiResponse<List<BookableCategoryResponse>>>> GetBookableServicesAsync()
+        public async Task<ActionResult<ApiResponse<List<BookableServiceResponse>>>> GetBookableServicesAsync()
         {
-            var categories = await _appointmentService.GetBookableServicesAsync();
-            return Ok(ApiResponse<List<BookableCategoryResponse>>.SuccessResult(categories));
+            var services = await _appointmentService.GetBookableServicesAsync();
+            return Ok(ApiResponse<List<BookableServiceResponse>>.SuccessResult(services));
         }
 
         [HttpGet("available-slots")]
@@ -51,6 +52,17 @@ namespace OZE.Controllers
                 "Appointment request received. The receptionist will call to confirm."));
         }
 
+        // POST api/appointments
+        [HttpPost]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> BookAsPatientAsync([FromBody] BookingRequest request)
+        {
+            // The empty fallback matches no patient, so a missing user id never books for someone else
+            var appointment = await _appointmentService.BookAsPatientAsync(request, CurrentUserId ?? string.Empty);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment,
+                "Appointment request received. The receptionist will call to confirm."));
+        }
+
         /// <summary>
         /// Retrieves a paginated list of appointments with optional filtering by date, doctor, patient, status, and search keyword.
         /// </summary>
@@ -61,6 +73,35 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.GetAppointmentsAsync(query, cancellationToken);
+            return Ok(ApiResponse<PagedResult<AppointmentResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
+        /// Today's waiting list: checked-in patients in the order they will be seen. A doctor sees only their own list.
+        /// </summary>
+        [HttpGet("waiting-list")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.DoctorRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<List<WaitingListItemResponse>>>> GetWaitingListAsync(
+            [FromQuery] int? doctorId,
+            CancellationToken cancellationToken)
+        {
+            // Staff may pick any doctor; a doctor is limited to their own account, the empty fallback matches no doctor
+            var doctorUserId = IsInRole(RoleConstants.DoctorRole) ? CurrentUserId ?? string.Empty : null;
+            var result = await _appointmentService.GetWaitingListAsync(doctorId, doctorUserId, cancellationToken);
+            return Ok(ApiResponse<List<WaitingListItemResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
+        /// Retrieves the signed-in patient's own appointments, filtered by date range and status.
+        /// </summary>
+        [HttpGet("my")]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<PagedResult<AppointmentResponse>>>> GetMyAppointmentsAsync(
+            [FromQuery] AppointmentQueryParameters query,
+            CancellationToken cancellationToken)
+        {
+            // The empty fallback matches no patient, so a missing user id never lists someone else's appointments
+            var result = await _appointmentService.GetMyAppointmentsAsync(query, CurrentUserId ?? string.Empty, cancellationToken);
             return Ok(ApiResponse<PagedResult<AppointmentResponse>>.SuccessResult(result));
         }
 
@@ -92,6 +133,20 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Moves an appointment to a new time and/or doctor. A patient can only move their own pending appointment.
+        /// </summary>
+        [HttpPost("{id:long}/reschedule")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.PatientRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> RescheduleAppointmentAsync(
+            [FromRoute] long id,
+            [FromBody] RescheduleAppointmentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.RescheduleAppointmentAsync(id, request, OwnerRestriction, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Đổi lịch hẹn thành công"));
+        }
+
+        /// <summary>
         /// Confirms an appointment that is waiting for the receptionist's confirmation.
         /// </summary>
         [HttpPost("{id:long}/confirm")]
@@ -111,10 +166,39 @@ namespace OZE.Controllers
         [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
         public async Task<ActionResult<ApiResponse<AppointmentResponse>>> CheckInAppointmentAsync(
             [FromRoute] long id,
+            [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] CheckInRequest? request,
             CancellationToken cancellationToken)
         {
-            var result = await _appointmentService.CheckInAppointmentAsync(id, cancellationToken);
+            var result = await _appointmentService.CheckInAppointmentAsync(id, request, cancellationToken);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Tiếp đón bệnh nhân thành công"));
+        }
+
+        /// <summary>
+        /// Changes the waiting-list priority of a patient who is checked in and still waiting.
+        /// </summary>
+        [HttpPost("{id:long}/priority")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> SetPriorityAsync(
+            [FromRoute] long id,
+            [FromBody] SetPriorityRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.SetPriorityAsync(id, request, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Cập nhật mức ưu tiên thành công"));
+        }
+
+        /// <summary>
+        /// Starts the visit: creates the examination and moves a checked-in appointment to in service.
+        /// </summary>
+        [HttpPost("{id:long}/start-examination")]
+        [Authorize(Roles = RoleConstants.DoctorRole)]
+        public async Task<ActionResult<ApiResponse<StartExaminationResponse>>> StartExaminationAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            // The empty fallback matches no doctor, so a missing user id never starts someone else's visit
+            var result = await _appointmentService.StartExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
+            return Ok(ApiResponse<StartExaminationResponse>.SuccessResult(result, "Bắt đầu khám thành công"));
         }
     }
 }

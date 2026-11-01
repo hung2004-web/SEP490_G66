@@ -207,11 +207,11 @@ namespace OZE.UnitTest.Controllers
             };
 
             _appointmentServiceMock
-                .Setup(s => s.CheckInAppointmentAsync(100, It.IsAny<CancellationToken>()))
+                .Setup(s => s.CheckInAppointmentAsync(100, It.IsAny<CheckInRequest?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(checkedIn);
 
             // Act
-            var actionResult = await _controller.CheckInAppointmentAsync(100, CancellationToken.None);
+            var actionResult = await _controller.CheckInAppointmentAsync(100, null, CancellationToken.None);
 
             // Assert
             var okResult = actionResult.Result as OkObjectResult;
@@ -221,6 +221,62 @@ namespace OZE.UnitTest.Controllers
             response!.Success.Should().BeTrue();
             response.Data!.Status.Should().Be(AppointmentConstants.CheckedInStatus);
             response.Data.CheckInAt.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task StartExaminationAsync_ShouldPassTheSignedInDoctor_WhenStarted()
+        {
+            SignInAsDoctor("doctor-user-1");
+            var started = new StartExaminationResponse
+            {
+                ExaminationId = 55,
+                AppointmentId = 100,
+                AppointmentStatus = AppointmentConstants.InServiceStatus,
+                ExaminationStatus = ExaminationConstants.InProgress
+            };
+            _appointmentServiceMock
+                .Setup(s => s.StartExaminationAsync(100, "doctor-user-1", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(started);
+
+            var actionResult = await _controller.StartExaminationAsync(100, CancellationToken.None);
+
+            var okResult = actionResult.Result as OkObjectResult;
+            okResult.Should().NotBeNull();
+            var response = okResult!.Value as ApiResponse<StartExaminationResponse>;
+            response.Should().NotBeNull();
+            response!.Success.Should().BeTrue();
+            response.Data!.ExaminationId.Should().Be(55);
+            response.Data.AppointmentStatus.Should().Be(AppointmentConstants.InServiceStatus);
+            _appointmentServiceMock.Verify(
+                s => s.StartExaminationAsync(100, "doctor-user-1", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task StartExaminationAsync_ShouldNeverWidenAccess_WhenDoctorHasNoUserId()
+        {
+            SignInAsDoctor(null);
+            _appointmentServiceMock
+                .Setup(s => s.StartExaminationAsync(100, string.Empty, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StartExaminationResponse { ExaminationId = 55 });
+
+            await _controller.StartExaminationAsync(100, CancellationToken.None);
+
+            _appointmentServiceMock.Verify(
+                s => s.StartExaminationAsync(100, string.Empty, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        private void SignInAsDoctor(string? userId)
+        {
+            var claims = new List<Claim> { new(ClaimTypes.Role, RoleConstants.DoctorRole) };
+            if (userId != null)
+            {
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+            }
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth")) }
+            };
         }
     }
 }

@@ -28,6 +28,7 @@ namespace OZE.UnitTest.Services
                 new Mock<IServiceRepository>().Object,
                 new Mock<ISmsSender>().Object,
                 new Mock<IEmailSender>().Object,
+                new Mock<IAuditLogService>().Object,
                 new Mock<ILogger<AppointmentService>>().Object);
         }
 

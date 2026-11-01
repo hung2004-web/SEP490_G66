@@ -74,3 +74,11 @@ export const formatClock = (value) => {
     const parts = value ? getClinicParts(value) : null;
     return parts ? `${parts.hour}:${parts.minute}` : "";
 };
+
+// Greeting by time of day: "Chào buổi sáng" before 12h, "Chào buổi chiều" before 18h, then "Chào buổi tối".
+export const getGreeting = (date = new Date()) => {
+    const hour = date.getHours();
+    if (hour < 12) return "Chào buổi sáng";
+    if (hour < 18) return "Chào buổi chiều";
+    return "Chào buổi tối";
+};

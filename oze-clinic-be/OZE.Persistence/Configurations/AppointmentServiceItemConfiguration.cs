@@ -10,13 +10,11 @@ namespace OZE.Persistence.Configurations
         {
             builder.ToTable("AppointmentServices", t =>
             {
-                t.HasCheckConstraint("CK_AppointmentServices_Status", "[Status] IN ('REQUESTED', 'CONFIRMED', 'PERFORMED', 'POSTPONED', 'CANCELLED')");
                 t.HasCheckConstraint("CK_AppointmentServices_Duration", "[DurationMinutes] > 0");
                 t.HasCheckConstraint("CK_AppointmentServices_Price", "[PriceAtBooking] >= 0");
             });
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("REQUESTED");
             builder.Property(x => x.PriceAtBooking).HasPrecision(18, 2);
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
@@ -31,11 +29,20 @@ namespace OZE.Persistence.Configurations
                    .HasConstraintName("FK_AppointmentServices_Services")
                    .OnDelete(DeleteBehavior.NoAction);
 
-            // The same service is listed once per appointment
-            builder.HasIndex(x => new { x.AppointmentId, x.ServiceId })
+            builder.HasOne(x => x.Variant)
+                   .WithMany()
+                   .HasForeignKey(x => x.VariantId)
+                   .HasConstraintName("FK_AppointmentServices_ServiceVariants")
+                   .OnDelete(DeleteBehavior.NoAction);
+
+            // The same service, or the same variant of a service, is listed once per appointment.
+            // SQL Server treats NULL as one value here, so the whole service also appears once
+            builder.HasIndex(x => new { x.AppointmentId, x.ServiceId, x.VariantId })
                    .IsUnique()
-                   .HasDatabaseName("UX_AppointmentServices_Appointment_Service");
+                   .HasFilter(null)
+                   .HasDatabaseName("UX_AppointmentServices_Appointment_Service_Variant");
             builder.HasIndex(x => x.ServiceId).HasDatabaseName("IX_AppointmentServices_ServiceId");
+            builder.HasIndex(x => x.VariantId).HasDatabaseName("IX_AppointmentServices_VariantId");
         }
     }
 }

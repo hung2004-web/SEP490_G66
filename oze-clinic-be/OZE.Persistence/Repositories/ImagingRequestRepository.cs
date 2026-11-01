@@ -48,6 +48,20 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
+        public Task<List<ImagingRequest>> GetQueueAsync(CancellationToken cancellationToken = default)
+        {
+            return _context.ImagingRequests
+                .AsNoTracking()
+                .Include(x => x.Examination)
+                    .ThenInclude(x => x.Patient)
+                .Include(x => x.RequestedByDoctor)
+                .Where(x => x.RequestStatus == ImagingRequestConstants.Pending
+                    || x.RequestStatus == ImagingRequestConstants.InProgress)
+                .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.Id)
+                .ToListAsync(cancellationToken);
+        }
+
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             return _context.SaveChangesAsync(cancellationToken);

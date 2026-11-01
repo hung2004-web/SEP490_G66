@@ -12,11 +12,13 @@ namespace OZE.Persistence.Configurations
             {
                 t.HasCheckConstraint("CK_Appointments_Type", "[AppointmentType] IN ('BOOKED', 'WALK_IN')");
                 t.HasCheckConstraint("CK_Appointments_Status", "[Status] IN ('PENDING', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'COMPLETED', 'CANCELLED', 'NO_SHOW')");
+                t.HasCheckConstraint("CK_Appointments_Priority", "[Priority] IN (0, 1, 2)");
             });
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.AppointmentType).HasMaxLength(10).IsRequired();
             builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("PENDING");
+            builder.Property(x => x.Priority).HasDefaultValue(0);
             builder.Property(x => x.CancellationReason).HasMaxLength(500);
             builder.Property(x => x.RowVersion).IsRowVersion();
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");

@@ -24,8 +24,6 @@ namespace OZE.Application.Helpers
             return leftBytes.Length == rightBytes.Length
                 && CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
         }
-
-
         public static bool TestMatches(string otpHash, string sessionId, string otp)
         {
             var leftBytes = Encoding.UTF8.GetBytes(otpHash);
@@ -33,12 +31,8 @@ namespace OZE.Application.Helpers
             return leftBytes.Length == rightBytes.Length
                 && CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
         }
-        public static bool CheckMatches(string otpHash, string sessionId, string otp)
-        {
-            var leftBytes = Encoding.UTF8.GetBytes(otpHash);
-            var rightBytes = Encoding.UTF8.GetBytes(Hash(sessionId, otp.Trim()));
-            return leftBytes.Length == rightBytes.Length
-                && CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
-        }
+
+
+
     }
 }

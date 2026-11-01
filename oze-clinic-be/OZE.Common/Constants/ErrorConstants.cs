@@ -63,7 +63,7 @@ namespace OZE.Common.Constants
         {
             public const string RoomNotFound = "Room not found";
             public const string RoomNameExist = "Room name already exists";
-            public const string InvalidRoomType = "Room type must be one of: General, Imaging, Treatment";
+            public const string InvalidRoomType = "Room type must be one of: GeneralTreatment, MinorSurgery, XRay";
             public const string InvalidStatus = "Room status must be one of: Active, Maintenance, Inactive";
             public const string RoomInUse = "Room is used by schedules or queue entries and cannot be deleted. Set its status to Inactive instead";
         }
@@ -159,7 +159,7 @@ namespace OZE.Common.Constants
             public const string ServiceNotFound = "Service not found in system";
             public const string ServiceCodeExist = "Service code already exists in system";
             public const string ServiceInUse = "Cannot delete service because it is currently linked to existing invoices or treatment plan stages. Please deactivate the service instead.";
-            public const string InvalidRoomType = "Required room type must be one of: General, Imaging, Treatment";
+            public const string InvalidRoomType = "Required room type must be one of: GeneralTreatment, MinorSurgery, XRay";
             public const string InvalidPrice = "Reference price must be greater than or equal to 0";
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
         }
@@ -188,8 +188,10 @@ namespace OZE.Common.Constants
         {
             public const string ServiceNotFound = "Service not found";
             public const string ServiceInactive = "This service is not available for booking";
+            public const string PatientProfileNotFound = "No patient profile is linked to this account";
+            public const string VariantNotFound = "Service variant not found";
+            public const string VariantInactive = "This service variant is not available for booking";
             public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";
-            public const string OneServicePerCategory = "Only one service can be chosen in {0}";
             public const string ServicesNeedDifferentRooms = "These services need different rooms and cannot be booked in one appointment";
             public const string PastDate = "Appointment date cannot be in the past";
             public const string TooFarAhead = "Appointment date is too far in advance";
@@ -200,9 +202,20 @@ namespace OZE.Common.Constants
             public const string OnlyOpenCanBeCancelled = "Only an appointment that is pending or confirmed can be cancelled";
             public const string ConfirmedNeedsReceptionistToCancel = "This appointment is already confirmed. Please call the clinic to cancel it";
             public const string CancelDeadlinePassed = "It is too close to the appointment time to cancel online. Please call the clinic";
-            public const string ReasonRequired = "Cancellation reason is required";
-            public const string OnlyOpenCanBeCheckedIn = "Only an appointment that is pending or confirmed can be checked in";
+            public const string OnlyOpenCanBeRescheduled = "Only an appointment that is pending or confirmed can be rescheduled";
+            public const string ConfirmedNeedsReceptionistToReschedule = "This appointment is already confirmed. Please call the clinic to reschedule it";
+            public const string RescheduleDeadlinePassed = "It is too close to the appointment time to reschedule online. Please call the clinic";            public const string ReasonRequired = "Cancellation reason is required";
+            public const string OnlyConfirmedCanBeCheckedIn = "Only a confirmed appointment can be checked in";
+            public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
+            public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
+            public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
+            public const string PriorityInvalid = "Priority must be 0 (normal), 1 (high) or 2 (urgent)";
+            public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
+            public const string PriorityOnlyForWaiting = "The priority can only be changed while the patient is checked in and waiting";
             public const string OnlyPendingCanBeConfirmed = "Only an appointment that is waiting for confirmation can be confirmed";
+            public const string OnlyCheckedInCanBeStarted = "Only a checked-in appointment can be started";
+            public const string NotAssignedDoctor = "You can only start an examination for your own appointment";
+            public const string ExaminationAlreadyStarted = "This appointment already has an examination";
         }
         public static class PatientMessage
         {
@@ -255,6 +268,8 @@ namespace OZE.Common.Constants
             public const string CannotCancelRequest = "You do not have permission to cancel this imaging request.";
             public const string RequestNotPending = "Cannot cancel imaging request because the imaging request is {0}.";
             public const string RequestCancelled = "Cancel imaging request success!";
+            // MSG02
+            public const string QueueEmpty = "No Data.";
             public const string TechnicianNotificationTitle = "New imaging request";
             public const string TechnicianNotificationMessage = "Imaging request ({0}) for {1} has been submitted.";
         }
