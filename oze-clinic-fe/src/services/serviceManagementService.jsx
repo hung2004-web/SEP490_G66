@@ -1,6 +1,6 @@
 import { MOCK_ADMIN_SERVICES, MOCK_SERVICE_TYPES } from "../utils/data/mockServicesAdmin";
 
-// TODO(api): mock only, swap for /api/Services once the backend has the service group and "price from".
+// TODO(api): mock only, swap for /api/Services once the backend has the room type, duration and "price from".
 const MOCK_DELAY_MS = 300;
 
 export const SERVICE_PAGE_SIZE = 10;
@@ -17,8 +17,8 @@ const serviceTypes = MOCK_SERVICE_TYPES.map((type) => ({ ...type }));
 
 const normalize = (value) => value.trim().toLowerCase();
 
-// status: "" (all), "active" or "inactive".
-export const getServices = async ({ keyword = "", group = "", status = "", page = 1, pageSize = SERVICE_PAGE_SIZE } = {}) => {
+// roomType: "" (all) or a ROOM_TYPES value. Each item also carries typeCount (its number of service types).
+export const getServices = async ({ keyword = "", roomType = "", page = 1, pageSize = SERVICE_PAGE_SIZE } = {}) => {
     await wait(MOCK_DELAY_MS);
     applyScheduledStops(services);
 
@@ -26,20 +26,21 @@ export const getServices = async ({ keyword = "", group = "", status = "", page 
     const filtered = services.filter(
         (service) =>
             (!search || normalize(service.name).includes(search) || normalize(service.code).includes(search)) &&
-            (!group || service.group === group) &&
-            (!status || service.isActive === (status === "active")),
+            (!roomType || service.roomType === roomType),
     );
 
     const totalItems = filtered.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     const currentPage = Math.min(Math.max(1, page), totalPages);
     const start = (currentPage - 1) * pageSize;
-    const items = filtered.slice(start, start + pageSize).map((service) => ({ ...service }));
+    const items = filtered
+        .slice(start, start + pageSize)
+        .map((service) => ({ ...service, typeCount: serviceTypes.filter((type) => type.serviceId === service.id).length }));
 
     return success({ items, page: currentPage, pageSize, totalItems, totalPages });
 };
 
-// request: { name, code, group, price, description }. A new service is active and has a fixed price.
+// request: { name, code, roomType, price, durationMinutes, description }. A new service is active and has a fixed price.
 export const createService = async (request) => {
     await wait(MOCK_DELAY_MS);
 
@@ -53,8 +54,9 @@ export const createService = async (request) => {
         code,
         name: request.name.trim(),
         description: request.description.trim(),
-        group: request.group,
+        roomType: request.roomType,
         price: request.price,
+        durationMinutes: request.durationMinutes,
         priceFrom: false,
         isActive: true,
     };
@@ -79,8 +81,9 @@ export const updateService = async (id, request) => {
         code,
         name: request.name.trim(),
         description: request.description.trim(),
-        group: request.group,
+        roomType: request.roomType,
         price: request.price,
+        durationMinutes: request.durationMinutes,
     });
 
     return success({ ...service }, `Đã cập nhật dịch vụ ${service.code}.`);
@@ -145,7 +148,50 @@ export const getDeactivationImpact = async (id) => {
 export const getServiceTypes = async (serviceId) => {
     await wait(MOCK_DELAY_MS);
     applyScheduledStops(serviceTypes);
-    return success(serviceTypes.filter((type) => type.serviceId === serviceId).map((type) => ({ ...type })));
+    return success(
+        serviceTypes
+            .filter((type) => type.serviceId === serviceId)
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((type) => ({ ...type })),
+    );
+};
+
+const isTypeCodeInUse = (code, exceptId) => serviceTypes.some((type) => type.id !== exceptId && type.code === code);
+
+const toServiceTypeFields = (request) => ({
+    code: request.code.trim().toUpperCase(),
+    name: request.name.trim(),
+    price: request.price,
+    durationMinutes: request.durationMinutes,
+    sortOrder: request.sortOrder,
+    description: request.description.trim(),
+});
+
+// request: { code, name, price, durationMinutes, sortOrder, description }. A new type is active.
+export const createServiceType = async (serviceId, request) => {
+    await wait(MOCK_DELAY_MS);
+
+    const fields = toServiceTypeFields(request);
+    if (isTypeCodeInUse(fields.code)) return { ...failure("Mã loại đã tồn tại."), errors: { code: "Mã loại đã tồn tại." } };
+
+    const type = { id: Math.max(0, ...serviceTypes.map((item) => item.id)) + 1, serviceId, ...fields, isActive: true };
+    serviceTypes.push(type);
+
+    return success({ ...type }, `Đã thêm loại ${type.code}.`);
+};
+
+export const updateServiceType = async (id, request) => {
+    await wait(MOCK_DELAY_MS);
+
+    const type = serviceTypes.find((item) => item.id === id);
+    if (!type) return failure("Loại dịch vụ không còn tồn tại.");
+
+    const fields = toServiceTypeFields(request);
+    if (isTypeCodeInUse(fields.code, id)) return { ...failure("Mã loại đã tồn tại."), errors: { code: "Mã loại đã tồn tại." } };
+
+    Object.assign(type, fields);
+
+    return success({ ...type }, `Đã cập nhật loại ${type.code}.`);
 };
 
 export const activateServiceType = async (id) => {
