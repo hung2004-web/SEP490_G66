@@ -1,4 +1,4 @@
-using OZE.Common.Models;
+﻿using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 using System;
@@ -28,6 +28,10 @@ namespace OZE.Application.Interfaces
         Task<List<Appointment>> GetWaitingAppointmentsAsync(DateOnly date, int? doctorId, CancellationToken cancellationToken = default);
         Task<int?> GetStaffProfileIdByUserIdAsync(string userId);
         Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default);
+        // Same as GetByIdWithDetailsAsync plus the examination of the appointment (tracked, so it can be updated)
+        Task<Appointment?> GetByIdWithExaminationAsync(long id, CancellationToken cancellationToken = default);
+        // True when the doctor already has a patient being examined (IN_SERVICE) on that date
+        Task<bool> HasAppointmentInServiceAsync(int doctorId, DateOnly date);
         Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default);
         Task UpdateAsync(Appointment appointment);
 

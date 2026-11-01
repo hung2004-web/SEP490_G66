@@ -1,4 +1,4 @@
-namespace OZE.Common.Models
+﻿namespace OZE.Common.Models
 {
     public class StartExaminationResponse
     {
@@ -8,5 +8,6 @@ namespace OZE.Common.Models
         public int DoctorId { get; set; }
         public string ExaminationStatus { get; set; } = string.Empty;
         public string AppointmentStatus { get; set; } = string.Empty;
+        public string? ChiefComplaint { get; set; }
     }
 }
