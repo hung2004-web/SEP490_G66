@@ -200,5 +200,18 @@ namespace OZE.Controllers
             var result = await _appointmentService.StartExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
             return Ok(ApiResponse<StartExaminationResponse>.SuccessResult(result, "Bắt đầu khám thành công"));
         }
+
+        /// <summary>
+        /// Completes the visit: locks the examination and marks the appointment completed.
+        /// </summary>
+        [HttpPost("{id:long}/complete-examination")]
+        [Authorize(Roles = RoleConstants.DoctorRole)]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> CompleteExaminationAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.CompleteExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Hoàn tất khám thành công"));
+        }
     }
 }

@@ -11,13 +11,19 @@ namespace OZE.Application.Services
     {
         private readonly IImagingRequestRepository _imagingRequestRepository;
         private readonly IStaffRepository _staffRepository;
+        private readonly IAppointmentRepository? _appointmentRepository;
+        private readonly IQueueService? _queueService;
 
         public ImagingRequestService(
             IImagingRequestRepository imagingRequestRepository,
-            IStaffRepository staffRepository)
+            IStaffRepository staffRepository,
+            IAppointmentRepository? appointmentRepository = null,
+            IQueueService? queueService = null)
         {
             _imagingRequestRepository = imagingRequestRepository;
             _staffRepository = staffRepository;
+            _appointmentRepository = appointmentRepository;
+            _queueService = queueService;
         }
 
         public async Task<ImagingRequestResponse> CreateAsync(
@@ -75,6 +81,30 @@ namespace OZE.Application.Services
                 ErrorConstants.ImagingRequestMessage.TechnicianNotificationTitle,
                 string.Format(ErrorConstants.ImagingRequestMessage.TechnicianNotificationMessage, canonicalType, patientName),
                 cancellationToken);
+
+            // Unblock doctor so doctor can examine other waiting patients while this patient goes to the imaging room
+            if (examination.Appointment != null)
+            {
+                examination.Appointment.Status = AppointmentConstants.CheckedInStatus;
+                examination.Appointment.UpdatedAt = now;
+                if (_appointmentRepository != null)
+                {
+                    await _appointmentRepository.UpdateAsync(examination.Appointment);
+                }
+            }
+
+            if (_queueService != null && examination.Appointment != null)
+            {
+                await _queueService.UpdateStatusAsync(examination.AppointmentId, "Examination", "WAITING", cancellationToken);
+                await _queueService.EnqueueAsync(
+                    examination.AppointmentId,
+                    "Imaging",
+                    null,
+                    null,
+                    1,
+                    $"Imaging: {canonicalType} - {targetArea}",
+                    cancellationToken);
+            }
 
             return ToResponse(imagingRequest, examination.PatientId);
         }
@@ -174,6 +204,94 @@ namespace OZE.Application.Services
                 .ThenBy(request => request.Id)
                 .Select(ToQueueResponse)
                 .ToList();
+        }
+
+        public async Task<ImagingRequestResponse> CompleteAsync(
+            long id,
+            string? technicianUserId = null,
+            string? notes = null,
+            CancellationToken cancellationToken = default)
+        {
+            var request = await _imagingRequestRepository.GetTrackedByIdAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(request != null, ErrorConstants.ImagingRequestMessage.RequestNotFound);
+
+            var now = DateTimeOffset.UtcNow;
+            request!.RequestStatus = ImagingRequestConstants.Completed;
+            request.UpdatedAt = now;
+            await _imagingRequestRepository.SaveChangesAsync(cancellationToken);
+
+            var examination = await _imagingRequestRepository.GetExaminationAsync(request.ExaminationId, cancellationToken);
+            if (examination?.Appointment != null)
+            {
+                examination.Appointment.Status = AppointmentConstants.CheckedInStatus;
+                examination.Appointment.Priority = PriorityConstants.Urgent;
+                examination.Appointment.UpdatedAt = now;
+                if (_appointmentRepository != null)
+                {
+                    await _appointmentRepository.UpdateAsync(examination.Appointment);
+                }
+            }
+
+            if (_queueService != null && examination?.Appointment != null)
+            {
+                await _queueService.UpdateStatusAsync(examination.AppointmentId, "Imaging", "COMPLETED", cancellationToken);
+                await _queueService.UpdateStatusAsync(examination.AppointmentId, "Examination", "WAITING", cancellationToken);
+            }
+
+            return ToResponse(request, examination?.PatientId ?? 0);
+        }
+
+        public async Task<bool> ProcessSimulatorWebhookAsync(
+            ImagingSimulatorWebhookPayload payload,
+            CancellationToken cancellationToken = default)
+        {
+            if (!string.Equals(payload.State, "Completed", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(payload.EventType, "capture.completed", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var orderRef = payload.OrderReference?.Trim() ?? string.Empty;
+            if (orderRef.StartsWith("IR-", StringComparison.OrdinalIgnoreCase))
+            {
+                orderRef = orderRef.Substring(3);
+            }
+
+            if (!long.TryParse(orderRef, out var requestId))
+            {
+                return false;
+            }
+
+            var request = await _imagingRequestRepository.GetTrackedByIdAsync(requestId, cancellationToken);
+            if (request == null)
+            {
+                return false;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            request.RequestStatus = ImagingRequestConstants.Completed;
+            request.UpdatedAt = now;
+            await _imagingRequestRepository.SaveChangesAsync(cancellationToken);
+
+            var examination = await _imagingRequestRepository.GetExaminationAsync(request.ExaminationId, cancellationToken);
+            if (examination?.Appointment != null)
+            {
+                examination.Appointment.Status = AppointmentConstants.CheckedInStatus;
+                examination.Appointment.Priority = PriorityConstants.Urgent;
+                examination.Appointment.UpdatedAt = now;
+                if (_appointmentRepository != null)
+                {
+                    await _appointmentRepository.UpdateAsync(examination.Appointment);
+                }
+            }
+
+            if (_queueService != null && examination?.Appointment != null)
+            {
+                await _queueService.UpdateStatusAsync(examination.AppointmentId, "Imaging", "COMPLETED", cancellationToken);
+                await _queueService.UpdateStatusAsync(examination.AppointmentId, "Examination", "WAITING", cancellationToken);
+            }
+
+            return true;
         }
 
         private static string RequireValue(string? value, string missingMessage)

@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
@@ -155,6 +155,8 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x.Service)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Variant)
+                .Include(x => x.Examination)
+                    .ThenInclude(x => x.ImagingRequests)
                 .Where(x => x.AppointmentDate == date && x.Status == AppointmentConstants.CheckedInStatus);
 
             if (doctorId.HasValue)
@@ -162,7 +164,15 @@ namespace OZE.Persistence.Repositories
                 query = query.Where(x => x.DoctorId == doctorId.Value);
             }
 
-            return await query.ToListAsync(cancellationToken);
+            var appointments = await query.ToListAsync(cancellationToken);
+
+            // Filter out patients who are currently in the X-ray/Imaging room (pending or in-progress imaging)
+            return appointments.Where(a =>
+                a.Examination == null ||
+                !a.Examination.ImagingRequests.Any(r =>
+                    r.RequestStatus == ImagingRequestConstants.Pending ||
+                    r.RequestStatus == ImagingRequestConstants.InProgress)
+            ).ToList();
         }
 
         public async Task<int?> GetStaffProfileIdByUserIdAsync(string userId)

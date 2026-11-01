@@ -19,6 +19,8 @@ namespace OZE.Common.Models
         public int Priority { get; set; }
         // A booked patient who checked in after the allowed delay; a walk-in is never "late"
         public bool IsLate { get; set; }
+        // True if the patient has finished imaging and returned to the doctor's priority queue
+        public bool IsPriorityReturn { get; set; }
         public List<string> Services { get; set; } = new();
     }
 }
