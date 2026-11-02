@@ -123,24 +123,6 @@ namespace OZE.Persistence.Repositories
             return rows == 1;
         }
 
-        public async Task<List<QueueEntry>> GetAbsentWaitingAsync(DateTimeOffset checkedInBefore, CancellationToken cancellationToken = default)
-        {
-            // Not AsNoTracking: the caller closes the entries and saves
-            return await _context.QueueEntries
-                .Where(x => x.QueueType == QueueConstants.ExaminationType && x.Status == QueueConstants.Waiting)
-                .Where(x => x.SkipCount > 0 && x.CreatedAt < checkedInBefore)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<string?> GetConfigValueAsync(string configKey)
-        {
-            return await _context.SystemConfigurations
-                .AsNoTracking()
-                .Where(x => x.ConfigKey == configKey)
-                .Select(x => x.ConfigValue)
-                .FirstOrDefaultAsync();
-        }
-
         public async Task<int?> GetStaffProfileIdByUserIdAsync(string userId, CancellationToken cancellationToken = default)
         {
             return await _context.StaffProfiles

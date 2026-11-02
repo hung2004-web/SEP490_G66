@@ -221,23 +221,6 @@ namespace OZE.Application.Services
             return MapToResponse(entry, includePatientDetails: true);
         }
 
-        public async Task<List<long>> CloseAbsentAsync(
-            DateTimeOffset checkedInBefore,
-            CancellationToken cancellationToken = default)
-        {
-            var entries = await _queueRepository.GetAbsentWaitingAsync(checkedInBefore, cancellationToken);
-            var now = DateTimeOffset.UtcNow;
-            foreach (var entry in entries)
-            {
-                entry.Status = QueueConstants.Skipped;
-                entry.CompletedAt = now;
-                await _queueRepository.UpdateAsync(entry, cancellationToken);
-            }
-
-            return entries.Select(x => x.AppointmentId).ToList();
-        }
-
-
         private static QueueEntryResponse MapToResponse(QueueEntry x, bool includePatientDetails) => new()
         {
             Id = x.Id,

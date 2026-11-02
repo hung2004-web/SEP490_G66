@@ -20,9 +20,6 @@ namespace OZE.Application.Interfaces
         Task<bool> TryMarkCalledAsync(long id, int? roomId, DateTimeOffset calledAt, CancellationToken cancellationToken = default);
         // A called patient who is not there goes back to waiting behind the others; false when the entry is no longer in the called state
         Task<bool> TryMoveBackAsync(long id, CancellationToken cancellationToken = default);
-        // Examination entries still waiting although the patient was already called and not there, checked in before the given time (tracked)
-        Task<List<QueueEntry>> GetAbsentWaitingAsync(DateTimeOffset checkedInBefore, CancellationToken cancellationToken = default);
-        Task<string?> GetConfigValueAsync(string configKey);
         Task<int?> GetStaffProfileIdByUserIdAsync(string userId, CancellationToken cancellationToken = default);
         Task UpdateAsync(QueueEntry entry, CancellationToken cancellationToken = default);
     }

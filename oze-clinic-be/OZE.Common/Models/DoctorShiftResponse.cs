@@ -18,6 +18,9 @@ namespace OZE.Common.Models
         // null: not checked yet, true: present, false: absent
         public bool? IsPresent { get; set; }
         public string? AbsenceReason { get; set; }
+        // Clock in and clock out of the doctor, null until the doctor starts or ends the shift
+        public TimeOnly? ActualStartTime { get; set; }
+        public TimeOnly? ActualEndTime { get; set; }
         public int AppointmentCount { get; set; }
         public List<DoctorAppointmentResponse> Appointments { get; set; } = new();
     }

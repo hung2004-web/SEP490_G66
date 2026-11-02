@@ -22,12 +22,6 @@ namespace OZE.Common.Constants
         public const string NumberLockPrefix = "queue-number:";
         public const int NumberLockTimeoutMilliseconds = 10000;
 
-        // Used when the clinic has not set the matching key of ConfigKeyConstants
-        public const string DefaultMorningEndTime = "12:00";
-
-        // How often the background worker looks for absent patients to mark as NO_SHOW
-        public const int NoShowCheckIntervalSeconds = 60;
-
         // The public board shows only the first letter of each word of the patient's name
         public const char MaskCharacter = '*';
         public const int MaskedLength = 3;

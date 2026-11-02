@@ -240,6 +240,12 @@ namespace OZE.Common.Constants
             public const string ShiftNotFound = "Work shift not found";
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
             public const string DateRangeTooLong = "You can view at most one week at a time";
+            public const string ShiftNotToday = "Only a shift of today can be started or ended";
+            public const string ShiftAlreadyStarted = "This shift has already been started";
+            public const string ShiftNotStarted = "Start the shift before ending it";
+            public const string ShiftAlreadyEnded = "This shift has already been ended";
+            public const string ExaminationStillRunning = "Finish the examination in progress before ending the shift";
+            public const string NoShowReason = "The doctor ended the shift before the patient was examined";
         }
         public static class MedicalRecordMessage
         {

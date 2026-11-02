@@ -86,6 +86,18 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Appointment>> GetDoctorOpenAppointmentsAsync(int doctorId, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            // Not AsNoTracking: the caller changes the status and saves
+            return await _context.Appointments
+                .Include(x => x.Examination)
+                .Where(x => x.DoctorId == doctorId && x.AppointmentDate == date
+                    && (x.Status == AppointmentConstants.ConfirmedStatus
+                        || x.Status == AppointmentConstants.CheckedInStatus
+                        || x.Status == AppointmentConstants.InServiceStatus))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<List<StaffSchedule>> GetDoctorShiftsAsync(DateOnly date, int? doctorId)
         {
             // Doctor role ids, joined through Identity tables

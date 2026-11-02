@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,12 +50,6 @@ namespace OZE.Application.Interfaces
         Task<QueueEntryResponse> SkipAsync(
             long queueEntryId,
             string? doctorUserId = null,
-            CancellationToken cancellationToken = default);
-
-        // Closes the examination entries of patients who were called, were not there and are still waiting;
-        // returns the appointments of the closed entries
-        Task<List<long>> CloseAbsentAsync(
-            DateTimeOffset checkedInBefore,
             CancellationToken cancellationToken = default);
 
         // A doctor (doctorUserId) is only handed the patients booked with that doctor in the examination queue
