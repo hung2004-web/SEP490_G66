@@ -65,7 +65,22 @@ namespace OZE.Controllers
         }
 
         /// <summary>
-        /// The patient was called but is not there: the number goes back to waiting and steps back a few places so others
+        /// Calls one chosen number instead of the first in line, e.g. when the patient first in line is not there.
+        /// A doctor is only allowed to call own patients.
+        /// </summary>
+        [HttpPost("{id:long}/call")]
+        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.DentalImagingTechnicianRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<QueueEntryResponse>>> CallAsync(
+            long id,
+            [FromQuery] int? roomId,
+            CancellationToken cancellationToken)
+        {
+            var result = await _queueService.CallAsync(id, roomId, LimitedDoctorUserId, cancellationToken);
+            return Ok(ApiResponse<QueueEntryResponse>.SuccessResult(result, $"Gọi số {result.QueueNumber} thành công."));
+        }
+
+        /// <summary>
+        /// The patient was called but is not there: the number goes back to waiting behind everyone who was not skipped, so others
         /// can go first. A patient still absent when the morning ends is marked NO_SHOW.
         /// </summary>
         [HttpPost("{id:long}/skip")]

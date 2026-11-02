@@ -17,9 +17,5 @@ namespace OZE.Common.Constants
         public const string GeneralExamServiceCode = "Booking.GeneralExamServiceCode";
         // A booked patient who checks in more than this many minutes after the slot start is "late" in the waiting list
         public const string CheckInLateMinutes = "CheckIn.LateMinutes";
-        // A called patient who is not there steps back this many places in the queue
-        public const string QueueSkipMoveBackPositions = "Queue.SkipMoveBackPositions";
-        // When the morning ends: patients skipped for being absent and still waiting then are marked NO_SHOW (HH:mm or HH:mm:ss)
-        public const string QueueMorningEndTime = "Queue.MorningEndTime";
     }
 }

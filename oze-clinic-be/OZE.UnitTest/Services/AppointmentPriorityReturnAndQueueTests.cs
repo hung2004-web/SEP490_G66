@@ -266,7 +266,7 @@ namespace OZE.UnitTest.Services
 
             // Arrange: CallNext
             queueRepoMock
-                .Setup(r => r.GetActiveEntriesAsync("Examination", 1, null, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Setup(r => r.GetActiveEntriesAsync("Examination", 1, null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<QueueEntry> { entry });
 
             // Act: CallNext

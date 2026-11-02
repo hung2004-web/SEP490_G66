@@ -63,7 +63,7 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<List<QueueEntry>> GetActiveEntriesAsync(string? queueType, int? roomId, int? assignedStaffId, int skipMoveBackPositions, CancellationToken cancellationToken = default)
+        public async Task<List<QueueEntry>> GetActiveEntriesAsync(string? queueType, int? roomId, int? assignedStaffId, CancellationToken cancellationToken = default)
         {
             var (today, tomorrow) = DayWindow(DateOnly.FromDateTime(DateTime.Today));
 
@@ -93,8 +93,8 @@ namespace OZE.Persistence.Repositories
             }
 
             return await query
-                .OrderByDescending(x => x.Priority)
-                .ThenBy(x => x.QueueNumber + x.SkipCount * skipMoveBackPositions)
+                .OrderBy(x => x.SkipCount)
+                .ThenByDescending(x => x.Priority)
                 .ThenBy(x => x.QueueNumber)
                 .ToListAsync(cancellationToken);
         }
@@ -121,24 +121,6 @@ namespace OZE.Persistence.Repositories
                     .SetProperty(x => x.CalledAt, (DateTimeOffset?)null)
                     .SetProperty(x => x.SkipCount, x => x.SkipCount + 1), cancellationToken);
             return rows == 1;
-        }
-
-        public async Task<List<QueueEntry>> GetAbsentWaitingAsync(DateTimeOffset checkedInBefore, CancellationToken cancellationToken = default)
-        {
-            // Not AsNoTracking: the caller closes the entries and saves
-            return await _context.QueueEntries
-                .Where(x => x.QueueType == QueueConstants.ExaminationType && x.Status == QueueConstants.Waiting)
-                .Where(x => x.SkipCount > 0 && x.CreatedAt < checkedInBefore)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<string?> GetConfigValueAsync(string configKey)
-        {
-            return await _context.SystemConfigurations
-                .AsNoTracking()
-                .Where(x => x.ConfigKey == configKey)
-                .Select(x => x.ConfigValue)
-                .FirstOrDefaultAsync();
         }
 
         public async Task<int?> GetStaffProfileIdByUserIdAsync(string userId, CancellationToken cancellationToken = default)
