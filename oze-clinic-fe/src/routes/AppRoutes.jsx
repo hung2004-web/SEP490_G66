@@ -139,7 +139,7 @@ const COMING_SOON_TITLES = {
     [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
     [ROUTES.ADMIN_STAFF]: "Tài khoản & nhân sự",
     [ROUTES.ADMIN_ROLES]: "Vai trò",
-    [ROUTES.ADMIN_WORK_SHIFTS]: "Chấm công",
+    [ROUTES.ADMIN_WORK_SHIFTS]: "Phân ca",
     [ROUTES.ADMIN_LEAVE_REQUESTS]: "Đơn xin nghỉ",
     [ROUTES.ADMIN_REFUNDS]: "Duyệt hoàn tiền",
     [ROUTES.ADMIN_SYSTEM_LOGS]: "Nhật ký hệ thống",

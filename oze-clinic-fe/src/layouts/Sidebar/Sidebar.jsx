@@ -1,13 +1,15 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { NavLink, matchPath, useLocation } from "react-router-dom";
 import { ChevronDown, X } from "lucide-react";
+import LogoOze from "@/assets/logo/Logo-OZE-ngang.png";
+import LogoOzeSquare from "@/assets/logo/Logo_OZE.png";
 import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
 import { getPendingRequests } from "@/services/adminReportService";
 import { getDoctorPendingCounts } from "@/services/doctorWorkService";
 import { cx } from "@/utils/cx";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
-import { USER_ROLES } from "@/utils/messages";
+import { GUEST_HEADER_TEXT, USER_ROLES } from "@/utils/messages";
 import { SIDEBAR_BADGES, getSidebarMenu } from "@/utils/sidebarMenu";
 
 const FOCUSABLE_SELECTOR = "a[href], button:not([disabled])";
@@ -85,15 +87,27 @@ const useOpenGroups = (menu) => {
     return { isOpen: (key) => !closed.has(key), toggle, pathname };
 };
 
-const Brand = ({ collapsed }) =>
-    collapsed ? (
-        <p className="font-heading text-heading-3 font-bold text-ink">OZE</p>
-    ) : (
-        <div className="min-w-0">
-            <p className="truncate font-heading text-heading-3 font-bold text-ink">OZE Dental</p>
-            <p className="truncate text-caption text-muted">Hệ thống quản lý phòng khám</p>
-        </div>
-    );
+// The logo files are white (made for the blue public header), so they are used as a mask and painted in the brand colour.
+const logoMaskStyle = (src) => ({
+    maskImage: `url(${src})`,
+    WebkitMaskImage: `url(${src})`,
+    maskRepeat: "no-repeat",
+    WebkitMaskRepeat: "no-repeat",
+    maskSize: "contain",
+    WebkitMaskSize: "contain",
+    maskPosition: "center",
+    WebkitMaskPosition: "center",
+});
+
+// Horizontal logo; the square one when the sidebar is collapsed.
+const Brand = ({ collapsed }) => (
+    <span
+        role="img"
+        aria-label={GUEST_HEADER_TEXT.LOGO_ALT}
+        className={cx("block shrink-0 bg-primary", collapsed ? "size-11" : "aspect-[1024/158] h-7")}
+        style={logoMaskStyle(collapsed ? LogoOzeSquare : LogoOze)}
+    />
+);
 
 // Icon link: a top-level link, or a whole group when the sidebar is collapsed (active = the page is inside it).
 const SidebarLink = ({ item, collapsed, drawer, active = false }) => {
@@ -145,7 +159,7 @@ const SidebarGroup = ({ group, open, onToggle, badges, drawer }) => {
                 />
             </button>
             {open && (
-                <ul id={listId} className="mb-1 ml-[21px] flex flex-col gap-0.5 border-l border-border pl-2">
+                <ul id={listId} className="ml-[21px] mt-0.5 flex flex-col gap-0.5 border-l border-border py-0.5 pl-2.5">
                     {group.children.map((child) => {
                         const count = child.badge ? badges[child.badge] : 0;
                         return (
@@ -176,11 +190,11 @@ const SidebarNav = ({ menu, collapsed = false, drawer = false }) => {
     return (
         <nav
             aria-label="Thanh bên"
-            className={cx("flex min-h-0 flex-1 flex-col p-3", collapsed ? "overflow-visible" : "overflow-y-auto")}
+            className={cx("flex min-h-0 flex-1 flex-col px-3 py-4", collapsed ? "overflow-visible" : "overflow-y-auto")}
         >
             <ul className="flex flex-col gap-1">
                 {menu.map((node) => (
-                    <li key={node.key}>
+                    <li key={node.key} className={cx(node.children && !collapsed && "pt-2")}>
                         {!node.children && <SidebarLink item={node} collapsed={collapsed} drawer={drawer} />}
                         {node.children && collapsed && (
                             <SidebarLink
@@ -261,7 +275,7 @@ const SidebarDrawer = ({ id, menu, onClose, returnFocusRef }) => {
                 onKeyDown={handleKeyDown}
                 className="absolute inset-y-0 left-0 flex w-sidebar max-w-full flex-col bg-canvas shadow-lg transition-transform duration-200 ease-out starting:-translate-x-full motion-reduce:transition-none"
             >
-                <div className="flex h-topbar shrink-0 items-center justify-between gap-2 border-b border-border pl-4 pr-3">
+                <div className="flex h-topbar shrink-0 items-center justify-between gap-2 border-b border-border pl-5 pr-3">
                     <Brand />
                     <button
                         ref={closeButtonRef}
@@ -297,7 +311,7 @@ const Sidebar = ({ id, drawer = false, collapsed = false, onClose, returnFocusRe
             <div
                 className={cx(
                     "flex h-topbar shrink-0 items-center border-b border-border",
-                    collapsed ? "justify-center" : "px-4",
+                    collapsed ? "justify-center" : "px-5",
                 )}
             >
                 <Brand collapsed={collapsed} />
