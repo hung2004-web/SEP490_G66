@@ -186,6 +186,118 @@ namespace OZE.Application.Services
             return await BuildChartAsync(examination, cancellationToken);
         }
 
+        public async Task<PrescriptionResponse> GetPrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            return ToPrescriptionResponse(examination);
+        }
+
+        public async Task<PrescriptionResponse> SavePrescriptionNotesAsync(string userId, long examinationId, SavePrescriptionNotesRequest request, CancellationToken cancellationToken = default)
+        {
+            var (doctor, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+
+            var notes = Clean(request.Notes);
+            ConditionGuard.Ensure(notes == null || notes.Length <= PrescriptionConstants.NotesMaxLength, ErrorConstants.ExaminationMessage.PrescriptionNotesTooLong);
+            var prescription = GetOrCreatePrescription(examination, doctor);
+            EnsureDraft(prescription);
+
+            prescription.Notes = notes;
+            prescription.UpdatedAt = DateTimeOffset.UtcNow;
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+            return ToPrescriptionResponse(examination);
+        }
+
+        public async Task<PrescriptionResponse> AddPrescriptionItemAsync(string userId, long examinationId, SavePrescriptionItemRequest request, CancellationToken cancellationToken = default)
+        {
+            var (doctor, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+            var item = ValidateMedication(request);
+            var prescription = GetOrCreatePrescription(examination, doctor);
+            EnsureDraft(prescription);
+
+            item.SortOrder = prescription.Items.Count == 0 ? 1 : prescription.Items.Max(x => x.SortOrder) + 1;
+            prescription.Items.Add(item);
+            prescription.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+            return ToPrescriptionResponse(examination);
+        }
+
+        public async Task<PrescriptionResponse> UpdatePrescriptionItemAsync(string userId, long examinationId, long itemId, SavePrescriptionItemRequest request, CancellationToken cancellationToken = default)
+        {
+            var (doctor, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+            var prescription = GetOrCreatePrescription(examination, doctor);
+            EnsureDraft(prescription);
+
+            var existing = prescription.Items.FirstOrDefault(x => x.Id == itemId);
+            ConditionGuard.Ensure<NotFoundException>(existing != null, ErrorConstants.ExaminationMessage.PrescriptionItemNotFound);
+            var changed = ValidateMedication(request);
+
+            existing!.MedicationName = changed.MedicationName;
+            existing.Dosage = changed.Dosage;
+            existing.Frequency = changed.Frequency;
+            existing.Duration = changed.Duration;
+            existing.Quantity = changed.Quantity;
+            existing.Instructions = changed.Instructions;
+            prescription.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+            return ToPrescriptionResponse(examination);
+        }
+
+        public async Task<PrescriptionResponse> DeletePrescriptionItemAsync(string userId, long examinationId, long itemId, CancellationToken cancellationToken = default)
+        {
+            var (doctor, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+            var prescription = GetOrCreatePrescription(examination, doctor);
+            EnsureDraft(prescription);
+
+            var existing = prescription.Items.FirstOrDefault(x => x.Id == itemId);
+            ConditionGuard.Ensure<NotFoundException>(existing != null, ErrorConstants.ExaminationMessage.PrescriptionItemNotFound);
+
+            _examinationRepository.RemovePrescriptionItem(existing!);
+            prescription.Items.Remove(existing!);
+            prescription.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+            return ToPrescriptionResponse(examination);
+        }
+
+        public async Task<PrescriptionResponse> FinalizePrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+
+            var prescription = examination.Prescriptions.OrderBy(x => x.Id).FirstOrDefault();
+            ConditionGuard.Ensure(prescription != null && prescription.Items.Count > 0, ErrorConstants.ExaminationMessage.PrescriptionNothingToFinalize);
+
+            // Finalizing twice is not an error, the prescription simply stays final
+            if (prescription!.Status != PrescriptionConstants.Finalized)
+            {
+                prescription.Status = PrescriptionConstants.Finalized;
+                prescription.UpdatedAt = DateTimeOffset.UtcNow;
+                await _examinationRepository.SaveChangesAsync(cancellationToken);
+            }
+            return ToPrescriptionResponse(examination);
+        }
+
+        public async Task<PrescriptionResponse> ReopenPrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+
+            var prescription = examination.Prescriptions.OrderBy(x => x.Id).FirstOrDefault();
+            if (prescription != null && prescription.Status != PrescriptionConstants.Draft)
+            {
+                prescription.Status = PrescriptionConstants.Draft;
+                prescription.UpdatedAt = DateTimeOffset.UtcNow;
+                await _examinationRepository.SaveChangesAsync(cancellationToken);
+            }
+            return ToPrescriptionResponse(examination);
+        }
+
         public async Task<List<DiagnosisResponse>> AddDiagnosisAsync(string userId, long examinationId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default)
         {
             var (doctor, examination) = await LoadAsync(userId, examinationId, cancellationToken);
@@ -285,6 +397,80 @@ namespace OZE.Application.Services
                 .Distinct()
                 .Count();
             ConditionGuard.Ensure(roomTypes <= 1, ErrorConstants.AppointmentMessage.ServicesNeedDifferentRooms);
+        }
+
+        // An examination has one prescription, created when the first medication or note is saved
+        private static Prescription GetOrCreatePrescription(Examination examination, StaffProfile doctor)
+        {
+            var prescription = examination.Prescriptions.OrderBy(x => x.Id).FirstOrDefault();
+            if (prescription != null) return prescription;
+
+            prescription = new Prescription
+            {
+                ExaminationId = examination.Id,
+                PatientId = examination.PatientId,
+                PrescribedByDoctorId = doctor.Id,
+                Status = PrescriptionConstants.Draft,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            examination.Prescriptions.Add(prescription);
+            return prescription;
+        }
+
+        private static void EnsureDraft(Prescription prescription)
+        {
+            ConditionGuard.Ensure(prescription.Status == PrescriptionConstants.Draft, ErrorConstants.ExaminationMessage.PrescriptionFinalized);
+        }
+
+        private static PrescriptionItem ValidateMedication(SavePrescriptionItemRequest request)
+        {
+            var name = Clean(request.MedicationName);
+            ConditionGuard.Ensure(name != null, ErrorConstants.ExaminationMessage.MedicationNameRequired);
+            ConditionGuard.Ensure(name!.Length <= PrescriptionConstants.MedicationNameMaxLength, ErrorConstants.ExaminationMessage.MedicationNameTooLong);
+
+            var dosage = Clean(request.Dosage);
+            var frequency = Clean(request.Frequency);
+            var duration = Clean(request.Duration);
+            var instructions = Clean(request.Instructions);
+            ConditionGuard.Ensure(dosage == null || dosage.Length <= PrescriptionConstants.DosageMaxLength, ErrorConstants.ExaminationMessage.DosageTooLong);
+            ConditionGuard.Ensure(frequency == null || frequency.Length <= PrescriptionConstants.FrequencyMaxLength, ErrorConstants.ExaminationMessage.FrequencyTooLong);
+            ConditionGuard.Ensure(duration == null || duration.Length <= PrescriptionConstants.DurationMaxLength, ErrorConstants.ExaminationMessage.DurationTooLong);
+            ConditionGuard.Ensure(instructions == null || instructions.Length <= PrescriptionConstants.InstructionsMaxLength, ErrorConstants.ExaminationMessage.InstructionsTooLong);
+            ConditionGuard.Ensure(request.Quantity == null || (request.Quantity >= 1 && request.Quantity <= PrescriptionConstants.MaxQuantity), ErrorConstants.ExaminationMessage.QuantityInvalid);
+
+            return new PrescriptionItem
+            {
+                MedicationName = name,
+                Dosage = dosage,
+                Frequency = frequency,
+                Duration = duration,
+                Quantity = request.Quantity,
+                Instructions = instructions
+            };
+        }
+
+        // No prescription yet shows as an empty draft with id 0
+        private static PrescriptionResponse ToPrescriptionResponse(Examination examination)
+        {
+            var prescription = examination.Prescriptions.OrderBy(x => x.Id).FirstOrDefault();
+            if (prescription == null) return new PrescriptionResponse { Id = 0, Status = PrescriptionConstants.Draft };
+
+            return new PrescriptionResponse
+            {
+                Id = prescription.Id,
+                Status = prescription.Status,
+                Notes = prescription.Notes,
+                Items = prescription.Items.OrderBy(x => x.SortOrder).ThenBy(x => x.Id).Select(x => new PrescriptionItemResponse
+                {
+                    Id = x.Id,
+                    MedicationName = x.MedicationName,
+                    Dosage = x.Dosage,
+                    Frequency = x.Frequency,
+                    Duration = x.Duration,
+                    Quantity = x.Quantity,
+                    Instructions = x.Instructions
+                }).ToList()
+            };
         }
 
         private void RemoveEntry(Examination examination, DentalChartEntry entry)
@@ -412,7 +598,8 @@ namespace OZE.Application.Services
             ChiefComplaint = examination.ChiefComplaint,
             ClinicalNotes = examination.ClinicalNotes,
             Services = ToServiceResponses(examination, examination.Appointment.ServiceItems),
-            Diagnoses = ToDiagnosisResponses(examination.Diagnoses)
+            Diagnoses = ToDiagnosisResponses(examination.Diagnoses),
+            Prescription = ToPrescriptionResponse(examination)
         };
 
         private static List<ExaminationServiceResponse> ToServiceResponses(Examination examination, IEnumerable<AppointmentServiceItem> items) =>

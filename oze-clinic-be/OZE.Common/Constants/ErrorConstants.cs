@@ -271,6 +271,17 @@ namespace OZE.Common.Constants
             public const string ToothSeverityTooLong = "The severity is too long";
             public const string ToothNotesTooLong = "The tooth notes are too long";
             public const string ToothNotRecorded = "No change was recorded for this tooth in this examination";
+            public const string MedicationNameRequired = "Please enter the medication name";
+            public const string MedicationNameTooLong = "The medication name is too long";
+            public const string DosageTooLong = "The dosage is too long";
+            public const string FrequencyTooLong = "The frequency is too long";
+            public const string DurationTooLong = "The duration is too long";
+            public const string InstructionsTooLong = "The instructions are too long";
+            public const string PrescriptionNotesTooLong = "The prescription note is too long";
+            public const string QuantityInvalid = "The quantity must be a whole number between 1 and the allowed maximum";
+            public const string PrescriptionItemNotFound = "Medication not found in this prescription";
+            public const string PrescriptionFinalized = "The prescription is finalized. Reopen it to change it";
+            public const string PrescriptionNothingToFinalize = "Add at least one medication before finalizing the prescription";
         }
 
         // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.

@@ -14,6 +14,7 @@ namespace OZE.Application.Interfaces
         Task<string?> GetConfigValueAsync(string configKey);
         void RemoveServiceItem(AppointmentServiceItem item);
         void RemoveDiagnosis(ClinicalDiagnosis diagnosis);
+        void RemovePrescriptionItem(PrescriptionItem item);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }
