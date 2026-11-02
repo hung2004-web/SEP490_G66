@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Pencil, Search, Stethoscope } from "lucide-react";
+import { Pencil, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
-import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
-import ServiceFormPopup from "@/components/popup/ServiceFormPopup";
-import ServiceTypesPopup from "@/components/popup/ServiceTypesPopup";
-import Pagination from "@/components/ui/Pagination";
+import DeactivateServicePopup from "@/components/popup/service/DeactivateServicePopup";
+import ServiceFormPopup from "@/components/popup/service/ServiceFormPopup";
+import ServiceTypesPopup from "@/components/popup/service/ServiceTypesPopup";
+import FilterSelect from "@/components/ui/FilterSelect";
+import SearchInput from "@/components/ui/SearchInput";
+import TablePagination from "@/components/ui/TablePagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
 import { activateService, getServices } from "@/services/serviceManagementService";
@@ -123,7 +125,6 @@ const ServiceManagement = () => {
     const services = data?.items ?? [];
     const filtered = Boolean(keyword || roomType);
     const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
-    const lastItem = firstItem + services.length - 1;
 
     const openCreate = () => setEditor({ service: null });
     const openEdit = (service) => setEditor({ service });
@@ -176,39 +177,24 @@ const ServiceManagement = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-                <div className="search w-full sm:w-72">
-                    <Search aria-hidden="true" />
-                    <label htmlFor="service-search" className="sr-only">
-                        Tìm kiếm dịch vụ
-                    </label>
-                    <input
-                        id="service-search"
-                        type="search"
-                        className="input"
-                        placeholder="Tìm theo mã, tên dịch vụ"
-                        value={searchInput}
-                        onChange={(event) => setSearchInput(event.target.value)}
-                    />
-                </div>
-                <label htmlFor="service-room-type" className="sr-only">
-                    Loại phòng
-                </label>
-                <select
+                <SearchInput
+                    id="service-search"
+                    label="Tìm kiếm dịch vụ"
+                    placeholder="Tìm theo mã, tên dịch vụ"
+                    value={searchInput}
+                    onChange={setSearchInput}
+                    className="w-full sm:w-72"
+                />
+                <FilterSelect
                     id="service-room-type"
-                    className="input w-auto min-w-48"
+                    label="Loại phòng"
+                    options={ROOM_TYPE_OPTIONS}
                     value={roomType}
-                    onChange={(event) => {
-                        setRoomType(event.target.value);
+                    onChange={(value) => {
+                        setRoomType(value);
                         setPage(1);
                     }}
-                >
-                    <option value="">Loại phòng: Tất cả</option>
-                    {ROOM_TYPE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            Loại phòng: {option.label}
-                        </option>
-                    ))}
-                </select>
+                />
             </div>
 
             <div>
@@ -271,14 +257,7 @@ const ServiceManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                {data && data.totalItems > 0 && (
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                        <p className="num text-caption text-muted">
-                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} dịch vụ
-                        </p>
-                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách dịch vụ" />
-                    </div>
-                )}
+                <TablePagination data={data} itemCount={services.length} onChange={setPage} label="Phân trang danh sách dịch vụ" />
             </div>
 
             {editor && (

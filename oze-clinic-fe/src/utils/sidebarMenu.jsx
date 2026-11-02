@@ -56,7 +56,7 @@ const SIDEBAR_MENU = {
             label: "Vận hành",
             icon: Building2,
             children: [
-                { key: "attendance", label: "Chấm công", to: ROUTES.ADMIN_WORK_SHIFTS },
+                { key: "work-shifts", label: "Phân ca", to: ROUTES.ADMIN_WORK_SHIFTS },
                 { key: "leave-requests", label: "Đơn xin nghỉ", to: ROUTES.ADMIN_LEAVE_REQUESTS, badge: SIDEBAR_BADGES.PENDING_LEAVES },
                 { key: "refunds", label: "Duyệt hoàn tiền", to: ROUTES.ADMIN_REFUNDS, badge: SIDEBAR_BADGES.PENDING_REFUNDS },
             ],
