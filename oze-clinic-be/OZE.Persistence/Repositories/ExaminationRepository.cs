@@ -25,7 +25,21 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x.ServiceItems)
                         .ThenInclude(x => x.Variant)
                 .Include(x => x.Diagnoses)
+                .Include(x => x.DentalChartEntries)
                 .FirstOrDefaultAsync(x => x.Id == examinationId, cancellationToken);
+        }
+
+        public Task<List<DentalChartEntry>> GetEarlierChartEntriesAsync(int patientId, DateTimeOffset before, long excludeExaminationId, CancellationToken cancellationToken = default)
+        {
+            return _context.DentalChartEntries
+                .AsNoTracking()
+                .Where(x => x.PatientId == patientId && x.ExaminationId != excludeExaminationId && x.Examination.CreatedAt < before)
+                .ToListAsync(cancellationToken);
+        }
+
+        public void RemoveChartEntry(DentalChartEntry entry)
+        {
+            _context.DentalChartEntries.Remove(entry);
         }
 
         public Task<Service?> GetServiceAsync(int serviceId, CancellationToken cancellationToken = default)

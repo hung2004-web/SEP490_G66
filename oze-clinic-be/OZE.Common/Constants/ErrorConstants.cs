@@ -265,6 +265,12 @@ namespace OZE.Common.Constants
             public const string ServiceItemNotFound = "Service not found in this appointment";
             public const string CannotRemoveLastService = "An appointment must keep at least one service";
             public const string VariantMismatch = "This variant does not belong to the selected service";
+            public const string ToothNumberInvalid = "The tooth number is not valid. Use the FDI number, for example 46";
+            public const string ToothConditionInvalid = "The tooth condition must be one of: Healthy, Caries, Filled, Crown, Missing, Denture, Implant";
+            public const string ToothSurfaceTooLong = "The tooth surface is too long";
+            public const string ToothSeverityTooLong = "The severity is too long";
+            public const string ToothNotesTooLong = "The tooth notes are too long";
+            public const string ToothNotRecorded = "No change was recorded for this tooth in this examination";
         }
 
         // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.

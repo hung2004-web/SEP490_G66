@@ -202,7 +202,11 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+<<<<<<< HEAD
         /// Finishes the visit: locks the examination and completes the appointment.
+=======
+        /// Completes the visit: locks the examination and marks the appointment completed.
+>>>>>>> bbec8909bd04a57ebe2df72f5765e501e33b89fe
         /// </summary>
         [HttpPost("{id:long}/complete-examination")]
         [Authorize(Roles = RoleConstants.DoctorRole)]

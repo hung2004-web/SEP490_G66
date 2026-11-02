@@ -14,6 +14,11 @@ namespace OZE.Application.Interfaces
         Task<List<ExaminationServiceResponse>> AddServiceAsync(string userId, long examinationId, AddExaminationServiceRequest request, CancellationToken cancellationToken = default);
         Task<List<ExaminationServiceResponse>> RemoveServiceAsync(string userId, long examinationId, long serviceItemId, CancellationToken cancellationToken = default);
 
+        // Dental chart: the doctor records how a tooth is, the chart is the latest state of each tooth
+        Task<List<DentalChartToothResponse>> GetDentalChartAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
+        Task<List<DentalChartToothResponse>> SetToothAsync(string userId, long examinationId, string toothNumber, SaveToothRequest request, CancellationToken cancellationToken = default);
+        Task<List<DentalChartToothResponse>> RemoveToothChangeAsync(string userId, long examinationId, string toothNumber, CancellationToken cancellationToken = default);
+
         // Each call returns the diagnoses of the examination as they are now, so a changed primary one is visible
         Task<List<DiagnosisResponse>> AddDiagnosisAsync(string userId, long examinationId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default);
         Task<List<DiagnosisResponse>> UpdateDiagnosisAsync(string userId, long examinationId, long diagnosisId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default);

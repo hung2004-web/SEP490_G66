@@ -21,7 +21,7 @@ namespace OZE.Application.Services
         public async Task<ExaminationWorkResponse> GetAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
         {
             var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
-            return ToWorkResponse(examination);
+            return await BuildWorkResponseAsync(examination, cancellationToken);
         }
 
         public async Task<ExaminationWorkResponse> UpdateContentAsync(string userId, long examinationId, UpdateExaminationContentRequest request, CancellationToken cancellationToken = default)
@@ -41,7 +41,7 @@ namespace OZE.Application.Services
             examination.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _examinationRepository.SaveChangesAsync(cancellationToken);
-            return ToWorkResponse(examination);
+            return await BuildWorkResponseAsync(examination, cancellationToken);
         }
 
         public async Task<List<ExaminationServiceResponse>> AddServiceAsync(string userId, long examinationId, AddExaminationServiceRequest request, CancellationToken cancellationToken = default)
@@ -105,6 +105,76 @@ namespace OZE.Application.Services
             _examinationRepository.RemoveServiceItem(item!);
             await _examinationRepository.SaveChangesAsync(cancellationToken);
             return ToServiceResponses(examination, items.Where(x => x.Id != item!.Id));
+        }
+
+        public async Task<List<DentalChartToothResponse>> GetDentalChartAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            return await BuildChartAsync(examination, cancellationToken);
+        }
+
+        public async Task<List<DentalChartToothResponse>> SetToothAsync(string userId, long examinationId, string toothNumber, SaveToothRequest request, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+
+            var tooth = NormalizeTooth(toothNumber);
+            var condition = DentalChartConstants.Conditions.FirstOrDefault(c => string.Equals(c, Clean(request.Condition), StringComparison.OrdinalIgnoreCase));
+            ConditionGuard.Ensure(condition != null, ErrorConstants.ExaminationMessage.ToothConditionInvalid);
+            var surface = Clean(request.Surface)?.ToUpperInvariant();
+            var severity = Clean(request.Severity);
+            var notes = Clean(request.Notes);
+            ConditionGuard.Ensure(surface == null || surface.Length <= DentalChartConstants.SurfaceMaxLength, ErrorConstants.ExaminationMessage.ToothSurfaceTooLong);
+            ConditionGuard.Ensure(severity == null || severity.Length <= DentalChartConstants.SeverityMaxLength, ErrorConstants.ExaminationMessage.ToothSeverityTooLong);
+            ConditionGuard.Ensure(notes == null || notes.Length <= DentalChartConstants.NotesMaxLength, ErrorConstants.ExaminationMessage.ToothNotesTooLong);
+
+            var earlier = await GetEarlierStateAsync(examination, cancellationToken);
+            var before = earlier.TryGetValue(tooth, out var previous) ? previous.Condition : DentalChartConstants.Healthy;
+            var existing = examination.DentalChartEntries.FirstOrDefault(x => x.ToothNumber == tooth);
+
+            // Setting a tooth back to how it already was, with nothing to add, means there is no change to keep
+            if (condition == before && surface == null && severity == null && notes == null)
+            {
+                if (existing != null) RemoveEntry(examination, existing);
+            }
+            else if (existing != null)
+            {
+                existing.Condition = condition!;
+                existing.Surface = surface;
+                existing.Severity = severity;
+                existing.Notes = notes;
+            }
+            else
+            {
+                examination.DentalChartEntries.Add(new DentalChartEntry
+                {
+                    ExaminationId = examination.Id,
+                    PatientId = examination.PatientId,
+                    ToothNumber = tooth,
+                    Condition = condition!,
+                    Surface = surface,
+                    Severity = severity,
+                    Notes = notes,
+                    CreatedAt = DateTimeOffset.UtcNow
+                });
+            }
+
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+            return await BuildChartAsync(examination, cancellationToken);
+        }
+
+        public async Task<List<DentalChartToothResponse>> RemoveToothChangeAsync(string userId, long examinationId, string toothNumber, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+
+            var tooth = NormalizeTooth(toothNumber);
+            var existing = examination.DentalChartEntries.FirstOrDefault(x => x.ToothNumber == tooth);
+            ConditionGuard.Ensure<NotFoundException>(existing != null, ErrorConstants.ExaminationMessage.ToothNotRecorded);
+
+            RemoveEntry(examination, existing!);
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+            return await BuildChartAsync(examination, cancellationToken);
         }
 
         public async Task<List<DiagnosisResponse>> AddDiagnosisAsync(string userId, long examinationId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default)
@@ -172,6 +242,68 @@ namespace OZE.Application.Services
 
             await _examinationRepository.SaveChangesAsync(cancellationToken);
             return ToDiagnosisResponses(remaining);
+        }
+
+        private void RemoveEntry(Examination examination, DentalChartEntry entry)
+        {
+            _examinationRepository.RemoveChartEntry(entry);
+            examination.DentalChartEntries.Remove(entry);
+        }
+
+        // FDI number: quadrant 1-4 has teeth 1-8, quadrant 5-8 (baby teeth) has teeth 1-5
+        private static string NormalizeTooth(string? toothNumber)
+        {
+            var value = Clean(toothNumber);
+            var valid = value != null && value.Length == 2 && char.IsDigit(value[0]) && char.IsDigit(value[1]);
+            if (valid)
+            {
+                var quadrant = value![0] - '0';
+                var index = value[1] - '0';
+                valid = (quadrant >= 1 && quadrant <= DentalChartConstants.LastPermanentQuadrant && index >= 1 && index <= DentalChartConstants.PermanentTeethPerQuadrant)
+                    || (quadrant > DentalChartConstants.LastPermanentQuadrant && quadrant <= DentalChartConstants.LastBabyToothQuadrant && index >= 1 && index <= DentalChartConstants.BabyTeethPerQuadrant);
+            }
+            ConditionGuard.Ensure(valid, ErrorConstants.ExaminationMessage.ToothNumberInvalid);
+            return value!;
+        }
+
+        // The latest entry of each tooth from the patient's earlier examinations
+        private async Task<Dictionary<string, DentalChartEntry>> GetEarlierStateAsync(Examination examination, CancellationToken cancellationToken)
+        {
+            var earlier = await _examinationRepository.GetEarlierChartEntriesAsync(examination.PatientId, examination.CreatedAt, examination.Id, cancellationToken);
+            return earlier.GroupBy(x => x.ToothNumber)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).First());
+        }
+
+        // The chart at the end of this examination: the earlier state of every tooth, with this examination's changes on top.
+        // Healthy teeth are left out unless this examination set them back to healthy.
+        private async Task<List<DentalChartToothResponse>> BuildChartAsync(Examination examination, CancellationToken cancellationToken)
+        {
+            var state = (await GetEarlierStateAsync(examination, cancellationToken))
+                .ToDictionary(x => x.Key, x => (Entry: x.Value, Here: false));
+            foreach (var own in examination.DentalChartEntries.GroupBy(x => x.ToothNumber))
+            {
+                state[own.Key] = (own.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).First(), true);
+            }
+
+            return state
+                .Where(x => x.Value.Here || x.Value.Entry.Condition != DentalChartConstants.Healthy)
+                .OrderBy(x => x.Key, StringComparer.Ordinal)
+                .Select(x => new DentalChartToothResponse
+                {
+                    ToothNumber = x.Key,
+                    Condition = x.Value.Entry.Condition,
+                    Surface = x.Value.Entry.Surface,
+                    Severity = x.Value.Entry.Severity,
+                    Notes = x.Value.Entry.Notes,
+                    RecordedInThisExamination = x.Value.Here
+                }).ToList();
+        }
+
+        private async Task<ExaminationWorkResponse> BuildWorkResponseAsync(Examination examination, CancellationToken cancellationToken)
+        {
+            var response = ToWorkResponse(examination);
+            response.DentalChart = await BuildChartAsync(examination, cancellationToken);
+            return response;
         }
 
         // The doctor of the examination only. Reading is allowed even when it is locked, writing is not (EnsureOpen).

@@ -56,6 +56,29 @@ namespace OZE.Controllers
             return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Đã bỏ dịch vụ"));
         }
 
+        [HttpGet("examinations/{id:long}/dental-chart")]
+        public async Task<ActionResult<ApiResponse<List<DentalChartToothResponse>>>> GetDentalChartAsync(long id, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.GetDentalChartAsync(DoctorUserId, id, cancellationToken);
+            return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result));
+        }
+
+        [HttpPut("examinations/{id:long}/dental-chart/{toothNumber}")]
+        public async Task<ActionResult<ApiResponse<List<DentalChartToothResponse>>>> SetToothAsync(
+            long id, string toothNumber, [FromBody] SaveToothRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.SetToothAsync(DoctorUserId, id, toothNumber, request, cancellationToken);
+            return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result, "Đã cập nhật sơ đồ răng"));
+        }
+
+        [HttpDelete("examinations/{id:long}/dental-chart/{toothNumber}")]
+        public async Task<ActionResult<ApiResponse<List<DentalChartToothResponse>>>> RemoveToothChangeAsync(
+            long id, string toothNumber, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.RemoveToothChangeAsync(DoctorUserId, id, toothNumber, cancellationToken);
+            return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result, "Đã bỏ thay đổi của răng"));
+        }
+
         [HttpPost("examinations/{id:long}/diagnoses")]
         public async Task<ActionResult<ApiResponse<List<DiagnosisResponse>>>> AddDiagnosisAsync(
             long id, [FromBody] SaveDiagnosisRequest request, CancellationToken cancellationToken)

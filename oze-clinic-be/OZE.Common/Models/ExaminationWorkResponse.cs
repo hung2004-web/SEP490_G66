@@ -11,5 +11,7 @@ namespace OZE.Common.Models
         public string? ClinicalNotes { get; set; }
         public List<ExaminationServiceResponse> Services { get; set; } = new();
         public List<DiagnosisResponse> Diagnoses { get; set; } = new();
+        // The dental chart at the end of this examination
+        public List<DentalChartToothResponse> DentalChart { get; set; } = new();
     }
 }

@@ -47,6 +47,7 @@ namespace OZE.Persistence
             services.AddScoped<IImagingRequestRepository, ImagingRequestRepository>();
             services.AddScoped<IExaminationRepository, ExaminationRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<IQueueRepository, QueueRepository>();
 
             return services;
         }

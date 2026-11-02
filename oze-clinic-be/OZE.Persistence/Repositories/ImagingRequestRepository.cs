@@ -18,8 +18,8 @@ namespace OZE.Persistence.Repositories
         public Task<Examination?> GetExaminationAsync(long examinationId, CancellationToken cancellationToken = default)
         {
             return _context.Examinations
-                .AsNoTracking()
                 .Include(x => x.Patient)
+                .Include(x => x.Appointment)
                 .FirstOrDefaultAsync(x => x.Id == examinationId, cancellationToken);
         }
 

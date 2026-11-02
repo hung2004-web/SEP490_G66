@@ -27,7 +27,11 @@ namespace OZE.Application.Interfaces
         Task<AppointmentResponse> SetPriorityAsync(long id, SetPriorityRequest request, CancellationToken cancellationToken = default);
         // The signed-in doctor opens the visit for one of their checked-in appointments
         Task<StartExaminationResponse> StartExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default);
+<<<<<<< HEAD
         // The signed-in doctor finishes the visit; the examination is locked at once
+=======
+        // The doctor completes the visit, locking the examination and marking the appointment completed
+>>>>>>> bbec8909bd04a57ebe2df72f5765e501e33b89fe
         Task<AppointmentResponse> CompleteExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default);
     }
 }

@@ -110,5 +110,18 @@ namespace OZE.Controllers
                 created,
                 ErrorConstants.ImagingRequestMessage.RequestSubmitted));
         }
+
+        /// <summary>
+        /// Marks an imaging request as Completed by the technician and returns the patient to the Priority Return Queue (UC-55).
+        /// </summary>
+        [Authorize(Roles = RoleConstants.DentalImagingTechnicianRole)]
+        [HttpPost("imaging-requests/{id:long}/complete")]
+        public async Task<ActionResult<ApiResponse<ImagingRequestResponse>>> CompleteAsync(
+            long id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _imagingRequestService.CompleteAsync(id, CurrentUserId, null, cancellationToken);
+            return Ok(ApiResponse<ImagingRequestResponse>.SuccessResult(result, "Chụp phim hoàn tất. Bệnh nhân đã được đưa vào hàng đợi ưu tiên đọc kết quả."));
+        }
     }
 }

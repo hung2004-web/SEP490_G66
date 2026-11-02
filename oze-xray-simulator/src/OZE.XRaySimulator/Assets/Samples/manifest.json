@@ -1,0 +1,123 @@
+[
+  {
+    "Id": "PANO-01",
+    "FileName": "Panoramic/pano_full_adult_01.png",
+    "Modality": "PANORAMIC",
+    "BodyRegion": "FULL_JAW",
+    "Width": 1920,
+    "Height": 1080,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "PANO-02",
+    "FileName": "Panoramic/pano_full_adult_02.png",
+    "Modality": "PANORAMIC",
+    "BodyRegion": "FULL_JAW",
+    "Width": 1920,
+    "Height": 1080,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "PANO-03",
+    "FileName": "Panoramic/pano_pediatric_01.png",
+    "Modality": "PANORAMIC",
+    "BodyRegion": "FULL_JAW",
+    "Width": 1920,
+    "Height": 1080,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "PA-01",
+    "FileName": "Periapical/pa_molar_quad1.png",
+    "Modality": "PERIAPICAL",
+    "BodyRegion": "QUADRANT_1_MOLAR",
+    "Width": 800,
+    "Height": 1000,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "PA-02",
+    "FileName": "Periapical/pa_incisor_maxilla.png",
+    "Modality": "PERIAPICAL",
+    "BodyRegion": "ANTERIOR_MAXILLA",
+    "Width": 800,
+    "Height": 1000,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "PA-03",
+    "FileName": "Periapical/pa_premolar_quad3.png",
+    "Modality": "PERIAPICAL",
+    "BodyRegion": "QUADRANT_3_PREMOLAR",
+    "Width": 800,
+    "Height": 1000,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "PA-04",
+    "FileName": "Periapical/pa_molar_quad4.png",
+    "Modality": "PERIAPICAL",
+    "BodyRegion": "QUADRANT_4_MOLAR",
+    "Width": 800,
+    "Height": 1000,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "BW-01",
+    "FileName": "Bitewing/bw_right_molar_01.png",
+    "Modality": "BITEWING",
+    "BodyRegion": "RIGHT_MOLAR",
+    "Width": 1000,
+    "Height": 750,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "BW-02",
+    "FileName": "Bitewing/bw_left_molar_01.png",
+    "Modality": "BITEWING",
+    "BodyRegion": "LEFT_MOLAR",
+    "Width": 1000,
+    "Height": 750,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "BW-03",
+    "FileName": "Bitewing/bw_right_premolar_01.png",
+    "Modality": "BITEWING",
+    "BodyRegion": "RIGHT_PREMOLAR",
+    "Width": 1000,
+    "Height": 750,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  },
+  {
+    "Id": "BW-04",
+    "FileName": "Bitewing/bw_left_premolar_01.png",
+    "Modality": "BITEWING",
+    "BodyRegion": "LEFT_PREMOLAR",
+    "Width": 1000,
+    "Height": 750,
+    "Source": "Synthetic-Radiograph-Library",
+    "License": "CC-BY-4.0",
+    "Attribution": "OZE Simulation Demo"
+  }
+]
