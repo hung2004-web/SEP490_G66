@@ -12,6 +12,12 @@ export const showErrorPage = (code) => {
     window.dispatchEvent(new CustomEvent(ERROR_PAGE_EVENT, { detail: { code } }));
 };
 
+export const SESSION_EXPIRED_EVENT = "app:session-expired";
+
+export const showSessionExpired = () => {
+    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+};
+
 // Maps an axios error to an HTTP code: timeout -> 408, no response (server down/offline) -> 503.
 export const getErrorStatus = (error) => {
     if (error.response) return error.response.status;

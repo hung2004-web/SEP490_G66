@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import Card from "@/components/ui/Card";
 import { signIn } from "../../services/authService";
 import { ROUTES, getPostLoginRoute } from "../../utils/routes";
-import { isPasswordEmpty, isPhoneEmpty, normalizePhone, requiredMessage, validatePhone } from "../../utils/validation";
+import { isPasswordEmpty, isRequiredEmpty, normalizeIdentifier, requiredMessage, validateIdentifier } from "../../utils/validation";
 
 // Sign In only checks that the password is filled; the length rule (validatePassword) belongs to
 // Register / Reset / Change Password.
@@ -12,7 +12,7 @@ const validateSignInPassword = (value) => (isPasswordEmpty(value) ? requiredMess
 
 // Per field: the "empty" rule (the same on blur and on submit) and the validator.
 const FIELDS = {
-    phone: { isEmpty: isPhoneEmpty, validate: validatePhone },
+    identifier: { isEmpty: isRequiredEmpty, validate: validateIdentifier },
     password: { isEmpty: isPasswordEmpty, validate: validateSignInPassword },
 };
 
@@ -30,9 +30,9 @@ const handleGoogleSignIn = () => { };
 
 const SignInPage = () => {
     const navigate = useNavigate();
-    const phoneRef = useRef(null);
+    const identifierRef = useRef(null);
     const passwordRef = useRef(null);
-    const [values, setValues] = useState({ phone: "", password: "" });
+    const [values, setValues] = useState({ identifier: "", password: "" });
     const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
@@ -56,8 +56,8 @@ const SignInPage = () => {
 
         const errors = validate(values);
         setFieldErrors(errors);
-        if (errors.phone) {
-            phoneRef.current?.focus();
+        if (errors.identifier) {
+            identifierRef.current?.focus();
             return;
         }
         if (errors.password) {
@@ -67,10 +67,10 @@ const SignInPage = () => {
 
         setLoading(true);
         try {
-            const result = await signIn({ phone: normalizePhone(values.phone), password: values.password });
+            const result = await signIn({ identifier: normalizeIdentifier(values.identifier), password: values.password });
             if (result.success) {
                 toast.success("Đăng nhập thành công!");
-                navigate(getPostLoginRoute(), { replace: true });
+                navigate(getPostLoginRoute(result.data.role), { replace: true });
                 return;
             }
             // TODO(spec): no system message is defined for a failure the API returns without a message.
@@ -91,29 +91,28 @@ const SignInPage = () => {
                 <form noValidate onSubmit={handleSubmit}>
                     {/* aria-required only, not the native required attribute, so the browser never shows its own popup. */}
                     <div className="field">
-                        <label htmlFor="phone" className="label label-required">
-                            Số điện thoại
+                        <label htmlFor="identifier" className="label label-required">
+                            Số điện thoại hoặc email
                         </label>
                         <input
-                            ref={phoneRef}
-                            id="phone"
-                            name="phone"
-                            type="tel"
-                            inputMode="numeric"
-                            autoComplete="tel"
-                            placeholder="0912 345 678"
+                            ref={identifierRef}
+                            id="identifier"
+                            name="identifier"
+                            type="text"
+                            autoComplete="username"
+                            placeholder="Ví dụ: 0912 345 678 hoặc abc@gmail.com"
                             className="input"
                             aria-required="true"
-                            aria-invalid={fieldErrors.phone ? true : undefined}
-                            aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-                            value={values.phone}
+                            aria-invalid={fieldErrors.identifier ? true : undefined}
+                            aria-describedby={fieldErrors.identifier ? "identifier-error" : undefined}
+                            value={values.identifier}
                             onChange={handleChange}
                             onBlur={handleBlur}
                         />
                         {/* TODO: add the CircleAlert icon before the error once lucide-react is approved (DESIGN.md section 7). */}
-                        {fieldErrors.phone && (
-                            <p id="phone-error" className="error-text">
-                                {fieldErrors.phone}
+                        {fieldErrors.identifier && (
+                            <p id="identifier-error" className="error-text">
+                                {fieldErrors.identifier}
                             </p>
                         )}
                     </div>

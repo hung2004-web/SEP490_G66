@@ -1,10 +1,9 @@
 import api from "./api";
-import { MESSAGES, USER_ROLES, VERIFICATION_METHOD } from "../utils/messages";
-import { findMockUserByPhone, getMockCurrentUser, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
+import { BACKEND_LOGIN_MESSAGES, GENERIC_ERROR_MESSAGE, MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
+import { getDefaultMockUserId, getMockCurrentUser, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
-import { clearSession, saveSession } from "./sessionStore";
+import { clearSession, getSessionRefreshToken, getSessionToken, isAccessTokenExpired, saveSession, sessionFromAuthResult } from "./sessionStore";
 
-const MOCK_LOCKED_PHONE = "0900000000";
 const MOCK_PASSWORD = "12345678";
 const MOCK_DELAY_MS = 800;
 
@@ -14,45 +13,56 @@ const failure = (message) => ({ success: false, message, data: null, errors: nul
 
 const success = (data) => ({ success: true, message: null, data, errors: null });
 
-const mockSignIn = async ({ phone, password }) => {
-    await wait(MOCK_DELAY_MS);
+const AUTH_REQUEST_CONFIG = { skipAuthRefresh: true };
 
-    if (phone === MOCK_LOCKED_PHONE) return failure(MESSAGES.MSG26);
-    // Users from mockData sign in with their own password; any other phone still uses MOCK_PASSWORD.
-    const user = findMockUserByPhone(phone);
-    if (password !== (user?.password ?? MOCK_PASSWORD)) return failure(MESSAGES.MSG24);
-
-    return {
-        success: true,
-        message: null,
-        data: {
-            token: "mock-access-token",
-            refreshToken: "mock-refresh-token",
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        },
-        errors: null,
-    };
+const loginFailure = (message) => {
+    if (message === BACKEND_LOGIN_MESSAGES.INVALID_LOGIN) return failure(MESSAGES.MSG24);
+    if (message === BACKEND_LOGIN_MESSAGES.LOCKED_OUT) return failure(MESSAGES.MSG26);
+    return failure(GENERIC_ERROR_MESSAGE);
 };
 
-export const signIn = async ({ phone, password }) => {
-    const result = await mockSignIn({ phone, password });
+const sendLogout = (token, refreshToken) => {
+    api.post("/api/Auth/logout", { refreshToken }, { ...AUTH_REQUEST_CONFIG, headers: { Authorization: `Bearer ${token}` } }).catch(() => { });
+};
 
-    if (result.success) {
-        const user = findMockUserByPhone(phone);
-        setMockCurrentUserId(user?.id);
-        saveSession({
-            token: result.data.token,
-            userName: user?.fullname,
-            role: user?.role ?? USER_ROLES.PATIENT,
-        });
+const completeSignIn = (body) => {
+    if (body?.success !== true) return loginFailure(body?.message);
+
+    const data = body.data;
+    if (typeof data?.token !== "string" || typeof data?.refreshToken !== "string" || !data.token || !data.refreshToken) {
+        return failure(GENERIC_ERROR_MESSAGE);
     }
 
-    return result;
+    const session = sessionFromAuthResult(data);
+    if (!session) {
+        sendLogout(data.token, data.refreshToken);
+        return failure(GENERIC_ERROR_MESSAGE);
+    }
+
+    setMockCurrentUserId(getDefaultMockUserId(session.role));
+    saveSession(session);
+    return success({ role: session.role });
+};
+
+export const signIn = async ({ identifier, password }) => {
+    try {
+        const response = await api.post("/api/Auth/login", { identifier, password }, AUTH_REQUEST_CONFIG);
+        return completeSignIn(response.data);
+    } catch (error) {
+        return loginFailure(error.response?.data?.message);
+    }
 };
 
 export const signOut = () => {
+    const token = getSessionToken();
+    const refreshToken = getSessionRefreshToken();
+    const expired = token !== null && isAccessTokenExpired(token);
+
+    if (token && !expired && refreshToken) sendLogout(token, refreshToken);
+
     setMockCurrentUserId(null);
     clearSession();
+    return { expired };
 };
 
 const GENERIC_ERROR = "Có lỗi xảy ra, vui lòng thử lại sau.";

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, NavLink, matchPath, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { Bell, BellOff, ChevronDown, ChevronLeft, ChevronRight, Info, Menu, PanelLeft, X } from "lucide-react";
 import LogoOze from "@/assets/logo/Logo-OZE-ngang.png";
 import Avatar from "@/components/ui/Avatar";
@@ -651,7 +652,12 @@ const UserMenu = ({ open, onOpenChange }) => {
     const label = userName || "Tài khoản";
 
     const handleSignOut = () => {
-        signOut();
+        const { expired } = signOut();
+        if (expired) {
+            toast.error(MESSAGES.MSG84);
+            navigate(ROUTES.SIGN_IN, { replace: true });
+            return;
+        }
         navigate(ROUTES.HOME);
     };
 
