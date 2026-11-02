@@ -87,6 +87,59 @@ namespace OZE.Controllers
             return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result, "Đã bỏ thay đổi của răng"));
         }
 
+        [HttpGet("examinations/{id:long}/prescription")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> GetPrescriptionAsync(long id, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.GetPrescriptionAsync(DoctorUserId, id, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result));
+        }
+
+        [HttpPut("examinations/{id:long}/prescription")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> SavePrescriptionNotesAsync(
+            long id, [FromBody] SavePrescriptionNotesRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.SavePrescriptionNotesAsync(DoctorUserId, id, request, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã lưu ghi chú đơn thuốc"));
+        }
+
+        [HttpPost("examinations/{id:long}/prescription/items")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> AddPrescriptionItemAsync(
+            long id, [FromBody] SavePrescriptionItemRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.AddPrescriptionItemAsync(DoctorUserId, id, request, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã thêm thuốc"));
+        }
+
+        [HttpPut("examinations/{id:long}/prescription/items/{itemId:long}")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> UpdatePrescriptionItemAsync(
+            long id, long itemId, [FromBody] SavePrescriptionItemRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.UpdatePrescriptionItemAsync(DoctorUserId, id, itemId, request, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã cập nhật thuốc"));
+        }
+
+        [HttpDelete("examinations/{id:long}/prescription/items/{itemId:long}")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> DeletePrescriptionItemAsync(
+            long id, long itemId, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.DeletePrescriptionItemAsync(DoctorUserId, id, itemId, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã bỏ thuốc"));
+        }
+
+        [HttpPost("examinations/{id:long}/prescription/finalize")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> FinalizePrescriptionAsync(long id, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.FinalizePrescriptionAsync(DoctorUserId, id, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã chốt đơn thuốc"));
+        }
+
+        [HttpPost("examinations/{id:long}/prescription/reopen")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> ReopenPrescriptionAsync(long id, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.ReopenPrescriptionAsync(DoctorUserId, id, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã mở lại đơn thuốc"));
+        }
+
         [HttpPost("examinations/{id:long}/diagnoses")]
         public async Task<ActionResult<ApiResponse<List<DiagnosisResponse>>>> AddDiagnosisAsync(
             long id, [FromBody] SaveDiagnosisRequest request, CancellationToken cancellationToken)
