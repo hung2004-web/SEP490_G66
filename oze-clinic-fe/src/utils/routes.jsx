@@ -110,4 +110,4 @@ export const getMedicalRecordDetailRoute = (examinationId) => generatePath(ROUTE
 
 export const getErrorRoute = (code) => generatePath(ROUTES.ERROR, { code: String(code) });
 
-export const getPostLoginRoute = () => ROUTES.DASHBOARD;
+export const getPostLoginRoute = (role) => (role === USER_ROLES.PATIENT ? ROUTES.HOME : ROUTES.DASHBOARD);

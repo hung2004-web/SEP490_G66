@@ -34,6 +34,19 @@ export const validatePhone = (value) => {
     return undefined;
 };
 
+const isEmailIdentifier = (value) => value.includes("@");
+
+export const normalizeIdentifier = (value) => {
+    const trimmed = value.trim();
+    return isEmailIdentifier(trimmed) ? trimmed : normalizePhone(trimmed);
+};
+
+export const validateIdentifier = (value) => {
+    if (isRequiredEmpty(value)) return requiredMessage("số điện thoại hoặc email");
+    const trimmed = value.trim();
+    return isEmailIdentifier(trimmed) ? validateEmail(trimmed) : validatePhone(trimmed);
+};
+
 // For Register / Reset / Change Password. Sign In only checks that the password is filled.
 export const validatePassword = (value) => {
     if (isPasswordEmpty(value)) return requiredMessage("mật khẩu");

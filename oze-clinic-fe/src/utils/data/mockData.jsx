@@ -138,6 +138,8 @@ export const findMockUserByPhone = (phone) => {
   return users.find(u => u.phone === phone);
 };
 
+export const getDefaultMockUserId = (role) => DEFAULT_USERS.find(u => u.role === role)?.id;
+
 // Stands in for the user id the backend reads from the access token.
 export const setMockCurrentUserId = (id) => {
   if (id) localStorage.setItem(MOCK_CURRENT_USER_KEY, id);
