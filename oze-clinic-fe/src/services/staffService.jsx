@@ -37,6 +37,7 @@ const isPhoneInUse = (phone, exceptId) => staff.some((member) => member.id !== e
 const toStaffFields = (request) => ({
     fullName: request.fullName.trim(),
     role: request.role,
+    gender: request.gender,
     email: request.email.trim(),
     phone: normalizePhone(request.phone),
     birthDate: request.birthDate || null,

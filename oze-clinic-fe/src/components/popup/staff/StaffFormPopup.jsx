@@ -3,12 +3,12 @@ import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import { createStaffAccount, updateStaffAccount } from "@/services/staffService";
 import { STAFF_ROLE_OPTIONS } from "@/utils/data/mockStaff";
-import { PROFILE_LIMITS, USER_ROLES, VALIDATION_MESSAGES } from "@/utils/messages";
+import { GENDER_LABELS, PROFILE_LIMITS, USER_ROLES, VALIDATION_MESSAGES } from "@/utils/messages";
 import { isRequiredEmpty, requiredMessage, validateEmail, validatePhone } from "@/utils/validation";
 
 const LICENSE_MAX = 50;
 
-const EMPTY_FORM = { fullName: "", role: "", email: "", phone: "", birthDate: "", licenseNumber: "" };
+const EMPTY_FORM = { fullName: "", role: "", gender: "", email: "", phone: "", birthDate: "", licenseNumber: "" };
 
 // Local date as YYYY-MM-DD, the format of <input type="date">.
 const today = () => new Date().toLocaleDateString("en-CA");
@@ -20,6 +20,7 @@ const validateStaff = (form) => {
     if (isRequiredEmpty(form.fullName)) errors.fullName = requiredMessage("họ và tên");
     else if (form.fullName.trim().length > PROFILE_LIMITS.FULL_NAME_MAX) errors.fullName = VALIDATION_MESSAGES.FULL_NAME_TOO_LONG;
     if (!form.role) errors.role = "Vui lòng chọn vai trò.";
+    if (!form.gender) errors.gender = "Vui lòng chọn giới tính.";
     if (isRequiredEmpty(form.email)) errors.email = requiredMessage("email");
     else errors.email = validateEmail(form.email.trim());
     errors.phone = validatePhone(form.phone);
@@ -37,6 +38,7 @@ const StaffFormPopup = ({ member, onClose, onSaved }) => {
             ? {
                   fullName: member.fullName,
                   role: member.role,
+                  gender: member.gender ?? "",
                   email: member.email,
                   phone: member.phone,
                   birthDate: member.birthDate ?? "",
@@ -121,6 +123,33 @@ const StaffFormPopup = ({ member, onClose, onSaved }) => {
                     <FormField id="staff-birthDate" label="Ngày sinh" error={errors.birthDate}>
                         <input {...fieldProps("birthDate")} type="date" className="input" max={today()} />
                     </FormField>
+                    <fieldset className="field" aria-describedby={errors.gender ? "staff-gender-error" : undefined}>
+                        <legend className="label label-required">Giới tính</legend>
+                        <div className="flex h-control items-center gap-6">
+                            {Object.entries(GENDER_LABELS).map(([value, label]) => (
+                                <label key={value} className="flex cursor-pointer items-center gap-2 text-body-sm text-ink">
+                                    <input
+                                        type="radio"
+                                        name="gender"
+                                        value={value}
+                                        className="size-4"
+                                        checked={form.gender === value}
+                                        aria-invalid={Boolean(errors.gender)}
+                                        onChange={(event) => {
+                                            setForm((current) => ({ ...current, gender: event.target.value }));
+                                            setErrors((current) => ({ ...current, gender: undefined }));
+                                        }}
+                                    />
+                                    {label}
+                                </label>
+                            ))}
+                        </div>
+                        {errors.gender && (
+                            <p id="staff-gender-error" className="error-text">
+                                {errors.gender}
+                            </p>
+                        )}
+                    </fieldset>
                 </div>
 
                 {form.role === USER_ROLES.DOCTOR && (
