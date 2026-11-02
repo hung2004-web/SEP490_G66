@@ -37,5 +37,8 @@ namespace OZE.Application.Interfaces
 
         // The appointment is already tracked. The examination insert and the status change are one save.
         Task SaveStartedExaminationAsync(Appointment appointment, Examination examination, CancellationToken cancellationToken = default);
+
+        // The appointment and its examination are already tracked, so one save stores both changes
+        Task SaveCompletedExaminationAsync(CancellationToken cancellationToken = default);
     }
 }

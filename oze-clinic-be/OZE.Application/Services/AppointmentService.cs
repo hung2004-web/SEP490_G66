@@ -723,6 +723,36 @@ namespace OZE.Application.Services
             };
         }
 
+        public async Task<AppointmentResponse> CompleteExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default)
+        {
+            var doctorId = await _appointmentRepository.GetStaffProfileIdByUserIdAsync(doctorUserId);
+            ConditionGuard.Ensure<NotFoundException>(doctorId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
+
+            var appointment = await _appointmentRepository.GetByIdWithExaminationAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            // Same rule as starting: only the doctor of this appointment may finish it
+            ConditionGuard.Ensure<ForbiddenException>(appointment!.DoctorId == doctorId, ErrorConstants.AppointmentMessage.NotAssignedDoctor);
+            ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.InServiceStatus, ErrorConstants.AppointmentMessage.OnlyInServiceCanBeCompleted);
+
+            var examination = appointment.Examination;
+            ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.AppointmentMessage.ExaminationNotFound);
+            ConditionGuard.ThrowIf(examination!.ExaminationStatus == ExaminationConstants.Locked, ErrorConstants.AppointmentMessage.ExaminationAlreadyLocked);
+
+            // The clinic locks the record as soon as the visit is finished, there is no step in between
+            var now = DateTimeOffset.UtcNow;
+            examination.ExaminationStatus = ExaminationConstants.Locked;
+            examination.LockedAt = now;
+            examination.LockedByUserId = doctorUserId;
+            examination.UpdatedAt = now;
+
+            appointment.Status = AppointmentConstants.CompletedStatus;
+            appointment.UpdatedAt = now;
+
+            await _appointmentRepository.SaveCompletedExaminationAsync(cancellationToken);
+            return MapToResponse(appointment);
+        }
+
         // Anything above normal needs a reason, so the order of the waiting list can be explained later
         private static void EnsureValidPriority(int priority, string? reason)
         {

@@ -288,6 +288,11 @@ namespace OZE.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task SaveCompletedExaminationAsync(CancellationToken cancellationToken = default)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task SaveStartedExaminationAsync(Appointment appointment, Examination examination, CancellationToken cancellationToken = default)
         {
             // The appointment was loaded without AsNoTracking, so the status change is already tracked
