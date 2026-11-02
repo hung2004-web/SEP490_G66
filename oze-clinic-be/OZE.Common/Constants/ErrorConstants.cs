@@ -285,6 +285,13 @@ namespace OZE.Common.Constants
         }
 
         // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.
+        public static class QueueMessage
+        {
+            public const string EntryNotFound = "Queue number not found";
+            public const string OnlyCalledCanBeSkipped = "Only a number that has been called can be skipped";
+            public const string NotYourPatient = "You can only skip your own patients";
+        }
+
         public static class ImagingRequestMessage
         {
             // MSG07
@@ -308,7 +315,12 @@ namespace OZE.Common.Constants
             public const string CancelReasonInvalid = "Cancel reason is invalid. Please check again.";
             public const string CannotCancelRequest = "You do not have permission to cancel this imaging request.";
             public const string RequestNotPending = "Cannot cancel imaging request because the imaging request is {0}.";
+            public const string RequestNotOpen = "Cannot complete imaging request because the imaging request is {0}.";
             public const string RequestCancelled = "Cancel imaging request success!";
+            public const string WebhookSignatureMissing = "Missing webhook signature";
+            public const string WebhookSignatureInvalid = "Invalid webhook signature";
+            public const string WebhookSecretNotConfigured = "Webhook secret is not configured";
+            public const string WebhookPayloadInvalid = "Invalid payload";
             // MSG02
             public const string QueueEmpty = "No Data.";
             public const string TechnicianNotificationTitle = "New imaging request";

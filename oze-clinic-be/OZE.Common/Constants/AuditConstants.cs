@@ -11,6 +11,7 @@ namespace OZE.Common.Constants
         public const string AppointmentPriorityChanged = "APPOINTMENT_PRIORITY_CHANGED";
         public const string AppointmentExaminationStarted = "APPOINTMENT_EXAMINATION_STARTED";
         public const string AppointmentCompleted = "APPOINTMENT_COMPLETED";
+        public const string AppointmentNoShow = "APPOINTMENT_NO_SHOW";
 
         public const string AppointmentEntity = "Appointment";
     }

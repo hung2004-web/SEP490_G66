@@ -15,6 +15,8 @@ namespace OZE.Application.Interfaces
         void RemoveServiceItem(AppointmentServiceItem item);
         void RemoveDiagnosis(ClinicalDiagnosis diagnosis);
         void RemovePrescriptionItem(PrescriptionItem item);
+        // Removes the prescription together with all of its medications
+        void RemovePrescription(Prescription prescription);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

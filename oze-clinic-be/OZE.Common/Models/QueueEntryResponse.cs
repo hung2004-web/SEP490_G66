@@ -15,6 +15,7 @@ namespace OZE.Common.Models
         public string PatientCode { get; set; } = string.Empty;
         public int QueueNumber { get; set; }
         public int Priority { get; set; }
+        public int SkipCount { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTimeOffset? CalledAt { get; set; }
         public DateTimeOffset? StartedAt { get; set; }
