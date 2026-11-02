@@ -61,5 +61,14 @@ namespace OZE.Application.Helpers
             var pagedResult = source.ToPagedResult<TSource, TDest>(mapFunc);
             return ApiResponse<PagedResult<TDest>>.SuccessResult(pagedResult, message);
         }
+        /// <summary>
+        /// Wraps an existing PagedResult in an ApiResponse without mapping.
+        /// </summary>
+        public static ApiResponse<PagedResult<T>> ToPagedApiResponse<T>(
+            this PagedResult<T> source,
+            string message = "Success")
+        {
+            return ApiResponse<PagedResult<T>>.SuccessResult(source, message);
+        }
     }
 }

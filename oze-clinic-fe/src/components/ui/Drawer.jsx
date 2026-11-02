@@ -6,8 +6,8 @@ const SCROLL_LOCK_CLASS = "overflow-hidden";
 
 // Panel sliding in from the right, for details that keep the list behind in view.
 // Same behaviour as Modal: locks page scroll, keeps Tab inside, closes on Escape or backdrop click, returns focus on close.
-// eyebrow: small line above the title; badge: shown next to the title.
-const Drawer = ({ title, eyebrow, badge, onClose, children }) => {
+// eyebrow: small line above the title; description: small line below it; badge: shown next to the title.
+const Drawer = ({ title, eyebrow, description, badge, onClose, children }) => {
     const titleId = useId();
     const drawerRef = useRef(null);
 
@@ -69,6 +69,7 @@ const Drawer = ({ title, eyebrow, badge, onClose, children }) => {
                             </h2>
                             {badge}
                         </div>
+                        {description && <p className="mt-1 text-body-sm text-muted">{description}</p>}
                     </div>
                     <button
                         type="button"

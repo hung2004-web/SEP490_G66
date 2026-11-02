@@ -25,5 +25,17 @@ namespace OZE.Application.Interfaces
             long id,
             CancelImagingRequest request,
             CancellationToken cancellationToken = default);
+
+        Task<List<ImagingRequestQueueResponse>> GetQueueAsync(CancellationToken cancellationToken = default);
+
+        Task<ImagingRequestResponse> CompleteAsync(
+            long id,
+            string? technicianUserId = null,
+            string? notes = null,
+            CancellationToken cancellationToken = default);
+
+        Task<bool> ProcessSimulatorWebhookAsync(
+            ImagingSimulatorWebhookPayload payload,
+            CancellationToken cancellationToken = default);
     }
 }

@@ -49,5 +49,7 @@ namespace OZE.Application.Services
                 EstimatedMinutes = service.EstimatedMinutes
             };
         }
+ 
+        }
     }
-}
+

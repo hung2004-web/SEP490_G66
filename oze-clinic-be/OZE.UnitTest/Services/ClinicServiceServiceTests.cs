@@ -174,7 +174,7 @@ namespace OZE.UnitTest.Services
             {
                 ServiceCode = "dv-new",
                 ServiceName = " Tram rang ",
-                RequiredRoomType = "treatment", // test case-insensitivity
+                RequiredRoomType = "generaltreatment", // test case-insensitivity
                 ReferencePrice = 250000m,
                 EstimatedMinutes = 30
             };
@@ -199,10 +199,10 @@ namespace OZE.UnitTest.Services
             result.Data.Should().NotBeNull();
             result.Data!.ServiceCode.Should().Be("DV-NEW");
             result.Data.ServiceName.Should().Be("Tram rang");
-            result.Data.RequiredRoomType.Should().Be("Treatment"); // normalized to PascalCase
+            result.Data.RequiredRoomType.Should().Be("GeneralTreatment"); // normalized to PascalCase
 
             _cache.TryGetValue(activeListKey, out _).Should().BeFalse(); // Cache invalidated
-            _serviceRepositoryMock.Verify(r => r.AddAsync(It.Is<Service>(s => s.ServiceCode == "DV-NEW" && s.RequiredRoomType == "Treatment"), It.IsAny<CancellationToken>()), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.AddAsync(It.Is<Service>(s => s.ServiceCode == "DV-NEW" && s.RequiredRoomType == "GeneralTreatment"), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -303,7 +303,7 @@ namespace OZE.UnitTest.Services
                 ServiceCode = "DV-05-NEW",
                 ServiceName = "New Name",
                 ReferencePrice = 200000m,
-                RequiredRoomType = "imaging",
+                RequiredRoomType = "xray",
                 EstimatedMinutes = 45,
                 IsActive = true
             };
@@ -332,7 +332,7 @@ namespace OZE.UnitTest.Services
             result.Data.Should().NotBeNull();
             result.Data!.ServiceCode.Should().Be("DV-05-NEW");
             result.Data.ServiceName.Should().Be("New Name");
-            result.Data.RequiredRoomType.Should().Be("Imaging");
+            result.Data.RequiredRoomType.Should().Be("XRay");
             result.Data.ReferencePrice.Should().Be(200000m);
         }
 

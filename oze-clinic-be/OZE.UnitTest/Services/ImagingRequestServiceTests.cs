@@ -425,6 +425,73 @@ namespace OZE.UnitTest.Services
             error.Which.Message.Should().Be(ErrorConstants.ImagingRequestMessage.RequestNotFound);
         }
 
+        [Fact]
+        public async Task GetQueueAsync_ShouldReturnPendingAndInProgressRequestsInRequestTimeOrder()
+        {
+            var earlier = new DateTimeOffset(2026, 10, 26, 1, 0, 0, TimeSpan.Zero);
+            var later = earlier.AddHours(1);
+            _imagingRequestRepository
+                .Setup(r => r.GetQueueAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ImagingRequest>
+                {
+                    QueueRequest(2, ImagingRequestConstants.InProgress, later, "Minh Tran", "Dr An"),
+                    QueueRequest(3, ImagingRequestConstants.Cancelled, earlier.AddMinutes(30), "Other", "Dr An"),
+                    QueueRequest(1, ImagingRequestConstants.Pending, earlier, "Lan Nguyen", "Dr Binh")
+                });
+
+            var result = await _service.GetQueueAsync();
+
+            result.Select(item => item.Id).Should().Equal(1, 2);
+            result[0].PatientName.Should().Be("Lan Nguyen");
+            result[0].DoctorName.Should().Be("Dr Binh");
+            result[0].ImagingType.Should().Be(ImagingRequestConstants.Panoramic);
+            result[0].TargetArea.Should().Be("Tooth 36");
+            result[0].ClinicalIndication.Should().Be("Check the root");
+            result[0].RequestStatus.Should().Be(ImagingRequestConstants.Pending);
+            result[0].CreatedAt.Should().Be(earlier);
+            result[1].RequestStatus.Should().Be(ImagingRequestConstants.InProgress);
+            result[1].PatientId.Should().Be(3);
+        }
+
+        [Fact]
+        public async Task GetQueueAsync_ShouldReturnEmptyList_WhenNoRequestIsWaiting()
+        {
+            _imagingRequestRepository
+                .Setup(r => r.GetQueueAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ImagingRequest>());
+
+            var result = await _service.GetQueueAsync();
+
+            result.Should().BeEmpty();
+        }
+
+        private static ImagingRequest QueueRequest(
+            long id,
+            string status,
+            DateTimeOffset createdAt,
+            string patientName,
+            string doctorName)
+        {
+            return new ImagingRequest
+            {
+                Id = id,
+                ExaminationId = ExaminationId,
+                RequestedByDoctorId = 5,
+                ImagingType = ImagingRequestConstants.Panoramic,
+                TargetArea = "Tooth 36",
+                ClinicalIndication = "Check the root",
+                RequestStatus = status,
+                CreatedAt = createdAt,
+                Examination = new Examination
+                {
+                    Id = ExaminationId,
+                    PatientId = 3,
+                    Patient = new Patient { Id = 3, FullName = patientName, PatientCode = "BN-03" }
+                },
+                RequestedByDoctor = new StaffProfile { Id = 5, FullName = doctorName }
+            };
+        }
+
         private void SetupPendingRequest(ImagingRequest? imagingRequest = null)
         {
             _staffRepository

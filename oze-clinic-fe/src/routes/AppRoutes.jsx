@@ -15,6 +15,7 @@ import ProfilePage from "../pages/common/ProfilePage";
 import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
 import MyAppointments from "../pages/patient/MyAppointments";
+import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import RoomManagement from "../pages/admin/RoomManagement";
 import ServiceManagement from "../pages/admin/ServiceManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
@@ -109,7 +110,8 @@ const ROLE_PAGES = {
     [ROUTES.APPOINTMENTS]: (
         <Routes>
             <Route index element={<MyAppointments />} />
-            <Route path="*" element={<ComingSoonPage title="Lịch hẹn của tôi" />} />
+            <Route path=":appointmentId" element={<AppointmentDetail />} />
+            <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
@@ -123,6 +125,8 @@ const COMING_SOON_TITLES = {
     [ROUTES.TREATMENT_PLANS]: "Kế hoạch điều trị",
     [ROUTES.MEDICAL_RECORD]: "Hồ sơ bệnh án",
     [ROUTES.INVOICES]: "Hóa đơn",
+    [ROUTES.DOCTOR_QUEUE]: "Hàng chờ khám",
+    [ROUTES.DOCTOR_IMAGING_REVIEWS]: "Duyệt kết quả chụp",
     [ROUTES.DOCTOR_APPOINTMENTS]: "Lịch hẹn khám",
     [ROUTES.DOCTOR_PATIENTS]: "Bệnh nhân",
     [ROUTES.DOCTOR_TREATMENT_PLANS]: "Kế hoạch điều trị",
@@ -136,7 +140,7 @@ const COMING_SOON_TITLES = {
     [ROUTES.RECEPTION_INVOICES]: "Thanh toán",
     [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
     [ROUTES.ADMIN_ROLES]: "Vai trò",
-    [ROUTES.ADMIN_WORK_SHIFTS]: "Ca làm việc",
+    [ROUTES.ADMIN_WORK_SHIFTS]: "Phân ca",
     [ROUTES.ADMIN_LEAVE_REQUESTS]: "Đơn xin nghỉ",
     [ROUTES.ADMIN_REFUNDS]: "Duyệt hoàn tiền",
     [ROUTES.ADMIN_SYSTEM_LOGS]: "Nhật ký hệ thống",

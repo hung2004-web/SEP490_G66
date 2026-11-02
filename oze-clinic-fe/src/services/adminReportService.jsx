@@ -1,5 +1,5 @@
 import { formatDate, toDateOnly } from "../utils/format";
-import { MOCK_PENDING_REQUESTS, MOCK_REVENUE_SHARES, MOCK_TODAY_APPOINTMENTS } from "../utils/data/mockAdminReport";
+import { MOCK_APPOINTMENT_RATES, MOCK_DEBTS, MOCK_PENDING_REQUESTS, MOCK_REVENUE_SHARES } from "../utils/data/mockAdminReport";
 
 // TODO(api): mock only. The numbers are made up from the date, so the same day always gives the same figures.
 const MOCK_DELAY_MS = 300;
@@ -121,6 +121,13 @@ const buildBars = (period, { from, to }, today) => {
     }));
 };
 
+// Appointments booked in the period: the completed ones are the visits, plus the cancelled and missed ones.
+const countAppointments = (visits) => {
+    const cancelled = Math.round(visits * MOCK_APPOINTMENT_RATES.cancelled);
+    const noShow = Math.round(visits * MOCK_APPOINTMENT_RATES.noShow);
+    return { total: visits + cancelled + noShow, completed: visits, cancelled, noShow };
+};
+
 const percentChange = (current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
 
 // Report of one period. offset: 0 = the current period, -1 = the one before, ...
@@ -149,7 +156,8 @@ export const getReport = async ({ period = REPORT_PERIODS.WEEK, offset = 0 } = {
         revenue: { value: revenue, change: percentChange(revenue, sumRevenue(previousDays)) },
         visits: { value: visits, change: percentChange(visits, total(previousDays, "visits")) },
         newPatients: { value: newPatients, change: newPatients - total(previousDays, "newPatients") },
-        todayAppointments: { ...MOCK_TODAY_APPOINTMENTS },
+        appointments: countAppointments(visits),
+        debts: { ...MOCK_DEBTS, items: MOCK_DEBTS.items.map((item) => ({ ...item })) },
         revenueBars: buildBars(period, range, today),
         revenueByService: MOCK_REVENUE_SHARES.map(({ label, share }) => ({ label, value: round1(revenue * share) })),
     });

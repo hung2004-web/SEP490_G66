@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarCheck, Download, Inbox, Stethoscope, UserPlus, Wallet } from "lucide-react";
+import { CalendarCheck, Inbox, Stethoscope, UserPlus, Wallet } from "lucide-react";
 import BarChart from "@/components/chart/BarChart";
 import DonutChart from "@/components/chart/DonutChart";
 import MetricCard from "@/components/ui/MetricCard";
@@ -81,11 +81,63 @@ const exportReport = (report) => {
     URL.revokeObjectURL(url);
 };
 
-const ReportCard = ({ title, children }) => (
-    <section className="card-app">
-        <h2 className="card-title mb-6">{title}</h2>
-        {children}
+// Card with a bordered head row: title on the left, an optional note or action on the right.
+const ReportCard = ({ title, aside, children }) => (
+    <section className="card-app flex flex-col p-0">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
+            <h2 className="card-title flex-1">{title}</h2>
+            {aside}
+        </div>
+        <div className="px-5 pb-5 pt-4">{children}</div>
     </section>
+);
+
+const DebtCard = ({ debts, loading, onViewAll }) => (
+    <ReportCard
+        title="Công nợ"
+        aside={
+            <button type="button" className="btn btn-link h-auto p-0 font-semibold" onClick={onViewAll}>
+                Xem danh sách
+            </button>
+        }
+    >
+        {loading || !debts ? (
+            <div className="skeleton h-56 w-full" aria-hidden="true" />
+        ) : (
+            <div className="flex flex-col gap-3.5">
+                <div>
+                    <p className="text-muted">Còn phải thu</p>
+                    <p className="num font-heading text-heading-1 text-ink">{formatCurrency(debts.total)}</p>
+                    <p className="num text-caption font-normal text-muted">{debts.invoiceCount} hoá đơn chưa thanh toán đủ</p>
+                </div>
+                <div className="table-wrap">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Bệnh nhân</th>
+                                <th scope="col" className="text-right">
+                                    Còn nợ
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {debts.items.map((item) => (
+                                <tr key={item.invoiceCode}>
+                                    <td className="py-2">
+                                        <p className="font-semibold text-ink">{item.patientName}</p>
+                                        <p className="text-caption font-normal text-muted">
+                                            {item.invoiceCode} · {item.note}
+                                        </p>
+                                    </td>
+                                    <td className="num whitespace-nowrap text-right font-bold text-ink">{formatCurrency(item.remaining)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        )}
+    </ReportCard>
 );
 
 const AdminDashboard = () => {
@@ -107,11 +159,14 @@ const AdminDashboard = () => {
     // TODO: open the leave / refund request once those pages exist.
     const openRequest = () => {};
 
+    // TODO: open the "Danh sách công nợ" drawer once it is built.
+    const openDebts = () => {};
+
     return (
         <div className="flex flex-col gap-6">
             <div className="page-header mb-0 items-center">
                 <div>
-                    <h1 className="page-title">Tổng quan</h1>
+                    <h1 className="page-title">Báo cáo</h1>
                     <p className="num mt-1 text-caption text-muted">
                         {updatedAt
                             ? `Cập nhật lúc ${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}, ${formatDate(toDateOnly(updatedAt))}`
@@ -127,7 +182,6 @@ const AdminDashboard = () => {
                         nextDisabled={offset >= 0}
                     />
                     <button type="button" className="btn btn-secondary" disabled={!report} onClick={() => exportReport(report)}>
-                        <Download className="size-4" aria-hidden="true" />
                         Xuất báo cáo
                     </button>
                 </div>
@@ -136,7 +190,7 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <MetricCard
                     icon={Wallet}
-                    label="Doanh thu"
+                    label="Doanh thu thực thu"
                     loading={loading}
                     value={report && formatCurrency(report.revenue.value * MILLION)}
                     caption={report && changeCaption(report.revenue.change, period, "%")}
@@ -160,17 +214,20 @@ const AdminDashboard = () => {
                 />
                 <MetricCard
                     icon={CalendarCheck}
-                    label="Lịch hẹn hôm nay"
+                    label="Lịch hẹn trong kỳ"
                     loading={loading}
-                    value={report?.todayAppointments.total}
+                    value={report?.appointments.total}
                     caption={
                         report &&
-                        `${report.todayAppointments.checkedIn} đã check-in · ${report.todayAppointments.notArrived} chưa đến`
+                        `${report.appointments.completed} hoàn thành · ${report.appointments.cancelled} huỷ · ${report.appointments.noShow} lỡ hẹn`
                     }
                 />
             </div>
 
-            <ReportCard title={`Doanh thu ${report?.label ?? ""} (triệu ₫)`}>
+            <ReportCard
+                title={`Doanh thu ${report?.label ?? ""} (triệu ₫)`}
+                aside={<p className="text-caption font-normal text-muted">Bấm vào một cột để xem báo cáo ngày đó</p>}
+            >
                 {loading ? (
                     <div className="skeleton h-64 w-full" aria-hidden="true" />
                 ) : (
@@ -180,25 +237,28 @@ const AdminDashboard = () => {
                 )}
             </ReportCard>
 
-            <ReportCard title="Tỷ trọng doanh thu theo dịch vụ">
-                {loading ? (
-                    <div className="skeleton h-44 w-full" aria-hidden="true" />
-                ) : (
-                    report && (
-                        <DonutChart
-                            data={report.revenueByService}
-                            title="Tỷ trọng doanh thu theo dịch vụ (triệu ₫)"
-                            formatValue={(value) => `${formatMillion(value)} tr`}
-                            centerValue={`${formatMillion(report.revenue.value)} tr`}
-                            centerLabel="Tổng"
-                        />
-                    )
-                )}
-            </ReportCard>
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+                <ReportCard title="Tỷ trọng doanh thu theo dịch vụ">
+                    {loading ? (
+                        <div className="skeleton h-44 w-full" aria-hidden="true" />
+                    ) : (
+                        report && (
+                            <DonutChart
+                                data={report.revenueByService}
+                                title="Tỷ trọng doanh thu theo dịch vụ (triệu ₫)"
+                                formatValue={(value) => `${formatMillion(value)} tr`}
+                                centerValue={`${formatMillion(report.revenue.value)} tr`}
+                                centerLabel="Tổng"
+                            />
+                        )
+                    )}
+                </ReportCard>
+                <DebtCard debts={report?.debts} loading={loading} onViewAll={openDebts} />
+            </div>
 
             <section className="card-app overflow-hidden p-0" aria-labelledby="pending-requests-title">
-                <div className="flex items-center gap-2 px-6 py-4">
-                    <h2 id="pending-requests-title" className="card-title">
+                <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+                    <h2 id="pending-requests-title" className="card-title flex-1">
                         Đơn chờ duyệt
                     </h2>
                     {requests.length > 0 && <span className="num rounded-full bg-warning-soft px-2 text-caption text-warning">{requests.length}</span>}
@@ -208,7 +268,7 @@ const AdminDashboard = () => {
                         <thead>
                             <tr>
                                 <th scope="col">Loại đơn</th>
-                                <th scope="col">Người gửi</th>
+                                <th scope="col">Người gửi / bệnh nhân</th>
                                 <th scope="col">Nội dung</th>
                                 <th scope="col">Gửi lúc</th>
                                 <th scope="col">

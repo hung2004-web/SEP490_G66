@@ -25,6 +25,8 @@ import { ROUTES } from "./routes";
 export const SIDEBAR_BADGES = {
     PENDING_LEAVES: "pendingLeaves",
     PENDING_REFUNDS: "pendingRefunds",
+    WAITING_PATIENTS: "waitingPatients",
+    PENDING_IMAGING_REVIEWS: "pendingImagingReviews",
 };
 
 const DASHBOARD_LINK = { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard, to: ROUTES.DASHBOARD };
@@ -48,58 +50,46 @@ const ACCOUNT_GROUP = {
 
 const SIDEBAR_MENU = {
     [USER_ROLES.CLINIC_MANAGER]: [
-        { key: "reports", label: "Tổng quan", icon: ChartColumn, to: ROUTES.DASHBOARD },
-        {
-            key: "staff",
-            label: "Nhân sự",
-            icon: Users,
-            children: [
-                { key: "accounts", label: "Nhân viên", to: ROUTES.ADMIN_STAFF },
-                { key: "work-shifts", label: "Ca làm việc", to: ROUTES.ADMIN_WORK_SHIFTS },
-                { key: "leave-requests", label: "Đơn xin nghỉ", to: ROUTES.ADMIN_LEAVE_REQUESTS, badge: SIDEBAR_BADGES.PENDING_LEAVES },
-            ],
-        },
+        { key: "reports", label: "Báo cáo", icon: ChartColumn, to: ROUTES.DASHBOARD },
         {
             key: "operations",
             label: "Vận hành",
             icon: Building2,
             children: [
-                { key: "rooms", label: "Phòng", to: ROUTES.ADMIN_ROOMS },
-                { key: "services", label: "Dịch vụ", to: ROUTES.ADMIN_SERVICES },
+                { key: "work-shifts", label: "Phân ca", to: ROUTES.ADMIN_WORK_SHIFTS },
+                { key: "leave-requests", label: "Đơn xin nghỉ", to: ROUTES.ADMIN_LEAVE_REQUESTS, badge: SIDEBAR_BADGES.PENDING_LEAVES },
+                { key: "refunds", label: "Duyệt hoàn tiền", to: ROUTES.ADMIN_REFUNDS, badge: SIDEBAR_BADGES.PENDING_REFUNDS },
             ],
         },
         {
-            key: "finance",
-            label: "Tài chính",
-            icon: Wallet,
-            children: [{ key: "refunds", label: "Duyệt hoàn tiền", to: ROUTES.ADMIN_REFUNDS, badge: SIDEBAR_BADGES.PENDING_REFUNDS }],
+            key: "catalog",
+            label: "Danh mục",
+            icon: Users,
+            children: [
+                { key: "services", label: "Dịch vụ", to: ROUTES.ADMIN_SERVICES },
+                { key: "rooms", label: "Phòng", to: ROUTES.ADMIN_ROOMS },
+                { key: "accounts", label: "Tài khoản & nhân sự", to: ROUTES.ADMIN_STAFF },
+            ],
         },
         {
             key: "system",
             label: "Hệ thống",
             icon: Shield,
-            children: [
-                { key: "system-logs", label: "Nhật ký hệ thống", to: ROUTES.ADMIN_SYSTEM_LOGS },
-                { key: "settings", label: "Cài đặt", to: ROUTES.ADMIN_SETTINGS },
-            ],
+            children: [{ key: "system-logs", label: "Nhật ký hệ thống", to: ROUTES.ADMIN_SYSTEM_LOGS }],
         },
-        ACCOUNT_GROUP,
     ],
     [USER_ROLES.DOCTOR]: [
         DASHBOARD_LINK,
         {
             key: "clinical",
-            label: "Khám chữa bệnh",
+            label: "Khám bệnh",
             icon: Stethoscope,
             children: [
-                { key: "appointments", label: "Lịch hẹn khám", to: ROUTES.DOCTOR_APPOINTMENTS },
-                { key: "patients", label: "Bệnh nhân", to: ROUTES.DOCTOR_PATIENTS },
-                { key: "treatment-plans", label: "Kế hoạch điều trị", to: ROUTES.DOCTOR_TREATMENT_PLANS },
-                { key: "imaging-requests", label: "Yêu cầu chụp phim", to: ROUTES.DOCTOR_IMAGING_REQUESTS },
+                { key: "queue", label: "Hàng chờ khám", to: ROUTES.DOCTOR_QUEUE, badge: SIDEBAR_BADGES.WAITING_PATIENTS },
+                { key: "imaging-reviews", label: "Duyệt kết quả chụp", to: ROUTES.DOCTOR_IMAGING_REVIEWS, badge: SIDEBAR_BADGES.PENDING_IMAGING_REVIEWS },
             ],
         },
-        WORK_GROUP,
-        ACCOUNT_GROUP,
+        { ...ACCOUNT_GROUP, children: [...WORK_GROUP.children, ...ACCOUNT_GROUP.children] },
     ],
     [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: [
         DASHBOARD_LINK,

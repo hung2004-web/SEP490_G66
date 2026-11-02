@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
 import { CheckCircle2, DoorOpen, Pencil, ScanLine, Search, Stethoscope, Syringe, Wrench } from "lucide-react";
 import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
 import RoomMaintenancePopup from "@/components/popup/room/RoomMaintenancePopup";
+=======
+import { CheckCircle2, DoorOpen, Pencil, Search } from "lucide-react";
+import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
+>>>>>>> fix/service-room-management-pages
 import Pagination from "@/components/ui/Pagination";
-import StatCard from "@/components/ui/StatCard";
 import useAsync from "@/hooks/useAsync";
 import { getRooms } from "@/services/roomService";
 import { cx } from "@/utils/cx";
+<<<<<<< HEAD
 import { ROOM_STATUSES, ROOM_TYPES, ROOM_TYPE_OPTIONS } from "@/utils/data/mockRooms";
+=======
+import { ROOM_STATUS_OPTIONS, ROOM_TYPE_OPTIONS, roomTypeLabel } from "@/utils/data/mockRooms";
+>>>>>>> fix/service-room-management-pages
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 3;
 const COLUMN_COUNT = 7;
+<<<<<<< HEAD
 
 const TYPE_ICONS = {
     [ROOM_TYPES.EXAMINATION]: Stethoscope,
@@ -48,12 +57,15 @@ const TypeChip = ({ type }) => {
         </span>
     );
 };
+=======
+>>>>>>> fix/service-room-management-pages
 
 const StatusBadge = ({ status }) => {
-    const option = findOption(STATUS_OPTIONS, status);
+    const option = ROOM_STATUS_OPTIONS.find((item) => item.value === status);
     return option ? <span className={cx("badge", option.badge)}>{option.label}</span> : null;
 };
 
+<<<<<<< HEAD
 const RoomRow = ({ room, onEdit, onMaintenance }) => {
     const inUse = room.status === ROOM_STATUSES.IN_USE;
     const underMaintenance = room.status === ROOM_STATUSES.MAINTENANCE;
@@ -105,6 +117,33 @@ const RoomRow = ({ room, onEdit, onMaintenance }) => {
         </tr>
     );
 };
+=======
+const RoomRow = ({ room, index, onEdit }) => (
+    <tr>
+        <td className="num">{index}</td>
+        <td className="cell-primary whitespace-nowrap">{room.name}</td>
+        <td className="whitespace-nowrap">{roomTypeLabel(room.type)}</td>
+        <td className="whitespace-nowrap">{room.floor || <span className="text-muted">—</span>}</td>
+        <td>{room.description || <span className="text-muted">—</span>}</td>
+        <td>
+            <StatusBadge status={room.status} />
+        </td>
+        <td>
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-icon size-8"
+                    aria-label={`Chỉnh sửa ${room.name}`}
+                    title="Chỉnh sửa"
+                    onClick={() => onEdit(room)}
+                >
+                    <Pencil className="size-4" aria-hidden="true" />
+                </button>
+            </div>
+        </td>
+    </tr>
+);
+>>>>>>> fix/service-room-management-pages
 
 const RoomManagement = () => {
     const [searchInput, setSearchInput] = useState("");
@@ -134,16 +173,9 @@ const RoomManagement = () => {
     const data = result?.success ? result.data : null;
     const rooms = data?.items ?? [];
     const filtered = Boolean(keyword || type || status);
-    const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
-    const lastItem = firstItem + rooms.length - 1;
 
     const changeFilter = (setter) => (event) => {
         setter(event.target.value);
-        setPage(1);
-    };
-
-    const toggleStatusFilter = (nextStatus) => {
-        setStatus((current) => (current === nextStatus ? "" : (nextStatus ?? "")));
         setPage(1);
     };
 
@@ -154,6 +186,8 @@ const RoomManagement = () => {
         setStatus("");
         setPage(1);
     };
+    const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
+    const lastItem = firstItem + rooms.length - 1;
 
     const handleSaved = (message) => {
         setDialog(null);
@@ -162,10 +196,13 @@ const RoomManagement = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
             <div className="page-header mb-0 items-center">
-                <h1 className="page-title">Phòng</h1>
-                <button type="button" className="btn btn-primary" onClick={() => setDialog({ kind: "form", room: null })}>
+                <div>
+                    <h1 className="page-title">Phòng</h1>
+                    <p className="page-description num">{data ? `${data.totalItems} phòng` : " "}</p>
+                </div>
+                <button type="button" className="btn btn-primary" onClick={() => setDialog({ room: null })}>
                     Thêm phòng
                 </button>
             </div>
@@ -182,29 +219,17 @@ const RoomManagement = () => {
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                {STAT_CARDS.map((card) => (
-                    <StatCard
-                        key={card.key}
-                        label={card.label}
-                        value={data?.stats[card.key]}
-                        active={card.status ? status === card.status : !status}
-                        onClick={() => toggleStatusFilter(card.status)}
-                    />
-                ))}
-            </div>
-
             <div className="flex flex-wrap items-center gap-3">
-                <div className="search w-full sm:w-64">
+                <div className="search w-full sm:w-72">
                     <Search aria-hidden="true" />
                     <label htmlFor="room-search" className="sr-only">
-                        Tìm phòng
+                        Tìm kiếm phòng
                     </label>
                     <input
                         id="room-search"
                         type="search"
                         className="input"
-                        placeholder="Tìm phòng"
+                        placeholder="Tìm theo tên phòng, tầng, mô tả"
                         value={searchInput}
                         onChange={(event) => setSearchInput(event.target.value)}
                     />
@@ -212,7 +237,7 @@ const RoomManagement = () => {
                 <label htmlFor="room-type-filter" className="sr-only">
                     Loại phòng
                 </label>
-                <select id="room-type-filter" className="input w-auto" value={type} onChange={changeFilter(setType)}>
+                <select id="room-type-filter" className="input w-auto min-w-48" value={type} onChange={changeFilter(setType)}>
                     <option value="">Loại phòng: Tất cả</option>
                     {ROOM_TYPE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -223,9 +248,9 @@ const RoomManagement = () => {
                 <label htmlFor="room-status-filter" className="sr-only">
                     Trạng thái
                 </label>
-                <select id="room-status-filter" className="input w-auto" value={status} onChange={changeFilter(setStatus)}>
+                <select id="room-status-filter" className="input w-auto min-w-44" value={status} onChange={changeFilter(setStatus)}>
                     <option value="">Trạng thái: Tất cả</option>
-                    {STATUS_OPTIONS.map((option) => (
+                    {ROOM_STATUS_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                             Trạng thái: {option.label}
                         </option>
@@ -233,7 +258,7 @@ const RoomManagement = () => {
                 </select>
                 {(filtered || searchInput) && (
                     <button type="button" className="btn btn-link" onClick={clearFilters}>
-                        Xóa bộ lọc
+                        Xoá bộ lọc
                     </button>
                 )}
             </div>
@@ -243,11 +268,11 @@ const RoomManagement = () => {
                     <table className="table" aria-busy={loading}>
                         <thead>
                             <tr>
-                                <th scope="col">Mã</th>
+                                <th scope="col">STT</th>
                                 <th scope="col">Tên phòng</th>
-                                <th scope="col">Loại</th>
-                                <th scope="col">Thiết bị chính</th>
-                                <th scope="col">Đang dùng bởi</th>
+                                <th scope="col">Loại phòng</th>
+                                <th scope="col">Tầng</th>
+                                <th scope="col">Mô tả</th>
                                 <th scope="col">Trạng thái</th>
                                 <th scope="col">
                                     <span className="sr-only">Thao tác</span>
@@ -281,12 +306,12 @@ const RoomManagement = () => {
                                 </tr>
                             )}
                             {!loading &&
-                                rooms.map((room) => (
+                                rooms.map((room, index) => (
                                     <RoomRow
                                         key={room.id}
                                         room={room}
-                                        onEdit={(selected) => setDialog({ kind: "form", room: selected })}
-                                        onMaintenance={(selected) => setDialog({ kind: "maintenance", room: selected })}
+                                        index={firstItem + index}
+                                        onEdit={(selected) => setDialog({ room: selected })}
                                     />
                                 ))}
                         </tbody>
@@ -295,19 +320,23 @@ const RoomManagement = () => {
                 {data && data.totalItems > 0 && (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                         <p className="num text-caption text-muted">
-                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} bản ghi
+                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} phòng
                         </p>
                         <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách phòng" />
                     </div>
                 )}
             </div>
 
+<<<<<<< HEAD
             {dialog?.kind === "form" && (
                 <RoomFormPopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
             )}
             {dialog?.kind === "maintenance" && (
                 <RoomMaintenancePopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
             )}
+=======
+            {dialog && <RoomFormPopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />}
+>>>>>>> fix/service-room-management-pages
         </div>
     );
 };

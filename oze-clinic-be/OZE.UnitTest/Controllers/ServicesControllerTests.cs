@@ -72,7 +72,7 @@ namespace OZE.UnitTest.Controllers
                 ServiceName = "Tẩy trắng răng",
                 ReferencePrice = 1500000m,
                 EstimatedMinutes = 60,
-                RequiredRoomType = "Treatment",
+                RequiredRoomType = "GeneralTreatment",
                 IsActive = true
             };
 
@@ -83,7 +83,7 @@ namespace OZE.UnitTest.Controllers
                 ServiceName = "Tẩy trắng răng",
                 ReferencePrice = 1500000m,
                 EstimatedMinutes = 60,
-                RequiredRoomType = "Treatment",
+                RequiredRoomType = "GeneralTreatment",
                 IsActive = true,
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -170,7 +170,7 @@ namespace OZE.UnitTest.Controllers
                 ServiceName = "Lấy cao răng chuyên sâu",
                 ReferencePrice = 300000m,
                 EstimatedMinutes = 45,
-                RequiredRoomType = "Treatment",
+                RequiredRoomType = "GeneralTreatment",
                 IsActive = true
             };
 
@@ -181,7 +181,7 @@ namespace OZE.UnitTest.Controllers
                 ServiceName = "Lấy cao răng chuyên sâu",
                 ReferencePrice = 300000m,
                 EstimatedMinutes = 45,
-                RequiredRoomType = "Treatment",
+                RequiredRoomType = "GeneralTreatment",
                 IsActive = true,
                 UpdatedAt = DateTimeOffset.UtcNow
             };

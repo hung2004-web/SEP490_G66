@@ -18,8 +18,8 @@ namespace OZE.Persistence.Repositories
         public Task<Examination?> GetExaminationAsync(long examinationId, CancellationToken cancellationToken = default)
         {
             return _context.Examinations
-                .AsNoTracking()
                 .Include(x => x.Patient)
+                .Include(x => x.Appointment)
                 .FirstOrDefaultAsync(x => x.Id == examinationId, cancellationToken);
         }
 
@@ -46,6 +46,20 @@ namespace OZE.Persistence.Repositories
             return _context.ImagingRequests
                 .Include(x => x.Examination)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        public Task<List<ImagingRequest>> GetQueueAsync(CancellationToken cancellationToken = default)
+        {
+            return _context.ImagingRequests
+                .AsNoTracking()
+                .Include(x => x.Examination)
+                    .ThenInclude(x => x.Patient)
+                .Include(x => x.RequestedByDoctor)
+                .Where(x => x.RequestStatus == ImagingRequestConstants.Pending
+                    || x.RequestStatus == ImagingRequestConstants.InProgress)
+                .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.Id)
+                .ToListAsync(cancellationToken);
         }
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
