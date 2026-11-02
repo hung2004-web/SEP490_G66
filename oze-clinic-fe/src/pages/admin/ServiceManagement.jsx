@@ -123,6 +123,7 @@ const ServiceManagement = () => {
     const services = data?.items ?? [];
     const filtered = Boolean(keyword || roomType);
     const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
+    const lastItem = firstItem + services.length - 1;
 
     const openCreate = () => setEditor({ service: null });
     const openEdit = (service) => setEditor({ service });
@@ -270,8 +271,11 @@ const ServiceManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                {data && data.totalPages > 1 && (
-                    <div className="mt-4 flex justify-end">
+                {data && data.totalItems > 0 && (
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <p className="num text-caption text-muted">
+                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} dịch vụ
+                        </p>
                         <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách dịch vụ" />
                     </div>
                 )}
