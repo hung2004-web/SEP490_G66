@@ -1,43 +1,36 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Pencil, Plus, Search, Stethoscope } from "lucide-react";
+import { Pencil, Search, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
 import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
 import ServiceFormPopup from "@/components/popup/ServiceFormPopup";
-import ServiceTypesDrawer from "@/components/popup/ServiceTypesDrawer";
+import ServiceTypesPopup from "@/components/popup/ServiceTypesPopup";
 import Pagination from "@/components/ui/Pagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
 import { activateService, getServices } from "@/services/serviceManagementService";
 import { cx } from "@/utils/cx";
-import { SERVICE_GROUP_OPTIONS } from "@/utils/data/mockServicesAdmin";
+import { ROOM_TYPE_OPTIONS, roomTypeLabel } from "@/utils/data/mockRooms";
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 5;
-const COLUMN_COUNT = 7;
-
-const STATUS_OPTIONS = [
-    { value: "active", label: "Đang hoạt động" },
-    { value: "inactive", label: "Ngừng hoạt động" },
-];
+const COLUMN_COUNT = 8;
 
 const priceFormatter = new Intl.NumberFormat("vi-VN");
 
 // "2026-10-20" -> "20/10/2026"
 const formatDate = (value) => value.split("-").reverse().join("/");
 
-const groupLabel =(group) => SERVICE_GROUP_OPTIONS.find((option) => option.value === group)?.label ?? group;
-
 const PriceCell = ({ service }) => {
-    if (service.price === 0) return <span className="font-semibold text-success">Miễn phí</span>;
+    if (service.price === 0) return <span className="font-bold text-ink">Miễn phí</span>;
     return (
-        <span className="font-semibold text-ink">
+        <span className="font-bold text-ink">
             {service.priceFrom && "Từ "}
             {priceFormatter.format(service.price)} ₫
         </span>
     );
 };
 
-const ServiceRow = ({ service, selected, onOpen, onEdit, onToggleActive }) => {
+const ServiceRow = ({ service, index, selected, onOpen, onEdit, onToggleActive }) => {
     const dimmed = !service.isActive;
 
     return (
@@ -46,11 +39,21 @@ const ServiceRow = ({ service, selected, onOpen, onEdit, onToggleActive }) => {
             aria-selected={selected}
             onClick={() => onOpen(service)}
         >
-            <td className={cx("cell-primary whitespace-nowrap", dimmed && "opacity-60")}>{service.code}</td>
-            <td className={cx("min-w-56 text-label text-ink", dimmed && "opacity-60")}>{service.name}</td>
-            <td className={cx("whitespace-nowrap", dimmed && "opacity-60")}>{groupLabel(service.group)}</td>
-            <td className={cx("whitespace-nowrap text-right", dimmed && "opacity-60")}>
+            <td className={cx("num", dimmed && "opacity-60")}>{index}</td>
+            <td className={cx("num whitespace-nowrap", dimmed && "opacity-60")}>{service.code}</td>
+            <td className={cx("min-w-56", dimmed && "opacity-60")}>
+                <p className="font-semibold text-ink">{service.name}</p>
+                <p className="text-caption font-normal text-muted">
+                    {service.description}
+                    {service.typeCount > 0 && ` · ${service.typeCount} loại`}
+                </p>
+            </td>
+            <td className={cx("whitespace-nowrap", dimmed && "opacity-60")}>{roomTypeLabel(service.roomType) || "—"}</td>
+            <td className={cx("num whitespace-nowrap text-right", dimmed && "opacity-60")}>
                 <PriceCell service={service} />
+            </td>
+            <td className={cx("num whitespace-nowrap", dimmed && "opacity-60")}>
+                {service.durationMinutes ? `${service.durationMinutes} phút` : "—"}
             </td>
             <td>
                 {service.isActive && service.deactivateFrom ? (
@@ -64,10 +67,10 @@ const ServiceRow = ({ service, selected, onOpen, onEdit, onToggleActive }) => {
                 )}
             </td>
             <td>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-end gap-3">
                     <button
                         type="button"
-                        className="btn btn-icon size-8 hover:bg-surface-tint"
+                        className="btn btn-secondary btn-icon size-8"
                         aria-label={`Chỉnh sửa ${service.code}`}
                         title="Chỉnh sửa"
                         onClick={(event) => {
@@ -85,20 +88,6 @@ const ServiceRow = ({ service, selected, onOpen, onEdit, onToggleActive }) => {
                     />
                 </div>
             </td>
-            <td className="w-10 pr-2">
-                <button
-                    type="button"
-                    className="btn btn-icon size-8 text-muted hover:bg-surface-tint hover:text-ink"
-                    aria-label={`Xem chi tiết ${service.name}`}
-                    title="Xem chi tiết"
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        onOpen(service);
-                    }}
-                >
-                    <ChevronRight className="size-4" aria-hidden="true" />
-                </button>
-            </td>
         </tr>
     );
 };
@@ -106,19 +95,18 @@ const ServiceRow = ({ service, selected, onOpen, onEdit, onToggleActive }) => {
 const ServiceManagement = () => {
     const [searchInput, setSearchInput] = useState("");
     const [keyword, setKeyword] = useState("");
-    const [group, setGroup] = useState("");
-    const [status, setStatus] = useState("");
+    const [roomType, setRoomType] = useState("");
     const [page, setPage] = useState(1);
     const [reloadKey, setReloadKey] = useState(0);
     // null = closed; { service: null } = add; { service } = update.
     const [editor, setEditor] = useState(null);
     const [deactivating, setDeactivating] = useState(null);
-    // Service whose types are shown in the drawer.
+    // Service whose types are shown in the types popup.
     const [viewing, setViewing] = useState(null);
 
     const { loading, value: result } = useAsync(
-        () => getServices({ keyword, group, status, page }),
-        [keyword, group, status, page, reloadKey],
+        () => getServices({ keyword, roomType, page }),
+        [keyword, roomType, page, reloadKey],
     );
 
     useEffect(() => {
@@ -133,14 +121,9 @@ const ServiceManagement = () => {
 
     const data = result?.success ? result.data : null;
     const services = data?.items ?? [];
-    const filtered = Boolean(keyword || group || status);
+    const filtered = Boolean(keyword || roomType);
     const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
     const lastItem = firstItem + services.length - 1;
-
-    const changeFilter = (setter) => (event) => {
-        setter(event.target.value);
-        setPage(1);
-    };
 
     const openCreate = () => setEditor({ service: null });
     const openEdit = (service) => setEditor({ service });
@@ -155,8 +138,7 @@ const ServiceManagement = () => {
         if (!created) return;
         setSearchInput("");
         setKeyword("");
-        setGroup("");
-        setStatus("");
+        setRoomType("");
         setPage(1);
     };
 
@@ -180,66 +162,53 @@ const ServiceManagement = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
             <div className="page-header mb-0 items-center">
                 <div>
                     <h1 className="page-title">Dịch vụ</h1>
-                    <p className="page-description">Bấm vào một dịch vụ để xem và quản lý các loại của dịch vụ đó.</p>
+                    <p className="page-description num" aria-live="polite">
+                        {data ? `${data.totalItems} dịch vụ · bấm một dòng để xem các loại` : "\u00a0"}
+                    </p>
                 </div>
                 <button type="button" className="btn btn-primary" onClick={openCreate}>
-                    <Plus className="size-4" aria-hidden="true" />
                     Thêm dịch vụ
                 </button>
             </div>
 
-            <div className="flex flex-wrap items-end gap-3">
-                <div className="field w-full sm:w-72">
-                    <label htmlFor="service-search" className="label">
-                        Tìm kiếm
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="search w-full sm:w-72">
+                    <Search aria-hidden="true" />
+                    <label htmlFor="service-search" className="sr-only">
+                        Tìm kiếm dịch vụ
                     </label>
-                    <div className="search">
-                        <Search aria-hidden="true" />
-                        <input
-                            id="service-search"
-                            type="search"
-                            className="input"
-                            placeholder="Nhập tên hoặc mã dịch vụ"
-                            value={searchInput}
-                            onChange={(event) => setSearchInput(event.target.value)}
-                        />
-                    </div>
+                    <input
+                        id="service-search"
+                        type="search"
+                        className="input"
+                        placeholder="Tìm theo mã, tên dịch vụ"
+                        value={searchInput}
+                        onChange={(event) => setSearchInput(event.target.value)}
+                    />
                 </div>
-                <div className="field">
-                    <label htmlFor="service-group" className="label">
-                        Nhóm dịch vụ
-                    </label>
-                    <select id="service-group" className="input w-auto min-w-40" value={group} onChange={changeFilter(setGroup)}>
-                        <option value="">Tất cả nhóm</option>
-                        {SERVICE_GROUP_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="field">
-                    <label htmlFor="service-status" className="label">
-                        Trạng thái
-                    </label>
-                    <select id="service-status" className="input w-auto min-w-40" value={status} onChange={changeFilter(setStatus)}>
-                        <option value="">Tất cả trạng thái</option>
-                        {STATUS_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                {data && (
-                    <p className="num ml-auto pb-2.5 text-caption text-muted" aria-live="polite">
-                        {data.totalItems} dịch vụ
-                    </p>
-                )}
+                <label htmlFor="service-room-type" className="sr-only">
+                    Loại phòng
+                </label>
+                <select
+                    id="service-room-type"
+                    className="input w-auto min-w-48"
+                    value={roomType}
+                    onChange={(event) => {
+                        setRoomType(event.target.value);
+                        setPage(1);
+                    }}
+                >
+                    <option value="">Loại phòng: Tất cả</option>
+                    {ROOM_TYPE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            Loại phòng: {option.label}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             <div>
@@ -247,16 +216,17 @@ const ServiceManagement = () => {
                     <table className="table" aria-busy={loading}>
                         <thead>
                             <tr>
+                                <th scope="col">STT</th>
                                 <th scope="col">Mã</th>
                                 <th scope="col">Tên dịch vụ</th>
-                                <th scope="col">Nhóm</th>
+                                <th scope="col">Loại phòng yêu cầu</th>
                                 <th scope="col" className="text-right">
                                     Giá tham khảo
                                 </th>
+                                <th scope="col">Thời lượng</th>
                                 <th scope="col">Trạng thái</th>
-                                <th scope="col">Thao tác</th>
                                 <th scope="col">
-                                    <span className="sr-only">Chi tiết</span>
+                                    <span className="sr-only">Thao tác</span>
                                 </th>
                             </tr>
                         </thead>
@@ -287,9 +257,10 @@ const ServiceManagement = () => {
                                 </tr>
                             )}
                             {!loading &&
-                                services.map((service) => (
+                                services.map((service, index) => (
                                     <ServiceRow
                                         key={service.id}
+                                        index={firstItem + index}
                                         service={service}
                                         selected={viewing?.id === service.id}
                                         onOpen={openDetail}
@@ -303,7 +274,7 @@ const ServiceManagement = () => {
                 {data && data.totalItems > 0 && (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                         <p className="num text-caption text-muted">
-                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} bản ghi
+                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} dịch vụ
                         </p>
                         <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách dịch vụ" />
                     </div>
@@ -318,7 +289,14 @@ const ServiceManagement = () => {
                     onSaved={handleSaved}
                 />
             )}
-            {viewing && <ServiceTypesDrawer key={viewing.id} service={viewing} onClose={() => setViewing(null)} />}
+            {viewing && (
+                <ServiceTypesPopup
+                    key={viewing.id}
+                    service={viewing}
+                    onClose={() => setViewing(null)}
+                    onChanged={() => setReloadKey((current) => current + 1)}
+                />
+            )}
             {deactivating && (
                 <DeactivateServicePopup
                     key={deactivating.id}

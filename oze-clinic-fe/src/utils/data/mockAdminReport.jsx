@@ -5,15 +5,25 @@
 export const MOCK_REVENUE_SHARES = [
     { label: "Niềng răng", share: 0.33 },
     { label: "Bọc răng sứ", share: 0.23 },
-    { label: "Điều trị tuỷ", share: 0.14 },
+    { label: "Điều trị tủy", share: 0.14 },
     { label: "Cấy ghép Implant", share: 0.12 },
-    { label: "Tẩy trắng răng", share: 0.06 },
-    { label: "Nhổ răng", share: 0.05 },
-    { label: "Khám tổng quát", share: 0.04 },
-    { label: "Khác", share: 0.03 },
+    { label: "Khám & trám", share: 0.04 },
+    { label: "Khác", share: 0.14 },
 ];
 
-export const MOCK_TODAY_APPOINTMENTS = { total: 8, checkedIn: 7, notArrived: 1 };
+// Share of booked appointments that were cancelled / missed, to fill the "Lịch hẹn trong kỳ" tile.
+export const MOCK_APPOINTMENT_RATES = { cancelled: 0.09, noShow: 0.05 };
+
+// Invoices not fully paid, biggest debts first. remaining in VND.
+export const MOCK_DEBTS = {
+    total: 23400000,
+    invoiceCount: 5,
+    items: [
+        { invoiceCode: "HD000188", patientName: "Vũ Đức Long", note: "Kế hoạch · Niềng răng mắc cài kim loại", remaining: 8000000 },
+        { invoiceCode: "HD000192", patientName: "Lê Hoàng Yến", note: "Kế hoạch · Cấy ghép Implant 46", remaining: 12000000 },
+        { invoiceCode: "HD000201", patientName: "Trịnh Văn Khải", note: "Kế hoạch · Bọc răng sứ 26", remaining: 2000000 },
+    ],
+};
 
 export const REQUEST_TYPES = {
     LEAVE: "leave",

@@ -326,6 +326,7 @@
   .modal-backdrop { @apply fixed inset-0 z-50 flex items-center justify-center bg-surface-navy/45 p-4; }
   .modal { @apply max-h-[90dvh] w-full max-w-[560px] overflow-y-auto rounded-xl bg-canvas p-6 text-body-sm text-body shadow-lg; }
   .modal-sm { @apply max-w-[400px]; }
+  .modal-md { @apply max-w-[640px]; }
   .modal-lg { @apply max-w-[800px]; }
   .modal-title { @apply font-heading text-heading-3 text-ink; }
   .modal-actions { @apply mt-6 flex justify-end gap-2; }
