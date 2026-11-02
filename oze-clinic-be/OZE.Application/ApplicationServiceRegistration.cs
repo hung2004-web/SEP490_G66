@@ -41,11 +41,8 @@ namespace OZE.Application
             services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<IImagingRequestService, ImagingRequestService>();
-<<<<<<< HEAD
             services.AddScoped<IExaminationService, ExaminationService>();
-=======
             services.AddScoped<IQueueService, QueueService>();
->>>>>>> bbec8909bd04a57ebe2df72f5765e501e33b89fe
             // The audit log reads the signed-in user, IP address and browser from the current request
             services.AddHttpContextAccessor();
             services.AddScoped<IAuditLogService, AuditLogService>();

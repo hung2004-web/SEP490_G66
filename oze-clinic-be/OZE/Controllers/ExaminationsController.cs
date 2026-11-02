@@ -42,10 +42,18 @@ namespace OZE.Controllers
 
         [HttpPost("examinations/{id:long}/services")]
         public async Task<ActionResult<ApiResponse<List<ExaminationServiceResponse>>>> AddServiceAsync(
-            long id, [FromBody] AddExaminationServiceRequest request, CancellationToken cancellationToken)
+            long id, [FromBody] SaveExaminationServiceRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.AddServiceAsync(DoctorUserId, id, request, cancellationToken);
             return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Đã thêm dịch vụ"));
+        }
+
+        [HttpPut("examinations/{id:long}/services/{serviceItemId:long}")]
+        public async Task<ActionResult<ApiResponse<List<ExaminationServiceResponse>>>> UpdateServiceAsync(
+            long id, long serviceItemId, [FromBody] SaveExaminationServiceRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.UpdateServiceAsync(DoctorUserId, id, serviceItemId, request, cancellationToken);
+            return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Đã cập nhật dịch vụ"));
         }
 
         [HttpDelete("examinations/{id:long}/services/{serviceItemId:long}")]

@@ -770,21 +770,6 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<NotFoundException>(doctorId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
 
             var appointment = await _appointmentRepository.GetByIdWithExaminationAsync(id, cancellationToken);
-<<<<<<< HEAD
-            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
-
-            // Same rule as starting: only the doctor of this appointment may finish it
-            ConditionGuard.Ensure<ForbiddenException>(appointment!.DoctorId == doctorId, ErrorConstants.AppointmentMessage.NotAssignedDoctor);
-            ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.InServiceStatus, ErrorConstants.AppointmentMessage.OnlyInServiceCanBeCompleted);
-
-            var examination = appointment.Examination;
-            ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.AppointmentMessage.ExaminationNotFound);
-            ConditionGuard.ThrowIf(examination!.ExaminationStatus == ExaminationConstants.Locked, ErrorConstants.AppointmentMessage.ExaminationAlreadyLocked);
-
-            // The clinic locks the record as soon as the visit is finished, there is no step in between
-            var now = DateTimeOffset.UtcNow;
-            examination.ExaminationStatus = ExaminationConstants.Locked;
-=======
             ConditionGuard.Ensure<NotFoundException>(appointment != null && appointment.DoctorId == doctorId,
                 ErrorConstants.AppointmentMessage.AppointmentNotFound);
 
@@ -798,7 +783,6 @@ namespace OZE.Application.Services
             var now = DateTimeOffset.UtcNow;
             var oldStatus = appointment.Status;
             examination.ExaminationStatus = "Locked";
->>>>>>> bbec8909bd04a57ebe2df72f5765e501e33b89fe
             examination.LockedAt = now;
             examination.LockedByUserId = doctorUserId;
             examination.UpdatedAt = now;
@@ -806,9 +790,6 @@ namespace OZE.Application.Services
             appointment.Status = AppointmentConstants.CompletedStatus;
             appointment.UpdatedAt = now;
 
-<<<<<<< HEAD
-            await _appointmentRepository.SaveCompletedExaminationAsync(cancellationToken);
-=======
             await _appointmentRepository.UpdateAsync(appointment);
 
             if (_queueService != null)
@@ -819,7 +800,6 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.AppointmentCompleted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status, ExaminationId = examination.Id, examination.ExaminationStatus });
 
->>>>>>> bbec8909bd04a57ebe2df72f5765e501e33b89fe
             return MapToResponse(appointment);
         }
 

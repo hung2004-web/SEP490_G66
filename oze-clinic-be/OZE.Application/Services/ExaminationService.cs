@@ -44,35 +44,14 @@ namespace OZE.Application.Services
             return await BuildWorkResponseAsync(examination, cancellationToken);
         }
 
-        public async Task<List<ExaminationServiceResponse>> AddServiceAsync(string userId, long examinationId, AddExaminationServiceRequest request, CancellationToken cancellationToken = default)
+        public async Task<List<ExaminationServiceResponse>> AddServiceAsync(string userId, long examinationId, SaveExaminationServiceRequest request, CancellationToken cancellationToken = default)
         {
             var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
             EnsureOpen(examination);
 
-            var service = await _examinationRepository.GetServiceAsync(request.ServiceId!.Value, cancellationToken);
-            ConditionGuard.Ensure<NotFoundException>(service != null, ErrorConstants.AppointmentMessage.ServiceNotFound);
-            ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
-
-            ServiceVariant? variant = null;
-            if (request.VariantId.HasValue)
-            {
-                variant = await _examinationRepository.GetVariantAsync(request.VariantId.Value, cancellationToken);
-                ConditionGuard.Ensure<NotFoundException>(variant != null, ErrorConstants.AppointmentMessage.VariantNotFound);
-                ConditionGuard.Ensure(variant!.ServiceId == service.Id, ErrorConstants.ExaminationMessage.VariantMismatch);
-                ConditionGuard.Ensure(variant.IsActive, ErrorConstants.AppointmentMessage.VariantInactive);
-            }
-
+            var (service, variant) = await ResolveServiceAsync(request, cancellationToken);
             var items = examination.Appointment.ServiceItems;
-            ConditionGuard.Ensure(!items.Any(x => x.ServiceId == service.Id && x.VariantId == request.VariantId),
-                ErrorConstants.ExaminationMessage.ServiceAlreadyAdded);
-
-            // The same rule as booking: one appointment is done in one kind of room
-            var roomTypes = items.Select(x => x.Service.RequiredRoomType)
-                .Append(service.RequiredRoomType)
-                .Where(t => !string.IsNullOrWhiteSpace(t))
-                .Distinct()
-                .Count();
-            ConditionGuard.Ensure(roomTypes <= 1, ErrorConstants.AppointmentMessage.ServicesNeedDifferentRooms);
+            EnsureServiceFits(items, service, variant, null);
 
             var slotMinutes = await GetSlotMinutesAsync();
             items.Add(new AppointmentServiceItem
@@ -87,6 +66,36 @@ namespace OZE.Application.Services
                 PriceAtBooking = variant?.ReferencePrice ?? service.ReferencePrice,
                 CreatedAt = DateTimeOffset.UtcNow
             });
+
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+            return ToServiceResponses(examination, items);
+        }
+
+        public async Task<List<ExaminationServiceResponse>> UpdateServiceAsync(string userId, long examinationId, long serviceItemId, SaveExaminationServiceRequest request, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+
+            var items = examination.Appointment.ServiceItems;
+            var item = items.FirstOrDefault(x => x.Id == serviceItemId);
+            ConditionGuard.Ensure<NotFoundException>(item != null, ErrorConstants.ExaminationMessage.ServiceItemNotFound);
+
+            var (service, variant) = await ResolveServiceAsync(request, cancellationToken);
+            // Choosing what the line already is changes nothing
+            if (item!.ServiceId == service.Id && item.VariantId == variant?.Id)
+            {
+                return ToServiceResponses(examination, items);
+            }
+            EnsureServiceFits(items, service, variant, item);
+
+            var slotMinutes = await GetSlotMinutesAsync();
+            item.ServiceId = service.Id;
+            item.VariantId = variant?.Id;
+            item.Service = service;
+            item.Variant = variant;
+            // The price and the time of the new choice are copied now. The line keeps its place and its "added by the doctor" mark.
+            item.DurationMinutes = (variant?.EstimatedMinutes ?? service.EstimatedMinutes) ?? slotMinutes;
+            item.PriceAtBooking = variant?.ReferencePrice ?? service.ReferencePrice;
 
             await _examinationRepository.SaveChangesAsync(cancellationToken);
             return ToServiceResponses(examination, items);
@@ -242,6 +251,40 @@ namespace OZE.Application.Services
 
             await _examinationRepository.SaveChangesAsync(cancellationToken);
             return ToDiagnosisResponses(remaining);
+        }
+
+        // The service and the variant the request names: both must exist and be active, the variant must belong to the service
+        private async Task<(Service Service, ServiceVariant? Variant)> ResolveServiceAsync(SaveExaminationServiceRequest request, CancellationToken cancellationToken)
+        {
+            var service = await _examinationRepository.GetServiceAsync(request.ServiceId!.Value, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(service != null, ErrorConstants.AppointmentMessage.ServiceNotFound);
+            ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
+
+            ServiceVariant? variant = null;
+            if (request.VariantId.HasValue)
+            {
+                variant = await _examinationRepository.GetVariantAsync(request.VariantId.Value, cancellationToken);
+                ConditionGuard.Ensure<NotFoundException>(variant != null, ErrorConstants.AppointmentMessage.VariantNotFound);
+                ConditionGuard.Ensure(variant!.ServiceId == service.Id, ErrorConstants.ExaminationMessage.VariantMismatch);
+                ConditionGuard.Ensure(variant.IsActive, ErrorConstants.AppointmentMessage.VariantInactive);
+            }
+            return (service, variant);
+        }
+
+        // Checked against the other lines of the appointment (the one being changed is left out)
+        private static void EnsureServiceFits(IEnumerable<AppointmentServiceItem> items, Service service, ServiceVariant? variant, AppointmentServiceItem? changing)
+        {
+            var others = items.Where(x => x != changing).ToList();
+            ConditionGuard.Ensure(!others.Any(x => x.ServiceId == service.Id && x.VariantId == variant?.Id),
+                ErrorConstants.ExaminationMessage.ServiceAlreadyAdded);
+
+            // The same rule as booking: one appointment is done in one kind of room
+            var roomTypes = others.Select(x => x.Service.RequiredRoomType)
+                .Append(service.RequiredRoomType)
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Distinct()
+                .Count();
+            ConditionGuard.Ensure(roomTypes <= 1, ErrorConstants.AppointmentMessage.ServicesNeedDifferentRooms);
         }
 
         private void RemoveEntry(Examination examination, DentalChartEntry entry)

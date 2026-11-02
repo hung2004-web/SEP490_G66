@@ -11,7 +11,9 @@ namespace OZE.Application.Interfaces
         Task<ExaminationWorkResponse> UpdateContentAsync(string userId, long examinationId, UpdateExaminationContentRequest request, CancellationToken cancellationToken = default);
 
         // Services of the appointment: all of them are listed, the doctor can add one after consulting the patient or remove one
-        Task<List<ExaminationServiceResponse>> AddServiceAsync(string userId, long examinationId, AddExaminationServiceRequest request, CancellationToken cancellationToken = default);
+        Task<List<ExaminationServiceResponse>> AddServiceAsync(string userId, long examinationId, SaveExaminationServiceRequest request, CancellationToken cancellationToken = default);
+        // Changes a service of the appointment into another service or variant, price and time follow the catalog
+        Task<List<ExaminationServiceResponse>> UpdateServiceAsync(string userId, long examinationId, long serviceItemId, SaveExaminationServiceRequest request, CancellationToken cancellationToken = default);
         Task<List<ExaminationServiceResponse>> RemoveServiceAsync(string userId, long examinationId, long serviceItemId, CancellationToken cancellationToken = default);
 
         // Dental chart: the doctor records how a tooth is, the chart is the latest state of each tooth
