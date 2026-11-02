@@ -99,11 +99,6 @@ const StaffDetailPopup = ({ member, onClose, onEdit }) => {
                 <DetailItem label="Số điện thoại">
                     <span className="num">{formatPhone(member.phone)}</span>
                 </DetailItem>
-                {isDoctor && (
-                    <DetailItem label="Số chứng chỉ hành nghề" className="sm:col-span-2">
-                        <span className="num">{member.licenseNumber || "—"}</span>
-                    </DetailItem>
-                )}
                 {locked && member.lock && (
                     <DetailItem label="Lý do khoá" className="sm:col-span-2">
                         {labelOf(LOCK_REASON_OPTIONS, member.lock.reason)}
