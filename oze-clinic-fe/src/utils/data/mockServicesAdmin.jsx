@@ -22,7 +22,8 @@ export const MOCK_ADMIN_SERVICES = [
 // durationMinutes: time for one visit; sortOrder: position in the list. Services without types are booked as they are.
 export const MOCK_SERVICE_TYPES = [
     { id: 1, serviceId: 2, code: "DV002-01", name: "Một hàm", price: 150000, durationMinutes: 20, sortOrder: 1, description: "Lấy cao răng và đánh bóng một hàm.", isActive: true },
-    { id: 2, serviceId: 2, code: "DV002-02", name: "Toàn hàm", price: 300000, durationMinutes: 30, sortOrder: 2, description: "Lấy cao răng và đánh bóng cả hai hàm.", isActive: true },
+    { id: 2, serviceId: 2, code: "DV002-02", name: "Toàn hàm", price: 300000, durationMinutes: 30, sortOrder: 2, description: "Lấy cao răng cả hai hàm, đánh bóng.", isActive: true },
+    { id: 8, serviceId: 2, code: "DV002-03", name: "Nửa hàm (cũ)", price: 100000, durationMinutes: 15, sortOrder: 3, description: "Gói cũ, không còn nhận lịch mới.", isActive: false },
     { id: 3, serviceId: 3, code: "DV003-01", name: "Răng một chân", price: 800000, durationMinutes: 45, sortOrder: 1, description: "Điều trị tủy răng cửa, răng nanh.", isActive: true },
     { id: 4, serviceId: 3, code: "DV003-02", name: "Răng nhiều chân", price: 1500000, durationMinutes: 60, sortOrder: 2, description: "Điều trị tủy răng hàm.", isActive: true },
     { id: 5, serviceId: 6, code: "DV006-01", name: "Mắc cài kim loại", price: 18000000, durationMinutes: 60, sortOrder: 1, description: "Mắc cài kim loại truyền thống, chi phí thấp, hiệu quả ổn định.", isActive: true },

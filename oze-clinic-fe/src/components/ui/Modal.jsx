@@ -30,6 +30,8 @@ const Modal = ({ title, description, size, onClose, initialFocusRef, closeDisabl
     };
 
     const handleKeyDown = (event) => {
+        // Already handled by a Modal opened inside this one.
+        if (event.defaultPrevented) return;
         if (event.key === "Escape") {
             event.preventDefault();
             requestClose();

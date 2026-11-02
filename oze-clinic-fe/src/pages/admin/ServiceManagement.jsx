@@ -3,7 +3,7 @@ import { Pencil, Search, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
 import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
 import ServiceFormPopup from "@/components/popup/ServiceFormPopup";
-import ServiceTypesDrawer from "@/components/popup/ServiceTypesDrawer";
+import ServiceTypesPopup from "@/components/popup/ServiceTypesPopup";
 import Pagination from "@/components/ui/Pagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
@@ -101,7 +101,7 @@ const ServiceManagement = () => {
     // null = closed; { service: null } = add; { service } = update.
     const [editor, setEditor] = useState(null);
     const [deactivating, setDeactivating] = useState(null);
-    // Service whose types are shown in the drawer.
+    // Service whose types are shown in the types popup.
     const [viewing, setViewing] = useState(null);
 
     const { loading, value: result } = useAsync(
@@ -290,7 +290,7 @@ const ServiceManagement = () => {
                 />
             )}
             {viewing && (
-                <ServiceTypesDrawer
+                <ServiceTypesPopup
                     key={viewing.id}
                     service={viewing}
                     onClose={() => setViewing(null)}

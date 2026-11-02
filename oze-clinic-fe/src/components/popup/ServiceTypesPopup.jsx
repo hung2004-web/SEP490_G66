@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Layers, Pencil, Plus } from "lucide-react";
+import { useRef, useState } from "react";
+import { Layers, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
 import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
 import ServiceTypeFormPopup from "@/components/popup/ServiceTypeFormPopup";
-import Drawer from "@/components/ui/Drawer";
+import Modal from "@/components/ui/Modal";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
 import { activateServiceType, getServiceTypes } from "@/services/serviceManagementService";
@@ -18,21 +18,40 @@ const priceFormatter = new Intl.NumberFormat("vi-VN");
 // "2026-10-20" -> "20/10/2026"
 const formatDate = (value) => value.split("-").reverse().join("/");
 
-const servicePrice = (service) => {
+// Price of the service: the cheapest active type ("Từ ..."), or its own price when it has none.
+const servicePrice = (service, activeTypes) => {
+    if (activeTypes.length > 0) return `Từ ${priceFormatter.format(Math.min(...activeTypes.map((type) => type.price)))} ₫`;
     if (service.price === 0) return "Miễn phí";
     return `${service.priceFrom ? "Từ " : ""}${priceFormatter.format(service.price)} ₫`;
 };
 
+// A scheduled stop shows its date (reason on hover).
+const StatusBadge = ({ type }) => {
+    if (type.isActive && type.deactivateFrom) {
+        return (
+            <span className="badge badge-warning num whitespace-nowrap" title={type.deactivateReason ?? undefined}>
+                Ngừng từ {formatDate(type.deactivateFrom)}
+            </span>
+        );
+    }
+    return (
+        <span className={cx("badge whitespace-nowrap", type.isActive ? "badge-success" : "badge-neutral")}>
+            {type.isActive ? "Đang hoạt động" : "Ngưng hoạt động"}
+        </span>
+    );
+};
+
 const SummaryItem = ({ label, children }) => (
-    <div className="grid grid-cols-[11rem_1fr] gap-3">
+    <div className="grid grid-cols-[9rem_1fr] gap-3">
         <dt className="text-muted">{label}</dt>
         <dd className="num font-semibold text-ink">{children}</dd>
     </div>
 );
 
-// Drawer with the service summary and its types, opened from a row of the service list.
-// onChanged runs after a type is added, updated or switched, so the list can refresh its type count.
-const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
+// "Loại dịch vụ" popup opened from a row of the service list.
+// onChanged runs after a type is added, updated or switched, so the list can refresh its price and type count.
+const ServiceTypesPopup = ({ service, onClose, onChanged }) => {
+    const closeRef = useRef(null);
     const [reloadKey, setReloadKey] = useState(0);
     // null = closed; { type: null } = add; { type } = update.
     const [editor, setEditor] = useState(null);
@@ -40,7 +59,7 @@ const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
 
     const { loading, value: result } = useAsync(() => getServiceTypes(service.id), [service.id, reloadKey]);
     const types = result?.success ? result.data : [];
-    const nextSortOrder = Math.max(0, ...types.map((type) => type.sortOrder ?? 0)) + 1;
+    const activeTypes = types.filter((type) => type.isActive);
 
     const reload = (message) => {
         toast.success(message);
@@ -64,20 +83,23 @@ const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
     };
 
     return (
-        <Drawer
-            title={service.name}
-            description={[service.code, roomTypeLabel(service.roomType)].filter(Boolean).join(" · ")}
+        <Modal
+            title={`Loại dịch vụ · ${service.name}`}
+            description={[roomTypeLabel(service.roomType), "giá dịch vụ lấy theo loại rẻ nhất đang hoạt động"].filter(Boolean).join(" · ")}
+            size="md"
             onClose={onClose}
+            initialFocusRef={closeRef}
         >
-            <dl className="flex flex-col gap-2 rounded-lg bg-surface-tint px-4 py-3 text-body-sm">
-                <SummaryItem label="Giá tham khảo">{servicePrice(service)}</SummaryItem>
-                <SummaryItem label="Thời lượng dự kiến">{service.durationMinutes ? `${service.durationMinutes} phút` : "—"}</SummaryItem>
+            <dl className="mt-5 flex flex-col gap-2 rounded-lg bg-surface-tint px-4 py-3">
+                <SummaryItem label="Giá tham khảo">{loading ? "…" : servicePrice(service, activeTypes)}</SummaryItem>
+                <SummaryItem label="Số loại">
+                    {loading ? "…" : `${types.length} loại · ${activeTypes.length} đang hoạt động`}
+                </SummaryItem>
             </dl>
 
             <div className="mb-3 mt-6 flex items-center justify-between gap-3">
-                <h3 className="text-heading-3 text-ink">Các loại dịch vụ</h3>
-                <button type="button" className="btn btn-link h-auto" onClick={() => setEditor({ type: null })}>
-                    <Plus className="size-4" aria-hidden="true" />
+                <h3 className="text-title text-ink">Danh sách loại</h3>
+                <button type="button" className="btn btn-primary" onClick={() => setEditor({ type: null })}>
                     Thêm loại
                 </button>
             </div>
@@ -87,12 +109,12 @@ const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
                     <thead>
                         <tr>
                             <th scope="col">TT</th>
-                            <th scope="col">Mã</th>
-                            <th scope="col">Tên loại</th>
+                            <th scope="col">Tên loại dịch vụ</th>
                             <th scope="col" className="text-right">
-                                Giá
+                                Giá tham khảo
                             </th>
-                            <th scope="col">Phút</th>
+                            <th scope="col">Thời gian dự kiến</th>
+                            <th scope="col">Trạng thái</th>
                             <th scope="col">
                                 <span className="sr-only">Thao tác</span>
                             </th>
@@ -123,27 +145,20 @@ const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
                         {!loading &&
                             types.map((type, index) => (
                                 <tr key={type.id}>
-                                    <td className={cx("num", !type.isActive && "opacity-60")}>{index + 1}</td>
-                                    <td className={cx("num whitespace-nowrap", !type.isActive && "opacity-60")}>{type.code}</td>
-                                    <td className={cx(!type.isActive && "opacity-60")}>
-                                        <span className="font-semibold text-ink">{type.name}</span>
-                                        {type.isActive && type.deactivateFrom && (
-                                            <span className="badge badge-warning num ml-2 whitespace-nowrap" title={type.deactivateReason ?? undefined}>
-                                                Ngừng từ {formatDate(type.deactivateFrom)}
-                                            </span>
-                                        )}
+                                    <td className="num">{index + 1}</td>
+                                    <td className="font-semibold text-ink">{type.name}</td>
+                                    <td className="num whitespace-nowrap text-right text-ink">{priceFormatter.format(type.price)} ₫</td>
+                                    <td className="num whitespace-nowrap">{type.durationMinutes ? `${type.durationMinutes} phút` : "—"}</td>
+                                    <td>
+                                        <StatusBadge type={type} />
                                     </td>
-                                    <td className={cx("num whitespace-nowrap text-right text-ink", !type.isActive && "opacity-60")}>
-                                        {priceFormatter.format(type.price)} ₫
-                                    </td>
-                                    <td className={cx("num", !type.isActive && "opacity-60")}>{type.durationMinutes ?? "—"}</td>
                                     <td>
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 type="button"
                                                 className="btn btn-secondary btn-icon size-8"
-                                                aria-label={`Chỉnh sửa ${type.code}`}
-                                                title="Chỉnh sửa"
+                                                aria-label={`Sửa ${type.name}`}
+                                                title="Sửa"
                                                 onClick={() => setEditor({ type })}
                                             >
                                                 <Pencil className="size-4" aria-hidden="true" />
@@ -151,7 +166,7 @@ const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
                                             <Toggle
                                                 key={`${type.id}-${type.isActive}`}
                                                 checked={type.isActive}
-                                                label={type.isActive ? `Ngừng hoạt động ${type.code}` : `Kích hoạt ${type.code}`}
+                                                label={type.isActive ? `Ngừng hoạt động ${type.name}` : `Kích hoạt ${type.name}`}
                                                 onChange={(next) => handleToggleActive(type, next)}
                                             />
                                         </div>
@@ -161,13 +176,21 @@ const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
                     </tbody>
                 </table>
             </div>
+            <p className="mt-3 text-caption font-normal text-muted">
+                Tắt một loại thì bệnh nhân không chọn được loại đó khi đặt lịch. Lịch đã đặt giữ nguyên.
+            </p>
+
+            <div className="modal-actions -mx-6 border-t border-border px-6 pt-4">
+                <button ref={closeRef} type="button" className="btn btn-secondary" onClick={onClose}>
+                    Đóng
+                </button>
+            </div>
 
             {editor && (
                 <ServiceTypeFormPopup
                     key={editor.type?.id ?? "new"}
                     service={service}
                     type={editor.type}
-                    nextSortOrder={nextSortOrder}
                     onClose={() => setEditor(null)}
                     onSaved={(message) => {
                         setEditor(null);
@@ -187,8 +210,8 @@ const ServiceTypesDrawer = ({ service, onClose, onChanged }) => {
                     }}
                 />
             )}
-        </Drawer>
+        </Modal>
     );
 };
 
-export default ServiceTypesDrawer;
+export default ServiceTypesPopup;
