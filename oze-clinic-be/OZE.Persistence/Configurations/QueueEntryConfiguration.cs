@@ -17,6 +17,7 @@ namespace OZE.Persistence.Configurations
 
             builder.Property(x => x.QueueType).HasMaxLength(20).IsRequired();
             builder.Property(x => x.Priority).HasDefaultValue(0);
+            builder.Property(x => x.SkipCount).HasDefaultValue(0);
             builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("WAITING");
             builder.Property(x => x.Notes).HasMaxLength(500);
             builder.Property(x => x.RowVersion).IsRowVersion();

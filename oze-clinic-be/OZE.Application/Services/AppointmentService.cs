@@ -662,7 +662,7 @@ namespace OZE.Application.Services
             {
                 await _queueService.EnqueueAsync(
                     appointment.Id,
-                    "Examination",
+                    QueueConstants.ExaminationType,
                     null,
                     appointment.DoctorId,
                     appointment.Priority,
@@ -692,6 +692,13 @@ namespace OZE.Application.Services
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _appointmentRepository.UpdateAsync(appointment);
+
+            // The queue board orders by its own copy of the priority, so it has to follow
+            if (_queueService != null)
+            {
+                await _queueService.UpdatePriorityAsync(appointment.Id, QueueConstants.ExaminationType, priority, cancellationToken);
+            }
+
             await _auditLogService.LogAsync(AuditConstants.AppointmentPriorityChanged, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Priority = oldPriority }, new { appointment.Priority }, request.Reason?.Trim());
 
@@ -746,7 +753,7 @@ namespace OZE.Application.Services
 
             if (_queueService != null)
             {
-                await _queueService.UpdateStatusAsync(appointment.Id, "Examination", "IN_PROGRESS", cancellationToken);
+                await _queueService.UpdateStatusAsync(appointment.Id, QueueConstants.ExaminationType, QueueConstants.InProgress, cancellationToken);
             }
 
             await _auditLogService.LogAsync(AuditConstants.AppointmentExaminationStarted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
@@ -794,7 +801,7 @@ namespace OZE.Application.Services
 
             if (_queueService != null)
             {
-                await _queueService.UpdateStatusAsync(appointment.Id, "Examination", "COMPLETED", cancellationToken);
+                await _queueService.UpdateStatusAsync(appointment.Id, QueueConstants.ExaminationType, QueueConstants.Completed, cancellationToken);
             }
 
             await _auditLogService.LogAsync(AuditConstants.AppointmentCompleted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),

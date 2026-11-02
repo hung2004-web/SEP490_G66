@@ -19,6 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 // 2. Add Clean Architecture Layers
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddApplication(builder.Configuration);
+builder.Services.AddHostedService<OZE.BackgroundServices.QueueNoShowWorker>();
 
 // 3. Configure CORS
 builder.Services.AddCors(options =>

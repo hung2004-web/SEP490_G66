@@ -265,6 +265,23 @@ namespace OZE.Application.Services
             return ToPrescriptionResponse(examination);
         }
 
+        public async Task<PrescriptionResponse> DeletePrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
+        {
+            var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);
+            EnsureOpen(examination);
+
+            // Nothing to clear is not an error, the examination simply has no prescription
+            var prescription = examination.Prescriptions.OrderBy(x => x.Id).FirstOrDefault();
+            if (prescription != null)
+            {
+                EnsureDraft(prescription);
+                _examinationRepository.RemovePrescription(prescription);
+                examination.Prescriptions.Remove(prescription);
+                await _examinationRepository.SaveChangesAsync(cancellationToken);
+            }
+            return ToPrescriptionResponse(examination);
+        }
+
         public async Task<PrescriptionResponse> FinalizePrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
         {
             var (_, examination) = await LoadAsync(userId, examinationId, cancellationToken);

@@ -68,6 +68,11 @@ namespace OZE.Persistence.Repositories
             _context.AppointmentServiceItems.Remove(item);
         }
 
+        public void RemovePrescription(Prescription prescription)
+        {
+            _context.Prescriptions.Remove(prescription);
+        }
+
         public void RemovePrescriptionItem(PrescriptionItem item)
         {
             _context.PrescriptionItems.Remove(item);
