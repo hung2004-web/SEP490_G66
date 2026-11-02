@@ -8,17 +8,11 @@ export const ROOM_TYPES = {
 };
 
 export const ROOM_TYPE_OPTIONS = [
-<<<<<<< HEAD
-    { value: ROOM_TYPES.EXAMINATION, label: "Khám" },
-    { value: ROOM_TYPES.TREATMENT, label: "Điều trị" },
-    { value: ROOM_TYPES.IMAGING, label: "Chẩn đoán hình ảnh" },
-=======
     { value: ROOM_TYPES.GENERAL, label: "Điều trị tổng quát" },
     { value: ROOM_TYPES.MINOR_SURGERY, label: "Tiểu phẫu" },
     { value: ROOM_TYPES.SPECIALIZED, label: "Điều trị chuyên sâu" },
     { value: ROOM_TYPES.XRAY, label: "Chụp X-quang" },
     { value: ROOM_TYPES.RECEPTION, label: "Tiếp tân" },
->>>>>>> fix/service-room-management-pages
 ];
 
 export const ROOM_STATUSES = {

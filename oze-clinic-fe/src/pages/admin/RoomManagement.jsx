@@ -1,123 +1,23 @@
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
-import { CheckCircle2, DoorOpen, Pencil, ScanLine, Search, Stethoscope, Syringe, Wrench } from "lucide-react";
+import { CheckCircle2, DoorOpen, Pencil } from "lucide-react";
 import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
-import RoomMaintenancePopup from "@/components/popup/room/RoomMaintenancePopup";
-=======
-import { CheckCircle2, DoorOpen, Pencil, Search } from "lucide-react";
-import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
->>>>>>> fix/service-room-management-pages
-import Pagination from "@/components/ui/Pagination";
+import FilterSelect from "@/components/ui/FilterSelect";
+import SearchInput from "@/components/ui/SearchInput";
+import TablePagination from "@/components/ui/TablePagination";
 import useAsync from "@/hooks/useAsync";
 import { getRooms } from "@/services/roomService";
 import { cx } from "@/utils/cx";
-<<<<<<< HEAD
-import { ROOM_STATUSES, ROOM_TYPES, ROOM_TYPE_OPTIONS } from "@/utils/data/mockRooms";
-=======
 import { ROOM_STATUS_OPTIONS, ROOM_TYPE_OPTIONS, roomTypeLabel } from "@/utils/data/mockRooms";
->>>>>>> fix/service-room-management-pages
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 3;
 const COLUMN_COUNT = 7;
-<<<<<<< HEAD
-
-const TYPE_ICONS = {
-    [ROOM_TYPES.EXAMINATION]: Stethoscope,
-    [ROOM_TYPES.TREATMENT]: Syringe,
-    [ROOM_TYPES.IMAGING]: ScanLine,
-};
-
-const STATUS_OPTIONS = [
-    { value: ROOM_STATUSES.IN_USE, label: "Đang sử dụng", badge: "badge-info" },
-    { value: ROOM_STATUSES.AVAILABLE, label: "Sẵn sàng", badge: "badge-success" },
-    { value: ROOM_STATUSES.MAINTENANCE, label: "Bảo trì", badge: "badge-warning" },
-];
-
-const STAT_CARDS = [
-    { key: "total", label: "Tổng số phòng" },
-    { key: "inUse", label: "Đang sử dụng", status: ROOM_STATUSES.IN_USE },
-    { key: "available", label: "Sẵn sàng", status: ROOM_STATUSES.AVAILABLE },
-    { key: "maintenance", label: "Bảo trì", status: ROOM_STATUSES.MAINTENANCE },
-];
-
-const ICON_BUTTON_CLASS = "btn btn-secondary btn-icon size-8";
-
-const findOption = (options, value) => options.find((option) => option.value === value);
-
-const TypeChip = ({ type }) => {
-    const option = findOption(ROOM_TYPE_OPTIONS, type);
-    if (!option) return null;
-    const Icon = TYPE_ICONS[type];
-
-    return (
-        <span className="chip-queue whitespace-nowrap">
-            <Icon className="size-3.5" aria-hidden="true" />
-            {option.label}
-        </span>
-    );
-};
-=======
->>>>>>> fix/service-room-management-pages
 
 const StatusBadge = ({ status }) => {
     const option = ROOM_STATUS_OPTIONS.find((item) => item.value === status);
     return option ? <span className={cx("badge", option.badge)}>{option.label}</span> : null;
 };
 
-<<<<<<< HEAD
-const RoomRow = ({ room, onEdit, onMaintenance }) => {
-    const inUse = room.status === ROOM_STATUSES.IN_USE;
-    const underMaintenance = room.status === ROOM_STATUSES.MAINTENANCE;
-    const maintenanceLabel = inUse
-        ? "Phòng đang được sử dụng, không thể bảo trì"
-        : underMaintenance
-          ? `Kết thúc bảo trì ${room.code}`
-          : `Chuyển ${room.code} sang bảo trì`;
-
-    return (
-        <tr>
-            <td className="cell-primary whitespace-nowrap">{room.code}</td>
-            <td className="whitespace-nowrap text-ink">{room.name}</td>
-            <td>
-                <TypeChip type={room.type} />
-            </td>
-            <td className="min-w-48">{room.equipment || <span className="text-muted">—</span>}</td>
-            <td className="whitespace-nowrap">
-                {room.usedBy ? <span className="font-medium text-ink">{room.usedBy}</span> : <span className="text-muted">—</span>}
-            </td>
-            <td>
-                <StatusBadge status={room.status} />
-            </td>
-            <td>
-                <div className="flex justify-end gap-2">
-                    <button
-                        type="button"
-                        className={ICON_BUTTON_CLASS}
-                        aria-label={`Chỉnh sửa ${room.code}`}
-                        title="Chỉnh sửa"
-                        onClick={() => onEdit(room)}
-                    >
-                        <Pencil className="size-4" aria-hidden="true" />
-                    </button>
-                    <span title={maintenanceLabel}>
-                        <button
-                            type="button"
-                            className={cx(ICON_BUTTON_CLASS, underMaintenance && "border-warning-solid text-warning")}
-                            aria-label={maintenanceLabel}
-                            aria-pressed={underMaintenance}
-                            disabled={inUse}
-                            onClick={() => onMaintenance(room)}
-                        >
-                            <Wrench className="size-4" aria-hidden="true" />
-                        </button>
-                    </span>
-                </div>
-            </td>
-        </tr>
-    );
-};
-=======
 const RoomRow = ({ room, index, onEdit }) => (
     <tr>
         <td className="num">{index}</td>
@@ -143,7 +43,6 @@ const RoomRow = ({ room, index, onEdit }) => (
         </td>
     </tr>
 );
->>>>>>> fix/service-room-management-pages
 
 const RoomManagement = () => {
     const [searchInput, setSearchInput] = useState("");
@@ -174,8 +73,8 @@ const RoomManagement = () => {
     const rooms = data?.items ?? [];
     const filtered = Boolean(keyword || type || status);
 
-    const changeFilter = (setter) => (event) => {
-        setter(event.target.value);
+    const changeFilter = (setter) => (value) => {
+        setter(value);
         setPage(1);
     };
 
@@ -187,7 +86,6 @@ const RoomManagement = () => {
         setPage(1);
     };
     const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
-    const lastItem = firstItem + rooms.length - 1;
 
     const handleSaved = (message) => {
         setDialog(null);
@@ -220,42 +118,22 @@ const RoomManagement = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-                <div className="search w-full sm:w-72">
-                    <Search aria-hidden="true" />
-                    <label htmlFor="room-search" className="sr-only">
-                        Tìm kiếm phòng
-                    </label>
-                    <input
-                        id="room-search"
-                        type="search"
-                        className="input"
-                        placeholder="Tìm theo tên phòng, tầng, mô tả"
-                        value={searchInput}
-                        onChange={(event) => setSearchInput(event.target.value)}
-                    />
-                </div>
-                <label htmlFor="room-type-filter" className="sr-only">
-                    Loại phòng
-                </label>
-                <select id="room-type-filter" className="input w-auto min-w-48" value={type} onChange={changeFilter(setType)}>
-                    <option value="">Loại phòng: Tất cả</option>
-                    {ROOM_TYPE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            Loại phòng: {option.label}
-                        </option>
-                    ))}
-                </select>
-                <label htmlFor="room-status-filter" className="sr-only">
-                    Trạng thái
-                </label>
-                <select id="room-status-filter" className="input w-auto min-w-44" value={status} onChange={changeFilter(setStatus)}>
-                    <option value="">Trạng thái: Tất cả</option>
-                    {ROOM_STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            Trạng thái: {option.label}
-                        </option>
-                    ))}
-                </select>
+                <SearchInput
+                    id="room-search"
+                    label="Tìm kiếm phòng"
+                    placeholder="Tìm theo tên phòng, tầng, mô tả"
+                    value={searchInput}
+                    onChange={setSearchInput}
+                    className="w-full sm:w-72"
+                />
+                <FilterSelect id="room-type-filter" label="Loại phòng" options={ROOM_TYPE_OPTIONS} value={type} onChange={changeFilter(setType)} />
+                <FilterSelect
+                    id="room-status-filter"
+                    label="Trạng thái"
+                    options={ROOM_STATUS_OPTIONS}
+                    value={status}
+                    onChange={changeFilter(setStatus)}
+                />
                 {(filtered || searchInput) && (
                     <button type="button" className="btn btn-link" onClick={clearFilters}>
                         Xoá bộ lọc
@@ -317,26 +195,10 @@ const RoomManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                {data && data.totalItems > 0 && (
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                        <p className="num text-caption text-muted">
-                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} phòng
-                        </p>
-                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách phòng" />
-                    </div>
-                )}
+                <TablePagination data={data} itemCount={rooms.length} onChange={setPage} label="Phân trang danh sách phòng" />
             </div>
 
-<<<<<<< HEAD
-            {dialog?.kind === "form" && (
-                <RoomFormPopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
-            )}
-            {dialog?.kind === "maintenance" && (
-                <RoomMaintenancePopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />
-            )}
-=======
             {dialog && <RoomFormPopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />}
->>>>>>> fix/service-room-management-pages
         </div>
     );
 };

@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { Layers, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
-import DeactivateServicePopup from "@/components/popup/DeactivateServicePopup";
-import ServiceTypeFormPopup from "@/components/popup/ServiceTypeFormPopup";
+import DeactivateServicePopup from "@/components/popup/service/DeactivateServicePopup";
+import ServiceTypeFormPopup from "@/components/popup/service/ServiceTypeFormPopup";
 import Modal from "@/components/ui/Modal";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";

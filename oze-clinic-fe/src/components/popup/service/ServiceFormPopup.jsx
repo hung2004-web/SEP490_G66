@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Pencil, X } from "lucide-react";
 import { toast } from "react-toastify";
-import ServiceTypeFormPopup from "@/components/popup/ServiceTypeFormPopup";
+import ServiceTypeFormPopup from "@/components/popup/service/ServiceTypeFormPopup";
 import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import { createService, updateService } from "@/services/serviceManagementService";
