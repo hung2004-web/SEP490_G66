@@ -289,6 +289,9 @@ namespace OZE.Common.Constants
         {
             public const string EntryNotFound = "Queue number not found";
             public const string OnlyCalledCanBeSkipped = "Only a number that has been called can be skipped";
+            public const string OnlyWaitingCanBeCalled = "Only a number that is waiting can be called";
+            public const string NotInTodayQueue = "This number is not in today's queue";
+            public const string NotYourPatientToCall = "You can only call your own patients";
             public const string NotYourPatient = "You can only skip your own patients";
         }
 

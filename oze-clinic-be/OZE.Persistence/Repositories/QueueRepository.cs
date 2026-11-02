@@ -63,7 +63,7 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<List<QueueEntry>> GetActiveEntriesAsync(string? queueType, int? roomId, int? assignedStaffId, int skipMoveBackPositions, CancellationToken cancellationToken = default)
+        public async Task<List<QueueEntry>> GetActiveEntriesAsync(string? queueType, int? roomId, int? assignedStaffId, CancellationToken cancellationToken = default)
         {
             var (today, tomorrow) = DayWindow(DateOnly.FromDateTime(DateTime.Today));
 
@@ -93,8 +93,8 @@ namespace OZE.Persistence.Repositories
             }
 
             return await query
-                .OrderByDescending(x => x.Priority)
-                .ThenBy(x => x.QueueNumber + x.SkipCount * skipMoveBackPositions)
+                .OrderBy(x => x.SkipCount)
+                .ThenByDescending(x => x.Priority)
                 .ThenBy(x => x.QueueNumber)
                 .ToListAsync(cancellationToken);
         }

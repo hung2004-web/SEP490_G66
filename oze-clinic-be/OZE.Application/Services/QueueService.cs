@@ -115,8 +115,7 @@ namespace OZE.Application.Services
             bool includePatientDetails = false,
             CancellationToken cancellationToken = default)
         {
-            var skipStep = await GetSkipMoveBackPositionsAsync();
-            var entries = await _queueRepository.GetActiveEntriesAsync(queueType, roomId, null, skipStep, cancellationToken);
+            var entries = await _queueRepository.GetActiveEntriesAsync(queueType, roomId, null, cancellationToken);
             return entries.Select(x => MapToResponse(x, includePatientDetails)).ToList();
         }
 
@@ -134,8 +133,7 @@ namespace OZE.Application.Services
                 ConditionGuard.Ensure<NotFoundException>(assignedStaffId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
             }
 
-            var skipStep = await GetSkipMoveBackPositionsAsync();
-            var entries = await _queueRepository.GetActiveEntriesAsync(queueType, roomId, assignedStaffId, skipStep, cancellationToken);
+            var entries = await _queueRepository.GetActiveEntriesAsync(queueType, roomId, assignedStaffId, cancellationToken);
             foreach (var next in entries.Where(x => x.Status == QueueConstants.Waiting))
             {
                 var calledAt = DateTimeOffset.UtcNow;
@@ -156,6 +154,41 @@ namespace OZE.Application.Services
             }
 
             return null;
+        }
+
+        public async Task<QueueEntryResponse> CallAsync(
+            long queueEntryId,
+            int? roomId = null,
+            string? doctorUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var entry = await _queueRepository.GetByIdAsync(queueEntryId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(entry != null, ErrorConstants.QueueMessage.EntryNotFound);
+
+            if (doctorUserId != null && entry!.QueueType == QueueConstants.ExaminationType)
+            {
+                var staffId = await _queueRepository.GetStaffProfileIdByUserIdAsync(doctorUserId, cancellationToken);
+                ConditionGuard.Ensure<NotFoundException>(staffId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
+                ConditionGuard.Ensure<ForbiddenException>(entry.AssignedStaffId == staffId, ErrorConstants.QueueMessage.NotYourPatientToCall);
+            }
+
+            // Numbers of earlier days are history, they cannot be called any more
+            ConditionGuard.Ensure(DateOnly.FromDateTime(entry!.CreatedAt.LocalDateTime) == DateOnly.FromDateTime(DateTime.Today), ErrorConstants.QueueMessage.NotInTodayQueue);
+            ConditionGuard.Ensure(entry.Status == QueueConstants.Waiting, ErrorConstants.QueueMessage.OnlyWaitingCanBeCalled);
+
+            var calledAt = DateTimeOffset.UtcNow;
+            // Checked again in the update itself: someone else may have called this number a moment ago
+            ConditionGuard.Ensure(await _queueRepository.TryMarkCalledAsync(entry.Id, roomId, calledAt, cancellationToken),
+                ErrorConstants.QueueMessage.OnlyWaitingCanBeCalled);
+
+            entry.Status = QueueConstants.Called;
+            entry.CalledAt = calledAt;
+            if (roomId.HasValue)
+            {
+                entry.RoomId = roomId.Value;
+            }
+
+            return MapToResponse(entry, includePatientDetails: true);
         }
 
         public async Task<QueueEntryResponse> SkipAsync(
@@ -204,11 +237,6 @@ namespace OZE.Application.Services
             return entries.Select(x => x.AppointmentId).ToList();
         }
 
-        private async Task<int> GetSkipMoveBackPositionsAsync()
-        {
-            var value = await _queueRepository.GetConfigValueAsync(ConfigKeyConstants.QueueSkipMoveBackPositions);
-            return int.TryParse(value, out var positions) && positions > 0 ? positions : QueueConstants.DefaultSkipMoveBackPositions;
-        }
 
         private static QueueEntryResponse MapToResponse(QueueEntry x, bool includePatientDetails) => new()
         {

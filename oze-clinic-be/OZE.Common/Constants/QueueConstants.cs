@@ -23,7 +23,6 @@ namespace OZE.Common.Constants
         public const int NumberLockTimeoutMilliseconds = 10000;
 
         // Used when the clinic has not set the matching key of ConfigKeyConstants
-        public const int DefaultSkipMoveBackPositions = 3;
         public const string DefaultMorningEndTime = "12:00";
 
         // How often the background worker looks for absent patients to mark as NO_SHOW
