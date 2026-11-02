@@ -220,7 +220,7 @@ namespace OZE.Common.Constants
             public const string ExaminationNotFound = "No examination was found for this appointment";
             public const string ExaminationAlreadyLocked = "This examination is already completed and locked";
             public const string OnlyCheckedInCanBeStarted = "Only a checked-in appointment can be started";
-            public const string NotAssignedDoctor = "You can only start an examination for your own appointment";
+            public const string NotAssignedDoctor = "You can only examine your own appointments";
             public const string ExaminationAlreadyStarted = "This appointment already has an examination";
         }
         public static class PatientMessage
@@ -247,6 +247,30 @@ namespace OZE.Common.Constants
             public const string PatientNotFound = "Patient not found";
             public const string ExaminationNotFound = "Examination not found";
             public const string AccessDenied = "You do not have permission to view this patient's medical record";
+        }
+
+        // Writing the content of an examination: services, notes and diagnoses
+        public static class ExaminationMessage
+        {
+            public const string NotExaminingDoctor = "You can only work on the examinations you are performing";
+            public const string AlreadyLocked = "This examination is already completed and locked, it can no longer be edited";
+            public const string ChiefComplaintTooLong = "The reason for the visit is too long";
+            public const string ClinicalNotesTooLong = "The clinical notes are too long";
+            public const string DiagnosisNameRequired = "Please enter the diagnosis name";
+            public const string DiagnosisNameTooLong = "The diagnosis name is too long";
+            public const string DiagnosisCodeTooLong = "The diagnosis code is too long";
+            public const string DiagnosisDescriptionTooLong = "The diagnosis description is too long";
+            public const string DiagnosisNotFound = "Diagnosis not found in this examination";
+            public const string ServiceAlreadyAdded = "This service is already in the appointment";
+            public const string ServiceItemNotFound = "Service not found in this appointment";
+            public const string CannotRemoveLastService = "An appointment must keep at least one service";
+            public const string VariantMismatch = "This variant does not belong to the selected service";
+            public const string ToothNumberInvalid = "The tooth number is not valid. Use the FDI number, for example 46";
+            public const string ToothConditionInvalid = "The tooth condition must be one of: Healthy, Caries, Filled, Crown, Missing, Denture, Implant";
+            public const string ToothSurfaceTooLong = "The tooth surface is too long";
+            public const string ToothSeverityTooLong = "The severity is too long";
+            public const string ToothNotesTooLong = "The tooth notes are too long";
+            public const string ToothNotRecorded = "No change was recorded for this tooth in this examination";
         }
 
         // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.
