@@ -2,6 +2,7 @@ namespace OZE.Common.Models
 {
     public class PrescriptionItemResponse
     {
+        public long Id { get; set; }
         public string MedicationName { get; set; } = string.Empty;
         public string? Dosage { get; set; }
         public string? Frequency { get; set; }

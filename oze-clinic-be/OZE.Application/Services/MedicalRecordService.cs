@@ -93,6 +93,7 @@ namespace OZE.Application.Services
                     Notes = p.Notes,
                     Items = p.Items.OrderBy(i => i.SortOrder).Select(i => new PrescriptionItemResponse
                     {
+                        Id = i.Id,
                         MedicationName = i.MedicationName,
                         Dosage = i.Dosage,
                         Frequency = i.Frequency,

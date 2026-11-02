@@ -26,6 +26,8 @@ namespace OZE.Persistence.Repositories
                         .ThenInclude(x => x.Variant)
                 .Include(x => x.Diagnoses)
                 .Include(x => x.DentalChartEntries)
+                .Include(x => x.Prescriptions)
+                    .ThenInclude(x => x.Items)
                 .FirstOrDefaultAsync(x => x.Id == examinationId, cancellationToken);
         }
 
@@ -64,6 +66,11 @@ namespace OZE.Persistence.Repositories
         public void RemoveServiceItem(AppointmentServiceItem item)
         {
             _context.AppointmentServiceItems.Remove(item);
+        }
+
+        public void RemovePrescriptionItem(PrescriptionItem item)
+        {
+            _context.PrescriptionItems.Remove(item);
         }
 
         public void RemoveDiagnosis(ClinicalDiagnosis diagnosis)

@@ -21,6 +21,15 @@ namespace OZE.Application.Interfaces
         Task<List<DentalChartToothResponse>> SetToothAsync(string userId, long examinationId, string toothNumber, SaveToothRequest request, CancellationToken cancellationToken = default);
         Task<List<DentalChartToothResponse>> RemoveToothChangeAsync(string userId, long examinationId, string toothNumber, CancellationToken cancellationToken = default);
 
+        // Prescription: one per examination, made of medications. Finalizing locks it for changes until it is reopened.
+        Task<PrescriptionResponse> GetPrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
+        Task<PrescriptionResponse> SavePrescriptionNotesAsync(string userId, long examinationId, SavePrescriptionNotesRequest request, CancellationToken cancellationToken = default);
+        Task<PrescriptionResponse> AddPrescriptionItemAsync(string userId, long examinationId, SavePrescriptionItemRequest request, CancellationToken cancellationToken = default);
+        Task<PrescriptionResponse> UpdatePrescriptionItemAsync(string userId, long examinationId, long itemId, SavePrescriptionItemRequest request, CancellationToken cancellationToken = default);
+        Task<PrescriptionResponse> DeletePrescriptionItemAsync(string userId, long examinationId, long itemId, CancellationToken cancellationToken = default);
+        Task<PrescriptionResponse> FinalizePrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
+        Task<PrescriptionResponse> ReopenPrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
+
         // Each call returns the diagnoses of the examination as they are now, so a changed primary one is visible
         Task<List<DiagnosisResponse>> AddDiagnosisAsync(string userId, long examinationId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default);
         Task<List<DiagnosisResponse>> UpdateDiagnosisAsync(string userId, long examinationId, long diagnosisId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default);
