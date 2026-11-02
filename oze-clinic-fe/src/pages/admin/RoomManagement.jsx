@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { CheckCircle2, DoorOpen, Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, DoorOpen, Pencil, Search } from "lucide-react";
 import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
 import Pagination from "@/components/ui/Pagination";
 import useAsync from "@/hooks/useAsync";
 import { getRooms } from "@/services/roomService";
 import { cx } from "@/utils/cx";
-import { ROOM_STATUS_OPTIONS, roomTypeLabel } from "@/utils/data/mockRooms";
+import { ROOM_STATUS_OPTIONS, ROOM_TYPE_OPTIONS, roomTypeLabel } from "@/utils/data/mockRooms";
 
+const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 3;
 const COLUMN_COUNT = 7;
 
@@ -42,15 +43,46 @@ const RoomRow = ({ room, index, onEdit }) => (
 );
 
 const RoomManagement = () => {
+    const [searchInput, setSearchInput] = useState("");
+    const [keyword, setKeyword] = useState("");
+    const [type, setType] = useState("");
+    const [status, setStatus] = useState("");
     const [page, setPage] = useState(1);
     const [reloadKey, setReloadKey] = useState(0);
     const [dialog, setDialog] = useState(null);
     const [notice, setNotice] = useState(null);
 
-    const { loading, value: result } = useAsync(() => getRooms({ page }), [page, reloadKey]);
+    const { loading, value: result } = useAsync(
+        () => getRooms({ keyword, type, status, page }),
+        [keyword, type, status, page, reloadKey],
+    );
+
+    useEffect(() => {
+        const nextKeyword = searchInput.trim();
+        if (nextKeyword === keyword) return undefined;
+        const timer = setTimeout(() => {
+            setKeyword(nextKeyword);
+            setPage(1);
+        }, SEARCH_DELAY_MS);
+        return () => clearTimeout(timer);
+    }, [searchInput, keyword]);
 
     const data = result?.success ? result.data : null;
     const rooms = data?.items ?? [];
+    const filtered = Boolean(keyword || type || status);
+
+    const changeFilter = (setter) => (event) => {
+        setter(event.target.value);
+        setPage(1);
+    };
+
+    const clearFilters = () => {
+        setSearchInput("");
+        setKeyword("");
+        setType("");
+        setStatus("");
+        setPage(1);
+    };
     const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
     const lastItem = firstItem + rooms.length - 1;
 
@@ -81,6 +113,50 @@ const RoomManagement = () => {
                             Đóng
                         </button>
                     </p>
+                )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="search w-full sm:w-72">
+                    <Search aria-hidden="true" />
+                    <label htmlFor="room-search" className="sr-only">
+                        Tìm kiếm phòng
+                    </label>
+                    <input
+                        id="room-search"
+                        type="search"
+                        className="input"
+                        placeholder="Tìm theo tên phòng, tầng, mô tả"
+                        value={searchInput}
+                        onChange={(event) => setSearchInput(event.target.value)}
+                    />
+                </div>
+                <label htmlFor="room-type-filter" className="sr-only">
+                    Loại phòng
+                </label>
+                <select id="room-type-filter" className="input w-auto min-w-48" value={type} onChange={changeFilter(setType)}>
+                    <option value="">Loại phòng: Tất cả</option>
+                    {ROOM_TYPE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            Loại phòng: {option.label}
+                        </option>
+                    ))}
+                </select>
+                <label htmlFor="room-status-filter" className="sr-only">
+                    Trạng thái
+                </label>
+                <select id="room-status-filter" className="input w-auto min-w-44" value={status} onChange={changeFilter(setStatus)}>
+                    <option value="">Trạng thái: Tất cả</option>
+                    {ROOM_STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            Trạng thái: {option.label}
+                        </option>
+                    ))}
+                </select>
+                {(filtered || searchInput) && (
+                    <button type="button" className="btn btn-link" onClick={clearFilters}>
+                        Xoá bộ lọc
+                    </button>
                 )}
             </div>
 
@@ -116,8 +192,12 @@ const RoomManagement = () => {
                                     <td colSpan={COLUMN_COUNT}>
                                         <div className="empty-state">
                                             <DoorOpen className="empty-state-icon" aria-hidden="true" />
-                                            <p className="empty-state-title">Chưa có phòng nào</p>
-                                            <p className="empty-state-text">Bấm “Thêm phòng” để tạo phòng đầu tiên.</p>
+                                            <p className="empty-state-title">
+                                                {filtered ? "Không tìm thấy phòng phù hợp" : "Chưa có phòng nào"}
+                                            </p>
+                                            <p className="empty-state-text">
+                                                {filtered ? "Thử đổi từ khóa hoặc bộ lọc." : "Bấm “Thêm phòng” để tạo phòng đầu tiên."}
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>

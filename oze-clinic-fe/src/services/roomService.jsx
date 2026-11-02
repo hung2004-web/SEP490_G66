@@ -26,14 +26,23 @@ const toRoomFields = (request) => ({
     status: request.status,
 });
 
-export const getRooms = async ({ page = 1, pageSize = ROOM_PAGE_SIZE } = {}) => {
+// keyword matches the name, floor or description; type / status: "" (all) or a ROOM_TYPES / ROOM_STATUSES value.
+export const getRooms = async ({ keyword = "", type = "", status = "", page = 1, pageSize = ROOM_PAGE_SIZE } = {}) => {
     await wait(MOCK_DELAY_MS);
 
-    const totalItems = rooms.length;
+    const search = normalize(keyword);
+    const filtered = rooms.filter(
+        (room) =>
+            (!search || [room.name, room.floor, room.description].some((field) => normalize(field ?? "").includes(search))) &&
+            (!type || room.type === type) &&
+            (!status || room.status === status),
+    );
+
+    const totalItems = filtered.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     const currentPage = Math.min(Math.max(1, page), totalPages);
     const start = (currentPage - 1) * pageSize;
-    const items = rooms.slice(start, start + pageSize).map((room) => ({ ...room }));
+    const items = filtered.slice(start, start + pageSize).map((room) => ({ ...room }));
 
     return success({ items, page: currentPage, pageSize, totalItems, totalPages });
 };
