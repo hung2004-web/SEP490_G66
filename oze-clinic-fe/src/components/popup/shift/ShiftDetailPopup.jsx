@@ -1,17 +1,18 @@
+import { Link } from "react-router-dom";
 import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { ShiftStatusPill } from "@/components/shift/ShiftStatus";
-import { SHIFT_STATUSES } from "@/utils/data/mockShifts";
-import { USER_ROLES } from "@/utils/messages";
+import { LEAVE_REQUEST_STATUS_LABELS, SHIFT_STATUSES } from "@/utils/data/mockShifts";
 import { formatShiftPlace } from "@/services/shiftService";
+import { formatPhone } from "@/utils/format";
+import { ROUTES } from "@/utils/routes";
 import ShiftInfoTable from "./ShiftInfoTable";
 
-const formatPhone = (phone) => phone.replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
-
-// "2026-10-16" -> "16/10"
-const dayMonth = (dateOnly) => `${dateOnly.slice(8, 10)}/${dateOnly.slice(5, 7)}`;
-
 const actualTimes = (cell) => (cell.checkIn ? `${cell.checkIn} – ${cell.checkOut ?? "…"}` : "");
+
+// TODO: point at the request's own page once "Đơn xin nghỉ" is built.
+const leaveRequestUrl = (requestId) => `${ROUTES.ADMIN_LEAVE_REQUESTS}?id=${requestId}`;
 
 // Rows after "Trạng thái", which depend on the status.
 const statusRows = (cell) => {
@@ -22,24 +23,32 @@ const statusRows = (cell) => {
         ];
     }
     if (cell.status === SHIFT_STATUSES.LEAVE) {
-        const { approvedAt, wholeDay, reason } = cell.leave;
-        return [{ label: "Đơn xin nghỉ", value: `Đã duyệt ${dayMonth(approvedAt)} · ${wholeDay ? "Cả ngày" : cell.slotLabel} · ${reason}` }];
+        return [
+            {
+                label: "Đơn xin nghỉ",
+                value: (
+                    <span className="flex flex-wrap items-center justify-between gap-2">
+                        <StatusBadge status={cell.leave.status} labels={LEAVE_REQUEST_STATUS_LABELS} />
+                        <Link to={leaveRequestUrl(cell.leave.requestId)} className="btn btn-link h-auto p-0 text-caption font-semibold">
+                            Xem chi tiết đơn
+                        </Link>
+                    </span>
+                ),
+            },
+        ];
     }
     if (cell.status === SHIFT_STATUSES.PENDING) return [{ label: "Giờ vào – ra thực tế", value: "" }];
-    return [
-        { label: "Giờ vào – ra thực tế", value: <span className="num font-medium">{actualTimes(cell)}</span> },
-        { label: "Ghi chú", value: cell.note },
-    ];
+    return [{ label: "Giờ vào – ra thực tế", value: <span className="num font-medium">{actualTimes(cell)}</span> }];
 };
 
 // "Chi tiết ca" popup of an assigned shift: who works, where, and how it went (present, absent, on leave or not started).
-// onViewLeave opens the leave request of a shift whose person is on leave.
-const ShiftDetailPopup = ({ cell, onClose, onViewLeave }) => {
+// A shift whose person is on leave shows the leave request's status with a link to the request.
+// onAssign(cell) opens "Chọn người thay" for that shift; pass it only while the shift has not started.
+const ShiftDetailPopup = ({ cell, onClose, onAssign }) => {
     const onLeave = cell.status === SHIFT_STATUSES.LEAVE;
     const rows = [
         { label: "Phòng", value: [cell.room.name, cell.room.floor].filter(Boolean).join(" · ") },
         { label: "Giờ ca", value: <span className="num font-medium">{`${cell.start} – ${cell.end}`}</span> },
-        ...(onLeave ? [] : [{ label: "Nhiệm vụ", value: cell.task }]),
         { label: "Trạng thái", value: <ShiftStatusPill status={cell.status} /> },
         ...statusRows(cell),
     ];
@@ -59,12 +68,6 @@ const ShiftDetailPopup = ({ cell, onClose, onViewLeave }) => {
 
                 <ShiftInfoTable rows={rows} />
 
-                {onLeave && (
-                    <p className="alert alert-warning border-0">
-                        Ca này chưa có người thay.
-                        {cell.staff.role === USER_ROLES.DOCTOR && " Bệnh nhân đã đặt lịch với bác sĩ này cần được báo đổi lịch."}
-                    </p>
-                )}
                 {cell.status === SHIFT_STATUSES.PENDING && (
                     <p className="rounded-md bg-surface-tint px-4 py-3 text-muted">Trạng thái được cập nhật khi nhân viên điểm danh vào ca.</p>
                 )}
@@ -74,9 +77,9 @@ const ShiftDetailPopup = ({ cell, onClose, onViewLeave }) => {
                 <button type="button" className="btn btn-secondary" onClick={onClose}>
                     Đóng
                 </button>
-                {onLeave && (
-                    <button type="button" className="btn btn-primary" onClick={() => onViewLeave(cell)}>
-                        Xem đơn xin nghỉ
+                {onLeave && onAssign && (
+                    <button type="button" className="btn btn-primary" onClick={() => onAssign(cell)}>
+                        Phân ca
                     </button>
                 )}
             </div>

@@ -16,5 +16,11 @@ namespace OZE.Common.Models
         [Required(ErrorMessage = "Confirmation password is required")]
         [Compare(nameof(NewPassword), ErrorMessage = "New password and confirmation password do not match")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Refresh token of the device that is changing the password (BR-104).
+        /// When set, other sessions are revoked and this one is kept.
+        /// </summary>
+        public string? RefreshToken { get; set; }
     }
 }

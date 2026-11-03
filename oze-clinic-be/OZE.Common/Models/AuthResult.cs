@@ -5,6 +5,8 @@ namespace OZE.Common.Models
         public string Token { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
         public DateTime? ExpiresAt { get; set; }
+        public string? FullName { get; set; }
+        public string? Role { get; set; }
         public string? ErrorMessage { get; set; }
         public bool Success => string.IsNullOrEmpty(ErrorMessage);
     }

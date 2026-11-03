@@ -20,6 +20,7 @@ namespace OZE.Application.Services
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IUserRefreshTokenRepository _refreshTokenRepository;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
+        private readonly IUserService _userService;
         private readonly IEmailSender _emailSender;
         private readonly ISmsSender _smsSender;
         private readonly IPendingRegistrationStore _pendingRegistrationStore;
@@ -35,6 +36,7 @@ namespace OZE.Application.Services
             SignInManager<ApplicationUser> signInManager,
             IUserRefreshTokenRepository refreshTokenRepository,
             IJwtTokenGenerator jwtTokenGenerator,
+            IUserService userService,
             IEmailSender emailSender,
             ISmsSender smsSender,
             IPendingRegistrationStore pendingRegistrationStore,
@@ -50,6 +52,7 @@ namespace OZE.Application.Services
             _signInManager = signInManager;
             _refreshTokenRepository = refreshTokenRepository;
             _jwtTokenGenerator = jwtTokenGenerator;
+            _userService = userService;
             _emailSender = emailSender;
             _smsSender = smsSender;
             _pendingRegistrationStore = pendingRegistrationStore;
@@ -527,12 +530,9 @@ namespace OZE.Application.Services
             });
             await _refreshTokenRepository.SaveChangesAsync();
 
-            return ApiResponse<AuthResult>.SuccessResult(new AuthResult
-            {
-                Token = token,
-                RefreshToken = refreshToken,
-                ExpiresAt = now.AddMinutes(accessTokenMinutes)
-            }, "Login successful");
+            return ApiResponse<AuthResult>.SuccessResult(
+                await ToAuthResultAsync(user, token, refreshToken, now.AddMinutes(accessTokenMinutes)),
+                "Login successful");
         }
         private async Task<ApplicationUser?> FindUserByIdentifierAsync(string identifier)
         {
@@ -572,6 +572,22 @@ namespace OZE.Application.Services
             {
                 return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidRefreshToken);
             }
+            // BR-101 / BR-102: do not rotate tokens while the account is locked or disabled.
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow)
+            {
+                if (IsPermanentlyDisabled(user))
+                    return ApiResponse<AuthResult>.FailureWithCode(
+                        ErrorConstants.AuthMessage.AccountDisabled, ErrorConstants.AuthCode.AccountDisabled);
+
+                return ApiResponse<AuthResult>.FailureWithCode(
+                    ErrorConstants.AuthMessage.AccountLocked,
+                    ErrorConstants.AuthCode.LockedOut,
+                    user.LockoutEnd);
+            }
+
+            // Revoke old refresh token
+            activeToken.RevokedAt = DateTimeOffset.UtcNow;
+            await _refreshTokenRepository.UpdateAsync(activeToken);
 
             // Generate new token pair
             var newAccessToken = await _jwtTokenGenerator.GenerateTokenAsync(user);
@@ -587,14 +603,24 @@ namespace OZE.Application.Services
             await _refreshTokenRepository.AddAsync(newTokenEntry);
             await _refreshTokenRepository.SaveChangesAsync();
 
-            var result = new AuthResult
-            {
-                Token = newAccessToken,
-                RefreshToken = newRefreshToken,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes > 0 ? _jwtSettings.ExpiresInMinutes : 60)
-            };
+            var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes > 0 ? _jwtSettings.ExpiresInMinutes : 60);
+            return ApiResponse<AuthResult>.SuccessResult(
+                await ToAuthResultAsync(user, newAccessToken, newRefreshToken, expiresAt),
+                "Token refreshed successfully");
+        }
 
-            return ApiResponse<AuthResult>.SuccessResult(result, "Token refreshed successfully");
+        private async Task<AuthResult> ToAuthResultAsync(
+            ApplicationUser user, string token, string refreshToken, DateTime expiresAt)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            return new AuthResult
+            {
+                Token = token,
+                RefreshToken = refreshToken,
+                ExpiresAt = expiresAt,
+                FullName = _userService.GetFullName(user.Id),
+                Role = roles.FirstOrDefault()
+            };
         }
 
         public async Task<ApiResponse> LogoutAsync(string? userId, string? refreshToken = null)
@@ -829,8 +855,20 @@ namespace OZE.Application.Services
                 return ApiResponse.FailureResult("Change password failed", errors);
             }
 
-            // Revoke active refresh tokens for security
-            await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            // BR-104: sign out other devices; keep this one when FE sends its refresh token.
+            if (!string.IsNullOrWhiteSpace(request.RefreshToken))
+            {
+                var current = await _refreshTokenRepository.GetActiveTokenAsync(request.RefreshToken);
+                if (current != null && current.UserId == userId)
+                    await _refreshTokenRepository.RevokeUserTokensExceptAsync(userId, request.RefreshToken);
+                else
+                    await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            }
+            else
+            {
+                await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            }
+
             await _refreshTokenRepository.SaveChangesAsync();
 
             return ApiResponse.SuccessResult("Password changed successfully");
