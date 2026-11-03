@@ -740,8 +740,20 @@ namespace OZE.Application.Services
                 return ApiResponse.FailureResult("Change password failed", errors);
             }
 
-            // Revoke active refresh tokens for security
-            await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            // BR-104: sign out other devices; keep this one when FE sends its refresh token.
+            if (!string.IsNullOrWhiteSpace(request.RefreshToken))
+            {
+                var current = await _refreshTokenRepository.GetActiveTokenAsync(request.RefreshToken);
+                if (current != null && current.UserId == userId)
+                    await _refreshTokenRepository.RevokeUserTokensExceptAsync(userId, request.RefreshToken);
+                else
+                    await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            }
+            else
+            {
+                await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            }
+
             await _refreshTokenRepository.SaveChangesAsync();
 
             return ApiResponse.SuccessResult("Password changed successfully");
