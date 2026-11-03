@@ -6,6 +6,10 @@ namespace OZE.Common.Models.Base
         public string Message { get; set; } = string.Empty;
         public T? Data { get; set; }
         public List<string>? Errors { get; set; }
+        /// <summary>Stable machine-readable failure code for clients (e.g. INVALID_CREDENTIALS).</summary>
+        public string? Code { get; set; }
+        /// <summary>UTC instant when a temporary lockout ends; set with LOCKED_OUT.</summary>
+        public DateTimeOffset? LockoutEnd { get; set; }
 
         public static ApiResponse<T> SuccessResult(T data, string message = "Success")
         {
@@ -37,6 +41,19 @@ namespace OZE.Common.Models.Base
                 Message = message,
                 Data = default,
                 Errors = new List<string> { error }
+            };
+        }
+
+        public static ApiResponse<T> FailureWithCode(string message, string code, DateTimeOffset? lockoutEnd = null)
+        {
+            return new ApiResponse<T>
+            {
+                Success = false,
+                Message = message,
+                Data = default,
+                Code = code,
+                LockoutEnd = lockoutEnd,
+                Errors = new List<string>()
             };
         }
     }
@@ -73,6 +90,19 @@ namespace OZE.Common.Models.Base
                 Message = message,
                 Data = null,
                 Errors = new List<string> { error }
+            };
+        }
+
+        public static new ApiResponse FailureWithCode(string message, string code, DateTimeOffset? lockoutEnd = null)
+        {
+            return new ApiResponse
+            {
+                Success = false,
+                Message = message,
+                Data = null,
+                Code = code,
+                LockoutEnd = lockoutEnd,
+                Errors = new List<string>()
             };
         }
     }

@@ -433,15 +433,25 @@ namespace OZE.Application.Services
         {
             var user = await FindUserByIdentifierAsync(request.Identifier.Trim());
             if (user == null || await IsPendingRegistrationAsync(user))
-                return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidLogin);
+                return ApiResponse<AuthResult>.FailureWithCode(
+                    ErrorConstants.AuthMessage.InvalidLogin, ErrorConstants.AuthCode.InvalidCredentials);
 
             var signIn = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
             if (signIn.IsLockedOut)
-                return ApiResponse<AuthResult>.FailureResult("Account is temporarily locked. Please try again later.");
-            if (!signIn.Succeeded)
-                return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidLogin);
+            {
+                // Staff deactivation uses LockoutEnd = MaxValue; temporary lockout uses a finite instant (BR-101 / MSG80).
+                if (IsPermanentlyDisabled(user))
+                    return ApiResponse<AuthResult>.FailureWithCode(
+                        ErrorConstants.AuthMessage.AccountDisabled, ErrorConstants.AuthCode.AccountDisabled);
 
-           
+                return ApiResponse<AuthResult>.FailureWithCode(
+                    ErrorConstants.AuthMessage.AccountLocked,
+                    ErrorConstants.AuthCode.LockedOut,
+                    user.LockoutEnd);
+            }
+            if (!signIn.Succeeded)
+                return ApiResponse<AuthResult>.FailureWithCode(
+                    ErrorConstants.AuthMessage.InvalidLogin, ErrorConstants.AuthCode.InvalidCredentials);
 
             var now = DateTime.UtcNow;
             var accessTokenMinutes = _jwtSettings.ExpiresInMinutes > 0 ? _jwtSettings.ExpiresInMinutes : 60;
@@ -517,28 +527,36 @@ namespace OZE.Application.Services
             return ApiResponse<AuthResult>.SuccessResult(result, "Token refreshed successfully");
         }
 
-        public async Task<ApiResponse> LogoutAsync(string userId, string? refreshToken = null)
+        public async Task<ApiResponse> LogoutAsync(string? userId, string? refreshToken = null)
         {
-            if (string.IsNullOrWhiteSpace(refreshToken))
+            if (!string.IsNullOrWhiteSpace(refreshToken))
             {
-                // No token supplied: sign out of every device.
-                await _refreshTokenRepository.RevokeUserTokensAsync(userId);
-            }
-            else
-            {
-                // Only end the session of the device that sent this refresh token.
+                // BR-109: revoke this refresh token even when the access token has already expired.
                 var token = await _refreshTokenRepository.GetActiveTokenAsync(refreshToken);
-                if (token != null && token.UserId == userId)
+                if (token != null)
                 {
                     token.RevokedAt = DateTimeOffset.UtcNow;
                     await _refreshTokenRepository.UpdateAsync(token);
                 }
+            }
+            else if (!string.IsNullOrEmpty(userId))
+            {
+                // Revoke every device only when the caller has a valid access token (userId from JWT).
+                await _refreshTokenRepository.RevokeUserTokensAsync(userId);
+            }
+            else
+            {
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.LogoutRequiresToken);
             }
 
             await _refreshTokenRepository.SaveChangesAsync();
 
             return ApiResponse.SuccessResult("Logged out successfully");
         }
+
+        // Staff deactivation sets LockoutEnd to MaxValue; temporary lockout uses a finite instant.
+        private static bool IsPermanentlyDisabled(ApplicationUser user) =>
+            user.LockoutEnd.HasValue && user.LockoutEnd.Value == DateTimeOffset.MaxValue;
 
         public async Task<ApiResponse> ConfirmEmailAsync(string userId, string code)
         {

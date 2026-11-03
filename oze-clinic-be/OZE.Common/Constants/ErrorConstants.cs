@@ -53,10 +53,23 @@ namespace OZE.Common.Constants
             public const string UserNotFound = "User not found in system";
             public const string EmailConfirmRequired = "Email confirm Required";
             public const string InvalidLogin = "Invalid login, please check again";
+            // Temporary lockout after too many failed attempts (BR-101).
+            public const string AccountLocked = "Account is temporarily locked. Please try again later.";
+            // Staff/manager disabled the account (MSG80 on FE).
+            public const string AccountDisabled = "Account has been disabled. Please contact the clinic.";
             public const string InvalidRefreshToken = "Refresh token is expiry or not found";
             public const string TwoFactorRequired = "Two factor required, please check your code";
             public const string SamePassword = "New password cannot be the same as current password";
             public const string PasswordMismatch = "New password and confirmation password do not match";
+            public const string LogoutRequiresToken = "Refresh token or authenticated user is required";
+        }
+
+        // Stable codes for login failures (UC-04). FE matches these instead of English message text.
+        public static class AuthCode
+        {
+            public const string InvalidCredentials = "INVALID_CREDENTIALS";
+            public const string LockedOut = "LOCKED_OUT";
+            public const string AccountDisabled = "ACCOUNT_DISABLED";
         }
 
         public static class RoomMessage
@@ -208,6 +221,7 @@ namespace OZE.Common.Constants
             public const string OnlyConfirmedCanBeCheckedIn = "Only a confirmed appointment can be checked in";
             public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
+            public const string CheckInDoctorShiftEnded = "The doctor has already ended the shift today";
             public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
             public const string PriorityInvalid = "Priority must be 0 (normal), 1 (high) or 2 (urgent)";
             public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
