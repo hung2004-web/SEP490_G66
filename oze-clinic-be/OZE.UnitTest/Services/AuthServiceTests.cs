@@ -21,12 +21,15 @@ namespace OZE.UnitTest.Services
         private const string Password = "Test@123";
         private const string AccessToken = "access-token";
         private const string RefreshToken = "refresh-token";
+        private const string UserFullName = "Nguyen Van A";
+        private const string UserRole = "Patient";
 
         // Fakes we need to control in the tests
         private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
         private readonly Mock<SignInManager<ApplicationUser>> _signInManagerMock;
         private readonly Mock<IUserRefreshTokenRepository> _refreshTokenRepositoryMock;
         private readonly Mock<IJwtTokenGenerator> _jwtTokenGeneratorMock;
+        private readonly Mock<IUserService> _userServiceMock;
         private readonly Mock<IRegistrationRepository> _registrationRepositoryMock;
         private readonly Mock<IPasswordResetStore> _passwordResetStoreMock;
         private readonly Mock<ISmsSender> _smsSenderMock;
@@ -52,6 +55,7 @@ namespace OZE.UnitTest.Services
 
             _refreshTokenRepositoryMock = new Mock<IUserRefreshTokenRepository>();
             _jwtTokenGeneratorMock = new Mock<IJwtTokenGenerator>();
+            _userServiceMock = new Mock<IUserService>();
             _registrationRepositoryMock = new Mock<IRegistrationRepository>();
             _passwordResetStoreMock = new Mock<IPasswordResetStore>();
             _smsSenderMock = new Mock<ISmsSender>();
@@ -66,6 +70,10 @@ namespace OZE.UnitTest.Services
             // Every successful login asks for a token pair
             _jwtTokenGeneratorMock.Setup(g => g.GenerateTokenAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(AccessToken);
             _jwtTokenGeneratorMock.Setup(g => g.GenerateRefreshToken()).Returns(RefreshToken);
+            _userServiceMock.Setup(s => s.GetFullName(It.IsAny<string>())).Returns(UserFullName);
+            _userManagerMock
+                .Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { UserRole });
 
             _authService = CreateService(jwtExpiresInMinutes: 30);
         }
@@ -78,6 +86,7 @@ namespace OZE.UnitTest.Services
                 _signInManagerMock.Object,
                 _refreshTokenRepositoryMock.Object,
                 _jwtTokenGeneratorMock.Object,
+                _userServiceMock.Object,
                 _emailSenderMock.Object,
                 _smsSenderMock.Object,
                 _pendingStoreMock.Object,
@@ -148,6 +157,8 @@ namespace OZE.UnitTest.Services
             result.Success.Should().BeTrue();
             result.Data!.Token.Should().Be(AccessToken);
             result.Data.RefreshToken.Should().Be(RefreshToken);
+            result.Data.FullName.Should().Be(UserFullName);
+            result.Data.Role.Should().Be(UserRole);
         }
 
         [Fact]
@@ -800,6 +811,8 @@ namespace OZE.UnitTest.Services
             result.Success.Should().BeTrue();
             result.Data!.Token.Should().Be(AccessToken);
             result.Data.RefreshToken.Should().Be(RefreshToken);
+            result.Data.FullName.Should().Be(UserFullName);
+            result.Data.Role.Should().Be(UserRole);
         }
 
         [Fact]
