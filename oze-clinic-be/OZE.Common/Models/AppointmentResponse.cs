@@ -17,8 +17,9 @@ namespace OZE.Common.Models
         public List<AppointmentServiceResponse> Services { get; set; } = new();
         public string AppointmentType { get; set; } = string.Empty;
         public DateOnly AppointmentDate { get; set; }
-        public TimeOnly TimeSlotStart { get; set; }
-        public TimeOnly TimeSlotEnd { get; set; }
+        // Null for a walk-in, who has no booked time
+        public TimeOnly? TimeSlotStart { get; set; }
+        public TimeOnly? TimeSlotEnd { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTimeOffset? CheckInAt { get; set; }
         // Filled when the patient checks in: the room of the doctor's shift, where the patient goes

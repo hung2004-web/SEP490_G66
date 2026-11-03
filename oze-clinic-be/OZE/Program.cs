@@ -9,11 +9,19 @@ using OZE.Persistence;
 using OZE.Persistence.DbContexts;
 using OZE.Persistence.Seed;
 using OZE.ProjectBase.Middlewares;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using OZE.Common.Constants;
+using OZE.Common.Models.Base;
+using OZE.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add Services
-builder.Services.AddControllers();
+// Keep the "Async" suffix in action names, so CreatedAtAction(nameof(GetXxxAsync)) finds the action
+builder.Services.AddControllers(options => options.SuppressAsyncSuffixInActionNames = false);
 builder.Services.AddEndpointsApiExplorer();
 
 // 2. Add Clean Architecture Layers
@@ -33,7 +41,12 @@ builder.Services.AddCors(options =>
 
 // 4. Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
-var keyBytes = Encoding.UTF8.GetBytes(string.IsNullOrEmpty(jwtSettings.Key) ? "default_super_secret_key_at_least_32_bytes_long" : jwtSettings.Key);
+// No built-in fallback key: a missing key must stop the start, not silently sign tokens with a public value
+if (string.IsNullOrWhiteSpace(jwtSettings.Key))
+{
+    throw new InvalidOperationException("JwtSettings:Key is not configured");
+}
+var keyBytes = Encoding.UTF8.GetBytes(jwtSettings.Key);
 builder.Services.AddDbContext<AppIdentityDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -54,6 +67,44 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
         ClockSkew = TimeSpan.Zero
+    };
+    // A token is refused once the account changed under it: logout, password change or reset, role change, account locked
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.Principal?.FindFirstValue("sub");
+            var stamp = context.Principal?.FindFirstValue(SecurityConstants.SecurityStampClaim);
+            var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = string.IsNullOrEmpty(userId) ? null : await userManager.FindByIdAsync(userId);
+            if (user == null || stamp == null || stamp != user.SecurityStamp || user.LockoutEnd == DateTimeOffset.MaxValue)
+            {
+                context.Fail("The session has ended");
+            }
+        }
+    };
+});
+
+// Limits the calls to the account endpoints from one address
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(SecurityConstants.AuthRateLimitPolicy, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = SecurityConstants.AuthRequestsPerWindow,
+                Window = TimeSpan.FromSeconds(SecurityConstants.AuthRateLimitWindowSeconds),
+                QueueLimit = 0
+            }));
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(
+            System.Text.Json.JsonSerializer.Serialize(ApiResponse.FailureResult(ErrorConstants.AuthMessage.TooManyRequests),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }),
+            cancellationToken);
     };
 });
 
@@ -123,6 +174,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

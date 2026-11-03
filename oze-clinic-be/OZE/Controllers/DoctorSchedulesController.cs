@@ -41,18 +41,19 @@ namespace OZE.Controllers
         public async Task<ActionResult<ApiResponse<DoctorShiftResponse>>> StartShiftAsync(long shiftId)
         {
             var shift = await _doctorScheduleService.StartShiftAsync(GetUserId(), shiftId);
-            return Ok(ApiResponse<DoctorShiftResponse>.SuccessResult(shift, "Đã bắt đầu ca làm việc"));
+            return Ok(ApiResponse<DoctorShiftResponse>.SuccessResult(shift, "Shift started"));
         }
 
         /// <summary>
-        /// Clock out: ends a shift of today. Patients of the shift who were not examined are marked NO_SHOW.
+        /// Clock out: ends a shift of today. A booked patient who never came is marked NO_SHOW; the patients waiting in the clinic
+        /// and the ones booked for later are told to see the front desk.
         /// </summary>
         [HttpPost("{shiftId:long}/end")]
         public async Task<ActionResult<ApiResponse<EndShiftResponse>>> EndShiftAsync(long shiftId)
         {
             var result = await _doctorScheduleService.EndShiftAsync(GetUserId(), shiftId);
             return Ok(ApiResponse<EndShiftResponse>.SuccessResult(result,
-                $"Đã kết thúc ca, {result.NoShowAppointmentIds.Count} bệnh nhân chưa khám bị đánh vắng mặt"));
+                $"Shift ended: {result.NoShowAppointmentIds.Count} marked NO_SHOW, {result.WaitingAppointmentIds.Count} waiting and {result.UpcomingAppointmentIds.Count} upcoming patients were told to see the front desk"));
         }
 
         private string GetUserId()

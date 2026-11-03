@@ -24,6 +24,17 @@ namespace OZE.Application.Interfaces
         // request is optional: without it the patient is checked in with normal priority
         Task<AppointmentResponse> CheckInAppointmentAsync(long id, CheckInRequest? request, CancellationToken cancellationToken = default);
 
+        // Today's patients the front desk has to deal with because their doctor ended the shift: the ones waiting in the clinic
+        // and the ones booked for a time that is still to come
+        Task<List<NeedsAttentionResponse>> GetNeedsAttentionAsync(CancellationToken cancellationToken = default);
+
+        // Moves a waiting patient to another doctor who has a shift to offer today: the patient goes to that doctor's room
+        // and gets a new number at the end of that doctor's queue
+        Task<AppointmentResponse> ReassignDoctorAsync(long id, ReassignDoctorRequest request, CancellationToken cancellationToken = default);
+
+        // A checked-in patient who left without being seen: NO_SHOW, out of the queue (any day, so an old one can be closed too)
+        Task<AppointmentResponse> MarkNoShowAsync(long id, MarkNoShowRequest? request, CancellationToken cancellationToken = default);
+
         // A patient without a booking: finds or creates the patient record by phone, creates the appointment already
         // checked in, sends the patient to the room of the doctor's shift and into the queue
         Task<AppointmentResponse> CreateWalkInAsync(WalkInRequest request, string? createdByUserId, CancellationToken cancellationToken = default);

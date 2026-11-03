@@ -23,6 +23,7 @@ namespace OZE.Application.Services
         private readonly IEmailSender _emailSender;
         private readonly RegisterOtpSettings _otpSettings;
         private readonly ILogger<UserService> _logger;
+        private readonly IOtpSendLimiter? _otpSendLimiter;
 
         public UserService(
             UserManager<ApplicationUser> userManager,
@@ -32,8 +33,10 @@ namespace OZE.Application.Services
             ISmsSender smsSender,
             IEmailSender emailSender,
             IOptions<RegisterOtpSettings> otpOptions,
-            ILogger<UserService> logger)
+            ILogger<UserService> logger,
+            IOtpSendLimiter? otpSendLimiter = null)
         {
+            _otpSendLimiter = otpSendLimiter;
             _userManager = userManager;
             _patientRepository = patientRepository;
             _registrationRepository = registrationRepository;
@@ -124,6 +127,7 @@ namespace OZE.Application.Services
             {
                 UserId = user.Id,
                 SecurityStamp = user.SecurityStamp ?? string.Empty,
+                ProfileUpdatedAt = patient.UpdatedAt,
                 FullName = request.FullName.Trim(),
                 DateOfBirth = dateOfBirth,
                 Gender = request.Gender,
@@ -147,6 +151,7 @@ namespace OZE.Application.Services
             }
 
             // UC-08 step 5.2, BR-006: a new phone number is saved only after the OTP sent to it is verified.
+            _otpSendLimiter?.EnsureCanSend(update.PhoneNumber);
             update.SessionId = Guid.NewGuid().ToString("N");
             var otp = OtpHelper.Generate();
             update.OtpHash = OtpHelper.Hash(update.SessionId, otp);
@@ -201,6 +206,12 @@ namespace OZE.Application.Services
             if (user == null || patient == null || user.SecurityStamp != update.SecurityStamp)
             {
                 return ApiResponse<UserProfileResponse>.FailureResult(ErrorConstants.ProfileMessage.OtpExpired);
+            }
+
+            // The profile was saved again after the code was sent: applying the older form would undo that save
+            if (patient.UpdatedAt != update.ProfileUpdatedAt)
+            {
+                return ApiResponse<UserProfileResponse>.FailureResult(ErrorConstants.ProfileMessage.ProfileChangedMeanwhile);
             }
 
             // The phone number or email may have been taken by another account while the OTP was pending.

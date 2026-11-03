@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
@@ -25,6 +26,13 @@ namespace OZE.Persistence.Repositories
         {
             var query = asNoTracking ? _context.Services.AsNoTracking() : _context.Services;
             return await query.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        }
+
+        public async Task<bool> HasOpenAppointmentsAsync(int serviceId, DateOnly today, CancellationToken cancellationToken = default)
+        {
+            return await _context.AppointmentServiceItems.AnyAsync(x => x.ServiceId == serviceId
+                && x.Appointment.AppointmentDate >= today
+                && AppointmentConstants.UnfinishedStatuses.Contains(x.Appointment.Status), cancellationToken);
         }
 
         public async Task<Service?> GetByCodeAsync(string serviceCode, CancellationToken cancellationToken = default)

@@ -49,6 +49,8 @@ namespace OZE.Persistence.Repositories
             return await _context.QueueEntries
                 .Include(x => x.Appointment)
                     .ThenInclude(x => x.Patient)
+                .Include(x => x.Appointment)
+                    .ThenInclude(x => x.Examination)
                 .Include(x => x.Room)
                 .Include(x => x.AssignedStaff)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -71,6 +73,8 @@ namespace OZE.Persistence.Repositories
                 .AsNoTracking()
                 .Include(x => x.Appointment)
                     .ThenInclude(x => x.Patient)
+                .Include(x => x.Appointment)
+                    .ThenInclude(x => x.Examination)
                 .Include(x => x.Room)
                 .Include(x => x.AssignedStaff)
                 .Where(x => x.CreatedAt >= today && x.CreatedAt < tomorrow)
@@ -121,6 +125,15 @@ namespace OZE.Persistence.Repositories
                     .SetProperty(x => x.CalledAt, (DateTimeOffset?)null)
                     .SetProperty(x => x.SkipCount, x => x.SkipCount + 1), cancellationToken);
             return rows == 1;
+        }
+
+        public async Task<bool> IsOffDutyAsync(int staffId, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            // On duty only between "start shift" and "end shift" of a shift of that day
+            return !await _context.StaffSchedules
+                .AsNoTracking()
+                .AnyAsync(x => x.StaffProfileId == staffId && x.ScheduleDate == date
+                    && x.ActualStartTime != null && x.ActualEndTime == null, cancellationToken);
         }
 
         public async Task<int?> GetStaffProfileIdByUserIdAsync(string userId, CancellationToken cancellationToken = default)

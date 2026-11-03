@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using OZE.Common.Constants;
 
 namespace OZE.Common.Models
 {
@@ -8,7 +9,8 @@ namespace OZE.Common.Models
         public string CurrentPassword { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "New password is required")]
-        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
+        // The same rule as registration
+        [StringLength(32, MinimumLength = 8, ErrorMessage = ErrorConstants.AuthMessage.PasswordInvalid)]
         public string NewPassword { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Confirmation password is required")]

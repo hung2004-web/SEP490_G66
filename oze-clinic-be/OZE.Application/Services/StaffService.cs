@@ -92,6 +92,10 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var phoneNumber), ErrorConstants.AuthMessage.InvalidPhone);
             // A manager who changes their own role could leave the clinic without any Clinic Manager.
             ConditionGuard.ThrowIf(userId == managerId && request.Role != currentRole, ErrorConstants.StaffMessage.CannotChangeOwnRole);
+            if (request.Role != currentRole)
+            {
+                await EnsureCanLeaveRoleAsync(staff, currentRole);
+            }
             var (specialization, licenseNumber) = GetDoctorInfo(request);
 
             var email = request.Email.Trim();
@@ -122,7 +126,8 @@ namespace OZE.Application.Services
                 user.PhoneNumber = phoneNumber;
                 user.PhoneNumberConfirmed = false;
             }
-            if (emailChanged || phoneChanged)
+            // A new role means new rights: the access tokens issued with the old ones end now
+            if (emailChanged || phoneChanged || request.Role != currentRole)
             {
                 user.SecurityStamp = Guid.NewGuid().ToString();
             }
@@ -147,12 +152,15 @@ namespace OZE.Application.Services
             var (user, staff, role) = await GetExistingStaffAsync(userId);
             ConditionGuard.ThrowIf(userId == managerId, ErrorConstants.StaffMessage.CannotDeactivateSelf);
             ConditionGuard.Ensure(staff.IsActive, ErrorConstants.StaffMessage.AlreadyInactive);
+            await EnsureCanLeaveRoleAsync(staff, role);
 
             // BR-088: the account is locked instead of deleted, so the staff member cannot log in.
             staff.IsActive = false;
             staff.UpdatedAt = DateTimeOffset.UtcNow;
             user.LockoutEnabled = true;
             user.LockoutEnd = DateTimeOffset.MaxValue;
+            // The access tokens already handed out end now too
+            user.SecurityStamp = Guid.NewGuid().ToString();
             // Refresh does not check the lockout, so the sessions on every device are ended here.
             await _refreshTokenRepository.RevokeUserTokensAsync(user.Id);
 
@@ -162,6 +170,18 @@ namespace OZE.Application.Services
                 result.Errors.FirstOrDefault()?.Description ?? ErrorConstants.StaffMessage.UpdateFailed);
 
             return ToResponse(user, staff, role);
+        }
+
+        // Taking someone out of a role must not leave planned work without a person, or the clinic without a manager
+        private async Task EnsureCanLeaveRoleAsync(StaffProfile staff, string? role)
+        {
+            var hasWork = await _staffRepository.HasUpcomingWorkAsync(staff.Id, DateOnly.FromDateTime(DateTime.Today), TimeOnly.FromDateTime(DateTime.Now));
+            ConditionGuard.ThrowIf(hasWork, ErrorConstants.StaffMessage.HasUpcomingWork);
+            if (role == RoleConstants.ClinicManagerRole)
+            {
+                var managers = await _staffRepository.CountActiveStaffInRoleAsync(RoleConstants.ClinicManagerRole);
+                ConditionGuard.ThrowIf(managers <= 1, ErrorConstants.StaffMessage.LastManager);
+            }
         }
 
         public async Task<StaffResponse> ActivateStaffAsync(string userId)

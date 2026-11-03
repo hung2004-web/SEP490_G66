@@ -1,4 +1,6 @@
-﻿using OZE.Application.Interfaces;
+﻿using Microsoft.Extensions.Logging;
+using OZE.Application.Helpers;
+using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
@@ -21,14 +23,23 @@ namespace OZE.Application.Services
         private readonly IQueueService? _queueService;
         private readonly IAuditLogService? _auditLogService;
         private readonly IAuditLogRepository? _auditLogRepository;
+        private readonly ISmsSender? _smsSender;
+        private readonly IEmailSender? _emailSender;
+        private readonly ILogger<DoctorScheduleService>? _logger;
 
         public DoctorScheduleService(IWorkShiftRepository workShiftRepository,
             IAppointmentRepository appointmentRepository,
             IStaffRepository staffRepository,
             IQueueService? queueService = null,
             IAuditLogService? auditLogService = null,
-            IAuditLogRepository? auditLogRepository = null)
+            IAuditLogRepository? auditLogRepository = null,
+            ISmsSender? smsSender = null,
+            IEmailSender? emailSender = null,
+            ILogger<DoctorScheduleService>? logger = null)
         {
+            _smsSender = smsSender;
+            _emailSender = emailSender;
+            _logger = logger;
             _auditLogRepository = auditLogRepository;
             _workShiftRepository = workShiftRepository;
             _appointmentRepository = appointmentRepository;
@@ -112,18 +123,31 @@ namespace OZE.Application.Services
             var response = new EndShiftResponse { ShiftId = shift.Id, ActualStartTime = shift.ActualStartTime };
             // What the patients were before, kept in the log so the shift can be reopened
             var restorable = new List<RestorableAppointment>();
+            // Patients who have to be told: the ones waiting in the clinic and the ones booked for a time still to come.
+            // Someone already told when the shift was ended before (and then reopened) is not told again.
+            var alreadyNotified = (await GetLastShiftEndedAsync(shift.Id))?.Notified ?? new List<long>();
+            var toNotify = new List<(Appointment Appointment, bool Waiting)>();
             // Someone who was already seen (e.g. back from the X-ray) is not "not examined"
-            foreach (var appointment in open.Where(a => a.Examination == null && IsInShift(a, shift)))
+            foreach (var appointment in open.Where(a => a.Examination == null && ShiftTimeHelper.IsInShift(a, shift)))
             {
-                if (appointment.Status == AppointmentConstants.CheckedInStatus || IsLate(appointment, nowTime))
+                if (appointment.Status == AppointmentConstants.CheckedInStatus)
                 {
+                    // Present in the clinic: not at fault, so not NO_SHOW. The desk moves the patient to another doctor.
+                    response.WaitingAppointmentIds.Add(appointment.Id);
+                    toNotify.Add((appointment, true));
+                }
+                else if (IsLate(appointment, nowTime))
+                {
+                    // Booked, the time has passed and the patient never came
                     restorable.Add(new RestorableAppointment(appointment.Id, appointment.Status));
                     await MarkNoShowAsync(appointment);
                     response.NoShowAppointmentIds.Add(appointment.Id);
                 }
-                else
+                else if (appointment.TimeSlotStart.HasValue && appointment.TimeSlotStart.Value > nowTime)
                 {
+                    // Booked for a time still to come: the desk reschedules
                     response.UpcomingAppointmentIds.Add(appointment.Id);
+                    toNotify.Add((appointment, false));
                 }
             }
 
@@ -134,8 +158,44 @@ namespace OZE.Application.Services
             await _workShiftRepository.SaveChangesAsync();
 
             response.ActualEndTime = shift.ActualEndTime;
-            await LogAsync(AuditConstants.ShiftEnded, shift.Id, new { shift.ActualEndTime, NoShow = restorable.Count, Restorable = restorable });
+            var newlyNotified = toNotify.Where(x => !alreadyNotified.Contains(x.Appointment.Id)).ToList();
+            await LogAsync(AuditConstants.ShiftEnded, shift.Id, new
+            {
+                shift.ActualEndTime,
+                NoShow = restorable.Count,
+                Restorable = restorable,
+                Notified = alreadyNotified.Concat(newlyNotified.Select(x => x.Appointment.Id)).Distinct().ToList()
+            });
+
+            await NotifyShiftEndedAsync(doctor.FullName, newlyNotified);
             return response;
+        }
+
+        // Tells each patient by SMS and email; a failed message must not undo the end of the shift, so errors are only logged
+        private async Task NotifyShiftEndedAsync(string doctorName, List<(Appointment Appointment, bool Waiting)> patients)
+        {
+            foreach (var (appointment, waiting) in patients)
+            {
+                var message = waiting
+                    ? string.Format(ErrorConstants.DoctorScheduleMessage.ShiftEndedWaitingNotice, doctorName)
+                    : string.Format(ErrorConstants.DoctorScheduleMessage.ShiftEndedUpcomingNotice, doctorName,
+                        appointment.TimeSlotStart?.ToString("HH:mm"), appointment.AppointmentDate.ToString("dd/MM/yyyy"));
+                try
+                {
+                    if (_smsSender != null && !string.IsNullOrWhiteSpace(appointment.Patient?.PhoneNumber))
+                    {
+                        await _smsSender.SendSmsAsync(appointment.Patient.PhoneNumber, message);
+                    }
+                    if (_emailSender != null && !string.IsNullOrWhiteSpace(appointment.Patient?.Email))
+                    {
+                        await _emailSender.SendEmailAsync(appointment.Patient.Email, ErrorConstants.DoctorScheduleMessage.ShiftEndedNoticeSubject, message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Could not tell the patient of appointment {AppointmentId} that the doctor ended the shift", appointment.Id);
+                }
+            }
         }
 
         public async Task<ReopenShiftResponse> ReopenShiftAsync(long shiftId)
@@ -198,31 +258,37 @@ namespace OZE.Application.Services
         // The patients the last end of that shift marked NO_SHOW, with what they were before
         private async Task<List<RestorableAppointment>> GetRestorableAsync(long shiftId)
         {
+            return (await GetLastShiftEndedAsync(shiftId))?.Restorable ?? new List<RestorableAppointment>();
+        }
+
+        // What the last end of that shift wrote in the log, or null
+        private async Task<ShiftEndedValues?> GetLastShiftEndedAsync(long shiftId)
+        {
             if (_auditLogRepository == null)
             {
-                return new List<RestorableAppointment>();
+                return null;
             }
 
             var ended = await _auditLogRepository.GetLatestAsync(AuditConstants.ShiftEnded, AuditConstants.StaffScheduleEntity, shiftId.ToString());
             if (string.IsNullOrWhiteSpace(ended?.NewValues))
             {
-                return new List<RestorableAppointment>();
+                return null;
             }
 
             try
             {
-                var values = JsonSerializer.Deserialize<ShiftEndedValues>(ended.NewValues, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return values?.Restorable ?? new List<RestorableAppointment>();
+                return JsonSerializer.Deserialize<ShiftEndedValues>(ended.NewValues, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (JsonException)
             {
-                return new List<RestorableAppointment>();
+                return null;
             }
         }
 
         private sealed record RestorableAppointment(long Id, string Status);
 
-        private sealed record ShiftEndedValues(List<RestorableAppointment>? Restorable);
+        // Notified: every patient told so far about the end of this shift, so nobody is told twice
+        private sealed record ShiftEndedValues(List<RestorableAppointment>? Restorable, List<long>? Notified);
 
         private async Task<(StaffProfile Doctor, StaffSchedule Shift)> GetOwnShiftOfTodayAsync(string userId, long shiftId)
         {
@@ -233,19 +299,6 @@ namespace OZE.Application.Services
                 ErrorConstants.DoctorScheduleMessage.ShiftNotFound);
             ConditionGuard.Ensure(shift!.ScheduleDate == DateOnly.FromDateTime(DateTime.Today), ErrorConstants.DoctorScheduleMessage.ShiftNotToday);
             return (doctor, shift);
-        }
-
-        // Booked patients are placed by their time slot, walk-ins (no slot) by the time they checked in
-        private static bool IsInShift(Appointment appointment, StaffSchedule shift)
-        {
-            var time = GetTimeInShift(appointment);
-            return time.HasValue && time.Value >= shift.ShiftStart && time.Value < shift.ShiftEnd;
-        }
-
-        private static TimeOnly? GetTimeInShift(Appointment appointment)
-        {
-            return appointment.TimeSlotStart
-                ?? (appointment.CheckInAt.HasValue ? TimeOnly.FromDateTime(appointment.CheckInAt.Value.LocalDateTime) : null);
         }
 
         // A booked patient who never came and whose slot has already started
@@ -293,8 +346,8 @@ namespace OZE.Application.Services
         {
             // Walk-ins have no booked time, they belong to the shift they checked in during (the same rule as ending the shift)
             var inShift = appointments
-                .Where(a => a.AppointmentDate == shift.ScheduleDate && IsInShift(a, shift))
-                .OrderBy(a => GetTimeInShift(a))
+                .Where(a => a.AppointmentDate == shift.ScheduleDate && ShiftTimeHelper.IsInShift(a, shift))
+                .OrderBy(a => ShiftTimeHelper.GetTimeInShift(a))
                 .Select(a => new DoctorAppointmentResponse
                 {
                     Id = a.Id,

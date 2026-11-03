@@ -31,6 +31,14 @@ namespace OZE.ProjectBase.Middlewares
             }
         }
 
+        // SQL Server unique index (2601) or unique constraint (2627)
+        private static bool IsUniqueViolation(Exception exception)
+        {
+            return exception is Microsoft.EntityFrameworkCore.DbUpdateException
+                && exception.InnerException is Microsoft.Data.SqlClient.SqlException sql
+                && (sql.Number == 2601 || sql.Number == 2627);
+        }
+
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
@@ -43,6 +51,12 @@ namespace OZE.ProjectBase.Middlewares
             {
                 statusCode = appException.StatusCode;
                 message = appException.Message;
+            }
+            else if (IsUniqueViolation(exception))
+            {
+                // Two requests created the same record at once: the database kept one, the other is told plainly
+                statusCode = HttpStatusCode.Conflict;
+                message = "This record already exists";
             }
             else
             {

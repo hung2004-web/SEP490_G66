@@ -29,6 +29,7 @@ namespace OZE.Application.Services
         private readonly JwtSettings _jwtSettings;
         private readonly RegisterOtpSettings _otpSettings;
         private readonly ILogger<AuthService> _logger;
+        private readonly IOtpSendLimiter? _otpSendLimiter;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -43,8 +44,10 @@ namespace OZE.Application.Services
             IRegistrationRepository registrationRepository,
             IOptions<JwtSettings> jwtOptions,
             IOptions<RegisterOtpSettings> otpOptions,
-            ILogger<AuthService> logger)
+            ILogger<AuthService> logger,
+            IOtpSendLimiter? otpSendLimiter = null)
         {
+            _otpSendLimiter = otpSendLimiter;
             _userManager = userManager;
             _signInManager = signInManager;
             _refreshTokenRepository = refreshTokenRepository;
@@ -85,12 +88,24 @@ namespace OZE.Application.Services
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.EmailRequired);
             }
 
+            // A code goes to this contact: only a few per hour, so codes cannot be guessed sign-up after sign-up
+            _otpSendLimiter?.EnsureCanSend(request.VerificationMethod == VerificationMethodConstants.Email ? email! : phoneNumber);
+
             // An account that never finished OTP verification is reused, so the guest can sign up again.
             var user = await _registrationRepository.FindUserByPhoneAsync(PhoneNumberHelper.GetLookupVariants(phoneNumber));
             if (user != null && !await IsPendingRegistrationAsync(user))
             {
-                return ApiResponse<RegisterPendingResponse>.FailureResult(
-                    string.Format(ErrorConstants.AuthMessage.PhoneExist, request.PhoneNumber.Trim()));
+                // A phone kept by a patient account that never proved it does not block its owner, who proves it by SMS now
+                if (request.VerificationMethod == VerificationMethodConstants.Sms && await IsUnprovenPatientContactAsync(user, user.PhoneNumberConfirmed))
+                {
+                    await ReleasePhoneAsync(user);
+                    user = null;
+                }
+                else
+                {
+                    return ApiResponse<RegisterPendingResponse>.FailureResult(
+                        string.Format(ErrorConstants.AuthMessage.PhoneExist, request.PhoneNumber.Trim()));
+                }
             }
 
             if (email != null)
@@ -98,7 +113,14 @@ namespace OZE.Application.Services
                 var emailOwner = await _userManager.FindByEmailAsync(email);
                 if (emailOwner != null && emailOwner.Id != user?.Id)
                 {
-                    return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.EmailExist);
+                    // An unfinished sign-up, or a patient account that never proved the email, does not keep it from its owner
+                    var unproven = await IsPendingRegistrationAsync(emailOwner)
+                        || (request.VerificationMethod == VerificationMethodConstants.Email && await IsUnprovenPatientContactAsync(emailOwner, emailOwner.EmailConfirmed));
+                    if (!unproven)
+                    {
+                        return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.EmailExist);
+                    }
+                    await ReleaseEmailAsync(emailOwner);
                 }
             }
 
@@ -158,6 +180,8 @@ namespace OZE.Application.Services
                 _pendingRegistrationStore.Remove(pending.SessionId);
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.OtpExpired);
             }
+
+            _otpSendLimiter?.EnsureCanSend(pending.VerificationMethod == VerificationMethodConstants.Email ? pending.Email ?? string.Empty : pending.PhoneNumber);
 
             // The previous OTP stays valid if the new one cannot be sent.
             var otp = OtpHelper.Generate();
@@ -363,6 +387,41 @@ namespace OZE.Application.Services
             return user;
         }
 
+        // A patient account holding a phone or email it never proved; staff contacts are set by the manager and stay
+        private async Task<bool> IsUnprovenPatientContactAsync(ApplicationUser owner, bool contactConfirmed)
+        {
+            return !contactConfirmed && await _userManager.IsInRoleAsync(owner, RoleConstants.PatientRole);
+        }
+
+        private async Task ReleasePhoneAsync(ApplicationUser owner)
+        {
+            var phone = owner.PhoneNumber;
+            owner.PhoneNumber = null;
+            owner.PhoneNumberConfirmed = false;
+            if (owner.UserName == phone)
+            {
+                owner.UserName = owner.Email ?? owner.Id;
+            }
+            owner.SecurityStamp = Guid.NewGuid().ToString();
+            await _userManager.UpdateAsync(owner);
+            _logger.LogInformation("Unproven phone released from account {UserId} for a new sign-up", owner.Id);
+        }
+
+        private async Task ReleaseEmailAsync(ApplicationUser owner)
+        {
+            var email = owner.Email;
+            owner.Email = null;
+            owner.NormalizedEmail = null;
+            owner.EmailConfirmed = false;
+            if (string.Equals(owner.UserName, email, StringComparison.OrdinalIgnoreCase))
+            {
+                owner.UserName = owner.PhoneNumber ?? owner.Id;
+            }
+            owner.SecurityStamp = Guid.NewGuid().ToString();
+            await _userManager.UpdateAsync(owner);
+            _logger.LogInformation("Unproven email released from account {UserId} for a new sign-up", owner.Id);
+        }
+
         private async Task<bool> IsPendingRegistrationAsync(ApplicationUser user)
         {
             return !user.PhoneNumberConfirmed
@@ -478,7 +537,15 @@ namespace OZE.Application.Services
         private async Task<ApplicationUser?> FindUserByIdentifierAsync(string identifier)
         {
             if (identifier.Contains('@'))
-                return await _userManager.FindByEmailAsync(identifier);
+            {
+                // A patient signs in with an email only once it is confirmed; until then the phone number works
+                var byEmail = await _userManager.FindByEmailAsync(identifier);
+                if (byEmail != null && !byEmail.EmailConfirmed && await _userManager.IsInRoleAsync(byEmail, RoleConstants.PatientRole))
+                {
+                    return null;
+                }
+                return byEmail;
+            }
 
             if (!PhoneNumberHelper.TryNormalize(identifier, out var phone))
                 return null;
@@ -505,11 +572,17 @@ namespace OZE.Application.Services
             }
 
             var user = await _userManager.FindByIdAsync(activeToken.UserId);
-            if (user == null)
+            if (user == null || IsPermanentlyDisabled(user))
             {
                 return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
             }
 
+            // Revoke the old refresh token in one statement that only succeeds while it is still active,
+            // so two calls with the same token cannot both get a new pair
+            if (!await _refreshTokenRepository.TryRevokeAsync(activeToken.Id, DateTimeOffset.UtcNow))
+            {
+                return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidRefreshToken);
+            }
             // BR-101 / BR-102: do not rotate tokens while the account is locked or disabled.
             if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow)
             {
@@ -571,6 +644,7 @@ namespace OZE.Application.Services
                 {
                     token.RevokedAt = DateTimeOffset.UtcNow;
                     await _refreshTokenRepository.UpdateAsync(token);
+                    userId = token.UserId;
                 }
             }
             else if (!string.IsNullOrEmpty(userId))
@@ -585,6 +659,16 @@ namespace OZE.Application.Services
 
             await _refreshTokenRepository.SaveChangesAsync();
 
+            // A new stamp ends the access tokens already handed out (other devices get a new one with their refresh token)
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var account = await _userManager.FindByIdAsync(userId);
+                if (account != null)
+                {
+                    await _userManager.UpdateSecurityStampAsync(account);
+                }
+            }
+
             return ApiResponse.SuccessResult("Logged out successfully");
         }
 
@@ -594,10 +678,11 @@ namespace OZE.Application.Services
 
         public async Task<ApiResponse> ConfirmEmailAsync(string userId, string code)
         {
+            // The same answer for an unknown user and a bad code, so the link does not tell which accounts exist
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.InvalidConfirmationLink);
             }
 
             try
@@ -615,7 +700,9 @@ namespace OZE.Application.Services
             }
             catch (Exception ex)
             {
-                return ApiResponse.FailureResult("Invalid confirmation token: " + ex.Message);
+                // The details stay in the log, not in the answer
+                _logger.LogWarning(ex, "Email confirmation failed for user {UserId}", userId);
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.InvalidConfirmationLink);
             }
         }
 
@@ -641,12 +728,24 @@ namespace OZE.Application.Services
                 destination = phone;
             }
 
-            if (user == null || await IsPendingRegistrationAsync(user))
-            {
-                return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
-            }
+            // Counted for every identifier, known or not, so the limit does not tell which accounts exist either
+            _otpSendLimiter?.EnsureCanSend(destination);
 
             var now = DateTime.UtcNow;
+            // No account, an unfinished sign-up, or an email the account never proved: the same answer as a real one,
+            // so the endpoint does not tell which accounts exist, but no code is sent and no session is kept
+            if (user == null || await IsPendingRegistrationAsync(user) || (isEmail && !user.EmailConfirmed))
+            {
+                return ApiResponse<RegisterPendingResponse>.SuccessResult(new RegisterPendingResponse
+                {
+                    SessionId = Guid.NewGuid().ToString("N"),
+                    VerificationMethod = isEmail ? VerificationMethodConstants.Email : VerificationMethodConstants.Sms,
+                    MaskedDestination = isEmail ? MaskEmail(destination) : PhoneNumberHelper.Mask(destination),
+                    ExpiresAt = now.AddMinutes(OtpExpiresInMinutes),
+                    ResendAvailableAt = now.AddSeconds(ResendCooldownSeconds)
+                });
+            }
+
             var session = new PasswordResetSession
             {
                 SessionId = Guid.NewGuid().ToString("N"),
@@ -695,6 +794,12 @@ namespace OZE.Application.Services
             if (session == null || session.ExpiresAt <= DateTime.UtcNow)
             {
                 return ApiResponse.FailureResult(ErrorConstants.AuthMessage.ResetSessionInvalid);
+            }
+
+            // A code is used once: verifying it again must not open a new time window
+            if (session.IsOtpVerified)
+            {
+                return ApiResponse.FailureResult(ErrorConstants.AuthMessage.OtpAlreadyUsed);
             }
 
             var maxAttempts = _otpSettings.MaxAttempts > 0 ? _otpSettings.MaxAttempts : 5;

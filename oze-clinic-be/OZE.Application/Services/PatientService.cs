@@ -223,9 +223,21 @@ namespace OZE.Application.Services
                 return ApiResponse<bool>.FailureResult(ErrorConstants.PatientMessage.PatientNotFound);
             }
 
+            // A patient with appointments still to come keeps the record; they are cancelled or completed first
+            if (await _patientRepository.HasUnfinishedAppointmentsAsync(id, DateOnly.FromDateTime(DateTime.Today), cancellationToken))
+            {
+                return ApiResponse<bool>.FailureResult(ErrorConstants.PatientMessage.HasOpenAppointments);
+            }
+
             patient.DeletedAt = DateTimeOffset.UtcNow;
             await _patientRepository.UpdateAsync(patient, cancellationToken);
             await _patientRepository.SaveChangesAsync(cancellationToken);
+
+            // A deleted patient no longer signs in: the linked account is locked and its sessions end
+            if (!string.IsNullOrEmpty(patient.UserId))
+            {
+                await _patientRepository.LockAccountAsync(patient.UserId, cancellationToken);
+            }
 
             _logger.LogInformation("Patient {PatientId} soft-deleted.", id);
             return ApiResponse<bool>.SuccessResult(true, "Patient deleted successfully");
