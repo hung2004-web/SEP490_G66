@@ -12,6 +12,7 @@ namespace OZE.Common.Constants
         public const string AppointmentExaminationStarted = "APPOINTMENT_EXAMINATION_STARTED";
         public const string AppointmentCompleted = "APPOINTMENT_COMPLETED";
         public const string AppointmentNoShow = "APPOINTMENT_NO_SHOW";
+        public const string AppointmentDoctorReassigned = "APPOINTMENT_DOCTOR_REASSIGNED";
         public const string ShiftStarted = "STAFF_SHIFT_STARTED";
         public const string ShiftEnded = "STAFF_SHIFT_ENDED";
         public const string ShiftReopened = "STAFF_SHIFT_REOPENED";

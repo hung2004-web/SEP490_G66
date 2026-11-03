@@ -682,6 +682,117 @@ namespace OZE.Application.Services
             return response;
         }
 
+        public async Task<List<NeedsAttentionResponse>> GetNeedsAttentionAsync(CancellationToken cancellationToken = default)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var shifts = await _appointmentRepository.GetEndedShiftsAsync(today);
+            if (shifts.Count == 0)
+            {
+                return new List<NeedsAttentionResponse>();
+            }
+
+            var doctorIds = shifts.Select(x => x.StaffProfileId).Distinct().ToList();
+            var statuses = new[] { AppointmentConstants.PendingStatus, AppointmentConstants.ConfirmedStatus, AppointmentConstants.CheckedInStatus };
+            var appointments = await _appointmentRepository.GetAppointmentsOfDoctorsAsync(today, doctorIds, statuses);
+
+            var items = new List<NeedsAttentionResponse>();
+            foreach (var appointment in appointments)
+            {
+                // The patient belongs to the shift the doctor ended, the same rule as when the shift was ended
+                var shift = shifts.FirstOrDefault(s => s.StaffProfileId == appointment.DoctorId && ShiftTimeHelper.IsInShift(appointment, s));
+                if (shift == null)
+                {
+                    continue;
+                }
+
+                string group;
+                if (appointment.Status == AppointmentConstants.CheckedInStatus)
+                {
+                    group = AppointmentConstants.AttentionWaiting;
+                }
+                else if (appointment.TimeSlotStart.HasValue && shift.ActualEndTime.HasValue && appointment.TimeSlotStart.Value > shift.ActualEndTime.Value)
+                {
+                    // Booked for a time after the doctor left
+                    group = AppointmentConstants.AttentionUpcoming;
+                }
+                else
+                {
+                    continue;
+                }
+
+                items.Add(new NeedsAttentionResponse
+                {
+                    AppointmentId = appointment.Id,
+                    PatientId = appointment.PatientId,
+                    PatientCode = appointment.Patient?.PatientCode ?? string.Empty,
+                    PatientName = appointment.Patient?.FullName ?? string.Empty,
+                    PatientPhoneNumber = appointment.Patient?.PhoneNumber ?? string.Empty,
+                    AppointmentType = appointment.AppointmentType,
+                    Status = appointment.Status,
+                    Group = group,
+                    TimeSlotStart = appointment.TimeSlotStart,
+                    DoctorId = appointment.DoctorId,
+                    DoctorName = appointment.Doctor?.FullName,
+                    ShiftEndedAt = shift.ActualEndTime,
+                    HasExamination = appointment.Examination != null
+                });
+            }
+
+            // The ones in the clinic first, then the booked ones by time
+            return items
+                .OrderBy(x => x.Group == AppointmentConstants.AttentionWaiting ? 0 : 1)
+                .ThenBy(x => x.TimeSlotStart)
+                .ThenBy(x => x.AppointmentId)
+                .ToList();
+        }
+
+        public async Task<AppointmentResponse> ReassignDoctorAsync(long id, ReassignDoctorRequest request, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithExaminationAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.ReassignOnlyWaiting);
+            // A patient the doctor has already examined (back from the X-ray) belongs to that examination
+            ConditionGuard.ThrowIf(appointment.Examination != null, ErrorConstants.AppointmentMessage.ReassignAlreadyExamined);
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            ConditionGuard.ThrowIf(appointment.AppointmentDate != today, ErrorConstants.AppointmentMessage.ReassignWrongDay);
+            var newDoctorId = request.DoctorId!.Value;
+            ConditionGuard.ThrowIf(appointment.DoctorId == newDoctorId, ErrorConstants.AppointmentMessage.ReassignSameDoctor);
+
+            var shift = await FindDoctorShiftAsync(newDoctorId, today, null);
+            ConditionGuard.Ensure(shift != null, ErrorConstants.AppointmentMessage.DoctorHasNoShiftToday);
+            var room = shift!.Room;
+
+            // The same rule as booking: the services need the right kind of room
+            var requiredRoomType = appointment.ServiceItems
+                .Select(i => i.Service?.RequiredRoomType)
+                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+            ConditionGuard.Ensure(requiredRoomType == null || room?.RoomType == requiredRoomType,
+                ErrorConstants.AppointmentMessage.ReassignRoomNotSuitable);
+
+            var oldDoctorId = appointment.DoctorId;
+            appointment.DoctorId = newDoctorId;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+            await _appointmentRepository.UpdateAsync(appointment);
+
+            // Out of the queue of the doctor who left, to the end of the queue of the new one (the priority goes along)
+            if (_queueService != null)
+            {
+                await _queueService.UpdateStatusAsync(appointment.Id, QueueConstants.ExaminationType, QueueConstants.Cancelled, cancellationToken);
+            }
+            await EnterExaminationQueueAsync(appointment, room, null, cancellationToken);
+
+            await _auditLogService.LogAsync(AuditConstants.AppointmentDoctorReassigned, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { DoctorId = oldDoctorId }, new { DoctorId = newDoctorId, RoomId = room?.Id });
+
+            var response = MapToResponse(appointment);
+            response.DoctorId = newDoctorId;
+            response.DoctorName = shift.StaffProfile?.FullName;
+            response.RoomId = room?.Id;
+            response.RoomName = room?.RoomName;
+            return response;
+        }
+
         public async Task<AppointmentResponse> CreateWalkInAsync(WalkInRequest request, string? createdByUserId, CancellationToken cancellationToken = default)
         {
             ConditionGuard.Ensure(PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var phone), ErrorConstants.AuthMessage.InvalidPhone);

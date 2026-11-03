@@ -115,13 +115,38 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<StaffSchedule>> GetEndedShiftsAsync(DateOnly date)
+        {
+            return await _context.StaffSchedules
+                .AsNoTracking()
+                .Where(x => x.ScheduleDate == date && x.ActualEndTime != null)
+                .ToListAsync();
+        }
+
+        public async Task<List<Appointment>> GetAppointmentsOfDoctorsAsync(DateOnly date, IReadOnlyCollection<int> doctorIds, IReadOnlyCollection<string> statuses)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Examination)
+                .Include(x => x.QueueEntries)
+                    .ThenInclude(x => x.Room)
+                .Where(x => x.DoctorId != null && doctorIds.Contains(x.DoctorId.Value)
+                    && x.AppointmentDate == date
+                    && statuses.Contains(x.Status))
+                .ToListAsync();
+        }
+
         public async Task<List<Appointment>> GetDoctorOpenAppointmentsAsync(int doctorId, DateOnly date, CancellationToken cancellationToken = default)
         {
             // Not AsNoTracking: the caller changes the status and saves
             return await _context.Appointments
+                .Include(x => x.Patient)
                 .Include(x => x.Examination)
                 .Where(x => x.DoctorId == doctorId && x.AppointmentDate == date
-                    && (x.Status == AppointmentConstants.ConfirmedStatus
+                    && (x.Status == AppointmentConstants.PendingStatus
+                        || x.Status == AppointmentConstants.ConfirmedStatus
                         || x.Status == AppointmentConstants.CheckedInStatus
                         || x.Status == AppointmentConstants.InServiceStatus))
                 .ToListAsync(cancellationToken);
