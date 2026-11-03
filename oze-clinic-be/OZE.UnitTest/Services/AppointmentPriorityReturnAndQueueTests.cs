@@ -244,13 +244,18 @@ namespace OZE.UnitTest.Services
             var loggerMock = new Mock<ILogger<QueueService>>();
             var queueService = new QueueService(queueRepoMock.Object, loggerMock.Object);
 
+            // The repository gives the number together with saving
             queueRepoMock
-                .Setup(r => r.GetNextQueueNumberAsync(It.IsAny<DateOnly>(), "Examination", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(5);
+                .Setup(r => r.AddWithNextNumberAsync(It.IsAny<QueueEntry>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((QueueEntry e, DateOnly _, CancellationToken _) =>
+                {
+                    e.QueueNumber = 5;
+                    return e;
+                });
 
             queueRepoMock
-                .Setup(r => r.AddAsync(It.IsAny<QueueEntry>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((QueueEntry e, CancellationToken _) => e);
+                .Setup(r => r.TryMarkCalledAsync(It.IsAny<long>(), It.IsAny<int?>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
             // Act: Enqueue
             var entry = await queueService.EnqueueAsync(100, "Examination", roomId: 1, assignedStaffId: DoctorId, priority: 1);
@@ -261,7 +266,7 @@ namespace OZE.UnitTest.Services
 
             // Arrange: CallNext
             queueRepoMock
-                .Setup(r => r.GetActiveEntriesAsync("Examination", 1, It.IsAny<CancellationToken>()))
+                .Setup(r => r.GetActiveEntriesAsync("Examination", 1, null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<QueueEntry> { entry });
 
             // Act: CallNext

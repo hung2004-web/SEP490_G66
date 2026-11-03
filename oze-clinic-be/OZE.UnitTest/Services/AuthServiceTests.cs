@@ -291,6 +291,7 @@ namespace OZE.UnitTest.Services
             // Assert
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidLogin);
+            result.Code.Should().Be(ErrorConstants.AuthCode.InvalidCredentials);
             VerifyPasswordNeverChecked();
             VerifyNoTokenIssued();
         }
@@ -309,6 +310,7 @@ namespace OZE.UnitTest.Services
             // Assert
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidLogin);
+            result.Code.Should().Be(ErrorConstants.AuthCode.InvalidCredentials);
             VerifyPasswordNeverChecked();
         }
 
@@ -326,6 +328,7 @@ namespace OZE.UnitTest.Services
             // Assert
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidLogin);
+            result.Code.Should().Be(ErrorConstants.AuthCode.InvalidCredentials);
             _registrationRepositoryMock.Verify(r => r.FindUserByPhoneAsync(It.IsAny<IReadOnlyCollection<string>>()), Times.Never);
             VerifyPasswordNeverChecked();
         }
@@ -341,9 +344,10 @@ namespace OZE.UnitTest.Services
             // Act
             var result = await _authService.LoginAsync(new LoginRequest { Identifier = Email, Password = Password });
 
-            // Assert: say "invalid login", not "locked"
+            // Assert: say "invalid login", not "locked" or "disabled"
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidLogin);
+            result.Code.Should().Be(ErrorConstants.AuthCode.InvalidCredentials);
             VerifyPasswordNeverChecked();
             VerifyNoTokenIssued();
         }
@@ -362,14 +366,17 @@ namespace OZE.UnitTest.Services
             // Assert
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidLogin);
+            result.Code.Should().Be(ErrorConstants.AuthCode.InvalidCredentials);
             VerifyNoTokenIssued();
         }
 
         [Fact]
-        public async Task LoginAsync_WhenLockedOut_ShouldReturnLockedMessage()
+        public async Task LoginAsync_WhenLockedOut_ShouldReturnLockedOutCodeAndLockoutEnd()
         {
             // Arrange
+            var lockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
             var user = ActiveUser();
+            user.LockoutEnd = lockoutEnd;
             SetupFindByEmail(user);
             SetupPasswordCheck(user, SignInResult.LockedOut);
 
@@ -378,7 +385,29 @@ namespace OZE.UnitTest.Services
 
             // Assert
             result.Success.Should().BeFalse();
-            result.Message.Should().Contain("locked");
+            result.Message.Should().Be(ErrorConstants.AuthMessage.AccountLocked);
+            result.Code.Should().Be(ErrorConstants.AuthCode.LockedOut);
+            result.LockoutEnd.Should().Be(lockoutEnd);
+            VerifyNoTokenIssued();
+        }
+
+        [Fact]
+        public async Task LoginAsync_WhenAccountDisabled_ShouldReturnAccountDisabledCode()
+        {
+            // Arrange: manager deactivation sets LockoutEnd to MaxValue; Identity reports LockedOut
+            var user = ActiveUser();
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            SetupFindByEmail(user);
+            SetupPasswordCheck(user, SignInResult.LockedOut);
+
+            // Act
+            var result = await _authService.LoginAsync(new LoginRequest { Identifier = Email, Password = Password });
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.AccountDisabled);
+            result.Code.Should().Be(ErrorConstants.AuthCode.AccountDisabled);
+            result.LockoutEnd.Should().BeNull();
             VerifyNoTokenIssued();
         }
 
@@ -396,6 +425,7 @@ namespace OZE.UnitTest.Services
             // Assert
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidLogin);
+            result.Code.Should().Be(ErrorConstants.AuthCode.InvalidCredentials);
             VerifyNoTokenIssued();
         }
 
@@ -620,9 +650,27 @@ namespace OZE.UnitTest.Services
         }
 
         [Fact]
-        public async Task LogoutAsync_WithAnotherUsersRefreshToken_ShouldNotRevokeIt()
+        public async Task LogoutAsync_WithRefreshTokenOnly_ShouldRevokeWithoutUserId()
         {
-            // Arrange: someone sends a token that belongs to a different account
+            // Arrange: access token already expired; only the refresh token is sent
+            var token = new UserRefreshToken { UserId = UserId, RefreshToken = DeviceToken };
+            SetupActiveToken(token);
+
+            // Act
+            var result = await _authService.LogoutAsync(null, DeviceToken);
+
+            // Assert
+            result.Success.Should().BeTrue();
+            token.RevokedAt.Should().NotBeNull();
+            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(token), Times.Once);
+            _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
+            _refreshTokenRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WithRefreshToken_ShouldRevokeEvenIfUserIdDiffers()
+        {
+            // Arrange: possession of the refresh token is enough to end that session
             var token = new UserRefreshToken { UserId = "other-user", RefreshToken = DeviceToken };
             SetupActiveToken(token);
 
@@ -631,8 +679,8 @@ namespace OZE.UnitTest.Services
 
             // Assert
             result.Success.Should().BeTrue();
-            token.RevokedAt.Should().BeNull();
-            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
+            token.RevokedAt.Should().NotBeNull();
+            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(token), Times.Once);
             _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
         }
 
@@ -649,6 +697,18 @@ namespace OZE.UnitTest.Services
             result.Success.Should().BeTrue();
             _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
             _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WithoutUserIdOrRefreshToken_ShouldFail()
+        {
+            // Act
+            var result = await _authService.LogoutAsync(null, null);
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.LogoutRequiresToken);
+            _refreshTokenRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
         }
 
         #endregion

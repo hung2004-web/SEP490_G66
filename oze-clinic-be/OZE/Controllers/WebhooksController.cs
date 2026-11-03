@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using System;
@@ -21,15 +23,18 @@ namespace OZE.Controllers
     {
         private readonly IImagingRequestService _imagingRequestService;
         private readonly IConfiguration _configuration;
+        private readonly IHostEnvironment _environment;
         private readonly ILogger<WebhooksController> _logger;
 
         public WebhooksController(
             IImagingRequestService imagingRequestService,
             IConfiguration configuration,
+            IHostEnvironment environment,
             ILogger<WebhooksController> logger)
         {
             _imagingRequestService = imagingRequestService;
             _configuration = configuration;
+            _environment = environment;
             _logger = logger;
         }
 
@@ -37,6 +42,7 @@ namespace OZE.Controllers
         /// Webhook receiver endpoint for X-ray Simulator Service.
         /// Processes capture session completion events, saves imaging results,
         /// marks the imaging request as Completed, and places the patient into the Priority Return Queue.
+        /// Every call must carry a valid HMAC SHA256 signature of the body.
         /// </summary>
         [HttpPost("imaging-simulator")]
         [AllowAnonymous]
@@ -45,35 +51,53 @@ namespace OZE.Controllers
             [FromHeader(Name = "X-Sim-Event-Id")] string? eventId,
             CancellationToken cancellationToken)
         {
+            var sharedSecret = _configuration[ImagingRequestConstants.WebhookSecretConfigKey];
+            if (string.IsNullOrWhiteSpace(sharedSecret) && _environment.IsDevelopment())
+            {
+                sharedSecret = ImagingRequestConstants.DevelopmentWebhookSecret;
+            }
+
+            if (string.IsNullOrWhiteSpace(sharedSecret))
+            {
+                _logger.LogError("The webhook secret {ConfigKey} is not configured, webhook event {EventId} refused", ImagingRequestConstants.WebhookSecretConfigKey, eventId);
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponse.FailureResult(ErrorConstants.ImagingRequestMessage.WebhookSecretNotConfigured));
+            }
+
+            if (string.IsNullOrWhiteSpace(signature))
+            {
+                _logger.LogWarning("Webhook event {EventId} refused: no signature", eventId);
+                return Unauthorized(ApiResponse.FailureResult(ErrorConstants.ImagingRequestMessage.WebhookSignatureMissing));
+            }
+
             // Read raw body for HMAC SHA256 verification
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var rawBody = await reader.ReadToEndAsync(cancellationToken);
 
-            var sharedSecret = _configuration["XRaySimulator:WebhookSecret"] ?? "oze-xray-shared-secret-key-2026";
-
-            // If signature is provided, verify HMAC SHA256
-            if (!string.IsNullOrWhiteSpace(signature))
+            var providedSignature = signature.StartsWith(ImagingRequestConstants.WebhookSignaturePrefix, StringComparison.OrdinalIgnoreCase)
+                ? signature.Substring(ImagingRequestConstants.WebhookSignaturePrefix.Length)
+                : signature;
+            if (!IsValidSignature(rawBody, sharedSecret, providedSignature))
             {
-                var expectedSignature = ComputeHmacSha256(rawBody, sharedSecret);
-                var providedSignature = signature.StartsWith("sha256=", StringComparison.OrdinalIgnoreCase)
-                    ? signature.Substring(7)
-                    : signature;
-
-                if (!string.Equals(expectedSignature, providedSignature, StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogWarning("Invalid webhook signature for event {EventId}", eventId);
-                    return Unauthorized(ApiResponse.FailureResult("Invalid webhook signature"));
-                }
+                _logger.LogWarning("Invalid webhook signature for event {EventId}", eventId);
+                return Unauthorized(ApiResponse.FailureResult(ErrorConstants.ImagingRequestMessage.WebhookSignatureInvalid));
             }
 
-            var payload = JsonSerializer.Deserialize<ImagingSimulatorWebhookPayload>(rawBody, new JsonSerializerOptions
+            ImagingSimulatorWebhookPayload? payload;
+            try
             {
-                PropertyNameCaseInsensitive = true
-            });
+                payload = JsonSerializer.Deserialize<ImagingSimulatorWebhookPayload>(rawBody, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            catch (JsonException)
+            {
+                payload = null;
+            }
 
             if (payload == null)
             {
-                return BadRequest(ApiResponse.FailureResult("Invalid payload"));
+                return BadRequest(ApiResponse.FailureResult(ErrorConstants.ImagingRequestMessage.WebhookPayloadInvalid));
             }
 
             _logger.LogInformation("Processing simulator webhook event {EventId} for OrderReference {OrderRef}, State {State}",
@@ -88,11 +112,23 @@ namespace OZE.Controllers
             return Ok(ApiResponse.SuccessResult("Webhook processed successfully. Patient added to Priority Return Queue."));
         }
 
-        private static string ComputeHmacSha256(string data, string secret)
+        private static bool IsValidSignature(string data, string secret, string providedSignature)
         {
             using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
-            return Convert.ToHexString(hash).ToLowerInvariant();
+            var expected = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+
+            byte[] provided;
+            try
+            {
+                provided = Convert.FromHexString(providedSignature);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+
+            // Constant-time comparison, so the response time does not give the signature away
+            return CryptographicOperations.FixedTimeEquals(expected, provided);
         }
     }
 }

@@ -53,10 +53,23 @@ namespace OZE.Common.Constants
             public const string UserNotFound = "User not found in system";
             public const string EmailConfirmRequired = "Email confirm Required";
             public const string InvalidLogin = "Invalid login, please check again";
+            // Temporary lockout after too many failed attempts (BR-101).
+            public const string AccountLocked = "Account is temporarily locked. Please try again later.";
+            // Staff/manager disabled the account (MSG80 on FE).
+            public const string AccountDisabled = "Account has been disabled. Please contact the clinic.";
             public const string InvalidRefreshToken = "Refresh token is expiry or not found";
             public const string TwoFactorRequired = "Two factor required, please check your code";
             public const string SamePassword = "New password cannot be the same as current password";
             public const string PasswordMismatch = "New password and confirmation password do not match";
+            public const string LogoutRequiresToken = "Refresh token or authenticated user is required";
+        }
+
+        // Stable codes for login failures (UC-04). FE matches these instead of English message text.
+        public static class AuthCode
+        {
+            public const string InvalidCredentials = "INVALID_CREDENTIALS";
+            public const string LockedOut = "LOCKED_OUT";
+            public const string AccountDisabled = "ACCOUNT_DISABLED";
         }
 
         public static class RoomMessage
@@ -240,6 +253,12 @@ namespace OZE.Common.Constants
             public const string ShiftNotFound = "Work shift not found";
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
             public const string DateRangeTooLong = "You can view at most one week at a time";
+            public const string ShiftNotToday = "Only a shift of today can be started or ended";
+            public const string ShiftAlreadyStarted = "This shift has already been started";
+            public const string ShiftNotStarted = "Start the shift before ending it";
+            public const string ShiftAlreadyEnded = "This shift has already been ended";
+            public const string ExaminationStillRunning = "Finish the examination in progress before ending the shift";
+            public const string NoShowReason = "The doctor ended the shift before the patient was examined";
         }
         public static class MedicalRecordMessage
         {
@@ -285,6 +304,16 @@ namespace OZE.Common.Constants
         }
 
         // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.
+        public static class QueueMessage
+        {
+            public const string EntryNotFound = "Queue number not found";
+            public const string OnlyCalledCanBeSkipped = "Only a number that has been called can be skipped";
+            public const string OnlyWaitingCanBeCalled = "Only a number that is waiting can be called";
+            public const string NotInTodayQueue = "This number is not in today's queue";
+            public const string NotYourPatientToCall = "You can only call your own patients";
+            public const string NotYourPatient = "You can only skip your own patients";
+        }
+
         public static class ImagingRequestMessage
         {
             // MSG07
@@ -308,7 +337,12 @@ namespace OZE.Common.Constants
             public const string CancelReasonInvalid = "Cancel reason is invalid. Please check again.";
             public const string CannotCancelRequest = "You do not have permission to cancel this imaging request.";
             public const string RequestNotPending = "Cannot cancel imaging request because the imaging request is {0}.";
+            public const string RequestNotOpen = "Cannot complete imaging request because the imaging request is {0}.";
             public const string RequestCancelled = "Cancel imaging request success!";
+            public const string WebhookSignatureMissing = "Missing webhook signature";
+            public const string WebhookSignatureInvalid = "Invalid webhook signature";
+            public const string WebhookSecretNotConfigured = "Webhook secret is not configured";
+            public const string WebhookPayloadInvalid = "Invalid payload";
             // MSG02
             public const string QueueEmpty = "No Data.";
             public const string TechnicianNotificationTitle = "New imaging request";

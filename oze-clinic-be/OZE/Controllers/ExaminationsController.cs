@@ -102,6 +102,13 @@ namespace OZE.Controllers
             return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã lưu ghi chú đơn thuốc"));
         }
 
+        [HttpDelete("examinations/{id:long}/prescription")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> DeletePrescriptionAsync(long id, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.DeletePrescriptionAsync(DoctorUserId, id, cancellationToken);
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã xóa đơn thuốc"));
+        }
+
         [HttpPost("examinations/{id:long}/prescription/items")]
         public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> AddPrescriptionItemAsync(
             long id, [FromBody] SavePrescriptionItemRequest request, CancellationToken cancellationToken)

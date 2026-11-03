@@ -9,6 +9,8 @@ namespace OZE.Domain.Entities
         public int? AssignedStaffId { get; set; }
         public int QueueNumber { get; set; }
         public int Priority { get; set; }
+        // How many times the patient was called and not there; the more times, the further back in the queue
+        public int SkipCount { get; set; }
         public string Status { get; set; } = "WAITING";
         public DateTimeOffset? CalledAt { get; set; }
         public DateTimeOffset? StartedAt { get; set; }

@@ -27,6 +27,8 @@ namespace OZE.Application.Interfaces
         Task<PrescriptionResponse> AddPrescriptionItemAsync(string userId, long examinationId, SavePrescriptionItemRequest request, CancellationToken cancellationToken = default);
         Task<PrescriptionResponse> UpdatePrescriptionItemAsync(string userId, long examinationId, long itemId, SavePrescriptionItemRequest request, CancellationToken cancellationToken = default);
         Task<PrescriptionResponse> DeletePrescriptionItemAsync(string userId, long examinationId, long itemId, CancellationToken cancellationToken = default);
+        // Clears the whole prescription at once: every medication and the note. A finalized one must be reopened first.
+        Task<PrescriptionResponse> DeletePrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
         Task<PrescriptionResponse> FinalizePrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
         Task<PrescriptionResponse> ReopenPrescriptionAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
 
