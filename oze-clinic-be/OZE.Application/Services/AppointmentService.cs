@@ -157,6 +157,14 @@ namespace OZE.Application.Services
                 var chosen = doctorId.HasValue ? candidates[0] : await PickLeastBusyAsync(candidates, date);
                 var patient = await getPatientAsync();
 
+                // One appointment at a time: the earlier one must be completed, cancelled or marked NO_SHOW first.
+                // A patient without a record yet (Id 0) cannot have one.
+                if (patient.Id != 0)
+                {
+                    ConditionGuard.ThrowIf(await _appointmentRepository.HasUnfinishedAppointmentAsync(patient.Id),
+                        ErrorConstants.AppointmentMessage.PatientHasUnfinishedAppointment);
+                }
+
                 var appointment = new Appointment
                 {
                     Patient = patient,
