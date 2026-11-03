@@ -48,6 +48,7 @@ export const ROUTES = {
     ADMIN_WORK_SHIFTS: "/admin/work-shifts",
     ADMIN_LEAVE_REQUESTS: "/admin/leave-requests",
     ADMIN_REFUNDS: "/admin/refunds",
+    ADMIN_DEBTS: "/admin/debts",
     ADMIN_SYSTEM_LOGS: "/admin/system-logs",
     ADMIN_SETTINGS: "/admin/settings",
     ERROR: "/error/:code",
@@ -88,6 +89,7 @@ export const ROLE_ROUTES = [
             ROUTES.ADMIN_ROOMS,
             ROUTES.ADMIN_SERVICES,
             ROUTES.ADMIN_REFUNDS,
+            ROUTES.ADMIN_DEBTS,
             ROUTES.ADMIN_SYSTEM_LOGS,
             ROUTES.ADMIN_SETTINGS,
         ]

@@ -21,12 +21,15 @@ namespace OZE.UnitTest.Services
         private const string Password = "Test@123";
         private const string AccessToken = "access-token";
         private const string RefreshToken = "refresh-token";
+        private const string UserFullName = "Nguyen Van A";
+        private const string UserRole = "Patient";
 
         // Fakes we need to control in the tests
         private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
         private readonly Mock<SignInManager<ApplicationUser>> _signInManagerMock;
         private readonly Mock<IUserRefreshTokenRepository> _refreshTokenRepositoryMock;
         private readonly Mock<IJwtTokenGenerator> _jwtTokenGeneratorMock;
+        private readonly Mock<IUserService> _userServiceMock;
         private readonly Mock<IRegistrationRepository> _registrationRepositoryMock;
         private readonly Mock<IPasswordResetStore> _passwordResetStoreMock;
         private readonly Mock<ISmsSender> _smsSenderMock;
@@ -52,6 +55,7 @@ namespace OZE.UnitTest.Services
 
             _refreshTokenRepositoryMock = new Mock<IUserRefreshTokenRepository>();
             _jwtTokenGeneratorMock = new Mock<IJwtTokenGenerator>();
+            _userServiceMock = new Mock<IUserService>();
             _registrationRepositoryMock = new Mock<IRegistrationRepository>();
             _passwordResetStoreMock = new Mock<IPasswordResetStore>();
             _smsSenderMock = new Mock<ISmsSender>();
@@ -66,6 +70,10 @@ namespace OZE.UnitTest.Services
             // Every successful login asks for a token pair
             _jwtTokenGeneratorMock.Setup(g => g.GenerateTokenAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(AccessToken);
             _jwtTokenGeneratorMock.Setup(g => g.GenerateRefreshToken()).Returns(RefreshToken);
+            _userServiceMock.Setup(s => s.GetFullName(It.IsAny<string>())).Returns(UserFullName);
+            _userManagerMock
+                .Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { UserRole });
 
             _authService = CreateService(jwtExpiresInMinutes: 30);
         }
@@ -78,6 +86,7 @@ namespace OZE.UnitTest.Services
                 _signInManagerMock.Object,
                 _refreshTokenRepositoryMock.Object,
                 _jwtTokenGeneratorMock.Object,
+                _userServiceMock.Object,
                 _emailSenderMock.Object,
                 _smsSenderMock.Object,
                 _pendingStoreMock.Object,
@@ -148,6 +157,8 @@ namespace OZE.UnitTest.Services
             result.Success.Should().BeTrue();
             result.Data!.Token.Should().Be(AccessToken);
             result.Data.RefreshToken.Should().Be(RefreshToken);
+            result.Data.FullName.Should().Be(UserFullName);
+            result.Data.Role.Should().Be(UserRole);
         }
 
         [Fact]
@@ -466,12 +477,14 @@ namespace OZE.UnitTest.Services
         private void VerifyDevicesNeverSignedOut()
         {
             _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task ChangePasswordAsync_WithValidRequest_ShouldChangePasswordAndSignOutAllDevices()
         {
-            // Arrange
+            // Arrange: no current refresh token → every device must sign in again
             var user = ActiveUser();
             SetupFindById(user);
             SetupIdentityChangePassword(user, IdentityResult.Success);
@@ -479,11 +492,64 @@ namespace OZE.UnitTest.Services
             // Act
             var result = await _authService.ChangePasswordAsync(UserId, ValidChangeRequest());
 
-            // Assert: old refresh tokens are revoked so other devices must sign in again
+            // Assert
             result.Success.Should().BeTrue();
             _userManagerMock.Verify(m => m.ChangePasswordAsync(user, CurrentPassword, NewPassword), Times.Once);
             _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(UserId), Times.Once);
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _refreshTokenRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WithCurrentRefreshToken_ShouldKeepThisDeviceAndSignOutOthers()
+        {
+            // Arrange: BR-104 — keep the session that just changed the password
+            const string currentRefreshToken = "current-device-token";
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Success);
+            _refreshTokenRepositoryMock
+                .Setup(r => r.GetActiveTokenAsync(currentRefreshToken))
+                .ReturnsAsync(new UserRefreshToken { UserId = UserId, RefreshToken = currentRefreshToken });
+
+            var request = ValidChangeRequest();
+            request.RefreshToken = currentRefreshToken;
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, request);
+
+            // Assert
+            result.Success.Should().BeTrue();
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(UserId, currentRefreshToken), Times.Once);
+            _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
+            _refreshTokenRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WithForeignOrUnknownRefreshToken_ShouldSignOutAllDevices()
+        {
+            // Arrange: token missing or belonging to someone else → revoke everything
+            const string foreignToken = "other-user-token";
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Success);
+            _refreshTokenRepositoryMock
+                .Setup(r => r.GetActiveTokenAsync(foreignToken))
+                .ReturnsAsync(new UserRefreshToken { UserId = "other-user", RefreshToken = foreignToken });
+
+            var request = ValidChangeRequest();
+            request.RefreshToken = foreignToken;
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, request);
+
+            // Assert
+            result.Success.Should().BeTrue();
+            _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(UserId), Times.Once);
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -750,6 +816,8 @@ namespace OZE.UnitTest.Services
             result.Success.Should().BeTrue();
             result.Data!.Token.Should().Be(AccessToken);
             result.Data.RefreshToken.Should().Be(RefreshToken);
+            result.Data.FullName.Should().Be(UserFullName);
+            result.Data.Role.Should().Be(UserRole);
         }
 
         [Fact]
@@ -868,6 +936,68 @@ namespace OZE.UnitTest.Services
             result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
             VerifyNoTokenIssued();
             _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WhenAccountDisabled_ShouldReturnAccountDisabledCode()
+        {
+            // Arrange: manager set LockoutEnd to MaxValue (MSG80)
+            var user = ActiveUser();
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            var oldToken = ActiveOldToken();
+            SetupOldToken(oldToken);
+            SetupFindById(user);
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Code.Should().Be(ErrorConstants.AuthCode.AccountDisabled);
+            result.Message.Should().Be(ErrorConstants.AuthMessage.AccountDisabled);
+            VerifyNoTokenIssued();
+            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
+            oldToken.RevokedAt.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WhenTemporarilyLockedOut_ShouldReturnLockedOutCode()
+        {
+            // Arrange: five failed logins on another device locked this account for 15 minutes
+            var lockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
+            var user = ActiveUser();
+            user.LockoutEnd = lockoutEnd;
+            var oldToken = ActiveOldToken();
+            SetupOldToken(oldToken);
+            SetupFindById(user);
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Code.Should().Be(ErrorConstants.AuthCode.LockedOut);
+            result.Message.Should().Be(ErrorConstants.AuthMessage.AccountLocked);
+            result.LockoutEnd.Should().Be(lockoutEnd);
+            VerifyNoTokenIssued();
+            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WhenLockoutAlreadyEnded_ShouldReturnNewTokenPair()
+        {
+            // Arrange: temporary lockout has expired
+            var user = ActiveUser();
+            user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(-1);
+            SetupOldToken(ActiveOldToken());
+            SetupFindById(user);
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeTrue();
+            result.Data!.Token.Should().Be(AccessToken);
         }
 
         #endregion

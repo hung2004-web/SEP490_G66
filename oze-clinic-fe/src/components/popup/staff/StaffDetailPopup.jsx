@@ -4,13 +4,10 @@ import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_LABELS, LOCK_REASON_OPTIONS, STAFF_ROLE_OPTIONS } from "@/utils/data/mockStaff";
-import { formatDate } from "@/utils/format";
+import { formatDate, formatPhone } from "@/utils/format";
 import { GENDER_LABELS, USER_ROLES } from "@/utils/messages";
 
 const labelOf = (options, value) => options.find((option) => option.value === value)?.label ?? value;
-
-// "0918777888" -> "0918 777 888"
-const formatPhone = (phone) => phone.replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
 
 const DetailItem = ({ label, className, children }) => (
     <div className={className}>

@@ -4,18 +4,14 @@ import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import useAsync from "@/hooks/useAsync";
 import { getShiftCandidates, saveShift } from "@/services/shiftService";
+import { formatDayMonth } from "@/utils/format";
 import { ShiftPlaceTable } from "./ShiftInfoTable";
 import StaffPicker from "./StaffPicker";
 
 const STAFF_ID = "shift-assign-staff";
-const TASK_ID = "shift-assign-task";
-const TASK_MAX = 200;
-
-// "2026-10-30" -> "30/10"
-const dayMonth = (dateOnly) => `${dateOnly.slice(8, 10)}/${dateOnly.slice(5, 7)}`;
 
 // Two popups in one:
-// - replace = false: "Phân ca" for an empty shift (pick a person and the task);
+// - replace = false: "Phân ca" for an empty shift;
 // - replace = true: "Chọn người thay" for a shift whose person is on approved leave.
 // onSaved(message) runs after a successful save.
 const ShiftAssignPopup = ({ cell, replace = false, onClose, onSaved }) => {
@@ -24,7 +20,6 @@ const ShiftAssignPopup = ({ cell, replace = false, onClose, onSaved }) => {
         [cell.key],
     );
     const [staffId, setStaffId] = useState(null);
-    const [task, setTask] = useState(replace ? cell.task : "");
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
 
@@ -45,7 +40,7 @@ const ShiftAssignPopup = ({ cell, replace = false, onClose, onSaved }) => {
         }
 
         setSaving(true);
-        const response = await saveShift({ date: cell.date, slot: cell.slot, roomId: cell.room.id, staffId, task, note: cell.note });
+        const response = await saveShift({ date: cell.date, slot: cell.slot, roomId: cell.room.id, staffId });
         setSaving(false);
         if (!response.success) {
             if (response.errors?.staffId) setErrors({ staffId: response.errors.staffId });
@@ -67,7 +62,7 @@ const ShiftAssignPopup = ({ cell, replace = false, onClose, onSaved }) => {
 
                 {replace && (
                     <p className="alert alert-warning border-0">
-                        {cell.staff.name} đã được duyệt nghỉ ngày {dayMonth(cell.date)} ({cell.leave.wholeDay ? "cả ngày" : cell.slotLabel.toLowerCase()}).
+                        {cell.staff.name} đã được duyệt nghỉ ngày {formatDayMonth(cell.date)} ({cell.leave.wholeDay ? "cả ngày" : cell.slotLabel.toLowerCase()}).
                         Chọn người thay cho ca này.
                     </p>
                 )}
@@ -82,19 +77,6 @@ const ShiftAssignPopup = ({ cell, replace = false, onClose, onSaved }) => {
                         invalid={Boolean(errors.staffId)}
                     />
                 </FormField>
-
-                {!replace && (
-                    <FormField id={TASK_ID} label="Nhiệm vụ trong ca">
-                        <input
-                            id={TASK_ID}
-                            className="input"
-                            maxLength={TASK_MAX}
-                            placeholder="Ví dụ: Nhổ răng khôn theo lịch hẹn"
-                            value={task}
-                            onChange={(event) => setTask(event.target.value)}
-                        />
-                    </FormField>
-                )}
 
                 <div className="modal-actions -mx-6 mt-2 border-t border-border px-6 pt-4">
                     <button type="button" className="btn btn-secondary" disabled={saving} onClick={onClose}>

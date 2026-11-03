@@ -12,6 +12,7 @@ import TablePagination from "@/components/ui/TablePagination";
 import useAsync from "@/hooks/useAsync";
 import { getStaffAccounts, unlockStaffAccount } from "@/services/staffService";
 import { cx } from "@/utils/cx";
+import { formatPhone } from "@/utils/format";
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_LABELS, ACCOUNT_STATUS_OPTIONS, STAFF_ROLE_OPTIONS } from "@/utils/data/mockStaff";
 
 const SEARCH_DELAY_MS = 300;
@@ -20,9 +21,6 @@ const COLUMN_COUNT = 6;
 const ACTION_CLASS = "btn btn-secondary btn-icon size-8";
 
 const roleLabel = (role) => STAFF_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role;
-
-// "0918777888" -> "0918 777 888"
-const formatPhone = (phone) => phone.replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
 
 const StaffRow = ({ member, onView, onEdit, onLock, onUnlock }) => {
     const locked = member.status === ACCOUNT_STATUSES.LOCKED;

@@ -26,6 +26,10 @@ const getClinicParts = (value) => {
 
 export const toDateOnly = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
+// Monday of the week containing date, as "YYYY-MM-DD".
+export const getWeekStart = (date = new Date()) =>
+    toDateOnly(new Date(date.getFullYear(), date.getMonth(), date.getDate() - ((date.getDay() + 6) % 7)));
+
 export const parseDateOnly = (value) => {
     if (!value) return null;
     const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);
@@ -37,6 +41,18 @@ export const formatDate = (value) => {
     const date = parseDateOnly(value);
     return date ? `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}` : "";
 };
+
+// "2026-10-16" -> "16/10"
+export const formatDayMonth = (value) => {
+    const date = parseDateOnly(value);
+    return date ? `${pad(date.getDate())}/${pad(date.getMonth() + 1)}` : "";
+};
+
+// "0901234567" -> "0901 234 567"
+export const formatPhone = (phone) => (phone ?? "").replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
+
+// Text compared in searches: same Unicode form, no surrounding spaces, lower case.
+export const normalizeText = (value) => (value ?? "").normalize("NFC").trim().toLocaleLowerCase("vi");
 
 export const formatWeekday = (value) => {
     const date = parseDateOnly(value);
