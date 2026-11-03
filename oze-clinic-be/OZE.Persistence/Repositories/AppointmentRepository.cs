@@ -237,6 +237,13 @@ namespace OZE.Persistence.Repositories
                     && x.Status == AppointmentConstants.InServiceStatus);
         }
 
+        public async Task<bool> HasUnfinishedAppointmentAsync(int patientId)
+        {
+            return await _context.Appointments
+                .AnyAsync(x => x.PatientId == patientId
+                    && AppointmentConstants.UnfinishedStatuses.Contains(x.Status));
+        }
+
         public async Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default)
         {
             var query = _context.Appointments

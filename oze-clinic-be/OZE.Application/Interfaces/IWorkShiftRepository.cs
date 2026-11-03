@@ -16,6 +16,8 @@ namespace OZE.Application.Interfaces
         Task<List<StaffSchedule>> GetAllAsync(DateOnly fromDate, DateOnly toDate, string? staffUserId, int? roomId);
         Task<StaffSchedule?> GetByIdAsync(long id);
         Task<bool> HasBookedAppointmentsAsync(int staffProfileId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd);
+        // True when another shift of that day in the same room has been started and not ended
+        Task<bool> HasRunningShiftInRoomAsync(int roomId, DateOnly scheduleDate, long excludeShiftId);
         void Update(StaffSchedule schedule);
         void Remove(StaffSchedule schedule);
     }

@@ -14,6 +14,8 @@ namespace OZE.Common.Constants
         public const string AppointmentNoShow = "APPOINTMENT_NO_SHOW";
         public const string ShiftStarted = "STAFF_SHIFT_STARTED";
         public const string ShiftEnded = "STAFF_SHIFT_ENDED";
+        public const string ShiftReopened = "STAFF_SHIFT_REOPENED";
+        public const string AppointmentNoShowReverted = "APPOINTMENT_NO_SHOW_REVERTED";
         public const string StaffScheduleEntity = "StaffSchedule";
         public const string AppointmentEntity = "Appointment";
     }
