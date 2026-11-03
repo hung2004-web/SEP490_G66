@@ -921,6 +921,48 @@ namespace OZE.UnitTest.Services
         }
 
         [Fact]
+        public async Task RefreshTokenAsync_WithTokenRevokedByDeactivation_ShouldReturnAccountDisabledCode()
+        {
+            // Arrange: DeactivateStaffAsync revoked the token and set LockoutEnd to MaxValue (BR-102, MSG80)
+            var user = ActiveUser();
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            var revokedToken = ActiveOldToken();
+            revokedToken.RevokedAt = DateTimeOffset.UtcNow.AddMinutes(-1);
+            SetupOldToken(null);
+            _refreshTokenRepositoryMock.Setup(r => r.GetByTokenAsync(OldRefreshToken)).ReturnsAsync(revokedToken);
+            SetupFindById(user);
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Code.Should().Be(ErrorConstants.AuthCode.AccountDisabled);
+            result.Message.Should().Be(ErrorConstants.AuthMessage.AccountDisabled);
+            VerifyNoTokenIssued();
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WithRevokedTokenOfActiveUser_ShouldFailWithoutCode()
+        {
+            // Arrange: the token was revoked by logout, the account is still active
+            var revokedToken = ActiveOldToken();
+            revokedToken.RevokedAt = DateTimeOffset.UtcNow.AddMinutes(-1);
+            SetupOldToken(null);
+            _refreshTokenRepositoryMock.Setup(r => r.GetByTokenAsync(OldRefreshToken)).ReturnsAsync(revokedToken);
+            SetupFindById(ActiveUser());
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Code.Should().BeNull();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidRefreshToken);
+            VerifyNoTokenIssued();
+        }
+
+        [Fact]
         public async Task RefreshTokenAsync_WhenUserDeleted_ShouldFailWithoutIssuingTokens()
         {
             // Arrange: the token is still active but its account no longer exists

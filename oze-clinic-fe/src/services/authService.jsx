@@ -1,5 +1,5 @@
 import api from "./api";
-import { BACKEND_LOGIN_MESSAGES, GENERIC_ERROR_MESSAGE, MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
+import { BACKEND_LOGIN_CODES, GENERIC_ERROR_MESSAGE, MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
 import { getDefaultMockUserId, getMockCurrentUser, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
 import { clearSession, getSessionRefreshToken, getSessionToken, isAccessTokenExpired, saveSession, sessionFromAuthResult } from "./sessionStore";
@@ -15,18 +15,19 @@ const success = (data) => ({ success: true, message: null, data, errors: null })
 
 const AUTH_REQUEST_CONFIG = { skipAuthRefresh: true };
 
-const loginFailure = (message) => {
-    if (message === BACKEND_LOGIN_MESSAGES.INVALID_LOGIN) return failure(MESSAGES.MSG24);
-    if (message === BACKEND_LOGIN_MESSAGES.LOCKED_OUT) return failure(MESSAGES.MSG26);
+const loginFailure = (code) => {
+    if (code === BACKEND_LOGIN_CODES.INVALID_CREDENTIALS) return failure(MESSAGES.MSG24);
+    if (code === BACKEND_LOGIN_CODES.LOCKED_OUT) return failure(MESSAGES.MSG26);
+    if (code === BACKEND_LOGIN_CODES.ACCOUNT_DISABLED) return failure(MESSAGES.MSG80);
     return failure(GENERIC_ERROR_MESSAGE);
 };
 
-const sendLogout = (token, refreshToken) => {
-    api.post("/api/Auth/logout", { refreshToken }, { ...AUTH_REQUEST_CONFIG, headers: { Authorization: `Bearer ${token}` } }).catch(() => { });
+const sendLogout = (refreshToken) => {
+    api.post("/api/Auth/logout", { refreshToken }, AUTH_REQUEST_CONFIG).catch(() => { });
 };
 
 const completeSignIn = (body) => {
-    if (body?.success !== true) return loginFailure(body?.message);
+    if (body?.success !== true) return loginFailure(body?.code);
 
     const data = body.data;
     if (typeof data?.token !== "string" || typeof data?.refreshToken !== "string" || !data.token || !data.refreshToken) {
@@ -35,7 +36,7 @@ const completeSignIn = (body) => {
 
     const session = sessionFromAuthResult(data);
     if (!session) {
-        sendLogout(data.token, data.refreshToken);
+        sendLogout(data.refreshToken);
         return failure(GENERIC_ERROR_MESSAGE);
     }
 
@@ -49,7 +50,7 @@ export const signIn = async ({ identifier, password }) => {
         const response = await api.post("/api/Auth/login", { identifier, password }, AUTH_REQUEST_CONFIG);
         return completeSignIn(response.data);
     } catch (error) {
-        return loginFailure(error.response?.data?.message);
+        return loginFailure(error.response?.data?.code);
     }
 };
 
@@ -58,10 +59,9 @@ export const signOut = () => {
     const refreshToken = getSessionRefreshToken();
     const expired = token !== null && isAccessTokenExpired(token);
 
-    if (token && !expired && refreshToken) sendLogout(token, refreshToken);
-
     setMockCurrentUserId(null);
     clearSession();
+    if (refreshToken) sendLogout(refreshToken);
     return { expired };
 };
 
