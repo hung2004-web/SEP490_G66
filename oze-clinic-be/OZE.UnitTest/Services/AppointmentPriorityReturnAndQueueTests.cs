@@ -177,6 +177,10 @@ namespace OZE.UnitTest.Services
             _appointmentRepoMock
                 .Setup(r => r.GetByIdWithExaminationAsync(300, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(appointment);
+            // One diagnosis recorded, no prescription left as a draft
+            _appointmentRepoMock
+                .Setup(r => r.GetExaminationCompletionCountsAsync(88, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((1, 0));
 
             // Act
             var response = await _service.CompleteExaminationAsync(300, DoctorUserId);
@@ -188,6 +192,30 @@ namespace OZE.UnitTest.Services
 
             _appointmentRepoMock.Verify(r => r.UpdateAsync(appointment), Times.Once);
             _queueServiceMock.Verify(q => q.UpdateStatusAsync(300, "Examination", "COMPLETED", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(0, 0, ErrorConstants.ExaminationMessage.NothingRecorded)]
+        [InlineData(1, 1, ErrorConstants.ExaminationMessage.PrescriptionNotFinalized)]
+        public async Task CompleteExaminationAsync_ShouldReject_WhenRecordIsNotReady(int diagnoses, int draftPrescriptions, string expected)
+        {
+            // Arrange
+            var examination = new Examination { Id = 88, AppointmentId = 300, PatientId = 66, DoctorId = DoctorId, ExaminationStatus = ExaminationConstants.InProgress };
+            var appointment = new Appointment { Id = 300, PatientId = 66, DoctorId = DoctorId, Status = AppointmentConstants.InServiceStatus, AppointmentDate = Today, Examination = examination };
+            _appointmentRepoMock
+                .Setup(r => r.GetByIdWithExaminationAsync(300, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(appointment);
+            _appointmentRepoMock
+                .Setup(r => r.GetExaminationCompletionCountsAsync(88, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((diagnoses, draftPrescriptions));
+
+            // Act
+            var act = () => _service.CompleteExaminationAsync(300, DoctorUserId);
+
+            // Assert: nothing is locked
+            await act.Should().ThrowAsync<BadRequestException>().WithMessage(expected);
+            examination.ExaminationStatus.Should().Be(ExaminationConstants.InProgress);
+            _appointmentRepoMock.Verify(r => r.UpdateAsync(It.IsAny<Appointment>()), Times.Never);
         }
 
         [Fact]

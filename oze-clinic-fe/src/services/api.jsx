@@ -50,7 +50,8 @@ const runRefresh = (seenRefreshToken) => withRefreshLock(async () => {
     } catch (error) {
         const changed = outcomeAfterRefresh(sentRefreshToken);
         if (changed) return changed;
-        if (error.response?.status === 400 && typeof error.response.data?.success === "boolean") {
+        // The backend answers 401 for a refresh token that is expired, revoked or unknown (400 kept for older builds)
+        if ([400, 401].includes(error.response?.status) && typeof error.response.data?.success === "boolean") {
             return { outcome: REFRESH_OUTCOME.EXPIRED };
         }
         return { outcome: REFRESH_OUTCOME.FAILED, error, errorPageShown: false };

@@ -19,7 +19,7 @@ namespace OZE.UnitTest.Services
             {
                 for (var i = 0; i < SecurityConstants.OtpSendsPerWindow; i++)
                 {
-                    _limiter.EnsureCanSend("0399000977");
+                    _limiter.EnsureCanSend(SecurityConstants.OtpPurposeRegister, "0399000977");
                 }
             };
 
@@ -33,11 +33,11 @@ namespace OZE.UnitTest.Services
             // Arrange
             for (var i = 0; i < SecurityConstants.OtpSendsPerWindow; i++)
             {
-                _limiter.EnsureCanSend("someone@example.test");
+                _limiter.EnsureCanSend(SecurityConstants.OtpPurposeRegister, "someone@example.test");
             }
 
             // Act: the same email written in other case still counts
-            var act = () => _limiter.EnsureCanSend(" SomeOne@Example.test ");
+            var act = () => _limiter.EnsureCanSend(SecurityConstants.OtpPurposeRegister, " SomeOne@Example.test ");
 
             // Assert
             act.Should().Throw<TooManyRequestsException>().WithMessage(ErrorConstants.AuthMessage.OtpTooManyRequests);
@@ -49,11 +49,11 @@ namespace OZE.UnitTest.Services
             // Arrange
             for (var i = 0; i < SecurityConstants.OtpSendsPerWindow; i++)
             {
-                _limiter.EnsureCanSend("0399000977");
+                _limiter.EnsureCanSend(SecurityConstants.OtpPurposeRegister, "0399000977");
             }
 
             // Act
-            var act = () => _limiter.EnsureCanSend("0399000978");
+            var act = () => _limiter.EnsureCanSend(SecurityConstants.OtpPurposeRegister, "0399000978");
 
             // Assert
             act.Should().NotThrow();

@@ -77,7 +77,9 @@ builder.Services.AddAuthentication(options =>
             var stamp = context.Principal?.FindFirstValue(SecurityConstants.SecurityStampClaim);
             var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
             var user = string.IsNullOrEmpty(userId) ? null : await userManager.FindByIdAsync(userId);
-            if (user == null || stamp == null || stamp != user.SecurityStamp || user.LockoutEnd == DateTimeOffset.MaxValue)
+            var tokenId = context.Principal?.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti);
+            var revoked = tokenId != null && context.HttpContext.RequestServices.GetRequiredService<OZE.Application.Interfaces.IAccessTokenRevocationStore>().IsRevoked(tokenId);
+            if (user == null || stamp == null || stamp != user.SecurityStamp || user.LockoutEnd == DateTimeOffset.MaxValue || revoked)
             {
                 context.Fail("The session has ended");
             }
@@ -172,6 +174,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Behind a reverse proxy on this machine, the address of the caller comes from X-Forwarded-For (used by the rate limiter)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
 app.UseCors("AllowAll");
 

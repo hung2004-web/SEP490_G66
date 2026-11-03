@@ -1,4 +1,5 @@
-﻿using OZE.Application.Interfaces;
+﻿using OZE.Application.Helpers;
+using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
@@ -33,7 +34,7 @@ namespace OZE.Application.Services
             var shiftEnd = request.ShiftEnd!.Value;
 
             ConditionGuard.Ensure(shiftStart < shiftEnd, ErrorConstants.WorkShiftMessage.InvalidTimeRange);
-            ConditionGuard.Ensure(scheduleDate >= DateOnly.FromDateTime(DateTime.Today), ErrorConstants.WorkShiftMessage.PastDate);
+            ConditionGuard.Ensure(scheduleDate >= DateOnly.FromDateTime(ClinicClock.Today), ErrorConstants.WorkShiftMessage.PastDate);
 
             var staff = await _staffRepository.GetByUserIdAsync(request.StaffUserId);
             ConditionGuard.Ensure<NotFoundException>(staff != null, ErrorConstants.WorkShiftMessage.StaffNotFound);
@@ -99,7 +100,7 @@ namespace OZE.Application.Services
 
         public async Task<List<WorkShipResponse>> GetWorkShiftsAsync(WorkShiftQueryRequest query)
         {
-            var fromDate = query.FromDate ?? GetStartOfWeek(DateOnly.FromDateTime(DateTime.Today));
+            var fromDate = query.FromDate ?? GetStartOfWeek(DateOnly.FromDateTime(ClinicClock.Today));
             var toDate = query.ToDate ?? fromDate.AddDays(WorkShiftConstants.DaysInWeek - 1);
 
             ConditionGuard.Ensure(fromDate <= toDate, ErrorConstants.WorkShiftMessage.InvalidDateRange);
@@ -122,7 +123,7 @@ namespace OZE.Application.Services
 
             // Only future shifts can be deleted; a started or past shift keeps attendance history
             var shiftStartAt = shift!.ScheduleDate.ToDateTime(shift.ShiftStart);
-            ConditionGuard.Ensure(shiftStartAt > DateTime.Now, ErrorConstants.WorkShiftMessage.ShiftAlreadyStarted);
+            ConditionGuard.Ensure(shiftStartAt > ClinicClock.Now, ErrorConstants.WorkShiftMessage.ShiftAlreadyStarted);
 
             var hasAppointments = await _workShipRepository.HasBookedAppointmentsAsync(
                 shift.StaffProfileId, shift.ScheduleDate, shift.ShiftStart, shift.ShiftEnd);
@@ -146,7 +147,7 @@ namespace OZE.Application.Services
 
             // Only future shifts can be edited; a started or past shift keeps its original schedule
             var currentShiftStartAt = shift!.ScheduleDate.ToDateTime(shift.ShiftStart);
-            ConditionGuard.Ensure(currentShiftStartAt > DateTime.Now, ErrorConstants.WorkShiftMessage.CannotUpdateStartedShift);
+            ConditionGuard.Ensure(currentShiftStartAt > ClinicClock.Now, ErrorConstants.WorkShiftMessage.CannotUpdateStartedShift);
 
             // [Required] has already rejected missing values, so .Value is safe here
             var scheduleDate = request.ScheduleDate!.Value;
@@ -154,7 +155,7 @@ namespace OZE.Application.Services
             var shiftEnd = request.ShiftEnd!.Value;
 
             ConditionGuard.Ensure(shiftStart < shiftEnd, ErrorConstants.WorkShiftMessage.InvalidTimeRange);
-            ConditionGuard.Ensure(scheduleDate >= DateOnly.FromDateTime(DateTime.Today), ErrorConstants.WorkShiftMessage.PastDate);
+            ConditionGuard.Ensure(scheduleDate >= DateOnly.FromDateTime(ClinicClock.Today), ErrorConstants.WorkShiftMessage.PastDate);
 
             var staff = await _staffRepository.GetByUserIdAsync(request.StaffUserId);
             ConditionGuard.Ensure<NotFoundException>(staff != null, ErrorConstants.WorkShiftMessage.StaffNotFound);

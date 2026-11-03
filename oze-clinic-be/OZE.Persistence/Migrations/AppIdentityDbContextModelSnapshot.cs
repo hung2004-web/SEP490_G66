@@ -1445,6 +1445,7 @@ namespace OZE.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExaminationId")
+                        .IsUnique()
                         .HasDatabaseName("IX_Prescriptions_ExaminationId");
 
                     b.HasIndex("PatientId", "CreatedAt")

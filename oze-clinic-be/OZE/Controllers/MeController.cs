@@ -55,6 +55,20 @@ namespace OZE.ProjectBase.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        [HttpPost("resend-confirmation-email")]
+        public async Task<ActionResult<ApiResponse>> ResendConfirmationEmailAsync()
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(ApiResponse.FailureResult("User not identified"));
+            }
+
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var result = await _userService.ResendEmailConfirmationAsync(userId, baseUrl);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost("verify-phone-otp")]
         [Authorize(Roles = RoleConstants.PatientRole)]
         [ApiResponseValidationFilter]

@@ -224,7 +224,7 @@ namespace OZE.Application.Services
             }
 
             // A patient with appointments still to come keeps the record; they are cancelled or completed first
-            if (await _patientRepository.HasUnfinishedAppointmentsAsync(id, DateOnly.FromDateTime(DateTime.Today), cancellationToken))
+            if (await _patientRepository.HasUnfinishedAppointmentsAsync(id, DateOnly.FromDateTime(ClinicClock.Today), cancellationToken))
             {
                 return ApiResponse<bool>.FailureResult(ErrorConstants.PatientMessage.HasOpenAppointments);
             }

@@ -15,5 +15,6 @@ namespace OZE.Application.Interfaces
         Task<ApiResponse<UpdateProfileResponse>> UpdateProfileAsync(string userId, UpdateProfileRequest request, string baseUrl);
         Task<ApiResponse<UserProfileResponse>> VerifyPhoneOtpAsync(string userId, VerifyOtpRequest request, string baseUrl);
         Task<ApiResponse<RegisterPendingResponse>> ResendPhoneOtpAsync(string userId, ResendOtpRequest request);
+        Task<ApiResponse> ResendEmailConfirmationAsync(string userId, string baseUrl);
     }
 }
