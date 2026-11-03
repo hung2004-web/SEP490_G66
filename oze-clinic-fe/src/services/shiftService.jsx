@@ -4,7 +4,6 @@ import { MOCK_ROOMS, ROOM_STATUSES, ROOM_TYPES } from "../utils/data/mockRooms";
 import {
     MOCK_ABSENCES,
     MOCK_LEAVES,
-    MOCK_SHIFT_TASKS,
     MOCK_SHIFT_TEMPLATE,
     MOCK_UNASSIGNED,
     SHIFT_SLOT_OPTIONS,
@@ -95,15 +94,11 @@ const shiftTime = (time, minutes) => {
 const thisMonday = startOfWeek(new Date());
 const mockDate = ({ week, weekday }) => toDateOnly(addDays(thisMonday, week * 7 + weekday));
 
-const leaves = MOCK_LEAVES.map((leave) => ({
-    ...leave,
-    date: mockDate(leave),
-    approvedAt: toDateOnly(addDays(parseDay(mockDate(leave)), -leave.approvedDaysBefore)),
-}));
+const leaves = MOCK_LEAVES.map((leave) => ({ ...leave, date: mockDate(leave) }));
 const unassignedKeys = new Set(MOCK_UNASSIGNED.map((item) => keyOf(mockDate(item), item.slot, item.roomId)));
 const absences = new Map(MOCK_ABSENCES.map((item) => [keyOf(mockDate(item), item.slot, item.roomId), item.reason]));
 
-// Shifts by keyOf(...): { staffId (null = nobody), task, note }. Weeks are filled from the template the first time they are read.
+// Staff id on each shift by keyOf(...); null = nobody. Weeks are filled from the template the first time they are read.
 const assignments = new Map();
 const seededWeeks = new Set();
 
@@ -120,7 +115,7 @@ const seedWeek = (monday) => {
                 const key = keyOf(date, slot.value, room.id);
                 if (assignments.has(key)) continue;
                 const staffId = unassignedKeys.has(key) ? null : (MOCK_SHIFT_TEMPLATE[room.id]?.[slot.value] ?? null);
-                assignments.set(key, { staffId, task: staffId ? (MOCK_SHIFT_TASKS[room.id] ?? "") : "", note: "" });
+                assignments.set(key, staffId);
             }
         }
     }
@@ -128,7 +123,7 @@ const seedWeek = (monday) => {
 
 const assignmentOf = (date, slot, roomId) => {
     seedWeek(startOfWeek(parseDay(date)));
-    return assignments.get(keyOf(date, slot, roomId)) ?? { staffId: null, task: "", note: "" };
+    return assignments.get(keyOf(date, slot, roomId)) ?? null;
 };
 
 const staffById = (id) => MOCK_STAFF.find((member) => member.id === id);
@@ -151,7 +146,7 @@ const leaveOf = (staffId, date, slot) =>
 
 // Room the staff member already works in at that time, other than roomId.
 const otherRoomOf = (staffId, date, slot, roomId) =>
-    activeRooms().find((room) => room.id !== roomId && assignmentOf(date, slot, room.id).staffId === staffId);
+    activeRooms().find((room) => room.id !== roomId && assignmentOf(date, slot, room.id) === staffId);
 
 const nowMinutes = () => {
     const now = new Date();
@@ -176,9 +171,9 @@ const toRoom = (room) => ({ id: room.id, name: room.name, type: room.type, floor
 
 const buildCell = (date, slotValue, room) => {
     const key = keyOf(date, slotValue, room.id);
-    const { staffId, task, note } = assignmentOf(date, slotValue, room.id);
+    const staffId = assignmentOf(date, slotValue, room.id);
     const slot = slotOf(slotValue);
-    const cell = { key, date, slot: slotValue, slotLabel: slot.label, start: slot.start, end: slot.end, room: toRoom(room), task, note };
+    const cell = { key, date, slot: slotValue, slotLabel: slot.label, start: slot.start, end: slot.end, room: toRoom(room) };
     const member = staffId ? staffById(staffId) : null;
     if (!member) return { ...cell, staff: null, status: SHIFT_STATUSES.UNASSIGNED };
 
@@ -189,7 +184,7 @@ const buildCell = (date, slotValue, room) => {
             ...cell,
             staff,
             status: SHIFT_STATUSES.LEAVE,
-            leave: { requestId: leave.requestId, approvedAt: leave.approvedAt, wholeDay: leave.slot === null, reason: leave.reason },
+            leave: { requestId: leave.requestId, status: leave.status, wholeDay: leave.slot === null },
         };
     }
 
@@ -285,8 +280,8 @@ export const roomsForRole = (role) =>
 
 const isFuture = (date, slot) => timingOf(date, slot) === "future";
 
-// Puts staffId on a shift (or changes it). request: { date, slot, roomId, staffId, task, note }.
-export const saveShift = async ({ date, slot, roomId, staffId, task = "", note = "" }) => {
+// Puts staffId on a shift (or changes who is on it).
+export const saveShift = async ({ date, slot, roomId, staffId }) => {
     await wait(MOCK_DELAY_MS);
 
     if (!isFuture(date, slot)) return failure({ form: "Ca này đã bắt đầu, không thể thay đổi." });
@@ -295,15 +290,15 @@ export const saveShift = async ({ date, slot, roomId, staffId, task = "", note =
     if (otherRoom) return failure({ staffId: `Nhân viên này đã có ca ở ${otherRoom.name}.` });
 
     const current = assignmentOf(date, slot, roomId);
-    assignments.set(keyOf(date, slot, roomId), { staffId, task: task.trim(), note: note.trim() });
-    return success(buildCell(date, slot, roomById(roomId)), current.staffId ? "Cập nhật phân ca thành công!" : "Phân ca thành công!");
+    assignments.set(keyOf(date, slot, roomId), staffId);
+    return success(buildCell(date, slot, roomById(roomId)), current ? "Cập nhật phân ca thành công!" : "Phân ca thành công!");
 };
 
 export const deleteShift = async ({ date, slot, roomId }) => {
     await wait(MOCK_DELAY_MS);
 
     if (!isFuture(date, slot)) return failure({ form: "Ca này đã bắt đầu, không thể xoá." });
-    assignments.set(keyOf(date, slot, roomId), { staffId: null, task: "", note: "" });
+    assignments.set(keyOf(date, slot, roomId), null);
     return success(null, "Đã xoá ca.");
 };
 
@@ -321,9 +316,9 @@ export const copyPreviousWeek = async ({ weekStart }) => {
             for (const room of activeRooms()) {
                 const current = assignmentOf(date, slot.value, room.id);
                 const previous = assignmentOf(previousDate, slot.value, room.id);
-                if (current.staffId || !previous.staffId) continue;
-                if (leaveOf(previous.staffId, date, slot.value) || otherRoomOf(previous.staffId, date, slot.value, room.id)) continue;
-                assignments.set(keyOf(date, slot.value, room.id), { ...previous });
+                if (current || !previous) continue;
+                if (leaveOf(previous, date, slot.value) || otherRoomOf(previous, date, slot.value, room.id)) continue;
+                assignments.set(keyOf(date, slot.value, room.id), previous);
                 copied++;
             }
         }
@@ -332,9 +327,10 @@ export const copyPreviousWeek = async ({ weekStart }) => {
 };
 
 // Monthly schedule for one person. pattern[weekday][slot] = roomId or "" (not working), weekday 0 = Monday.
+// Days the person is on approved leave and shifts someone else already has are skipped.
 // Returns what would be created: { created, skippedLeave: [date], conflicts: [{ date, slot, reason }] }.
 // dryRun = true only counts, without saving.
-export const createMonthlyShifts = async ({ staffId, from, to, pattern, skipLeave, overwrite, dryRun = false }) => {
+export const createMonthlyShifts = async ({ staffId, from, to, pattern, dryRun = false }) => {
     await wait(dryRun ? 150 : MOCK_DELAY_MS);
 
     const member = staffById(staffId);
@@ -347,7 +343,7 @@ export const createMonthlyShifts = async ({ staffId, from, to, pattern, skipLeav
         for (const slot of SHIFT_SLOT_OPTIONS) {
             const roomId = Number(pattern[weekdayOf(date)]?.[slot.value]) || null;
             if (!roomId || !isFuture(date, slot.value)) continue;
-            if (skipLeave && leaveOf(staffId, date, slot.value)) {
+            if (leaveOf(staffId, date, slot.value)) {
                 result.skippedLeave.push(date);
                 continue;
             }
@@ -357,12 +353,12 @@ export const createMonthlyShifts = async ({ staffId, from, to, pattern, skipLeav
                 result.conflicts.push({ date, slot: slot.value, reason: `đã có ca ở ${otherRoom.name}` });
                 continue;
             }
-            if (current.staffId && current.staffId !== staffId && !overwrite) {
-                const taken = displayName(staffById(current.staffId).fullName);
+            if (current && current !== staffId) {
+                const taken = displayName(staffById(current).fullName);
                 result.conflicts.push({ date, slot: slot.value, reason: `${roomById(roomId).name} đã có ${taken}` });
                 continue;
             }
-            if (!dryRun) assignments.set(keyOf(date, slot.value, roomId), { staffId, task: MOCK_SHIFT_TASKS[roomId] ?? "", note: "" });
+            if (!dryRun) assignments.set(keyOf(date, slot.value, roomId), staffId);
             result.created++;
         }
     }

@@ -37,21 +37,21 @@ export const MOCK_SHIFT_TEMPLATE = {
     6: { [SHIFT_SLOTS.MORNING]: 24, [SHIFT_SLOTS.AFTERNOON]: 36 },
 };
 
-// Default "Nhiệm vụ" of a shift per room.
-export const MOCK_SHIFT_TASKS = {
-    1: "Khám tổng quát & vãng lai",
-    2: "Nhổ răng khôn theo lịch hẹn",
-    3: "Niềng răng, lấy dấu",
-    4: "Chụp X-quang theo chỉ định",
-    6: "Đón tiếp, thu ngân",
+export const LEAVE_REQUEST_STATUSES = {
+    APPROVED: "approved",
+};
+
+// For the badge in "Chi tiết ca". Only approved requests take a person off a shift.
+export const LEAVE_REQUEST_STATUS_LABELS = {
+    [LEAVE_REQUEST_STATUSES.APPROVED]: { label: "Đã duyệt", badge: "badge-success" },
 };
 
 // The entries below are placed relative to today: week 0 = this week, 1 = next week; weekday 0 = Monday ... 6 = Sunday.
 
-// Approved leave. slot null = the whole day.
+// Leave requests that take a person off their shifts. slot null = the whole day.
 export const MOCK_LEAVES = [
-    { requestId: 1, staffId: 12, week: 0, weekday: 4, slot: null, approvedDaysBefore: 7, reason: "Việc gia đình" },
-    { requestId: 2, staffId: 12, week: 1, weekday: 4, slot: null, approvedDaysBefore: 5, reason: "Việc gia đình" },
+    { requestId: 1, staffId: 12, week: 0, weekday: 4, slot: null, status: LEAVE_REQUEST_STATUSES.APPROVED },
+    { requestId: 2, staffId: 12, week: 1, weekday: 4, slot: null, status: LEAVE_REQUEST_STATUSES.APPROVED },
 ];
 
 // Shifts nobody was put on.

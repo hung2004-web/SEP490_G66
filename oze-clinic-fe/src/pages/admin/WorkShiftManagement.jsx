@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import MonthlyShiftPopup from "@/components/popup/shift/MonthlyShiftPopup";
 import ShiftAssignPopup from "@/components/popup/shift/ShiftAssignPopup";
@@ -14,7 +13,6 @@ import { SHIFT_ROLE_OPTIONS, copyPreviousWeek, getWeekShifts, roomTypeRole } fro
 import { MOCK_ROOMS, ROOM_STATUSES } from "@/utils/data/mockRooms";
 import { SHIFT_STATUSES, SHIFT_STATUS_OPTIONS } from "@/utils/data/mockShifts";
 import { getWeekStart, toDateOnly } from "@/utils/format";
-import { ROUTES } from "@/utils/routes";
 
 const WEEK_NAMES = { 0: "Tuần này", 1: "Tuần sau" };
 
@@ -39,7 +37,6 @@ const pendingWorkText = (week) => {
 };
 
 const WorkShiftManagement = () => {
-    const navigate = useNavigate();
     const [weekStart, setWeekStart] = useState(() => getWeekStart());
     const [roomId, setRoomId] = useState("");
     const [role, setRole] = useState("");
@@ -81,9 +78,6 @@ const WorkShiftManagement = () => {
         setReloadKey((current) => current + 1);
     };
 
-    // TODO: open the request itself once the "Đơn xin nghỉ" page exists.
-    const viewLeave = () => navigate(ROUTES.ADMIN_LEAVE_REQUESTS);
-
     const today = toDateOnly(new Date());
     const pendingWork = week?.editable ? pendingWorkText(week) : null;
 
@@ -121,7 +115,7 @@ const WorkShiftManagement = () => {
 
             {loading || !week ? <div className="skeleton h-160 w-full" aria-hidden="true" /> : <ShiftWeekGrid week={week} isVisible={isVisible} onSelect={openCell} />}
 
-            {dialog?.type === DIALOGS.DETAIL && <ShiftDetailPopup cell={dialog.cell} onClose={() => setDialog(null)} onViewLeave={viewLeave} />}
+            {dialog?.type === DIALOGS.DETAIL && <ShiftDetailPopup cell={dialog.cell} onClose={() => setDialog(null)} />}
             {dialog?.type === DIALOGS.UNASSIGNED && (
                 <UnassignedShiftPopup
                     cell={dialog.cell}

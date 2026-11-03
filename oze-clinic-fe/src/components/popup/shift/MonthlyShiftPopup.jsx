@@ -70,8 +70,6 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
     const [month, setMonth] = useState(months[1].value);
     const [range, setRange] = useState(() => monthRange(months[1].value));
     const [pattern, setPattern] = useState(emptyPattern);
-    const [skipLeave, setSkipLeave] = useState(true);
-    const [overwrite, setOverwrite] = useState(false);
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
 
@@ -80,7 +78,7 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
     const staff = staffList.find((member) => member.id === Number(staffId));
     const rooms = staff ? roomsForRole(staff.role) : [];
 
-    const request = { staffId: Number(staffId), from: range.from, to: range.to, pattern, skipLeave, overwrite };
+    const request = { staffId: Number(staffId), from: range.from, to: range.to, pattern };
     const previewKey = JSON.stringify(request);
     const preview = useAsync(
         () => (staff ? createMonthlyShifts({ ...request, dryRun: true }).then((result) => ({ key: previewKey, result })) : Promise.resolve(null)),
@@ -242,17 +240,6 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <label className="flex cursor-pointer items-center gap-2 text-body">
-                        <input type="checkbox" className="size-4 accent-primary" checked={skipLeave} onChange={(event) => setSkipLeave(event.target.checked)} />
-                        Bỏ qua ngày nhân viên đã có đơn nghỉ được duyệt
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2 text-body">
-                        <input type="checkbox" className="size-4 accent-primary" checked={overwrite} onChange={(event) => setOverwrite(event.target.checked)} />
-                        Ghi đè ca đã phân trước đó
-                    </label>
-                </div>
-
                 {staff && previewResult && (
                     <div className="rounded-md bg-info-soft px-4 py-3" role="status">
                         <p className="num font-semibold text-primary">
@@ -267,7 +254,7 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
                         Huỷ
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={saving || (staff && count === 0)}>
-                        {saving ? "Đang tạo…" : `Tạo ${count} ca`}
+                        {saving ? "Đang phân ca…" : "Phân ca"}
                     </button>
                 </div>
             </form>
