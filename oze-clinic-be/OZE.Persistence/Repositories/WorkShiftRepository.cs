@@ -71,6 +71,16 @@ namespace OZE.Persistence.Repositories
                 && x.ActualEndTime == null);
         }
 
+        public async Task<bool> HasRoomOverlapAsync(int roomId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd, long? excludeShiftId = null)
+        {
+            return await context.StaffSchedules.AnyAsync(x =>
+                x.RoomId == roomId
+                && x.ScheduleDate == scheduleDate
+                && x.Id != excludeShiftId
+                && x.ShiftStart < shiftEnd
+                && shiftStart < x.ShiftEnd);
+        }
+
         public async Task<bool> HasOverlapAsync(int staffProfileId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd, long? excludeShiftId = null)
         {
             return await context.StaffSchedules.AnyAsync(x =>

@@ -58,10 +58,10 @@ namespace OZE.Controllers
             var result = await _queueService.CallNextAsync(queueType, roomId, LimitedDoctorUserId, cancellationToken);
             if (result == null)
             {
-                return Ok(ApiResponse<QueueEntryResponse?>.SuccessResult(null, "Không có bệnh nhân đang chờ trong hàng đợi."));
+                return Ok(ApiResponse<QueueEntryResponse?>.SuccessResult(null, "No patient is waiting in the queue."));
             }
 
-            return Ok(ApiResponse<QueueEntryResponse>.SuccessResult(result, $"Gọi số {result.QueueNumber} thành công."));
+            return Ok(ApiResponse<QueueEntryResponse>.SuccessResult(result, $"Number {result.QueueNumber} called successfully."));
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _queueService.CallAsync(id, roomId, LimitedDoctorUserId, cancellationToken);
-            return Ok(ApiResponse<QueueEntryResponse>.SuccessResult(result, $"Gọi số {result.QueueNumber} thành công."));
+            return Ok(ApiResponse<QueueEntryResponse>.SuccessResult(result, $"Number {result.QueueNumber} called successfully."));
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace OZE.Controllers
         public async Task<ActionResult<ApiResponse<QueueEntryResponse>>> SkipAsync(long id, CancellationToken cancellationToken)
         {
             var result = await _queueService.SkipAsync(id, LimitedDoctorUserId, cancellationToken);
-            return Ok(ApiResponse<QueueEntryResponse>.SuccessResult(result, $"Số {result.QueueNumber} vắng mặt, đã lùi xuống."));
+            return Ok(ApiResponse<QueueEntryResponse>.SuccessResult(result, $"Number {result.QueueNumber} was not there and has moved back in the queue."));
         }
 
         // Reception and managers work for the whole clinic; a doctor on their own is limited to their own patients

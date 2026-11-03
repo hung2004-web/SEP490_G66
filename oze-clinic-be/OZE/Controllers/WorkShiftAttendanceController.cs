@@ -30,7 +30,7 @@ namespace OZE.Controllers
         {
             var result = await _doctorScheduleService.ReopenShiftAsync(id);
             return Ok(ApiResponse<ReopenShiftResponse>.SuccessResult(result,
-                $"Đã mở lại ca, khôi phục {result.RestoredAppointmentIds.Count} bệnh nhân"));
+                $"Shift reopened, {result.RestoredAppointmentIds.Count} patient(s) restored"));
         }
     }
 }

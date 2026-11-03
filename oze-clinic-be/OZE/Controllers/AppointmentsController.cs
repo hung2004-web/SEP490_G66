@@ -74,7 +74,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var appointment = await _appointmentService.CreateWalkInAsync(request, CurrentUserId, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment, "Đã đăng ký khám và đưa vào hàng chờ"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment, "Walk-in registered and added to the queue"));
         }
 
         /// <summary>
@@ -90,6 +90,20 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// A checked-in patient who left without being seen: marked NO_SHOW and taken out of the queue.
+        /// </summary>
+        [HttpPost("{id:long}/no-show")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> MarkNoShowAsync(
+            [FromRoute] long id,
+            [FromBody] MarkNoShowRequest? request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.MarkNoShowAsync(id, request, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Patient marked as NO_SHOW"));
+        }
+
+        /// <summary>
         /// Moves a waiting patient to another doctor who has a shift today. The patient goes to the room of that shift.
         /// </summary>
         [HttpPost("{id:long}/reassign-doctor")]
@@ -100,7 +114,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.ReassignDoctorAsync(id, request, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Đã chuyển bệnh nhân sang bác sĩ khác"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Patient moved to another doctor"));
         }
 
         /// <summary>
@@ -169,7 +183,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.CancelAppointmentAsync(id, request, CurrentUserId, OwnerRestriction, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Hủy lịch hẹn thành công"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Appointment cancelled successfully"));
         }
 
         /// <summary>
@@ -183,7 +197,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.RescheduleAppointmentAsync(id, request, OwnerRestriction, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Đổi lịch hẹn thành công"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Appointment rescheduled successfully"));
         }
 
         /// <summary>
@@ -196,7 +210,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.ConfirmAppointmentAsync(id, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Xác nhận lịch hẹn thành công"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Appointment confirmed successfully"));
         }
 
         /// <summary>
@@ -210,7 +224,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.CheckInAppointmentAsync(id, request, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Tiếp đón bệnh nhân thành công"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Patient checked in successfully"));
         }
 
         /// <summary>
@@ -224,7 +238,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.SetPriorityAsync(id, request, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Cập nhật mức ưu tiên thành công"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Priority updated successfully"));
         }
 
         /// <summary>
@@ -238,7 +252,7 @@ namespace OZE.Controllers
         {
             // The empty fallback matches no doctor, so a missing user id never starts someone else's visit
             var result = await _appointmentService.StartExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
-            return Ok(ApiResponse<StartExaminationResponse>.SuccessResult(result, "Bắt đầu khám thành công"));
+            return Ok(ApiResponse<StartExaminationResponse>.SuccessResult(result, "Examination started successfully"));
         }
 
         /// <summary>
@@ -251,7 +265,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.CompleteExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Hoàn tất khám thành công"));
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Examination completed successfully"));
         }
     }
 }

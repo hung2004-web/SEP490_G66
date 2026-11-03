@@ -50,6 +50,13 @@ namespace OZE.Application.Services
             var hasOverlap = await _workShipRepository.HasOverlapAsync(staff.Id, scheduleDate, shiftStart, shiftEnd);
             ConditionGuard.ThrowIf(hasOverlap, ErrorConstants.WorkShiftMessage.ShiftOverlap);
 
+            // One room is used by one person at a time
+            if (request.RoomId.HasValue)
+            {
+                var roomTaken = await _workShipRepository.HasRoomOverlapAsync(request.RoomId.Value, scheduleDate, shiftStart, shiftEnd);
+                ConditionGuard.ThrowIf(roomTaken, ErrorConstants.WorkShiftMessage.RoomOverlap);
+            }
+
             var schedule = new StaffSchedule
             {
                 StaffProfileId = staff.Id,
@@ -177,6 +184,13 @@ namespace OZE.Application.Services
             // Exclude the current shift so it does not overlap with itself
             var hasOverlap = await _workShipRepository.HasOverlapAsync(staff.Id, scheduleDate, shiftStart, shiftEnd, id);
             ConditionGuard.ThrowIf(hasOverlap, ErrorConstants.WorkShiftMessage.ShiftOverlap);
+
+            // One room is used by one person at a time (the shift itself is left out)
+            if (request.RoomId.HasValue)
+            {
+                var roomTaken = await _workShipRepository.HasRoomOverlapAsync(request.RoomId.Value, scheduleDate, shiftStart, shiftEnd, id);
+                ConditionGuard.ThrowIf(roomTaken, ErrorConstants.WorkShiftMessage.RoomOverlap);
+            }
 
             shift.StaffProfileId = staff.Id;
             shift.RoomId = request.RoomId;
