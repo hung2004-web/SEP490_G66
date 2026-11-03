@@ -499,6 +499,19 @@ namespace OZE.Application.Services
                 return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.UserNotFound);
             }
 
+            // BR-101 / BR-102: do not rotate tokens while the account is locked or disabled.
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow)
+            {
+                if (IsPermanentlyDisabled(user))
+                    return ApiResponse<AuthResult>.FailureWithCode(
+                        ErrorConstants.AuthMessage.AccountDisabled, ErrorConstants.AuthCode.AccountDisabled);
+
+                return ApiResponse<AuthResult>.FailureWithCode(
+                    ErrorConstants.AuthMessage.AccountLocked,
+                    ErrorConstants.AuthCode.LockedOut,
+                    user.LockoutEnd);
+            }
+
             // Revoke old refresh token
             activeToken.RevokedAt = DateTimeOffset.UtcNow;
             await _refreshTokenRepository.UpdateAsync(activeToken);
