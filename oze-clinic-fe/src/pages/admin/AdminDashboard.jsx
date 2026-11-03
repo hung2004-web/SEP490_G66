@@ -2,13 +2,14 @@ import { useState } from "react";
 import { CalendarCheck, Inbox, Stethoscope, UserPlus, Wallet } from "lucide-react";
 import BarChart from "@/components/chart/BarChart";
 import DonutChart from "@/components/chart/DonutChart";
+import ExportReportPopup from "@/components/popup/report/ExportReportPopup";
 import MetricCard from "@/components/ui/MetricCard";
 import PeriodNavigator from "@/components/ui/PeriodNavigator";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import useAsync from "@/hooks/useAsync";
-import { REPORT_PERIODS, getPendingRequests, getReport } from "@/services/adminReportService";
+import { REPORT_PERIODS, getPendingRequests, getReport, getReportOffset } from "@/services/adminReportService";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
-import { formatCurrency, formatDate, parseDateOnly, toDateOnly } from "@/utils/format";
+import { formatCurrency, formatDate, toDateOnly } from "@/utils/format";
 
 const PERIOD_OPTIONS = [
     { value: REPORT_PERIODS.DAY, label: "Ngày" },
@@ -31,7 +32,6 @@ const REQUEST_TYPE_BADGES = {
 };
 
 const MILLION = 1_000_000;
-const DAY_MS = 86_400_000;
 const SKELETON_ROW_COUNT = 3;
 
 // Revenue figures come in million VND: 24.1 -> "24,1".
@@ -44,14 +44,6 @@ const pad = (value) => String(value).padStart(2, "0");
 const formatSubmittedAt = (value) => {
     const date = new Date(value);
     return `${pad(date.getHours())}:${pad(date.getMinutes())}, ${formatDate(toDateOnly(date))}`;
-};
-
-// Offset from the current period that opens the given day (period DAY) or its month (period MONTH).
-const offsetTo = (period, dateOnly) => {
-    const date = parseDateOnly(dateOnly);
-    const today = parseDateOnly(toDateOnly(new Date()));
-    if (period === REPORT_PERIODS.MONTH) return (date.getFullYear() - today.getFullYear()) * 12 + date.getMonth() - today.getMonth();
-    return Math.round((date - today) / DAY_MS);
 };
 
 // "Thực thu theo ngày · tháng 10/2026 (triệu ₫)"; a day or week label starts with a weekday / date, so it keeps its case.
@@ -71,30 +63,6 @@ const toneOf = (change) => {
 // Comparison line of a metric, e.g. "+12% so với tuần trước"; nothing to compare = no line.
 const changeCaption = (change, report, unit = "") =>
     change === null ? undefined : `${signed(change)}${unit} ${report.comparison.caption}`;
-
-// Downloads the report shown on screen as a CSV file (opens in Excel; the BOM keeps Vietnamese letters).
-const exportReport = (report) => {
-    const rows = [
-        ["Báo cáo", report.label],
-        [],
-        ["Doanh thu (₫)", report.revenue.value * MILLION],
-        ["Lượt khám", report.visits.value],
-        ["Bệnh nhân mới", report.newPatients.value],
-        [],
-        ["Doanh thu theo thời gian (triệu ₫)", report.comparison.current, report.comparison.previous],
-        ...report.revenueBars.map((bar) => [[bar.label, bar.sublabel].filter(Boolean).join(" "), bar.value ?? "", bar.previous ?? ""]),
-        [],
-        ["Doanh thu theo dịch vụ", "Triệu ₫"],
-        ...report.revenueByService.map((item) => [item.label, item.value]),
-    ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\r\n");
-    const url = URL.createObjectURL(new Blob(["﻿", csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `bao-cao-${report.period}-${report.from}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-};
 
 // Card with a bordered head row: title on the left, an optional note or action on the right.
 const ReportCard = ({ title, aside, children }) => (
@@ -158,6 +126,7 @@ const DebtCard = ({ debts, loading, onViewAll }) => (
 const AdminDashboard = () => {
     const [period, setPeriod] = useState(REPORT_PERIODS.WEEK);
     const [offset, setOffset] = useState(0);
+    const [exportOpen, setExportOpen] = useState(false);
 
     const { loading, value: reportResult } = useAsync(() => getReport({ period, offset }), [period, offset]);
     const { loading: requestsLoading, value: requestsResult } = useAsync(() => getPendingRequests(), []);
@@ -186,7 +155,7 @@ const AdminDashboard = () => {
         if (bar.value === null) return;
         const next = period === REPORT_PERIODS.YEAR ? REPORT_PERIODS.MONTH : REPORT_PERIODS.DAY;
         setPeriod(next);
-        setOffset(offsetTo(next, bar.date));
+        setOffset(getReportOffset(next, bar.date));
     };
 
     return (
@@ -208,7 +177,7 @@ const AdminDashboard = () => {
                         onNext={() => setOffset((current) => current + 1)}
                         nextDisabled={offset >= 0}
                     />
-                    <button type="button" className="btn btn-secondary" disabled={!report} onClick={() => exportReport(report)}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setExportOpen(true)}>
                         Xuất báo cáo
                     </button>
                 </div>
@@ -376,6 +345,8 @@ const AdminDashboard = () => {
                     </table>
                 </div>
             </section>
+
+            {exportOpen && <ExportReportPopup initialPeriod={period} onClose={() => setExportOpen(false)} />}
         </div>
     );
 };

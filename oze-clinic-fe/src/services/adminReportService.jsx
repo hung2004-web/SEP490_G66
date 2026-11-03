@@ -3,6 +3,7 @@ import { MOCK_APPOINTMENT_RATES, MOCK_DEBTS, MOCK_PENDING_REQUESTS, MOCK_REVENUE
 
 // TODO(api): mock only. The numbers are made up from the date, so the same day always gives the same figures.
 const MOCK_DELAY_MS = 300;
+const DAY_MS = 86_400_000;
 
 export const REPORT_PERIODS = {
     DAY: "day",
@@ -154,7 +155,16 @@ const countAppointments = (visits) => {
     return { total: visits + cancelled + noShow, completed: visits, cancelled, noShow };
 };
 
-const percentChange = (current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
+// Offset (for getReport) of the day / month / year that contains dateOnly ("2026-10-18").
+export const getReportOffset = (period, dateOnly) => {
+    const [year, month, day] = dateOnly.split("-").map(Number);
+    const today = startOfDay(new Date());
+    if (period === REPORT_PERIODS.YEAR) return year - today.getFullYear();
+    if (period === REPORT_PERIODS.MONTH) return (year - today.getFullYear()) * 12 + month - 1 - today.getMonth();
+    return Math.round((new Date(year, month - 1, day) - today) / DAY_MS);
+};
+
+const percentChange =(current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
 
 // Report of one period. offset: 0 = the current period, -1 = the one before, ...
 // Changes compare with the same number of days at the start of the previous period, so a week in progress is fair.
