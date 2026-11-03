@@ -246,7 +246,11 @@ namespace OZE.Common.Constants
             public const string ShiftNotStarted = "Start the shift before ending it";
             public const string ShiftAlreadyEnded = "This shift has already been ended";
             public const string ExaminationStillRunning = "Finish the examination in progress before ending the shift";
-            public const string NoShowReason = "The doctor ended the shift before the patient was examined";
+            public const string ShiftNotEnded = "This shift has not been ended";
+            public const string ShiftTimeOver = "The time of this shift is over, it cannot be reopened";
+            public const string RoomInUse = "The room is already used by another doctor's shift";
+            public const string ShiftReopenedReason = "The shift was reopened after it had been ended by mistake";
+            public const string NoShowReason ="The doctor ended the shift before the patient was examined";
         }
         public static class MedicalRecordMessage
         {
