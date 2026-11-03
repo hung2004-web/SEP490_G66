@@ -6,7 +6,7 @@ import useAsync from "@/hooks/useAsync";
 import { WEEKDAYS_SHORT, createMonthlyShifts, getShiftStaff, roomsForRole } from "@/services/shiftService";
 import { cx } from "@/utils/cx";
 import { SHIFT_SLOTS, SHIFT_SLOT_OPTIONS } from "@/utils/data/mockShifts";
-import { toDateOnly } from "@/utils/format";
+import { formatDayMonth, toDateOnly } from "@/utils/format";
 import { requiredMessage } from "@/utils/validation";
 
 const STAFF_ID = "monthly-shift-staff";
@@ -21,9 +21,6 @@ const MAX_LISTED = 3;
 const WEEKDAY_NAMES = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
 const pad = (value) => String(value).padStart(2, "0");
-
-// "2026-11-05" -> "05/11"
-const dayMonth = (dateOnly) => `${dateOnly.slice(8, 10)}/${dateOnly.slice(5, 7)}`;
 
 const emptyPattern = () => WEEKDAYS_SHORT.map(() => ({ [SHIFT_SLOTS.MORNING]: "", [SHIFT_SLOTS.AFTERNOON]: "" }));
 
@@ -45,7 +42,7 @@ const monthOptions = () => {
 };
 
 const listDates = (dates) => {
-    const unique = [...new Set(dates)].map(dayMonth);
+    const unique = [...new Set(dates)].map(formatDayMonth);
     return unique.length > MAX_LISTED ? `${unique.slice(0, MAX_LISTED).join(", ")}…` : unique.join(", ");
 };
 
@@ -56,7 +53,7 @@ const skippedText = ({ skippedLeave, conflicts }) => {
     if (conflicts.length > 0) {
         const listed = conflicts
             .slice(0, MAX_LISTED)
-            .map((item) => `${dayMonth(item.date)} ${item.slot === SHIFT_SLOTS.MORNING ? "sáng" : "chiều"} (${item.reason})`);
+            .map((item) => `${formatDayMonth(item.date)} ${item.slot === SHIFT_SLOTS.MORNING ? "sáng" : "chiều"} (${item.reason})`);
         parts.push(`${conflicts.length} ca ngày ${listed.join(", ")}${conflicts.length > MAX_LISTED ? "…" : ""}`);
     }
     return parts.length > 0 ? `Bỏ qua ${parts.join(" và ")}.` : null;
@@ -70,8 +67,6 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
     const [month, setMonth] = useState(months[1].value);
     const [range, setRange] = useState(() => monthRange(months[1].value));
     const [pattern, setPattern] = useState(emptyPattern);
-    const [skipLeave, setSkipLeave] = useState(true);
-    const [overwrite, setOverwrite] = useState(false);
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
 
@@ -80,7 +75,7 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
     const staff = staffList.find((member) => member.id === Number(staffId));
     const rooms = staff ? roomsForRole(staff.role) : [];
 
-    const request = { staffId: Number(staffId), from: range.from, to: range.to, pattern, skipLeave, overwrite };
+    const request = { staffId: Number(staffId), from: range.from, to: range.to, pattern };
     const previewKey = JSON.stringify(request);
     const preview = useAsync(
         () => (staff ? createMonthlyShifts({ ...request, dryRun: true }).then((result) => ({ key: previewKey, result })) : Promise.resolve(null)),
@@ -242,17 +237,6 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <label className="flex cursor-pointer items-center gap-2 text-body">
-                        <input type="checkbox" className="size-4 accent-primary" checked={skipLeave} onChange={(event) => setSkipLeave(event.target.checked)} />
-                        Bỏ qua ngày nhân viên đã có đơn nghỉ được duyệt
-                    </label>
-                    <label className="flex cursor-pointer items-center gap-2 text-body">
-                        <input type="checkbox" className="size-4 accent-primary" checked={overwrite} onChange={(event) => setOverwrite(event.target.checked)} />
-                        Ghi đè ca đã phân trước đó
-                    </label>
-                </div>
-
                 {staff && previewResult && (
                     <div className="rounded-md bg-info-soft px-4 py-3" role="status">
                         <p className="num font-semibold text-primary">
@@ -267,7 +251,7 @@ const MonthlyShiftPopup = ({ onClose, onSaved }) => {
                         Huỷ
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={saving || (staff && count === 0)}>
-                        {saving ? "Đang tạo…" : `Tạo ${count} ca`}
+                        {saving ? "Đang phân ca…" : "Phân ca"}
                     </button>
                 </div>
             </form>

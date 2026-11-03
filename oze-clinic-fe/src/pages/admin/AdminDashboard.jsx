@@ -6,10 +6,11 @@ import ExportReportPopup from "@/components/popup/report/ExportReportPopup";
 import MetricCard from "@/components/ui/MetricCard";
 import PeriodNavigator from "@/components/ui/PeriodNavigator";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import StatusBadge from "@/components/ui/StatusBadge";
 import useAsync from "@/hooks/useAsync";
 import { REPORT_PERIODS, getPendingRequests, getReport, getReportOffset } from "@/services/adminReportService";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
-import { formatCurrency, formatDate, toDateOnly } from "@/utils/format";
+import { formatCurrency, formatDateTime } from "@/utils/format";
 
 const PERIOD_OPTIONS = [
     { value: REPORT_PERIODS.DAY, label: "Ngày" },
@@ -37,14 +38,6 @@ const SKELETON_ROW_COUNT = 3;
 // Revenue figures come in million VND: 24.1 -> "24,1".
 const millionFormatter = new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const formatMillion = (value) => millionFormatter.format(value);
-
-const pad = (value) => String(value).padStart(2, "0");
-
-// "2026-10-28T09:10" -> "09:10, 28/10/2026"
-const formatSubmittedAt = (value) => {
-    const date = new Date(value);
-    return `${pad(date.getHours())}:${pad(date.getMinutes())}, ${formatDate(toDateOnly(date))}`;
-};
 
 // "Thực thu theo ngày · tháng 10/2026 (triệu ₫)"; a day or week label starts with a weekday / date, so it keeps its case.
 const chartTitle = (report) => {
@@ -133,7 +126,6 @@ const AdminDashboard = () => {
 
     const report = reportResult?.success ? reportResult.data : null;
     const requests = requestsResult?.success ? requestsResult.data : [];
-    const updatedAt = report && new Date(report.updatedAt);
 
     const changePeriod = (next) => {
         setPeriod(next);
@@ -164,9 +156,7 @@ const AdminDashboard = () => {
                 <div>
                     <h1 className="page-title">Báo cáo</h1>
                     <p className="num mt-1 text-caption text-muted">
-                        {updatedAt
-                            ? `Cập nhật lúc ${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}, ${formatDate(toDateOnly(updatedAt))}`
-                            : "Đang tải…"}
+                        {report ? `Cập nhật lúc ${formatDateTime(report.updatedAt)}` : "Đang tải…"}
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -317,18 +307,17 @@ const AdminDashboard = () => {
                             )}
                             {!requestsLoading &&
                                 requests.map((request) => {
-                                    const type = REQUEST_TYPE_BADGES[request.type];
                                     return (
                                         <tr key={request.id}>
                                             <td>
-                                                <span className={`badge whitespace-nowrap ${type.badge}`}>{type.label}</span>
+                                                <StatusBadge status={request.type} labels={REQUEST_TYPE_BADGES} />
                                             </td>
                                             <td className="min-w-44 py-2">
                                                 <p className="text-label text-ink">{request.senderName}</p>
                                                 <p className="text-caption text-muted">{request.senderDetail}</p>
                                             </td>
                                             <td className="min-w-56">{request.content}</td>
-                                            <td className="whitespace-nowrap text-muted">{formatSubmittedAt(request.submittedAt)}</td>
+                                            <td className="whitespace-nowrap text-muted">{formatDateTime(request.submittedAt)}</td>
                                             <td className="text-right">
                                                 <button
                                                     type="button"

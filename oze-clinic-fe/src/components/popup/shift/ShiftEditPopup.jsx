@@ -7,17 +7,13 @@ import { AVAILABILITY, deleteShift, getShiftCandidates, saveShift } from "@/serv
 import { ShiftPlaceTable } from "./ShiftInfoTable";
 
 const STAFF_ID = "shift-edit-staff";
-const TASK_ID = "shift-edit-task";
-const NOTE_ID = "shift-edit-note";
-const TASK_MAX = 200;
-const NOTE_MAX = 500;
 
 const UNAVAILABLE_NOTES = {
     [AVAILABILITY.BUSY]: "đã có ca khác",
     [AVAILABILITY.LEAVE]: "nghỉ phép",
 };
 
-// "Sửa phân ca" popup of an assigned shift that has not started: change the person, task or note, or delete the shift.
+// "Sửa phân ca" popup of an assigned shift that has not started: change the person or delete the shift.
 // onSaved(message) runs after a save or a delete.
 const ShiftEditPopup = ({ cell, onClose, onSaved }) => {
     const { loading, value: result } = useAsync(
@@ -25,8 +21,6 @@ const ShiftEditPopup = ({ cell, onClose, onSaved }) => {
         [cell.key],
     );
     const [staffId, setStaffId] = useState(cell.staff.id);
-    const [task, setTask] = useState(cell.task);
-    const [note, setNote] = useState(cell.note);
     const [error, setError] = useState(null);
     const [busy, setBusy] = useState(false);
 
@@ -45,7 +39,7 @@ const ShiftEditPopup = ({ cell, onClose, onSaved }) => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setBusy(true);
-        finish(await saveShift({ date: cell.date, slot: cell.slot, roomId: cell.room.id, staffId, task, note }));
+        finish(await saveShift({ date: cell.date, slot: cell.slot, roomId: cell.room.id, staffId }));
     };
 
     const handleDelete = async () => {
@@ -54,7 +48,7 @@ const ShiftEditPopup = ({ cell, onClose, onSaved }) => {
     };
 
     return (
-        <Modal title="Sửa phân ca" description="Đổi người, nhiệm vụ hoặc ghi chú của ca đã phân" onClose={onClose} closeDisabled={busy}>
+        <Modal title="Sửa phân ca" description="Đổi người phụ trách của ca đã phân" onClose={onClose} closeDisabled={busy}>
             <form noValidate onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
                 <ShiftPlaceTable cell={cell} />
 
@@ -79,14 +73,6 @@ const ShiftEditPopup = ({ cell, onClose, onSaved }) => {
                             </option>
                         ))}
                     </select>
-                </FormField>
-
-                <FormField id={TASK_ID} label="Nhiệm vụ trong ca">
-                    <input id={TASK_ID} className="input" maxLength={TASK_MAX} value={task} onChange={(event) => setTask(event.target.value)} />
-                </FormField>
-
-                <FormField id={NOTE_ID} label="Ghi chú">
-                    <textarea id={NOTE_ID} className="input" rows={3} maxLength={NOTE_MAX} value={note} onChange={(event) => setNote(event.target.value)} />
                 </FormField>
 
                 <div className="modal-actions -mx-6 mt-2 items-center border-t border-border px-6 pt-4">
