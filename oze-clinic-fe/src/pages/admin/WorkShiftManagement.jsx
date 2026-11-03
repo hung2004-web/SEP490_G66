@@ -8,16 +8,14 @@ import ShiftEditPopup from "@/components/popup/shift/ShiftEditPopup";
 import UnassignedShiftPopup from "@/components/popup/shift/UnassignedShiftPopup";
 import ShiftWeekGrid from "@/components/shift/ShiftWeekGrid";
 import FilterSelect from "@/components/ui/FilterSelect";
+import WeekPicker from "@/components/ui/WeekPicker";
 import useAsync from "@/hooks/useAsync";
-import { SHIFT_ROLE_OPTIONS, copyPreviousWeek, getWeekOptions, getWeekShifts, roomTypeRole } from "@/services/shiftService";
+import { SHIFT_ROLE_OPTIONS, copyPreviousWeek, getWeekShifts, roomTypeRole } from "@/services/shiftService";
 import { MOCK_ROOMS, ROOM_STATUSES } from "@/utils/data/mockRooms";
 import { SHIFT_STATUSES, SHIFT_STATUS_OPTIONS } from "@/utils/data/mockShifts";
-import { toDateOnly } from "@/utils/format";
+import { getWeekStart, toDateOnly } from "@/utils/format";
 import { ROUTES } from "@/utils/routes";
 
-// Weeks offered in the week picker, around this week.
-const WEEK_OFFSETS = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
-const WEEK_SUFFIXES = { [-1]: " (tuần trước)", 0: " (tuần này)", 1: " (tuần sau)" };
 const WEEK_NAMES = { 0: "Tuần này", 1: "Tuần sau" };
 
 const ROOM_OPTIONS = MOCK_ROOMS.filter((room) => room.status === ROOM_STATUSES.ACTIVE).map((room) => ({ value: String(room.id), label: room.name }));
@@ -42,16 +40,15 @@ const pendingWorkText = (week) => {
 
 const WorkShiftManagement = () => {
     const navigate = useNavigate();
-    const [weekOffset, setWeekOffset] = useState(0);
+    const [weekStart, setWeekStart] = useState(() => getWeekStart());
     const [roomId, setRoomId] = useState("");
     const [role, setRole] = useState("");
     const [status, setStatus] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
     const [dialog, setDialog] = useState(null);
     const [copying, setCopying] = useState(false);
-    const [weekOptions] = useState(() => getWeekOptions(WEEK_OFFSETS));
 
-    const { loading, value: result } = useAsync(() => getWeekShifts({ weekOffset }), [weekOffset, reloadKey]);
+    const { loading, value: result } = useAsync(() => getWeekShifts({ weekStart }), [weekStart, reloadKey]);
     const week = result?.success ? result.data : null;
 
     const isVisible = (cell) =>
@@ -78,7 +75,7 @@ const WorkShiftManagement = () => {
 
     const handleCopy = async () => {
         setCopying(true);
-        const response = await copyPreviousWeek({ weekOffset });
+        const response = await copyPreviousWeek({ weekStart });
         setCopying(false);
         toast[response.data?.copied > 0 ? "success" : "info"](response.message);
         setReloadKey((current) => current + 1);
@@ -111,28 +108,18 @@ const WorkShiftManagement = () => {
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-                <FilterSelect id="shift-room-filter" label="Phòng" options={ROOM_OPTIONS} value={roomId} onChange={setRoomId} />
-                <FilterSelect id="shift-role-filter" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={setRole} />
-                <FilterSelect id="shift-status-filter" label="Trạng thái" options={SHIFT_STATUS_OPTIONS} value={status} onChange={setStatus} />
-                <select
-                    id="shift-week"
-                    className="input num w-auto min-w-64"
-                    aria-label="Tuần"
-                    value={weekOffset}
-                    onChange={(event) => setWeekOffset(Number(event.target.value))}
-                >
-                    {weekOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {`Tuần: ${option.label}${WEEK_SUFFIXES[option.value] ?? ""}`}
-                        </option>
-                    ))}
-                </select>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <WeekPicker id="shift-week" value={weekStart} onChange={setWeekStart} />
+                <div className="flex flex-wrap items-center gap-3">
+                    <FilterSelect id="shift-room-filter" label="Phòng" options={ROOM_OPTIONS} value={roomId} onChange={setRoomId} />
+                    <FilterSelect id="shift-role-filter" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={setRole} />
+                    <FilterSelect id="shift-status-filter" label="Trạng thái" options={SHIFT_STATUS_OPTIONS} value={status} onChange={setStatus} />
+                </div>
             </div>
 
             {pendingWork && <p className="alert alert-danger border-0">{pendingWork}</p>}
 
-            {loading || !week ? <div className="skeleton h-[640px] w-full" aria-hidden="true" /> : <ShiftWeekGrid week={week} isVisible={isVisible} onSelect={openCell} />}
+            {loading || !week ? <div className="skeleton h-160 w-full" aria-hidden="true" /> : <ShiftWeekGrid week={week} isVisible={isVisible} onSelect={openCell} />}
 
             {dialog?.type === DIALOGS.DETAIL && <ShiftDetailPopup cell={dialog.cell} onClose={() => setDialog(null)} onViewLeave={viewLeave} />}
             {dialog?.type === DIALOGS.UNASSIGNED && (

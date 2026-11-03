@@ -14,6 +14,8 @@ import { ACCOUNT_STATUSES, MOCK_STAFF } from "../utils/data/mockStaff";
 
 // TODO(api): mock only. Shifts live in memory, so changes last until the page is reloaded.
 const MOCK_DELAY_MS = 300;
+// Rounded when used, so a daylight-saving hour does not matter.
+const WEEK_MS = 7 * 86_400_000;
 
 // Roles that can be put on shift, with the names used on the shift pages.
 export const SHIFT_ROLE_OPTIONS = [
@@ -205,21 +207,16 @@ const buildCell = (date, slotValue, room) => {
 
 const weekLabel = (from, to) => `${pad(from.getDate())}/${pad(from.getMonth() + 1)} – ${formatDate(toDateOnly(to))}`;
 
-// "19/10 – 25/10/2026" for each week offset, for the week picker.
-export const getWeekOptions = (offsets) =>
-    offsets.map((offset) => {
-        const from = addDays(thisMonday, offset * 7);
-        return { value: offset, label: weekLabel(from, addDays(from, 6)) };
-    });
-
-// Week of the schedule. weekOffset: 0 = this week, 1 = next week, -1 = last week ...
+// Week of the schedule that contains weekStart ("2026-11-02"; any day of the week works).
+// weekOffset in the result: 0 = this week, 1 = next week, -1 = last week ...
 // editable: the week has not started, so shifts can be assigned and changed.
-export const getWeekShifts = async ({ weekOffset = 0 } = {}) => {
+export const getWeekShifts = async ({ weekStart }) => {
     await wait(MOCK_DELAY_MS);
 
     const today = toDateOnly(new Date());
-    const from = addDays(thisMonday, weekOffset * 7);
+    const from = startOfWeek(parseDay(weekStart));
     const to = addDays(from, 6);
+    const weekOffset = Math.round((from - startOfWeek(new Date())) / WEEK_MS);
     seedWeek(from);
 
     const days = Array.from({ length: 7 }, (_, weekday) => {
@@ -311,10 +308,10 @@ export const deleteShift = async ({ date, slot, roomId }) => {
 };
 
 // Fills the empty shifts of a week with the people of the same shifts a week earlier (skipping anyone on leave or busy).
-export const copyPreviousWeek = async ({ weekOffset }) => {
+export const copyPreviousWeek = async ({ weekStart }) => {
     await wait(MOCK_DELAY_MS);
 
-    const from = addDays(thisMonday, weekOffset * 7);
+    const from = startOfWeek(parseDay(weekStart));
     let copied = 0;
     for (let weekday = 0; weekday < 7; weekday++) {
         const date = toDateOnly(addDays(from, weekday));

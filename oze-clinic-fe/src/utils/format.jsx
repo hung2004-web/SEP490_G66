@@ -26,6 +26,10 @@ const getClinicParts = (value) => {
 
 export const toDateOnly = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
+// Monday of the week containing date, as "YYYY-MM-DD".
+export const getWeekStart = (date = new Date()) =>
+    toDateOnly(new Date(date.getFullYear(), date.getMonth(), date.getDate() - ((date.getDay() + 6) % 7)));
+
 export const parseDateOnly = (value) => {
     if (!value) return null;
     const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);
