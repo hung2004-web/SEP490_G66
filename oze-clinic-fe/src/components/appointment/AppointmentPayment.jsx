@@ -3,7 +3,7 @@ import DetailLink from "@/components/ui/DetailLink";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCurrency, formatDateTime } from "@/utils/format";
 import { INVOICE_PAYMENT_STATUS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS } from "@/utils/messages";
-import { getInvoiceDetailRoute } from "@/utils/routes";
+import { getPaymentHistoryRoute } from "@/utils/routes";
 
 const KNOWN_STATUSES = [PAYMENT_STATUS.UNPAID, PAYMENT_STATUS.PARTIALLY_PAID, PAYMENT_STATUS.PAID];
 
@@ -46,8 +46,8 @@ const AppointmentPayment = ({ invoice }) => {
                 )}
                 {paymentLine && <p className="num mt-2 text-caption text-muted">{paymentLine}</p>}
             </div>
-            <DetailLink to={getInvoiceDetailRoute(invoice.id)} context={`hóa đơn ${invoice.invoiceNumber}`} className="self-start">
-                Xem hóa đơn
+            <DetailLink to={getPaymentHistoryRoute(invoice.id)} context={`hóa đơn ${invoice.invoiceNumber}`} className="self-start">
+                Chi phí buổi này
             </DetailLink>
         </DashboardSection>
     );
