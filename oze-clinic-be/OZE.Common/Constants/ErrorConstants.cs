@@ -210,6 +210,7 @@ namespace OZE.Common.Constants
             public const string TooFarAhead = "Appointment date is too far in advance";
             public const string SlotNotAvailable = "This time slot is no longer available. Please choose another time";
             public const string PhoneHasAccount = "This phone number already has an account. Please sign in to book";
+            public const string PatientHasUnfinishedAppointment = "You already have an appointment that is not finished. Please finish or cancel it before booking a new one";
             public const string ConfigMissing = "System configuration {0} is missing";
             public const string AppointmentNotFound = "Appointment not found in system";
             public const string OnlyOpenCanBeCancelled = "Only an appointment that is pending or confirmed can be cancelled";
@@ -222,6 +223,7 @@ namespace OZE.Common.Constants
             public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
             public const string CheckInDoctorShiftEnded = "The doctor has already ended the shift today";
+            public const string DoctorHasNoShiftToday = "The doctor has no shift to see this patient today";
             public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
             public const string PriorityInvalid = "Priority must be 0 (normal), 1 (high) or 2 (urgent)";
             public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
@@ -259,7 +261,11 @@ namespace OZE.Common.Constants
             public const string ShiftNotStarted = "Start the shift before ending it";
             public const string ShiftAlreadyEnded = "This shift has already been ended";
             public const string ExaminationStillRunning = "Finish the examination in progress before ending the shift";
-            public const string NoShowReason = "The doctor ended the shift before the patient was examined";
+            public const string ShiftNotEnded = "This shift has not been ended";
+            public const string ShiftTimeOver = "The time of this shift is over, it cannot be reopened";
+            public const string RoomInUse = "The room is already used by another doctor's shift";
+            public const string ShiftReopenedReason = "The shift was reopened after it had been ended by mistake";
+            public const string NoShowReason ="The doctor ended the shift before the patient was examined";
         }
         public static class MedicalRecordMessage
         {

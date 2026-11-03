@@ -20,6 +20,15 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.PhoneNumber != null && phoneNumbers.Contains(x.PhoneNumber));
         }
 
+        public async Task<List<Patient>> FindPatientsByPhoneAsync(IReadOnlyCollection<string> phoneNumbers)
+        {
+            return await _context.Patients
+                .Where(x => x.DeletedAt == null
+                    && x.PhoneNumber != null
+                    && phoneNumbers.Contains(x.PhoneNumber))
+                .ToListAsync();
+        }
+
         public async Task<List<Patient>> FindUnlinkedPatientsByPhoneAsync(IReadOnlyCollection<string> phoneNumbers)
         {
             return await _context.Patients
