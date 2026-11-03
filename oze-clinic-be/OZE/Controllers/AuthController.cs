@@ -50,6 +50,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<AuthResult>>> LoginAsync([FromBody] LoginRequest loginRequest)
         {
             var result = await _authService.LoginAsync(loginRequest);
@@ -58,6 +59,7 @@ namespace OZE.ProjectBase.Controllers
 
         [HttpPost("refresh-token")]
         [AllowAnonymous]
+        [ApiResponseValidationFilter]
         public async Task<ActionResult<ApiResponse<AuthResult>>> RefreshTokenAsync([FromBody] RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request);
