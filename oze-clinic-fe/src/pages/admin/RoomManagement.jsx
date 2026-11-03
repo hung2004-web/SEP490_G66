@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, DoorOpen, Pencil, Search } from "lucide-react";
+import { CheckCircle2, DoorOpen, Pencil } from "lucide-react";
 import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
-import Pagination from "@/components/ui/Pagination";
+import FilterSelect from "@/components/ui/FilterSelect";
+import SearchInput from "@/components/ui/SearchInput";
+import TablePagination from "@/components/ui/TablePagination";
 import useAsync from "@/hooks/useAsync";
 import { getRooms } from "@/services/roomService";
 import { cx } from "@/utils/cx";
@@ -71,8 +73,8 @@ const RoomManagement = () => {
     const rooms = data?.items ?? [];
     const filtered = Boolean(keyword || type || status);
 
-    const changeFilter = (setter) => (event) => {
-        setter(event.target.value);
+    const changeFilter = (setter) => (value) => {
+        setter(value);
         setPage(1);
     };
 
@@ -84,7 +86,6 @@ const RoomManagement = () => {
         setPage(1);
     };
     const firstItem = data ? (data.page - 1) * data.pageSize + 1 : 0;
-    const lastItem = firstItem + rooms.length - 1;
 
     const handleSaved = (message) => {
         setDialog(null);
@@ -117,42 +118,22 @@ const RoomManagement = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-                <div className="search w-full sm:w-72">
-                    <Search aria-hidden="true" />
-                    <label htmlFor="room-search" className="sr-only">
-                        Tìm kiếm phòng
-                    </label>
-                    <input
-                        id="room-search"
-                        type="search"
-                        className="input"
-                        placeholder="Tìm theo tên phòng, tầng, mô tả"
-                        value={searchInput}
-                        onChange={(event) => setSearchInput(event.target.value)}
-                    />
-                </div>
-                <label htmlFor="room-type-filter" className="sr-only">
-                    Loại phòng
-                </label>
-                <select id="room-type-filter" className="input w-auto min-w-48" value={type} onChange={changeFilter(setType)}>
-                    <option value="">Loại phòng: Tất cả</option>
-                    {ROOM_TYPE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            Loại phòng: {option.label}
-                        </option>
-                    ))}
-                </select>
-                <label htmlFor="room-status-filter" className="sr-only">
-                    Trạng thái
-                </label>
-                <select id="room-status-filter" className="input w-auto min-w-44" value={status} onChange={changeFilter(setStatus)}>
-                    <option value="">Trạng thái: Tất cả</option>
-                    {ROOM_STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            Trạng thái: {option.label}
-                        </option>
-                    ))}
-                </select>
+                <SearchInput
+                    id="room-search"
+                    label="Tìm kiếm phòng"
+                    placeholder="Tìm theo tên phòng, tầng, mô tả"
+                    value={searchInput}
+                    onChange={setSearchInput}
+                    className="w-full sm:w-72"
+                />
+                <FilterSelect id="room-type-filter" label="Loại phòng" options={ROOM_TYPE_OPTIONS} value={type} onChange={changeFilter(setType)} />
+                <FilterSelect
+                    id="room-status-filter"
+                    label="Trạng thái"
+                    options={ROOM_STATUS_OPTIONS}
+                    value={status}
+                    onChange={changeFilter(setStatus)}
+                />
                 {(filtered || searchInput) && (
                     <button type="button" className="btn btn-link" onClick={clearFilters}>
                         Xoá bộ lọc
@@ -214,14 +195,7 @@ const RoomManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                {data && data.totalItems > 0 && (
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                        <p className="num text-caption text-muted">
-                            Hiển thị {firstItem}–{lastItem} trong {data.totalItems} phòng
-                        </p>
-                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách phòng" />
-                    </div>
-                )}
+                <TablePagination data={data} itemCount={rooms.length} onChange={setPage} label="Phân trang danh sách phòng" />
             </div>
 
             {dialog && <RoomFormPopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />}

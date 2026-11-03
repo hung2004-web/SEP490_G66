@@ -28,6 +28,10 @@ namespace OZE.Persistence
                 // Email is optional for patients (FR 1.1); uniqueness is kept by the filtered unique index on NormalizedEmail.
                 options.User.RequireUniqueEmail = false;
                 options.SignIn.RequireConfirmedEmail = false; // set true if email confirmation is enforced
+                // BR-101: five failed attempts lock the account for 15 minutes.
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             })
             .AddEntityFrameworkStores<AppIdentityDbContext>()
             .AddDefaultTokenProviders();

@@ -20,6 +20,8 @@ export const MESSAGES = {
     MSG64: "Cập nhật mật khẩu thành công!",
     MSG66: "[Tên trường] không hợp lệ. Vui lòng kiểm tra lại.",
     MSG76: "[Mục] không khả dụng vào [thời gian].",
+    MSG80: "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ phòng khám.",
+    MSG84: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
 };
 
 // Agreed by the team on 07/10/2026 for Register / Reset / Change Password (not used by Sign In).
@@ -92,6 +94,19 @@ export const USER_ROLES = {
     DENTAL_IMAGING_TECHNICIAN: "dental_imaging_technician",
     RECEPTIONIST: "receptionist",
     CLINIC_MANAGER: "clinic_manager",
+};
+
+export const BACKEND_ROLE_NAMES = {
+    [USER_ROLES.PATIENT]: "Patient",
+    [USER_ROLES.DOCTOR]: "Doctor",
+    [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: "DentalImagingTechnician",
+    [USER_ROLES.RECEPTIONIST]: "Receptionist",
+    [USER_ROLES.CLINIC_MANAGER]: "ClinicManager",
+};
+
+export const BACKEND_LOGIN_MESSAGES = {
+    INVALID_LOGIN: "Invalid login, please check again",
+    LOCKED_OUT: "Account is temporarily locked. Please try again later.",
 };
 
 export const ROLE_LABELS = {
