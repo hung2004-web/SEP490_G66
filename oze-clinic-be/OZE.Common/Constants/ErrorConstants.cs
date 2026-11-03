@@ -210,6 +210,7 @@ namespace OZE.Common.Constants
             public const string TooFarAhead = "Appointment date is too far in advance";
             public const string SlotNotAvailable = "This time slot is no longer available. Please choose another time";
             public const string PhoneHasAccount = "This phone number already has an account. Please sign in to book";
+            public const string PatientHasUnfinishedAppointment = "You already have an appointment that is not finished. Please finish or cancel it before booking a new one";
             public const string ConfigMissing = "System configuration {0} is missing";
             public const string AppointmentNotFound = "Appointment not found in system";
             public const string OnlyOpenCanBeCancelled = "Only an appointment that is pending or confirmed can be cancelled";
