@@ -39,6 +39,18 @@ namespace OZE.UnitTest.Controllers
             _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
         }
 
+        // Unauthenticated request (e.g. access token already expired)
+        private void SetAnonymousUser()
+        {
+            var httpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity())
+            };
+            httpContext.Request.Scheme = "https";
+            httpContext.Request.Host = new HostString("api.oze.test");
+            _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+        }
+
         private static ApiResponse<AuthResult> TokensResult() =>
             ApiResponse<AuthResult>.SuccessResult(new AuthResult { Token = "access-token", RefreshToken = "refresh-token" });
 
@@ -160,15 +172,30 @@ namespace OZE.UnitTest.Controllers
         [Fact]
         public async Task LogoutAsync_WhenUserIdMissing_ShouldReturnUnauthorized()
         {
-            // Arrange: a token without any user id
-            SetUser();
+            // Arrange: anonymous caller with no refresh token
+            SetAnonymousUser();
 
             // Act
             var actionResult = await _controller.LogoutAsync();
 
             // Assert
             actionResult.Result.Should().BeOfType<UnauthorizedObjectResult>();
-            _authServiceMock.Verify(s => s.LogoutAsync(It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
+            _authServiceMock.Verify(s => s.LogoutAsync(It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WithRefreshTokenOnly_ShouldSucceedWithoutAccessToken()
+        {
+            // Arrange: access token expired; FE still sends the refresh token
+            SetAnonymousUser();
+            _authServiceMock.Setup(s => s.LogoutAsync(null, "device-token")).ReturnsAsync(ApiResponse.SuccessResult());
+
+            // Act
+            var actionResult = await _controller.LogoutAsync(new RefreshTokenRequest { RefreshToken = "device-token" });
+
+            // Assert
+            actionResult.Result.Should().BeOfType<OkObjectResult>();
+            _authServiceMock.Verify(s => s.LogoutAsync(null, "device-token"), Times.Once);
         }
 
         #endregion
