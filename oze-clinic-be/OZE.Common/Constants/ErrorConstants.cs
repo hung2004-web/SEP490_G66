@@ -223,6 +223,7 @@ namespace OZE.Common.Constants
             public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
             public const string CheckInDoctorShiftEnded = "The doctor has already ended the shift today";
+            public const string DoctorHasNoShiftToday = "The doctor has no shift to see this patient today";
             public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
             public const string PriorityInvalid = "Priority must be 0 (normal), 1 (high) or 2 (urgent)";
             public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
