@@ -138,9 +138,14 @@ namespace OZE.Application.Services
         // Booked patients are placed by their time slot, walk-ins (no slot) by the time they checked in
         private static bool IsInShift(Appointment appointment, StaffSchedule shift)
         {
-            TimeOnly? time = appointment.TimeSlotStart
-                ?? (appointment.CheckInAt.HasValue ? TimeOnly.FromDateTime(appointment.CheckInAt.Value.LocalDateTime) : null);
+            var time = GetTimeInShift(appointment);
             return time.HasValue && time.Value >= shift.ShiftStart && time.Value < shift.ShiftEnd;
+        }
+
+        private static TimeOnly? GetTimeInShift(Appointment appointment)
+        {
+            return appointment.TimeSlotStart
+                ?? (appointment.CheckInAt.HasValue ? TimeOnly.FromDateTime(appointment.CheckInAt.Value.LocalDateTime) : null);
         }
 
         // A booked patient who never came and whose slot has already started
@@ -186,11 +191,10 @@ namespace OZE.Application.Services
       
         private static DoctorShiftResponse ToResponse(StaffSchedule shift, List<Appointment> appointments)
         {
+            // Walk-ins have no booked time, they belong to the shift they checked in during (the same rule as ending the shift)
             var inShift = appointments
-                .Where(a => a.AppointmentDate == shift.ScheduleDate
-                    && a.TimeSlotStart.HasValue
-                    && a.TimeSlotStart.Value >= shift.ShiftStart
-                    && a.TimeSlotStart.Value < shift.ShiftEnd)
+                .Where(a => a.AppointmentDate == shift.ScheduleDate && IsInShift(a, shift))
+                .OrderBy(a => GetTimeInShift(a))
                 .Select(a => new DoctorAppointmentResponse
                 {
                     Id = a.Id,
