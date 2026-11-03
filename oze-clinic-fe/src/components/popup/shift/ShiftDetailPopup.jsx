@@ -24,15 +24,28 @@ const statusRows = (cell) => {
     }
     if (cell.status === SHIFT_STATUSES.LEAVE) {
         const status = LEAVE_REQUEST_STATUS_LABELS[cell.leave.status];
-        return [{ label: "Đơn xin nghỉ", value: <span className={`badge ${status.badge}`}>{status.label}</span> }];
+        return [
+            {
+                label: "Đơn xin nghỉ",
+                value: (
+                    <span className="flex flex-wrap items-center justify-between gap-2">
+                        <span className={`badge ${status.badge}`}>{status.label}</span>
+                        <Link to={leaveRequestUrl(cell.leave.requestId)} className="btn btn-link h-auto p-0 text-caption font-semibold">
+                            Xem chi tiết đơn
+                        </Link>
+                    </span>
+                ),
+            },
+        ];
     }
     if (cell.status === SHIFT_STATUSES.PENDING) return [{ label: "Giờ vào – ra thực tế", value: "" }];
     return [{ label: "Giờ vào – ra thực tế", value: <span className="num font-medium">{actualTimes(cell)}</span> }];
 };
 
 // "Chi tiết ca" popup of an assigned shift: who works, where, and how it went (present, absent, on leave or not started).
-// A shift whose person is on leave shows the leave request's status and links to the request.
-const ShiftDetailPopup = ({ cell, onClose }) => {
+// A shift whose person is on leave shows the leave request's status with a link to the request.
+// onAssign(cell) opens "Chọn người thay" for that shift; pass it only while the shift has not started.
+const ShiftDetailPopup = ({ cell, onClose, onAssign }) => {
     const onLeave = cell.status === SHIFT_STATUSES.LEAVE;
     const rows = [
         { label: "Phòng", value: [cell.room.name, cell.room.floor].filter(Boolean).join(" · ") },
@@ -65,10 +78,10 @@ const ShiftDetailPopup = ({ cell, onClose }) => {
                 <button type="button" className="btn btn-secondary" onClick={onClose}>
                     Đóng
                 </button>
-                {onLeave && (
-                    <Link to={leaveRequestUrl(cell.leave.requestId)} className="btn btn-primary">
-                        Xem chi tiết đơn
-                    </Link>
+                {onLeave && onAssign && (
+                    <button type="button" className="btn btn-primary" onClick={() => onAssign(cell)}>
+                        Phân ca
+                    </button>
                 )}
             </div>
         </Modal>

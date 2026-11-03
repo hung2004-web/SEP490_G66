@@ -115,7 +115,13 @@ const WorkShiftManagement = () => {
 
             {loading || !week ? <div className="skeleton h-160 w-full" aria-hidden="true" /> : <ShiftWeekGrid week={week} isVisible={isVisible} onSelect={openCell} />}
 
-            {dialog?.type === DIALOGS.DETAIL && <ShiftDetailPopup cell={dialog.cell} onClose={() => setDialog(null)} />}
+            {dialog?.type === DIALOGS.DETAIL && (
+                <ShiftDetailPopup
+                    cell={dialog.cell}
+                    onClose={() => setDialog(null)}
+                    onAssign={dialog.cell.date >= today ? (cell) => setDialog({ type: DIALOGS.REPLACE, cell }) : undefined}
+                />
+            )}
             {dialog?.type === DIALOGS.UNASSIGNED && (
                 <UnassignedShiftPopup
                     cell={dialog.cell}
