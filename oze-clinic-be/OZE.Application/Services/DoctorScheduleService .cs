@@ -75,6 +75,13 @@ namespace OZE.Application.Services
             var (doctor, shift) = await GetOwnShiftOfTodayAsync(userId, shiftId);
             ConditionGuard.Ensure(shift.ActualStartTime == null, ErrorConstants.DoctorScheduleMessage.ShiftAlreadyStarted);
 
+            // The clock-in follows the time the shift was scheduled for
+            var now = TimeOnly.FromDateTime(DateTime.Now);
+            ConditionGuard.Ensure(now < shift.ShiftEnd, ErrorConstants.DoctorScheduleMessage.ShiftOverCannotStart);
+            // TimeSpan, not TimeOnly: a shift that starts just after midnight must not wrap around to the evening before
+            ConditionGuard.Ensure(now.ToTimeSpan() >= shift.ShiftStart.ToTimeSpan() - TimeSpan.FromMinutes(WorkShiftConstants.ClockInEarlyMinutes),
+                ErrorConstants.DoctorScheduleMessage.ShiftTooEarlyToStart);
+
             shift.IsPresent = true;
             shift.AbsenceReason = null;
             shift.ActualStartTime = TimeOnly.FromDateTime(DateTime.Now);
