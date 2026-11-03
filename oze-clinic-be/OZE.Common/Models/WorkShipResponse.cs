@@ -19,6 +19,10 @@ namespace OZE.Common.Models
         public string? Assignment { get; set; }
         public bool? IsPresent { get; set; }
         public string? AbsenceReason { get; set; }
+        // Clock in and clock out of the doctor, null until the doctor starts or ends the shift;
+        // a shift with an end time is the one the manager can reopen
+        public TimeOnly? ActualStartTime { get; set; }
+        public TimeOnly? ActualEndTime { get; set; }
         public string? Notes { get; set; }
         public DateTimeOffset CreatedAt
         {

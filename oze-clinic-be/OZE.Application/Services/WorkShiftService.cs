@@ -83,6 +83,8 @@ namespace OZE.Application.Services
                 Assignment = schedule.Assignment,
                 IsPresent = schedule.IsPresent,
                 AbsenceReason = schedule.AbsenceReason,
+                ActualStartTime = schedule.ActualStartTime,
+                ActualEndTime = schedule.ActualEndTime,
                 Notes = schedule.Notes,
                 CreatedAt = schedule.CreatedAt
             };

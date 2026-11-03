@@ -33,7 +33,11 @@ namespace OZE.Application.Interfaces
         Task<Appointment?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default);
         // Same as GetByIdWithDetailsAsync plus the examination of the appointment (tracked, so it can be updated)
         Task<Appointment?> GetByIdWithExaminationAsync(long id, CancellationToken cancellationToken = default);
-        // Confirmed, checked-in and in-service appointments of the doctor on one day, with the examination (tracked, so they can be updated)
+        // Shifts of that day the doctor has ended
+        Task<List<StaffSchedule>> GetEndedShiftsAsync(DateOnly date);
+        // Appointments of these doctors on one day in these statuses, with the patient, the doctor, the examination and the queue entries
+        Task<List<Appointment>> GetAppointmentsOfDoctorsAsync(DateOnly date, IReadOnlyCollection<int> doctorIds, IReadOnlyCollection<string> statuses);
+        // Pending, confirmed, checked-in and in-service appointments of the doctor on one day, with the patient and the examination (tracked, so they can be updated)
         Task<List<Appointment>> GetDoctorOpenAppointmentsAsync(int doctorId, DateOnly date, CancellationToken cancellationToken = default);
         // True when the doctor already has a patient being examined (IN_SERVICE) on that date
         Task<bool> HasAppointmentInServiceAsync(int doctorId, DateOnly date);

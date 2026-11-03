@@ -224,6 +224,11 @@ namespace OZE.Common.Constants
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
             public const string CheckInDoctorShiftEnded = "The doctor has already ended the shift today";
             public const string DoctorHasNoShiftToday = "The doctor has no shift to see this patient today";
+            public const string ReassignOnlyWaiting = "Only a patient who is checked in and waiting can be moved to another doctor";
+            public const string ReassignAlreadyExamined = "This patient was already seen by the doctor and stays with that doctor";
+            public const string ReassignWrongDay = "A patient can only be moved to another doctor on the day of the appointment";
+            public const string ReassignSameDoctor = "The patient is already with this doctor";
+            public const string ReassignRoomNotSuitable = "The room of this doctor's shift does not suit the services of the appointment";
             public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
             public const string PriorityInvalid = "Priority must be 0 (normal), 1 (high) or 2 (urgent)";
             public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
@@ -266,7 +271,11 @@ namespace OZE.Common.Constants
             public const string ShiftNotEnded = "This shift has not been ended";
             public const string ShiftTimeOver = "The time of this shift is over, it cannot be reopened";
             public const string RoomInUse = "The room is already used by another doctor's shift";
-            public const string ShiftReopenedReason = "The shift was reopened after it had been ended by mistake";
+            // Texts sent to the patient (no accents, like the booking notice); {0} doctor, {1} time, {2} date
+            public const string ShiftEndedWaitingNotice = "OZE Dental: Bac si {0} da ket thuc ca lam viec. Vui long gap le tan de duoc chuyen sang bac si khac.";
+            public const string ShiftEndedUpcomingNotice = "OZE Dental: Bac si {0} da ket thuc ca lam viec som. Lich hen luc {1} ngay {2} can doi. Vui long lien he le tan de chuyen lich.";
+            public const string ShiftEndedNoticeSubject = "OZE Dental - Your appointment needs to change";
+            public const string ShiftReopenedReason ="The shift was reopened after it had been ended by mistake";
             public const string NoShowReason ="The doctor ended the shift before the patient was examined";
         }
         public static class MedicalRecordMessage

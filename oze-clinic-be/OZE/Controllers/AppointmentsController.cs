@@ -78,6 +78,32 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Today's patients the front desk has to deal with because their doctor ended the shift: the ones waiting in
+        /// the clinic (to be moved to another doctor) and the ones booked for a time still to come (to be rescheduled).
+        /// </summary>
+        [HttpGet("needs-attention")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<List<NeedsAttentionResponse>>>> GetNeedsAttentionAsync(CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.GetNeedsAttentionAsync(cancellationToken);
+            return Ok(ApiResponse<List<NeedsAttentionResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
+        /// Moves a waiting patient to another doctor who has a shift today. The patient goes to the room of that shift.
+        /// </summary>
+        [HttpPost("{id:long}/reassign-doctor")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> ReassignDoctorAsync(
+            [FromRoute] long id,
+            [FromBody] ReassignDoctorRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.ReassignDoctorAsync(id, request, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Đã chuyển bệnh nhân sang bác sĩ khác"));
+        }
+
+        /// <summary>
         /// Retrieves a paginated list of appointments with optional filtering by date, doctor, patient, status, and search keyword.
         /// </summary>
         [HttpGet]
