@@ -49,6 +49,8 @@ namespace OZE.Persistence.Repositories
             return await _context.QueueEntries
                 .Include(x => x.Appointment)
                     .ThenInclude(x => x.Patient)
+                .Include(x => x.Appointment)
+                    .ThenInclude(x => x.Examination)
                 .Include(x => x.Room)
                 .Include(x => x.AssignedStaff)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -71,6 +73,8 @@ namespace OZE.Persistence.Repositories
                 .AsNoTracking()
                 .Include(x => x.Appointment)
                     .ThenInclude(x => x.Patient)
+                .Include(x => x.Appointment)
+                    .ThenInclude(x => x.Examination)
                 .Include(x => x.Room)
                 .Include(x => x.AssignedStaff)
                 .Where(x => x.CreatedAt >= today && x.CreatedAt < tomorrow)
@@ -121,6 +125,16 @@ namespace OZE.Persistence.Repositories
                     .SetProperty(x => x.CalledAt, (DateTimeOffset?)null)
                     .SetProperty(x => x.SkipCount, x => x.SkipCount + 1), cancellationToken);
             return rows == 1;
+        }
+
+        public async Task<bool> IsOffDutyAsync(int staffId, DateOnly date, TimeOnly now, CancellationToken cancellationToken = default)
+        {
+            // The shifts that are on right now: off duty means the doctor ended one of them and has no other that is still open
+            var running = _context.StaffSchedules
+                .AsNoTracking()
+                .Where(x => x.StaffProfileId == staffId && x.ScheduleDate == date && x.ShiftStart <= now && now < x.ShiftEnd);
+            return await running.AnyAsync(x => x.ActualEndTime != null, cancellationToken)
+                && !await running.AnyAsync(x => x.ActualEndTime == null, cancellationToken);
         }
 
         public async Task<int?> GetStaffProfileIdByUserIdAsync(string userId, CancellationToken cancellationToken = default)

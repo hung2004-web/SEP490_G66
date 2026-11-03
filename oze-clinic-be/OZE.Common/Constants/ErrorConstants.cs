@@ -224,6 +224,7 @@ namespace OZE.Common.Constants
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
             public const string CheckInDoctorShiftEnded = "The doctor has already ended the shift today";
             public const string DoctorHasNoShiftToday = "The doctor has no shift to see this patient today";
+            public const string DoctorShiftEndedCannotStart = "Your shift has ended. Only patients you have already examined can still be seen; ask the manager to reopen the shift for new ones";
             public const string ReassignOnlyWaiting = "Only a patient who is checked in and waiting can be moved to another doctor";
             public const string ReassignAlreadyExamined = "This patient was already seen by the doctor and stays with that doctor";
             public const string ReassignWrongDay = "A patient can only be moved to another doctor on the day of the appointment";
@@ -271,9 +272,9 @@ namespace OZE.Common.Constants
             public const string ShiftNotEnded = "This shift has not been ended";
             public const string ShiftTimeOver = "The time of this shift is over, it cannot be reopened";
             public const string RoomInUse = "The room is already used by another doctor's shift";
-            // Texts sent to the patient (no accents, like the booking notice); {0} doctor, {1} time, {2} date
-            public const string ShiftEndedWaitingNotice = "OZE Dental: Bac si {0} da ket thuc ca lam viec. Vui long gap le tan de duoc chuyen sang bac si khac.";
-            public const string ShiftEndedUpcomingNotice = "OZE Dental: Bac si {0} da ket thuc ca lam viec som. Lich hen luc {1} ngay {2} can doi. Vui long lien he le tan de chuyen lich.";
+            // Texts sent to the patient; {0} doctor, {1} time, {2} date
+            public const string ShiftEndedWaitingNotice = "OZE Dental: {0} has ended the shift. Please see the front desk to be moved to another doctor.";
+            public const string ShiftEndedUpcomingNotice = "OZE Dental: {0} has ended the shift early. Your appointment at {1} on {2} needs to change. Please contact the front desk to reschedule.";
             public const string ShiftEndedNoticeSubject = "OZE Dental - Your appointment needs to change";
             public const string ShiftReopenedReason ="The shift was reopened after it had been ended by mistake";
             public const string NoShowReason ="The doctor ended the shift before the patient was examined";
@@ -326,6 +327,7 @@ namespace OZE.Common.Constants
         {
             public const string EntryNotFound = "Queue number not found";
             public const string OnlyCalledCanBeSkipped = "Only a number that has been called can be skipped";
+            public const string DoctorShiftEnded = "Your shift has ended. Only patients you have already examined can still be called";
             public const string OnlyWaitingCanBeCalled = "Only a number that is waiting can be called";
             public const string NotInTodayQueue = "This number is not in today's queue";
             public const string NotYourPatientToCall = "You can only call your own patients";

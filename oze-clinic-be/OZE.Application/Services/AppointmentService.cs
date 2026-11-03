@@ -336,9 +336,9 @@ namespace OZE.Application.Services
             var serviceNames = string.Join(", ", appointment.ServiceItems.Select(i => i.Variant == null
                 ? i.Service?.ServiceName
                 : $"{i.Service?.ServiceName} - {i.Variant.VariantName}"));
-            var message = $"OZE Dental: Lich hen {serviceNames} " +
-                          $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy} " +
-                          "da duoc xac nhan.";
+            var message = $"OZE Dental: Your appointment for {serviceNames} " +
+                          $"at {appointment.TimeSlotStart:HH\\:mm} on {appointment.AppointmentDate:dd/MM/yyyy} " +
+                          "has been confirmed.";
             try
             {
                 if (!string.IsNullOrWhiteSpace(appointment.Patient?.PhoneNumber))
@@ -368,9 +368,9 @@ namespace OZE.Application.Services
         private async Task SendBookingNotificationAsync(string? phone, string? email, Appointment appointment, List<BookingLine> lines)
         {
             var serviceNames = string.Join(", ", lines.Select(l => l.DisplayName));
-            var message = $"OZE Dental: Lich hen {serviceNames} " +
-                          $"luc {appointment.TimeSlotStart:HH\\:mm} ngay {appointment.AppointmentDate:dd/MM/yyyy} " +
-                          "da duoc ghi nhan. Le tan se goi dien de xac nhan.";
+            var message = $"OZE Dental: Your appointment request for {serviceNames} " +
+                          $"at {appointment.TimeSlotStart:HH\\:mm} on {appointment.AppointmentDate:dd/MM/yyyy} " +
+                          "has been received. The receptionist will call to confirm.";
             try
             {
                 if (!string.IsNullOrWhiteSpace(phone))
@@ -449,6 +449,13 @@ namespace OZE.Application.Services
             var lateMinutes = await GetIntConfigAsync(ConfigKeyConstants.CheckInLateMinutes);
             var today = DateOnly.FromDateTime(DateTime.Today);
             var waiting = await _appointmentRepository.GetWaitingAppointmentsAsync(today, doctorId, cancellationToken);
+
+            // A doctor who ended the shift has no waiting list any more, except patients already examined (back from the X-ray)
+            if (doctorUserId != null && doctorId.HasValue && _queueService != null
+                && await _queueService.IsDoctorOffDutyAsync(doctorId.Value, cancellationToken))
+            {
+                waiting = waiting.Where(a => a.Examination != null).ToList();
+            }
 
             return waiting
                 .Select(a => (Appointment: a, Group: GetWaitingGroup(a, lateMinutes)))
@@ -988,6 +995,13 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<ForbiddenException>(appointment!.DoctorId == doctorId, ErrorConstants.AppointmentMessage.NotAssignedDoctor);
             ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.OnlyCheckedInCanBeStarted);
             ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.ExaminationWrongDay);
+
+            // A doctor who ended the shift takes no new patient; one already examined (back from the X-ray) is still theirs
+            if (appointment.Examination == null && _queueService != null)
+            {
+                ConditionGuard.ThrowIf(await _queueService.IsDoctorOffDutyAsync(doctorId!.Value, cancellationToken),
+                    ErrorConstants.AppointmentMessage.DoctorShiftEndedCannotStart);
+            }
 
             // One patient at a time: the doctor must finish the current examination first
             var isExamining = await _appointmentRepository.HasAppointmentInServiceAsync(doctorId!.Value, appointment.AppointmentDate);

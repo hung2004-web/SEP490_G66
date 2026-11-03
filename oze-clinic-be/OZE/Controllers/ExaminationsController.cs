@@ -37,7 +37,7 @@ namespace OZE.Controllers
             long id, [FromBody] UpdateExaminationContentRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.UpdateContentAsync(DoctorUserId, id, request, cancellationToken);
-            return Ok(ApiResponse<ExaminationWorkResponse>.SuccessResult(result, "Đã lưu nội dung khám"));
+            return Ok(ApiResponse<ExaminationWorkResponse>.SuccessResult(result, "Examination notes saved"));
         }
 
         [HttpPost("examinations/{id:long}/services")]
@@ -45,7 +45,7 @@ namespace OZE.Controllers
             long id, [FromBody] SaveExaminationServiceRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.AddServiceAsync(DoctorUserId, id, request, cancellationToken);
-            return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Đã thêm dịch vụ"));
+            return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Service added"));
         }
 
         [HttpPut("examinations/{id:long}/services/{serviceItemId:long}")]
@@ -53,7 +53,7 @@ namespace OZE.Controllers
             long id, long serviceItemId, [FromBody] SaveExaminationServiceRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.UpdateServiceAsync(DoctorUserId, id, serviceItemId, request, cancellationToken);
-            return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Đã cập nhật dịch vụ"));
+            return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Service updated"));
         }
 
         [HttpDelete("examinations/{id:long}/services/{serviceItemId:long}")]
@@ -61,7 +61,7 @@ namespace OZE.Controllers
             long id, long serviceItemId, CancellationToken cancellationToken)
         {
             var result = await _examinationService.RemoveServiceAsync(DoctorUserId, id, serviceItemId, cancellationToken);
-            return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Đã bỏ dịch vụ"));
+            return Ok(ApiResponse<List<ExaminationServiceResponse>>.SuccessResult(result, "Service removed"));
         }
 
         [HttpGet("examinations/{id:long}/dental-chart")]
@@ -76,7 +76,7 @@ namespace OZE.Controllers
             long id, string toothNumber, [FromBody] SaveToothRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.SetToothAsync(DoctorUserId, id, toothNumber, request, cancellationToken);
-            return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result, "Đã cập nhật sơ đồ răng"));
+            return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result, "Dental chart updated"));
         }
 
         [HttpDelete("examinations/{id:long}/dental-chart/{toothNumber}")]
@@ -84,7 +84,7 @@ namespace OZE.Controllers
             long id, string toothNumber, CancellationToken cancellationToken)
         {
             var result = await _examinationService.RemoveToothChangeAsync(DoctorUserId, id, toothNumber, cancellationToken);
-            return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result, "Đã bỏ thay đổi của răng"));
+            return Ok(ApiResponse<List<DentalChartToothResponse>>.SuccessResult(result, "Tooth change removed"));
         }
 
         [HttpGet("examinations/{id:long}/prescription")]
@@ -99,14 +99,14 @@ namespace OZE.Controllers
             long id, [FromBody] SavePrescriptionNotesRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.SavePrescriptionNotesAsync(DoctorUserId, id, request, cancellationToken);
-            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã lưu ghi chú đơn thuốc"));
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Prescription note saved"));
         }
 
         [HttpDelete("examinations/{id:long}/prescription")]
         public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> DeletePrescriptionAsync(long id, CancellationToken cancellationToken)
         {
             var result = await _examinationService.DeletePrescriptionAsync(DoctorUserId, id, cancellationToken);
-            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã xóa đơn thuốc"));
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Prescription deleted"));
         }
 
         [HttpPost("examinations/{id:long}/prescription/items")]
@@ -114,7 +114,7 @@ namespace OZE.Controllers
             long id, [FromBody] SavePrescriptionItemRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.AddPrescriptionItemAsync(DoctorUserId, id, request, cancellationToken);
-            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã thêm thuốc"));
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Medication added"));
         }
 
         [HttpPut("examinations/{id:long}/prescription/items/{itemId:long}")]
@@ -122,7 +122,7 @@ namespace OZE.Controllers
             long id, long itemId, [FromBody] SavePrescriptionItemRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.UpdatePrescriptionItemAsync(DoctorUserId, id, itemId, request, cancellationToken);
-            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã cập nhật thuốc"));
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Medication updated"));
         }
 
         [HttpDelete("examinations/{id:long}/prescription/items/{itemId:long}")]
@@ -130,21 +130,21 @@ namespace OZE.Controllers
             long id, long itemId, CancellationToken cancellationToken)
         {
             var result = await _examinationService.DeletePrescriptionItemAsync(DoctorUserId, id, itemId, cancellationToken);
-            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã bỏ thuốc"));
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Medication removed"));
         }
 
         [HttpPost("examinations/{id:long}/prescription/finalize")]
         public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> FinalizePrescriptionAsync(long id, CancellationToken cancellationToken)
         {
             var result = await _examinationService.FinalizePrescriptionAsync(DoctorUserId, id, cancellationToken);
-            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã chốt đơn thuốc"));
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Prescription finalized"));
         }
 
         [HttpPost("examinations/{id:long}/prescription/reopen")]
         public async Task<ActionResult<ApiResponse<PrescriptionResponse>>> ReopenPrescriptionAsync(long id, CancellationToken cancellationToken)
         {
             var result = await _examinationService.ReopenPrescriptionAsync(DoctorUserId, id, cancellationToken);
-            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Đã mở lại đơn thuốc"));
+            return Ok(ApiResponse<PrescriptionResponse>.SuccessResult(result, "Prescription reopened"));
         }
 
         [HttpPost("examinations/{id:long}/diagnoses")]
@@ -152,7 +152,7 @@ namespace OZE.Controllers
             long id, [FromBody] SaveDiagnosisRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.AddDiagnosisAsync(DoctorUserId, id, request, cancellationToken);
-            return Ok(ApiResponse<List<DiagnosisResponse>>.SuccessResult(result, "Đã thêm chẩn đoán"));
+            return Ok(ApiResponse<List<DiagnosisResponse>>.SuccessResult(result, "Diagnosis added"));
         }
 
         [HttpPut("examinations/{id:long}/diagnoses/{diagnosisId:long}")]
@@ -160,7 +160,7 @@ namespace OZE.Controllers
             long id, long diagnosisId, [FromBody] SaveDiagnosisRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.UpdateDiagnosisAsync(DoctorUserId, id, diagnosisId, request, cancellationToken);
-            return Ok(ApiResponse<List<DiagnosisResponse>>.SuccessResult(result, "Đã cập nhật chẩn đoán"));
+            return Ok(ApiResponse<List<DiagnosisResponse>>.SuccessResult(result, "Diagnosis updated"));
         }
 
         [HttpDelete("examinations/{id:long}/diagnoses/{diagnosisId:long}")]
@@ -168,7 +168,7 @@ namespace OZE.Controllers
             long id, long diagnosisId, CancellationToken cancellationToken)
         {
             var result = await _examinationService.DeleteDiagnosisAsync(DoctorUserId, id, diagnosisId, cancellationToken);
-            return Ok(ApiResponse<List<DiagnosisResponse>>.SuccessResult(result, "Đã xóa chẩn đoán"));
+            return Ok(ApiResponse<List<DiagnosisResponse>>.SuccessResult(result, "Diagnosis deleted"));
         }
     }
 }

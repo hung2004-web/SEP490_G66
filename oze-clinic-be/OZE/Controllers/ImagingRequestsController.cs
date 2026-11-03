@@ -121,7 +121,7 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _imagingRequestService.CompleteAsync(id, CurrentUserId, null, cancellationToken);
-            return Ok(ApiResponse<ImagingRequestResponse>.SuccessResult(result, "Chụp phim hoàn tất. Bệnh nhân đã được đưa vào hàng đợi ưu tiên đọc kết quả."));
+            return Ok(ApiResponse<ImagingRequestResponse>.SuccessResult(result, "Imaging completed. The patient has been added to the priority return queue."));
         }
     }
 }
