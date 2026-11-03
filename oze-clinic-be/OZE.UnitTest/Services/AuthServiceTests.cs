@@ -848,6 +848,68 @@ namespace OZE.UnitTest.Services
             _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
         }
 
+        [Fact]
+        public async Task RefreshTokenAsync_WhenAccountDisabled_ShouldReturnAccountDisabledCode()
+        {
+            // Arrange: manager set LockoutEnd to MaxValue (MSG80)
+            var user = ActiveUser();
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            var oldToken = ActiveOldToken();
+            SetupOldToken(oldToken);
+            SetupFindById(user);
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Code.Should().Be(ErrorConstants.AuthCode.AccountDisabled);
+            result.Message.Should().Be(ErrorConstants.AuthMessage.AccountDisabled);
+            VerifyNoTokenIssued();
+            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
+            oldToken.RevokedAt.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WhenTemporarilyLockedOut_ShouldReturnLockedOutCode()
+        {
+            // Arrange: five failed logins on another device locked this account for 15 minutes
+            var lockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
+            var user = ActiveUser();
+            user.LockoutEnd = lockoutEnd;
+            var oldToken = ActiveOldToken();
+            SetupOldToken(oldToken);
+            SetupFindById(user);
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Code.Should().Be(ErrorConstants.AuthCode.LockedOut);
+            result.Message.Should().Be(ErrorConstants.AuthMessage.AccountLocked);
+            result.LockoutEnd.Should().Be(lockoutEnd);
+            VerifyNoTokenIssued();
+            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<UserRefreshToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WhenLockoutAlreadyEnded_ShouldReturnNewTokenPair()
+        {
+            // Arrange: temporary lockout has expired
+            var user = ActiveUser();
+            user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(-1);
+            SetupOldToken(ActiveOldToken());
+            SetupFindById(user);
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeTrue();
+            result.Data!.Token.Should().Be(AccessToken);
+        }
+
         #endregion
 
         #region ConfirmEmailAsync
