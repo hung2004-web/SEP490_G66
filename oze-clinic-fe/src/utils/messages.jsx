@@ -104,9 +104,10 @@ export const BACKEND_ROLE_NAMES = {
     [USER_ROLES.CLINIC_MANAGER]: "ClinicManager",
 };
 
-export const BACKEND_LOGIN_MESSAGES = {
-    INVALID_LOGIN: "Invalid login, please check again",
-    LOCKED_OUT: "Account is temporarily locked. Please try again later.",
+export const BACKEND_LOGIN_CODES = {
+    INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
+    LOCKED_OUT: "LOCKED_OUT",
+    ACCOUNT_DISABLED: "ACCOUNT_DISABLED",
 };
 
 export const ROLE_LABELS = {
