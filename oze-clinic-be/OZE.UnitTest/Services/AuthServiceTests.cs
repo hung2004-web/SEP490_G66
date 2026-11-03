@@ -466,12 +466,14 @@ namespace OZE.UnitTest.Services
         private void VerifyDevicesNeverSignedOut()
         {
             _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task ChangePasswordAsync_WithValidRequest_ShouldChangePasswordAndSignOutAllDevices()
         {
-            // Arrange
+            // Arrange: no current refresh token → every device must sign in again
             var user = ActiveUser();
             SetupFindById(user);
             SetupIdentityChangePassword(user, IdentityResult.Success);
@@ -479,11 +481,64 @@ namespace OZE.UnitTest.Services
             // Act
             var result = await _authService.ChangePasswordAsync(UserId, ValidChangeRequest());
 
-            // Assert: old refresh tokens are revoked so other devices must sign in again
+            // Assert
             result.Success.Should().BeTrue();
             _userManagerMock.Verify(m => m.ChangePasswordAsync(user, CurrentPassword, NewPassword), Times.Once);
             _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(UserId), Times.Once);
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _refreshTokenRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WithCurrentRefreshToken_ShouldKeepThisDeviceAndSignOutOthers()
+        {
+            // Arrange: BR-104 — keep the session that just changed the password
+            const string currentRefreshToken = "current-device-token";
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Success);
+            _refreshTokenRepositoryMock
+                .Setup(r => r.GetActiveTokenAsync(currentRefreshToken))
+                .ReturnsAsync(new UserRefreshToken { UserId = UserId, RefreshToken = currentRefreshToken });
+
+            var request = ValidChangeRequest();
+            request.RefreshToken = currentRefreshToken;
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, request);
+
+            // Assert
+            result.Success.Should().BeTrue();
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(UserId, currentRefreshToken), Times.Once);
+            _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(It.IsAny<string>()), Times.Never);
+            _refreshTokenRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_WithForeignOrUnknownRefreshToken_ShouldSignOutAllDevices()
+        {
+            // Arrange: token missing or belonging to someone else → revoke everything
+            const string foreignToken = "other-user-token";
+            var user = ActiveUser();
+            SetupFindById(user);
+            SetupIdentityChangePassword(user, IdentityResult.Success);
+            _refreshTokenRepositoryMock
+                .Setup(r => r.GetActiveTokenAsync(foreignToken))
+                .ReturnsAsync(new UserRefreshToken { UserId = "other-user", RefreshToken = foreignToken });
+
+            var request = ValidChangeRequest();
+            request.RefreshToken = foreignToken;
+
+            // Act
+            var result = await _authService.ChangePasswordAsync(UserId, request);
+
+            // Assert
+            result.Success.Should().BeTrue();
+            _refreshTokenRepositoryMock.Verify(r => r.RevokeUserTokensAsync(UserId), Times.Once);
+            _refreshTokenRepositoryMock.Verify(
+                r => r.RevokeUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
