@@ -10,6 +10,8 @@ namespace OZE.Application.Interfaces
     public interface IWorkShiftRepository
     {
         Task<bool> HasOverlapAsync(int staffProfileId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd, long? excludeShiftId = null);
+        // True when another shift uses the same room at a time that overlaps
+        Task<bool> HasRoomOverlapAsync(int roomId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd, long? excludeShiftId = null);
         Task<string?> GetConfigValueAsync(string configKey);
         Task AddAsync(StaffSchedule schedule);
         Task SaveChangesAsync();

@@ -211,13 +211,9 @@ namespace OZE.Application.Services
             var duration = TimeSpan.FromMinutes(lines.Sum(l => l.GetMinutes(slotMinutes)));
 
             var shifts = await _appointmentRepository.GetDoctorShiftsAsync(date, doctorId);
-            var requiredRoomType = lines
-                .Select(l => l.Service.RequiredRoomType)
-                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
-            if (requiredRoomType != null)
-            {
-                shifts = shifts.Where(x => x.Room!.RoomType == requiredRoomType).ToList();
-            }
+            // Only shifts in the kind of room the services need (a general treatment room when they ask for none)
+            var requiredRoomType = RequiredRoomTypeOf(lines.Select(l => l.Service.RequiredRoomType));
+            shifts = shifts.Where(x => x.Room!.RoomType == requiredRoomType).ToList();
 
             var doctorIds = shifts.Select(x => x.StaffProfileId).Distinct().ToList();
             var booked = (await _appointmentRepository.GetActiveAppointmentsAsync(date, doctorIds))
@@ -767,16 +763,11 @@ namespace OZE.Application.Services
             var newDoctorId = request.DoctorId!.Value;
             ConditionGuard.ThrowIf(appointment.DoctorId == newDoctorId, ErrorConstants.AppointmentMessage.ReassignSameDoctor);
 
-            var shift = await FindDoctorShiftAsync(newDoctorId, today, null);
-            ConditionGuard.Ensure(shift != null, ErrorConstants.AppointmentMessage.DoctorHasNoShiftToday);
+            // The same rule as booking: a shift in the kind of room the services need
+            var shift = await FindDoctorShiftAsync(newDoctorId, today, null,
+                RequiredRoomTypeOf(appointment.ServiceItems.Select(i => i.Service?.RequiredRoomType)));
+            ConditionGuard.Ensure(shift != null, ErrorConstants.AppointmentMessage.DoctorNoSuitableShiftToday);
             var room = shift!.Room;
-
-            // The same rule as booking: the services need the right kind of room
-            var requiredRoomType = appointment.ServiceItems
-                .Select(i => i.Service?.RequiredRoomType)
-                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
-            ConditionGuard.Ensure(requiredRoomType == null || room?.RoomType == requiredRoomType,
-                ErrorConstants.AppointmentMessage.ReassignRoomNotSuitable);
 
             var oldDoctorId = appointment.DoctorId;
             appointment.DoctorId = newDoctorId;
@@ -846,8 +837,9 @@ namespace OZE.Application.Services
 
             // The patient is seen by the doctor they asked for, in the room of that doctor's shift
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var shift = await FindDoctorShiftAsync(request.DoctorId!.Value, today, null);
-            ConditionGuard.Ensure(shift != null, ErrorConstants.AppointmentMessage.DoctorHasNoShiftToday);
+            var shift = await FindDoctorShiftAsync(request.DoctorId!.Value, today, null,
+                RequiredRoomTypeOf(lines.Select(l => l.Service.RequiredRoomType)));
+            ConditionGuard.Ensure(shift != null, ErrorConstants.AppointmentMessage.DoctorNoSuitableShiftToday);
             var room = shift!.Room;
 
             var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
@@ -932,7 +924,7 @@ namespace OZE.Application.Services
             return response;
         }
 
-        // The room of the doctor's shift: the one running now, else the one the booked slot belongs to, else the next one of the day.
+        // The room of the doctor's shift: the one the booked slot belongs to, else the one running now, else the next one of the day.
         // A doctor who has ended the shift takes no more patients; a doctor without a shift today is left without a room.
         private async Task<Room?> FindDoctorRoomAsync(Appointment appointment)
         {
@@ -941,18 +933,27 @@ namespace OZE.Application.Services
                 return null;
             }
 
-            var shift = await FindDoctorShiftAsync(appointment.DoctorId.Value, appointment.AppointmentDate, appointment.TimeSlotStart);
+            var shift = await FindDoctorShiftAsync(appointment.DoctorId.Value, appointment.AppointmentDate, appointment.TimeSlotStart,
+                RequiredRoomTypeOf(appointment.ServiceItems.Select(i => i.Service?.RequiredRoomType)));
             return shift?.Room;
         }
 
-        // The shift the patient is seen in; null when the doctor has none to offer today
-        private async Task<StaffSchedule?> FindDoctorShiftAsync(int doctorId, DateOnly date, TimeOnly? slot)
+        // The kind of room the services need; services that ask for none are done in a general treatment room
+        private static string RequiredRoomTypeOf(IEnumerable<string?> roomTypes)
         {
-            var shifts = await _appointmentRepository.GetDoctorShiftsAsync(date, doctorId)
-                ?? new List<StaffSchedule>();
+            return roomTypes.FirstOrDefault(t => !string.IsNullOrWhiteSpace(t)) ?? RoomTypeConstants.GeneralTreatment;
+        }
+
+        // The shift the patient is seen in, in the kind of room the services need; null when the doctor has none to offer today.
+        // A booked patient belongs to the shift of the booked time even when arriving during an earlier shift.
+        private async Task<StaffSchedule?> FindDoctorShiftAsync(int doctorId, DateOnly date, TimeOnly? slot, string requiredRoomType)
+        {
+            var shifts = (await _appointmentRepository.GetDoctorShiftsAsync(date, doctorId) ?? new List<StaffSchedule>())
+                .Where(x => x.Room?.RoomType == requiredRoomType)
+                .ToList();
             var now = TimeOnly.FromDateTime(DateTime.Now);
-            var shift = shifts.FirstOrDefault(x => x.ShiftStart <= now && now < x.ShiftEnd)
-                ?? shifts.FirstOrDefault(x => slot.HasValue && x.ShiftStart <= slot.Value && slot.Value < x.ShiftEnd)
+            var shift = shifts.FirstOrDefault(x => slot.HasValue && x.ShiftStart <= slot.Value && slot.Value < x.ShiftEnd)
+                ?? shifts.FirstOrDefault(x => x.ShiftStart <= now && now < x.ShiftEnd)
                 ?? shifts.FirstOrDefault(x => x.ShiftStart > now);
             if (shift == null)
             {

@@ -155,6 +155,7 @@ namespace OZE.Common.Constants
             public const string InvalidTimeRange = "Shift start time must be earlier than end time";
             public const string PastDate = "Shift date cannot be in the past";
             public const string ShiftOverlap = "This staff member already has a shift that overlaps this time";
+            public const string RoomOverlap = "This room is already used by another shift at that time";
             public const string WorkShiftNotFound = "Work shift not found";
             public const string InvalidDateRange = "From date must be earlier than or equal to to date";
             public const string ShiftAlreadyStarted = "Cannot delete a work shift that has already started or passed";
@@ -223,7 +224,6 @@ namespace OZE.Common.Constants
             public const string CheckInNeedsConfirmation = "This appointment is not confirmed yet. Please confirm it before check-in";
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
             public const string CheckInDoctorShiftEnded = "The doctor has already ended the shift today";
-            public const string DoctorHasNoShiftToday = "The doctor has no shift to see this patient today";
             public const string DoctorNotOnShiftCannotStart = "You are not on a shift now. Start your shift to see new patients; only patients you have already examined can still be seen";
             public const string NoShowOnlyWaiting = "Only a patient who is checked in and waiting can be marked as not there";
             public const string NoShowAlreadyExamined = "The doctor has already started on this patient; the doctor completes the examination instead";
@@ -231,7 +231,7 @@ namespace OZE.Common.Constants
             public const string ReassignAlreadyExamined = "This patient was already seen by the doctor and stays with that doctor";
             public const string ReassignWrongDay = "A patient can only be moved to another doctor on the day of the appointment";
             public const string ReassignSameDoctor = "The patient is already with this doctor";
-            public const string ReassignRoomNotSuitable = "The room of this doctor's shift does not suit the services of the appointment";
+            public const string DoctorNoSuitableShiftToday = "The doctor has no shift today in a room that suits these services";
             public const string DoctorProfileNotFound = "No doctor profile is linked to this account";
             public const string PriorityInvalid = "Priority must be 0 (normal), 1 (high) or 2 (urgent)";
             public const string PriorityReasonRequired = "A reason is required when the priority is above normal";
