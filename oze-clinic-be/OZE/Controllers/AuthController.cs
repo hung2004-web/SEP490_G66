@@ -65,17 +65,22 @@ namespace OZE.ProjectBase.Controllers
         }
 
         [HttpPost("logout")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse>> LogoutAsync([FromBody] RefreshTokenRequest? request = null)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-            if (string.IsNullOrEmpty(userId))
+            // Access token may already be expired; refresh token alone is enough to end that device session (BR-109).
+            var userId = User.Identity?.IsAuthenticated == true
+                ? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")
+                : null;
+            var refreshToken = request?.RefreshToken;
+
+            if (string.IsNullOrWhiteSpace(refreshToken) && string.IsNullOrEmpty(userId))
             {
                 return Unauthorized(ApiResponse.FailureResult("User not identified"));
             }
 
-            var result = await _authService.LogoutAsync(userId, request?.RefreshToken);
-            return Ok(result);
+            var result = await _authService.LogoutAsync(userId, refreshToken);
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         [HttpPost("change-password")]
