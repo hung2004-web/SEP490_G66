@@ -42,6 +42,18 @@ export const formatDate = (value) => {
     return date ? `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}` : "";
 };
 
+// "2026-10-16" -> "16/10"
+export const formatDayMonth = (value) => {
+    const date = parseDateOnly(value);
+    return date ? `${pad(date.getDate())}/${pad(date.getMonth() + 1)}` : "";
+};
+
+// "0901234567" -> "0901 234 567"
+export const formatPhone = (phone) => (phone ?? "").replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
+
+// Text compared in searches: same Unicode form, no surrounding spaces, lower case.
+export const normalizeText = (value) => (value ?? "").normalize("NFC").trim().toLocaleLowerCase("vi");
+
 export const formatWeekday = (value) => {
     const date = parseDateOnly(value);
     return date ? WEEKDAYS[date.getDay()] : "";

@@ -2,6 +2,7 @@ import { useState } from "react";
 import SearchInput from "@/components/ui/SearchInput";
 import { AVAILABILITY } from "@/services/shiftService";
 import { cx } from "@/utils/cx";
+import { normalizeText } from "@/utils/format";
 
 const AVAILABILITY_LOOKS = {
     [AVAILABILITY.FREE]: { label: "Rảnh", className: "text-success" },
@@ -11,13 +12,11 @@ const AVAILABILITY_LOOKS = {
 
 const SKELETON_COUNT = 3;
 
-const normalize = (value) => value.normalize("NFC").trim().toLocaleLowerCase("vi");
-
 // Search box + radio list of staff for a shift. Only free people can be picked; busy ones show the room they are in.
 // id goes on the search box (give the field label htmlFor={id}); value / onChange: the picked staff id.
 const StaffPicker = ({ id, candidates, loading, value, onChange, invalid }) => {
     const [keyword, setKeyword] = useState("");
-    const shown = candidates.filter((candidate) => normalize(candidate.name).includes(normalize(keyword)));
+    const shown = candidates.filter((candidate) => normalizeText(candidate.name).includes(normalizeText(keyword)));
 
     return (
         <div className="flex flex-col gap-2">

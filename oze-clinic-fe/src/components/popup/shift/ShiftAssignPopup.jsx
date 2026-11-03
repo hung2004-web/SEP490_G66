@@ -4,13 +4,11 @@ import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import useAsync from "@/hooks/useAsync";
 import { getShiftCandidates, saveShift } from "@/services/shiftService";
+import { formatDayMonth } from "@/utils/format";
 import { ShiftPlaceTable } from "./ShiftInfoTable";
 import StaffPicker from "./StaffPicker";
 
 const STAFF_ID = "shift-assign-staff";
-
-// "2026-10-30" -> "30/10"
-const dayMonth = (dateOnly) => `${dateOnly.slice(8, 10)}/${dateOnly.slice(5, 7)}`;
 
 // Two popups in one:
 // - replace = false: "Phân ca" for an empty shift;
@@ -64,7 +62,7 @@ const ShiftAssignPopup = ({ cell, replace = false, onClose, onSaved }) => {
 
                 {replace && (
                     <p className="alert alert-warning border-0">
-                        {cell.staff.name} đã được duyệt nghỉ ngày {dayMonth(cell.date)} ({cell.leave.wholeDay ? "cả ngày" : cell.slotLabel.toLowerCase()}).
+                        {cell.staff.name} đã được duyệt nghỉ ngày {formatDayMonth(cell.date)} ({cell.leave.wholeDay ? "cả ngày" : cell.slotLabel.toLowerCase()}).
                         Chọn người thay cho ca này.
                     </p>
                 )}

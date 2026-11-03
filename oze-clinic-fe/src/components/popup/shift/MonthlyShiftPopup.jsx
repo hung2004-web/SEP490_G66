@@ -6,7 +6,7 @@ import useAsync from "@/hooks/useAsync";
 import { WEEKDAYS_SHORT, createMonthlyShifts, getShiftStaff, roomsForRole } from "@/services/shiftService";
 import { cx } from "@/utils/cx";
 import { SHIFT_SLOTS, SHIFT_SLOT_OPTIONS } from "@/utils/data/mockShifts";
-import { toDateOnly } from "@/utils/format";
+import { formatDayMonth, toDateOnly } from "@/utils/format";
 import { requiredMessage } from "@/utils/validation";
 
 const STAFF_ID = "monthly-shift-staff";
@@ -21,9 +21,6 @@ const MAX_LISTED = 3;
 const WEEKDAY_NAMES = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
 const pad = (value) => String(value).padStart(2, "0");
-
-// "2026-11-05" -> "05/11"
-const dayMonth = (dateOnly) => `${dateOnly.slice(8, 10)}/${dateOnly.slice(5, 7)}`;
 
 const emptyPattern = () => WEEKDAYS_SHORT.map(() => ({ [SHIFT_SLOTS.MORNING]: "", [SHIFT_SLOTS.AFTERNOON]: "" }));
 
@@ -45,7 +42,7 @@ const monthOptions = () => {
 };
 
 const listDates = (dates) => {
-    const unique = [...new Set(dates)].map(dayMonth);
+    const unique = [...new Set(dates)].map(formatDayMonth);
     return unique.length > MAX_LISTED ? `${unique.slice(0, MAX_LISTED).join(", ")}…` : unique.join(", ");
 };
 
@@ -56,7 +53,7 @@ const skippedText = ({ skippedLeave, conflicts }) => {
     if (conflicts.length > 0) {
         const listed = conflicts
             .slice(0, MAX_LISTED)
-            .map((item) => `${dayMonth(item.date)} ${item.slot === SHIFT_SLOTS.MORNING ? "sáng" : "chiều"} (${item.reason})`);
+            .map((item) => `${formatDayMonth(item.date)} ${item.slot === SHIFT_SLOTS.MORNING ? "sáng" : "chiều"} (${item.reason})`);
         parts.push(`${conflicts.length} ca ngày ${listed.join(", ")}${conflicts.length > MAX_LISTED ? "…" : ""}`);
     }
     return parts.length > 0 ? `Bỏ qua ${parts.join(" và ")}.` : null;

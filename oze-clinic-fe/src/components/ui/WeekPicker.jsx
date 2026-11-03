@@ -1,10 +1,8 @@
 import { ArrowLeft, ArrowRight, CalendarCheck, CalendarDays } from "lucide-react";
 import { cx } from "@/utils/cx";
-import { formatDate, getWeekStart, parseDateOnly, toDateOnly } from "@/utils/format";
+import { formatDate, formatDayMonth, getWeekStart, parseDateOnly, toDateOnly } from "@/utils/format";
 
 const DAY_MS = 86_400_000;
-
-const pad = (value) => String(value).padStart(2, "0");
 
 const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 
@@ -32,7 +30,7 @@ const WeekPicker = ({ id, value, onChange, label = "Chọn tuần", className })
     const sunday = addDays(monday, 6);
     const { week, year } = isoWeek(monday);
     const isCurrent = value === getWeekStart();
-    const range = `${pad(monday.getDate())}/${pad(monday.getMonth() + 1)} – ${formatDate(toDateOnly(sunday))}`;
+    const range = `${formatDayMonth(toDateOnly(monday))} – ${formatDate(toDateOnly(sunday))}`;
 
     const move = (weeks) => onChange(toDateOnly(addDays(monday, weeks * 7)));
 

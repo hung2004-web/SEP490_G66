@@ -6,10 +6,9 @@ import ConfigSection from "@/components/config/ConfigSection";
 import SaveConfigPopup from "@/components/popup/config/SaveConfigPopup";
 import SearchInput from "@/components/ui/SearchInput";
 import { getSystemConfigs, saveSystemConfigs, validateSystemConfigs } from "@/services/systemConfigService";
+import { normalizeText } from "@/utils/format";
 
 const SKELETON_SECTION_COUNT = 3;
-
-const normalize = (value) => value.normalize("NFC").trim().toLocaleLowerCase("vi");
 
 // Clinic manager's "Cấu hình hệ thống": edit the SystemConfigurations values, then confirm and save them all at once.
 const SystemSettings = () => {
@@ -36,8 +35,8 @@ const SystemSettings = () => {
     const changes = configs.filter((config) => values[config.key] !== saved[config.key]).map((config) => ({ config, value: values[config.key] }));
     const errors = showErrors ? { ...serverErrors, ...validateSystemConfigs(values) } : {};
 
-    const search = normalize(keyword);
-    const matches = (config) => !search || [config.label, config.key].some((text) => normalize(text).includes(search));
+    const search = normalizeText(keyword);
+    const matches = (config) => !search || [config.label, config.key].some((text) => normalizeText(text).includes(search));
     const shownGroups = (groups ?? []).map((group) => ({ ...group, configs: group.configs.filter(matches) })).filter((group) => group.configs.length > 0);
 
     const change = (key, value) => {

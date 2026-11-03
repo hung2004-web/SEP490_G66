@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { ShiftStatusPill } from "@/components/shift/ShiftStatus";
 import { LEAVE_REQUEST_STATUS_LABELS, SHIFT_STATUSES } from "@/utils/data/mockShifts";
 import { formatShiftPlace } from "@/services/shiftService";
+import { formatPhone } from "@/utils/format";
 import { ROUTES } from "@/utils/routes";
 import ShiftInfoTable from "./ShiftInfoTable";
-
-const formatPhone = (phone) => phone.replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
 
 const actualTimes = (cell) => (cell.checkIn ? `${cell.checkIn} – ${cell.checkOut ?? "…"}` : "");
 
@@ -23,13 +23,12 @@ const statusRows = (cell) => {
         ];
     }
     if (cell.status === SHIFT_STATUSES.LEAVE) {
-        const status = LEAVE_REQUEST_STATUS_LABELS[cell.leave.status];
         return [
             {
                 label: "Đơn xin nghỉ",
                 value: (
                     <span className="flex flex-wrap items-center justify-between gap-2">
-                        <span className={`badge ${status.badge}`}>{status.label}</span>
+                        <StatusBadge status={cell.leave.status} labels={LEAVE_REQUEST_STATUS_LABELS} />
                         <Link to={leaveRequestUrl(cell.leave.requestId)} className="btn btn-link h-auto p-0 text-caption font-semibold">
                             Xem chi tiết đơn
                         </Link>
