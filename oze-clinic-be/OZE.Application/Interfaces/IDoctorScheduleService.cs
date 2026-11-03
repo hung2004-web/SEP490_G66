@@ -18,5 +18,9 @@ namespace OZE.Application.Interfaces
         // Clock out: the doctor ends a shift of today. Patients of the shift who were not examined are marked NO_SHOW
         // (checked in and waiting, or booked and already late); booked patients whose time is still to come are only reported.
         Task<EndShiftResponse> EndShiftAsync(string userId, long shiftId);
+
+        // For the manager, when a shift was ended by mistake: only while the shift time is still on and the room is not
+        // used by another doctor's running shift. The patients that end marked NO_SHOW are taken back as they were.
+        Task<ReopenShiftResponse> ReopenShiftAsync(long shiftId);
     }
 }

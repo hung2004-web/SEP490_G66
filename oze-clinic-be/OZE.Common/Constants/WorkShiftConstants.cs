@@ -11,5 +11,8 @@ namespace OZE.Common.Constants
     {
         public const int DaysInWeek = 7;
         public const DayOfWeek WeekStartDay = DayOfWeek.Monday;
+
+        // A doctor can start a shift this long before it is due to begin, until it is over
+        public const int ClockInEarlyMinutes = 30;
     }
 }

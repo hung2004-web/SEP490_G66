@@ -9,6 +9,8 @@ namespace OZE.Application.Interfaces
         Task AddAsync(UserRefreshToken refreshToken);
         Task UpdateAsync(UserRefreshToken refreshToken);
         Task RevokeUserTokensAsync(string userId);
+        /// <summary>Revokes every active refresh token for the user except <paramref name="keepRefreshToken"/>.</summary>
+        Task RevokeUserTokensExceptAsync(string userId, string keepRefreshToken);
         Task SaveChangesAsync();
     }
 }

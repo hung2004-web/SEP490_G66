@@ -157,6 +157,14 @@ namespace OZE.Application.Services
                 var chosen = doctorId.HasValue ? candidates[0] : await PickLeastBusyAsync(candidates, date);
                 var patient = await getPatientAsync();
 
+                // One appointment at a time: the earlier one must be completed, cancelled or marked NO_SHOW first.
+                // A patient without a record yet (Id 0) cannot have one.
+                if (patient.Id != 0)
+                {
+                    ConditionGuard.ThrowIf(await _appointmentRepository.HasUnfinishedAppointmentAsync(patient.Id),
+                        ErrorConstants.AppointmentMessage.PatientHasUnfinishedAppointment);
+                }
+
                 var appointment = new Appointment
                 {
                     Patient = patient,
@@ -460,6 +468,8 @@ namespace OZE.Application.Services
                     AppointmentType = x.Appointment.AppointmentType,
                     TimeSlotStart = x.Appointment.TimeSlotStart,
                     CheckInAt = x.Appointment.CheckInAt,
+                    RoomId = GetCurrentRoom(x.Appointment)?.Id,
+                    RoomName = GetCurrentRoom(x.Appointment)?.RoomName,
                     Priority = x.Appointment.Priority,
                     IsLate = x.Group == LateGroup,
                     IsPriorityReturn = x.Group == PriorityReturnGroup,
@@ -650,6 +660,9 @@ namespace OZE.Application.Services
             var priority = request?.Priority ?? PriorityConstants.Normal;
             EnsureValidPriority(priority, request?.Reason);
 
+            // The patient goes to the room of the doctor's shift
+            var room = await FindDoctorRoomAsync(appointment);
+
             var oldStatus = appointment.Status;
             appointment.Status = AppointmentConstants.CheckedInStatus;
             appointment.Priority = priority;
@@ -658,22 +671,168 @@ namespace OZE.Application.Services
 
             await _appointmentRepository.UpdateAsync(appointment);
 
-            if (_queueService != null)
-            {
-                await _queueService.EnqueueAsync(
-                    appointment.Id,
-                    QueueConstants.ExaminationType,
-                    null,
-                    appointment.DoctorId,
-                    appointment.Priority,
-                    request?.Reason,
-                    cancellationToken);
-            }
+            await EnterExaminationQueueAsync(appointment, room, request?.Reason, cancellationToken);
 
             await _auditLogService.LogAsync(AuditConstants.AppointmentCheckedIn, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status, appointment.Priority }, request?.Reason?.Trim());
 
-            return MapToResponse(appointment);
+            var response = MapToResponse(appointment);
+            response.RoomId = room?.Id;
+            response.RoomName = room?.RoomName;
+            return response;
+        }
+
+        public async Task<AppointmentResponse> CreateWalkInAsync(WalkInRequest request, string? createdByUserId, CancellationToken cancellationToken = default)
+        {
+            ConditionGuard.Ensure(PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var phone), ErrorConstants.AuthMessage.InvalidPhone);
+
+            var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+            ConditionGuard.ThrowIf(email != null && (email.Length > 256 || !new EmailAddressAttribute().IsValid(email)),
+                ErrorConstants.AuthMessage.EmailInvalid);
+            ConditionGuard.Ensure(PatientConstants.Gender.TryNormalize(request.Gender, out var gender), ErrorConstants.PatientMessage.InvalidGender);
+            ConditionGuard.Ensure(request.DateOfBirth == null || request.DateOfBirth.Value <= DateOnly.FromDateTime(DateTime.Today),
+                ErrorConstants.PatientMessage.InvalidDateOfBirth);
+
+            // Normal unless the desk says otherwise; above normal needs a reason, like at check-in
+            var priority = request.Priority ?? PriorityConstants.Normal;
+            EnsureValidPriority(priority, request.Reason);
+
+            var lines = await ResolveBookingLinesAsync(request.ServiceId, request.VariantId);
+
+            // The patient is seen by the doctor they asked for, in the room of that doctor's shift
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var shift = await FindDoctorShiftAsync(request.DoctorId!.Value, today, null);
+            ConditionGuard.Ensure(shift != null, ErrorConstants.AppointmentMessage.DoctorHasNoShiftToday);
+            var room = shift!.Room;
+
+            var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
+            var phoneVariants = PhoneNumberHelper.GetLookupVariants(phone);
+
+            var (appointment, patient) = await _appointmentRepository.ExecuteSerializableAsync(async () =>
+            {
+                // A phone that already has a record (with or without an account) is the same person: the record is used as it is
+                var patients = await _registrationRepository.FindPatientsByPhoneAsync(phoneVariants);
+                ConditionGuard.ThrowIf(patients.Count > 1, ErrorConstants.AuthMessage.MultiplePatientRecords);
+
+                var patient = patients.FirstOrDefault();
+                if (patient == null)
+                {
+                    patient = new Patient
+                    {
+                        PatientCode = GeneratePatientCode(),
+                        FullName = request.FullName.Trim(),
+                        PhoneNumber = phone,
+                        Email = email,
+                        DateOfBirth = request.DateOfBirth,
+                        Gender = gender,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    };
+                    await _appointmentRepository.AddPatientAsync(patient);
+                }
+                else
+                {
+                    // One appointment at a time, also for someone who walks in
+                    ConditionGuard.ThrowIf(await _appointmentRepository.HasUnfinishedAppointmentAsync(patient.Id),
+                        ErrorConstants.AppointmentMessage.PatientHasUnfinishedAppointment);
+                }
+
+                var now = DateTimeOffset.UtcNow;
+                var appointment = new Appointment
+                {
+                    Patient = patient,
+                    DoctorId = request.DoctorId,
+                    AppointmentType = AppointmentConstants.WalkInType,
+                    AppointmentDate = today,
+                    // The patient is at the desk, so there is nothing to confirm
+                    Status = AppointmentConstants.CheckedInStatus,
+                    Priority = priority,
+                    CheckInAt = now,
+                    Notes = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+                    CreatedAt = now,
+                    CreatedByUserId = createdByUserId,
+                    ServiceItems = lines.Select(l => new AppointmentServiceItem
+                    {
+                        ServiceId = l.Service.Id,
+                        VariantId = l.Variant?.Id,
+                        DurationMinutes = l.GetMinutes(slotMinutes),
+                        PriceAtBooking = l.Price,
+                        CreatedAt = now
+                    }).ToList()
+                };
+                await _appointmentRepository.AddAsync(appointment);
+                await _appointmentRepository.SaveChangesAsync();
+
+                return (appointment, patient);
+            });
+
+            // After the transaction: the queue gives out its numbers in a transaction of its own
+            await EnterExaminationQueueAsync(appointment, room, request.Reason?.Trim(), cancellationToken);
+
+            await LogCreatedAsync(appointment, lines);
+            await _auditLogService.LogAsync(AuditConstants.AppointmentCheckedIn, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                null, new { appointment.Status, appointment.Priority }, request.Reason?.Trim());
+
+            // A walk-in has no booked time, so the time fields stay empty
+            var response = ToResponse(appointment, patient, new AvailableSlotResponse
+            {
+                DoctorId = shift.StaffProfileId,
+                DoctorName = shift.StaffProfile?.FullName ?? string.Empty,
+                Date = today
+            }, lines);
+            response.CheckInAt = appointment.CheckInAt;
+            response.RoomId = room?.Id;
+            response.RoomName = room?.RoomName;
+            return response;
+        }
+
+        // The room of the doctor's shift: the one running now, else the one the booked slot belongs to, else the next one of the day.
+        // A doctor who has ended the shift takes no more patients; a doctor without a shift today is left without a room.
+        private async Task<Room?> FindDoctorRoomAsync(Appointment appointment)
+        {
+            if (appointment.DoctorId == null)
+            {
+                return null;
+            }
+
+            var shift = await FindDoctorShiftAsync(appointment.DoctorId.Value, appointment.AppointmentDate, appointment.TimeSlotStart);
+            return shift?.Room;
+        }
+
+        // The shift the patient is seen in; null when the doctor has none to offer today
+        private async Task<StaffSchedule?> FindDoctorShiftAsync(int doctorId, DateOnly date, TimeOnly? slot)
+        {
+            var shifts = await _appointmentRepository.GetDoctorShiftsAsync(date, doctorId)
+                ?? new List<StaffSchedule>();
+            var now = TimeOnly.FromDateTime(DateTime.Now);
+            var shift = shifts.FirstOrDefault(x => x.ShiftStart <= now && now < x.ShiftEnd)
+                ?? shifts.FirstOrDefault(x => slot.HasValue && x.ShiftStart <= slot.Value && slot.Value < x.ShiftEnd)
+                ?? shifts.FirstOrDefault(x => x.ShiftStart > now);
+            if (shift == null)
+            {
+                var hasEnded = await _appointmentRepository.HasEndedShiftAsync(doctorId, date);
+                ConditionGuard.ThrowIf(hasEnded, ErrorConstants.AppointmentMessage.CheckInDoctorShiftEnded);
+            }
+
+            return shift;
+        }
+
+        // The patient waits for the doctor in the examination queue, in the room of the shift
+        private Task EnterExaminationQueueAsync(Appointment appointment, Room? room, string? reason, CancellationToken cancellationToken)
+        {
+            return _queueService == null
+                ? Task.CompletedTask
+                : _queueService.EnqueueAsync(appointment.Id, QueueConstants.ExaminationType, room?.Id, appointment.DoctorId,
+                    appointment.Priority, reason, cancellationToken);
+        }
+
+        // The room the waiting patient was sent to at check-in
+        private static Room? GetCurrentRoom(Appointment appointment)
+        {
+            return appointment.QueueEntries
+                .Where(q => q.QueueType == QueueConstants.ExaminationType && QueueConstants.ActiveStatuses.Contains(q.Status))
+                .OrderByDescending(q => q.CreatedAt)
+                .Select(q => q.Room)
+                .FirstOrDefault();
         }
 
         public async Task<AppointmentResponse> SetPriorityAsync(long id, SetPriorityRequest request, CancellationToken cancellationToken = default)

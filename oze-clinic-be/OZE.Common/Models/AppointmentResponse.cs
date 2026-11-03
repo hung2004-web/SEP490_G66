@@ -21,6 +21,9 @@ namespace OZE.Common.Models
         public TimeOnly TimeSlotEnd { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTimeOffset? CheckInAt { get; set; }
+        // Filled when the patient checks in: the room of the doctor's shift, where the patient goes
+        public int? RoomId { get; set; }
+        public string? RoomName { get; set; }
         public string? CancellationReason { get; set; }
         public string? Notes { get; set; }
         public DateTimeOffset CreatedAt { get; set; }

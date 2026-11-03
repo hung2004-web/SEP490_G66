@@ -50,6 +50,21 @@ namespace OZE.Persistence.Repositories
             }
         }
 
+        public async Task RevokeUserTokensExceptAsync(string userId, string keepRefreshToken)
+        {
+            var activeTokens = await _context.UserRefreshTokens
+                .Where(x => x.UserId == userId
+                    && x.RevokedAt == null
+                    && x.RefreshToken != keepRefreshToken)
+                .ToListAsync();
+
+            var now = DateTimeOffset.UtcNow;
+            foreach (var token in activeTokens)
+            {
+                token.RevokedAt = now;
+            }
+        }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();

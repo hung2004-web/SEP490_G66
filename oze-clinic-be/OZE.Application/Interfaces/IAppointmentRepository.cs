@@ -10,7 +10,10 @@ namespace OZE.Application.Interfaces
 {
     public interface IAppointmentRepository
     {
+        // Shifts still open: a shift the doctor has ended is not offered any more
         Task<List<StaffSchedule>> GetDoctorShiftsAsync(DateOnly date, int? doctorId);
+        // True when the doctor has ended a shift on that date
+        Task<bool> HasEndedShiftAsync(int doctorId, DateOnly date);
         Task<List<Appointment>> GetActiveAppointmentsAsync(DateOnly date, IReadOnlyCollection<int> doctorIds);
         Task<string?> GetConfigValueAsync(string configKey);
         Task AddPatientAsync(Patient patient);
@@ -34,6 +37,8 @@ namespace OZE.Application.Interfaces
         Task<List<Appointment>> GetDoctorOpenAppointmentsAsync(int doctorId, DateOnly date, CancellationToken cancellationToken = default);
         // True when the doctor already has a patient being examined (IN_SERVICE) on that date
         Task<bool> HasAppointmentInServiceAsync(int doctorId, DateOnly date);
+        // True when the patient has an appointment of today or later that is not finished yet
+        Task<bool> HasUnfinishedAppointmentAsync(int patientId);
         Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default);
         Task UpdateAsync(Appointment appointment);
 

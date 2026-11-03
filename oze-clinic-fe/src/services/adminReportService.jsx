@@ -3,6 +3,7 @@ import { MOCK_APPOINTMENT_RATES, MOCK_DEBTS, MOCK_PENDING_REQUESTS, MOCK_REVENUE
 
 // TODO(api): mock only. The numbers are made up from the date, so the same day always gives the same figures.
 const MOCK_DELAY_MS = 300;
+const DAY_MS = 86_400_000;
 
 export const REPORT_PERIODS = {
     DAY: "day",
@@ -12,14 +13,17 @@ export const REPORT_PERIODS = {
 };
 
 const WEEKDAYS_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-// Opening hours split into 2-hour slots for the "day" chart, with each slot's share of the day.
+// Opening hours split into 1-hour slots for the "day" chart, with each slot's share of the day (lunch break at 12h).
 const DAY_SLOTS = [
-    { label: "08h", weight: 0.14 },
-    { label: "10h", weight: 0.22 },
-    { label: "12h", weight: 0.1 },
-    { label: "14h", weight: 0.2 },
-    { label: "16h", weight: 0.2 },
-    { label: "18h", weight: 0.14 },
+    { label: "08h", weight: 0.08 },
+    { label: "09h", weight: 0.18 },
+    { label: "10h", weight: 0.23 },
+    { label: "11h", weight: 0.1 },
+    { label: "12h", weight: 0 },
+    { label: "13h", weight: 0.12 },
+    { label: "14h", weight: 0.16 },
+    { label: "15h", weight: 0.1 },
+    { label: "16h", weight: 0.03 },
 ];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -79,45 +83,68 @@ const getRange = (period, offset, today) => {
 };
 
 const rangeLabel = (period, { from, to }) => {
-    if (period === REPORT_PERIODS.DAY) return formatDate(toDateOnly(from));
+    if (period === REPORT_PERIODS.DAY) return `${WEEKDAYS_SHORT[from.getDay()]} ${formatDate(toDateOnly(from))}`;
     if (period === REPORT_PERIODS.MONTH) return `Tháng ${from.getMonth() + 1}/${from.getFullYear()}`;
     if (period === REPORT_PERIODS.YEAR) return `Năm ${from.getFullYear()}`;
     const start = from.getFullYear() === to.getFullYear() ? `${pad(from.getDate())}/${pad(from.getMonth() + 1)}` : formatDate(toDateOnly(from));
     return `${start} – ${formatDate(toDateOnly(to))}`;
 };
 
+// Period the report is compared with: the same weekday last week for a day, otherwise the period before.
+const getPreviousRange = (period, offset, today) => getRange(period, period === REPORT_PERIODS.DAY ? offset - 7 : offset - 1, today);
+
+// Names of the two chart series and the metric caption, e.g. "Tháng 10" / "Tháng 9" / "so với cùng kỳ tháng 9".
+const comparisonLabels = (period, range, previousRange) => {
+    if (period === REPORT_PERIODS.DAY) {
+        const previous = `${WEEKDAYS_SHORT[range.from.getDay()]} tuần trước`;
+        return { current: formatDate(toDateOnly(range.from)), previous, caption: `so với ${previous}` };
+    }
+    if (period === REPORT_PERIODS.WEEK) return { current: "Tuần này", previous: "Tuần trước", caption: "so với tuần trước" };
+    if (period === REPORT_PERIODS.MONTH) {
+        const previousMonth = previousRange.from.getMonth() + 1;
+        return {
+            current: `Tháng ${range.from.getMonth() + 1}`,
+            previous: `Tháng ${previousMonth}`,
+            caption: `so với cùng kỳ tháng ${previousMonth}`,
+        };
+    }
+    const previousYear = previousRange.from.getFullYear();
+    return { current: `Năm ${range.from.getFullYear()}`, previous: `Năm ${previousYear}`, caption: `so với cùng kỳ ${previousYear}` };
+};
+
 const sumRevenue = (days) => round1(days.reduce((sum, day) => sum + dailyStats(day).revenue, 0));
 
-// Chart bars; days after today have no data yet (value null).
-const buildBars = (period, { from, to }, today) => {
+const daysOfMonth = (year, month) => daysBetween(new Date(year, month, 1), new Date(year, month + 1, 0));
+
+// Chart bars; days after today have no data yet (value null). previous = the matching bar of the compared period,
+// filled for the whole period so the comparison line keeps going past today. date = the day / month a bar opens.
+const buildBars = (period, range, previousRange, today) => {
     const elapsed = (day) => day <= today;
     const sumElapsed = (days) => (days.some(elapsed) ? sumRevenue(days.filter(elapsed)) : null);
 
     if (period === REPORT_PERIODS.DAY) {
-        const revenue = elapsed(from) ? dailyStats(from).revenue : null;
+        // No comparison line for a single day.
+        const revenue = elapsed(range.from) ? dailyStats(range.from).revenue : null;
         return DAY_SLOTS.map((slot) => ({ label: slot.label, value: revenue === null ? null : round1(revenue * slot.weight) }));
     }
-    if (period === REPORT_PERIODS.WEEK) {
-        return daysBetween(from, to).map((day) => ({
-            label: WEEKDAYS_SHORT[day.getDay()],
-            sublabel: `${pad(day.getDate())}/${pad(day.getMonth() + 1)}`,
+    if (period === REPORT_PERIODS.WEEK || period === REPORT_PERIODS.MONTH) {
+        const week = period === REPORT_PERIODS.WEEK;
+        const previousDays = daysBetween(previousRange.from, previousRange.to);
+        return daysBetween(range.from, range.to).map((day, index) => ({
+            label: week ? WEEKDAYS_SHORT[day.getDay()] : String(day.getDate()),
+            sublabel: week ? `${pad(day.getDate())}/${pad(day.getMonth() + 1)}` : undefined,
             value: elapsed(day) ? dailyStats(day).revenue : null,
+            // A shorter previous month has no matching day.
+            previous: previousDays[index] ? dailyStats(previousDays[index]).revenue : null,
+            date: toDateOnly(day),
         }));
     }
-    if (period === REPORT_PERIODS.MONTH) {
-        const days = daysBetween(from, to);
-        return Array.from({ length: Math.ceil(days.length / 7) }, (_, index) => {
-            const week = days.slice(index * 7, index * 7 + 7);
-            return {
-                label: `Tuần ${index + 1}`,
-                sublabel: `${pad(week[0].getDate())}–${pad(week.at(-1).getDate())}`,
-                value: sumElapsed(week),
-            };
-        });
-    }
+    const year = range.from.getFullYear();
     return Array.from({ length: 12 }, (_, month) => ({
-        label: `T${month + 1}`,
-        value: sumElapsed(daysBetween(new Date(from.getFullYear(), month, 1), new Date(from.getFullYear(), month + 1, 0))),
+        label: `Th${month + 1}`,
+        value: sumElapsed(daysOfMonth(year, month)),
+        previous: sumRevenue(daysOfMonth(previousRange.from.getFullYear(), month)),
+        date: toDateOnly(new Date(year, month, 1)),
     }));
 };
 
@@ -128,7 +155,16 @@ const countAppointments = (visits) => {
     return { total: visits + cancelled + noShow, completed: visits, cancelled, noShow };
 };
 
-const percentChange = (current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
+// Offset (for getReport) of the day / month / year that contains dateOnly ("2026-10-18").
+export const getReportOffset = (period, dateOnly) => {
+    const [year, month, day] = dateOnly.split("-").map(Number);
+    const today = startOfDay(new Date());
+    if (period === REPORT_PERIODS.YEAR) return year - today.getFullYear();
+    if (period === REPORT_PERIODS.MONTH) return (year - today.getFullYear()) * 12 + month - 1 - today.getMonth();
+    return Math.round((new Date(year, month - 1, day) - today) / DAY_MS);
+};
+
+const percentChange =(current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
 
 // Report of one period. offset: 0 = the current period, -1 = the one before, ...
 // Changes compare with the same number of days at the start of the previous period, so a week in progress is fair.
@@ -139,7 +175,7 @@ export const getReport = async ({ period = REPORT_PERIODS.WEEK, offset = 0 } = {
     const today = startOfDay(now);
     const range = getRange(period, offset, today);
     const days = daysBetween(range.from, range.to < today ? range.to : today);
-    const previousRange = getRange(period, offset - 1, today);
+    const previousRange = getPreviousRange(period, offset, today);
     const previousDays = daysBetween(previousRange.from, previousRange.to).slice(0, days.length);
 
     const total = (list, field) => list.reduce((sum, day) => sum + dailyStats(day)[field], 0);
@@ -153,12 +189,13 @@ export const getReport = async ({ period = REPORT_PERIODS.WEEK, offset = 0 } = {
         to: toDateOnly(range.to),
         label: rangeLabel(period, range),
         updatedAt: now.toISOString(),
+        comparison: comparisonLabels(period, range, previousRange),
         revenue: { value: revenue, change: percentChange(revenue, sumRevenue(previousDays)) },
         visits: { value: visits, change: percentChange(visits, total(previousDays, "visits")) },
         newPatients: { value: newPatients, change: newPatients - total(previousDays, "newPatients") },
         appointments: countAppointments(visits),
         debts: { ...MOCK_DEBTS, items: MOCK_DEBTS.items.map((item) => ({ ...item })) },
-        revenueBars: buildBars(period, range, today),
+        revenueBars: buildBars(period, range, previousRange, today),
         revenueByService: MOCK_REVENUE_SHARES.map(({ label, share }) => ({ label, value: round1(revenue * share) })),
     });
 };

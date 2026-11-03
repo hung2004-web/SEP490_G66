@@ -41,16 +41,45 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.DeletedAt == null);
         }
 
+        // A transaction the database gave up because another one, doing the same thing, was in its way
+        private const int DeadlockErrorNumber = 1205;
+        private const int MaxDeadlockAttempts = 3;
+
         public async Task<T> ExecuteSerializableAsync<T>(Func<Task<T>> action)
         {
-            var strategy = _context.Database.CreateExecutionStrategy();
-            return await strategy.ExecuteAsync(async () =>
+            for (var attempt = 1; ; attempt++)
             {
-                await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-                var result = await action();
-                await transaction.CommitAsync();
-                return result;
-            });
+                try
+                {
+                    var strategy = _context.Database.CreateExecutionStrategy();
+                    return await strategy.ExecuteAsync(async () =>
+                    {
+                        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+                        var result = await action();
+                        await transaction.CommitAsync();
+                        return result;
+                    });
+                }
+                catch (Exception ex) when (attempt < MaxDeadlockAttempts && IsDeadlockVictim(ex))
+                {
+                    // Two requests asked for the same thing at once and this one had to give way. Forget what it read and
+                    // try again: it now sees the result of the other one (for example the patient record just created).
+                    _context.ChangeTracker.Clear();
+                }
+            }
+        }
+
+        private static bool IsDeadlockVictim(Exception exception)
+        {
+            for (var current = exception; current != null; current = current.InnerException)
+            {
+                if (current is SqlException sql && sql.Number == DeadlockErrorNumber)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public async Task<List<Appointment>> GetActiveAppointmentsAsync(DateOnly date, IReadOnlyCollection<int> doctorIds)
@@ -98,6 +127,12 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<bool> HasEndedShiftAsync(int doctorId, DateOnly date)
+        {
+            return await _context.StaffSchedules
+                .AnyAsync(x => x.StaffProfileId == doctorId && x.ScheduleDate == date && x.ActualEndTime != null);
+        }
+
         public async Task<List<StaffSchedule>> GetDoctorShiftsAsync(DateOnly date, int? doctorId)
         {
             // Doctor role ids, joined through Identity tables
@@ -111,7 +146,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.StaffProfile)
                 .Include(x => x.Room)
                 .Where(x => x.ScheduleDate == date
-                    && x.IsPresent != false                    
+                    && x.IsPresent != false
+                    && x.ActualEndTime == null
                     && x.StaffProfile.IsActive
                     && doctorUserIds.Contains(x.StaffProfile.UserId)
                     && x.Room != null && x.Room.Status == RoomConstants.ActiveStatus);
@@ -169,6 +205,8 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x.Variant)
                 .Include(x => x.Examination)
                     .ThenInclude(x => x.ImagingRequests)
+                .Include(x => x.QueueEntries)
+                    .ThenInclude(x => x.Room)
                 .Where(x => x.AppointmentDate == date && x.Status == AppointmentConstants.CheckedInStatus);
 
             if (doctorId.HasValue)
@@ -226,6 +264,17 @@ namespace OZE.Persistence.Repositories
                 .AnyAsync(x => x.DoctorId == doctorId
                     && x.AppointmentDate == date
                     && x.Status == AppointmentConstants.InServiceStatus);
+        }
+
+        public async Task<bool> HasUnfinishedAppointmentAsync(int patientId)
+        {
+            // An appointment of a day that has passed is not counted: the patient did not come and nobody closed it,
+            // and a checked-in one can no longer be cancelled or examined, so it would block the patient for good
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            return await _context.Appointments
+                .AnyAsync(x => x.PatientId == patientId
+                    && x.AppointmentDate >= today
+                    && AppointmentConstants.UnfinishedStatuses.Contains(x.Status));
         }
 
         public async Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default)

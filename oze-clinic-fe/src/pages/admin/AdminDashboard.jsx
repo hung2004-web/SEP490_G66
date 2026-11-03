@@ -2,13 +2,15 @@ import { useState } from "react";
 import { CalendarCheck, Inbox, Stethoscope, UserPlus, Wallet } from "lucide-react";
 import BarChart from "@/components/chart/BarChart";
 import DonutChart from "@/components/chart/DonutChart";
+import ExportReportPopup from "@/components/popup/report/ExportReportPopup";
 import MetricCard from "@/components/ui/MetricCard";
 import PeriodNavigator from "@/components/ui/PeriodNavigator";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import StatusBadge from "@/components/ui/StatusBadge";
 import useAsync from "@/hooks/useAsync";
-import { REPORT_PERIODS, getPendingRequests, getReport } from "@/services/adminReportService";
+import { REPORT_PERIODS, getPendingRequests, getReport, getReportOffset } from "@/services/adminReportService";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
-import { formatCurrency, formatDate, toDateOnly } from "@/utils/format";
+import { formatCurrency, formatDateTime } from "@/utils/format";
 
 const PERIOD_OPTIONS = [
     { value: REPORT_PERIODS.DAY, label: "Ngày" },
@@ -17,12 +19,12 @@ const PERIOD_OPTIONS = [
     { value: REPORT_PERIODS.YEAR, label: "Năm" },
 ];
 
-// Words after "so với ..." in the metric captions.
-const PREVIOUS_LABELS = {
-    [REPORT_PERIODS.DAY]: "hôm trước",
-    [REPORT_PERIODS.WEEK]: "tuần trước",
-    [REPORT_PERIODS.MONTH]: "tháng trước",
-    [REPORT_PERIODS.YEAR]: "năm trước",
+// Revenue chart title (followed by the period) and the hint next to it.
+const CHART_TEXTS = {
+    [REPORT_PERIODS.DAY]: { title: "Thực thu theo khung giờ", hint: "Bấm vào một cột để xem hoá đơn trong ngày" },
+    [REPORT_PERIODS.WEEK]: { title: "Thực thu theo ngày", hint: "Bấm vào một cột để xem báo cáo ngày đó" },
+    [REPORT_PERIODS.MONTH]: { title: "Thực thu theo ngày", hint: "Bấm vào một cột để xem báo cáo ngày đó" },
+    [REPORT_PERIODS.YEAR]: { title: "Thực thu theo tháng", hint: "Bấm vào một cột để xem tháng đó" },
 };
 
 const REQUEST_TYPE_BADGES = {
@@ -37,12 +39,10 @@ const SKELETON_ROW_COUNT = 3;
 const millionFormatter = new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const formatMillion = (value) => millionFormatter.format(value);
 
-const pad = (value) => String(value).padStart(2, "0");
-
-// "2026-10-28T09:10" -> "09:10, 28/10"
-const formatSubmittedAt = (value) => {
-    const date = new Date(value);
-    return `${pad(date.getHours())}:${pad(date.getMinutes())}, ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
+// "Thực thu theo ngày · tháng 10/2026 (triệu ₫)"; a day or week label starts with a weekday / date, so it keeps its case.
+const chartTitle = (report) => {
+    const label = report.period === REPORT_PERIODS.MONTH || report.period === REPORT_PERIODS.YEAR ? report.label.toLowerCase() : report.label;
+    return `${CHART_TEXTS[report.period].title} · ${label} (triệu ₫)`;
 };
 
 const signed = (value) => (value > 0 ? `+${value}` : String(value));
@@ -54,32 +54,8 @@ const toneOf = (change) => {
 };
 
 // Comparison line of a metric, e.g. "+12% so với tuần trước"; nothing to compare = no line.
-const changeCaption = (change, period, unit = "") =>
-    change === null ? undefined : `${signed(change)}${unit} so với ${PREVIOUS_LABELS[period]}`;
-
-// Downloads the report shown on screen as a CSV file (opens in Excel; the BOM keeps Vietnamese letters).
-const exportReport = (report) => {
-    const rows = [
-        ["Báo cáo", report.label],
-        [],
-        ["Doanh thu (₫)", report.revenue.value * MILLION],
-        ["Lượt khám", report.visits.value],
-        ["Bệnh nhân mới", report.newPatients.value],
-        [],
-        ["Doanh thu theo thời gian", "Triệu ₫"],
-        ...report.revenueBars.map((bar) => [[bar.label, bar.sublabel].filter(Boolean).join(" "), bar.value ?? ""]),
-        [],
-        ["Doanh thu theo dịch vụ", "Triệu ₫"],
-        ...report.revenueByService.map((item) => [item.label, item.value]),
-    ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\r\n");
-    const url = URL.createObjectURL(new Blob(["﻿", csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `bao-cao-${report.period}-${report.from}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-};
+const changeCaption = (change, report, unit = "") =>
+    change === null ? undefined : `${signed(change)}${unit} ${report.comparison.caption}`;
 
 // Card with a bordered head row: title on the left, an optional note or action on the right.
 const ReportCard = ({ title, aside, children }) => (
@@ -143,13 +119,13 @@ const DebtCard = ({ debts, loading, onViewAll }) => (
 const AdminDashboard = () => {
     const [period, setPeriod] = useState(REPORT_PERIODS.WEEK);
     const [offset, setOffset] = useState(0);
+    const [exportOpen, setExportOpen] = useState(false);
 
     const { loading, value: reportResult } = useAsync(() => getReport({ period, offset }), [period, offset]);
     const { loading: requestsLoading, value: requestsResult } = useAsync(() => getPendingRequests(), []);
 
     const report = reportResult?.success ? reportResult.data : null;
     const requests = requestsResult?.success ? requestsResult.data : [];
-    const updatedAt = report && new Date(report.updatedAt);
 
     const changePeriod = (next) => {
         setPeriod(next);
@@ -162,15 +138,25 @@ const AdminDashboard = () => {
     // TODO: open the "Danh sách công nợ" drawer once it is built.
     const openDebts = () => {};
 
+    // TODO: open the invoices of the clicked hour once the invoice list exists.
+    const openInvoices = () => {};
+
+    // A day bar opens that day's report, a month bar that month's; days not reached yet have nothing to show.
+    const openBar = (bar) => {
+        if (period === REPORT_PERIODS.DAY) return openInvoices(bar);
+        if (bar.value === null) return;
+        const next = period === REPORT_PERIODS.YEAR ? REPORT_PERIODS.MONTH : REPORT_PERIODS.DAY;
+        setPeriod(next);
+        setOffset(getReportOffset(next, bar.date));
+    };
+
     return (
         <div className="flex flex-col gap-6">
             <div className="page-header mb-0 items-center">
                 <div>
                     <h1 className="page-title">Báo cáo</h1>
                     <p className="num mt-1 text-caption text-muted">
-                        {updatedAt
-                            ? `Cập nhật lúc ${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}, ${formatDate(toDateOnly(updatedAt))}`
-                            : "Đang tải…"}
+                        {report ? `Cập nhật lúc ${formatDateTime(report.updatedAt)}` : "Đang tải…"}
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -181,7 +167,7 @@ const AdminDashboard = () => {
                         onNext={() => setOffset((current) => current + 1)}
                         nextDisabled={offset >= 0}
                     />
-                    <button type="button" className="btn btn-secondary" disabled={!report} onClick={() => exportReport(report)}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setExportOpen(true)}>
                         Xuất báo cáo
                     </button>
                 </div>
@@ -193,7 +179,7 @@ const AdminDashboard = () => {
                     label="Doanh thu thực thu"
                     loading={loading}
                     value={report && formatCurrency(report.revenue.value * MILLION)}
-                    caption={report && changeCaption(report.revenue.change, period, "%")}
+                    caption={report && changeCaption(report.revenue.change, report, "%")}
                     tone={report ? toneOf(report.revenue.change) : undefined}
                 />
                 <MetricCard
@@ -201,7 +187,7 @@ const AdminDashboard = () => {
                     label="Lượt khám"
                     loading={loading}
                     value={report?.visits.value}
-                    caption={report && changeCaption(report.visits.change, period, "%")}
+                    caption={report && changeCaption(report.visits.change, report, "%")}
                     tone={report ? toneOf(report.visits.change) : undefined}
                 />
                 <MetricCard
@@ -209,7 +195,7 @@ const AdminDashboard = () => {
                     label="Bệnh nhân mới"
                     loading={loading}
                     value={report?.newPatients.value}
-                    caption={report && changeCaption(report.newPatients.change, period)}
+                    caption={report && changeCaption(report.newPatients.change, report)}
                     tone={report ? toneOf(report.newPatients.change) : undefined}
                 />
                 <MetricCard
@@ -225,14 +211,36 @@ const AdminDashboard = () => {
             </div>
 
             <ReportCard
-                title={`Doanh thu ${report?.label ?? ""} (triệu ₫)`}
-                aside={<p className="text-caption font-normal text-muted">Bấm vào một cột để xem báo cáo ngày đó</p>}
+                title={report ? chartTitle(report) : CHART_TEXTS[period].title}
+                aside={
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption font-normal text-muted">
+                        {report && period !== REPORT_PERIODS.DAY && (
+                            <>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="size-2.5 rounded-sm bg-chart-1" aria-hidden="true" />
+                                    {report.comparison.current}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-4 border-t-2 border-dashed border-placeholder" aria-hidden="true" />
+                                    {report.comparison.previous}
+                                </span>
+                            </>
+                        )}
+                        <span>{CHART_TEXTS[period].hint}</span>
+                    </div>
+                }
             >
                 {loading ? (
                     <div className="skeleton h-64 w-full" aria-hidden="true" />
                 ) : (
                     report && (
-                        <BarChart data={report.revenueBars} title={`Doanh thu ${report.label} (triệu ₫)`} formatValue={formatMillion} />
+                        <BarChart
+                            data={report.revenueBars}
+                            title={chartTitle(report)}
+                            formatValue={formatMillion}
+                            previousLabel={period === REPORT_PERIODS.DAY ? undefined : report.comparison.previous}
+                            onSelect={openBar}
+                        />
                     )
                 )}
             </ReportCard>
@@ -299,18 +307,17 @@ const AdminDashboard = () => {
                             )}
                             {!requestsLoading &&
                                 requests.map((request) => {
-                                    const type = REQUEST_TYPE_BADGES[request.type];
                                     return (
                                         <tr key={request.id}>
                                             <td>
-                                                <span className={`badge whitespace-nowrap ${type.badge}`}>{type.label}</span>
+                                                <StatusBadge status={request.type} labels={REQUEST_TYPE_BADGES} />
                                             </td>
                                             <td className="min-w-44 py-2">
                                                 <p className="text-label text-ink">{request.senderName}</p>
-                                                <p className="text-caption text-muted">{request.senderRole}</p>
+                                                <p className="text-caption text-muted">{request.senderDetail}</p>
                                             </td>
                                             <td className="min-w-56">{request.content}</td>
-                                            <td className="whitespace-nowrap text-muted">{formatSubmittedAt(request.submittedAt)}</td>
+                                            <td className="whitespace-nowrap text-muted">{formatDateTime(request.submittedAt)}</td>
                                             <td className="text-right">
                                                 <button
                                                     type="button"
@@ -327,6 +334,8 @@ const AdminDashboard = () => {
                     </table>
                 </div>
             </section>
+
+            {exportOpen && <ExportReportPopup initialPeriod={period} onClose={() => setExportOpen(false)} />}
         </div>
     );
 };
