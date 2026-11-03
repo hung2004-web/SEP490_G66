@@ -6,7 +6,7 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import { REPORT_PERIODS, getReport, getReportOffset } from "@/services/adminReportService";
 import { toDateOnly } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE } from "@/utils/messages";
-import { downloadReportCsv, printReportPdf } from "@/utils/reportExport";
+import { downloadReportExcel } from "@/utils/reportExport";
 import { invalidMessage, requiredMessage } from "@/utils/validation";
 
 const TYPE_OPTIONS = [
@@ -15,81 +15,70 @@ const TYPE_OPTIONS = [
     { value: REPORT_PERIODS.YEAR, label: "Năm" },
 ];
 
-const FORMATS = { EXCEL: "excel", PDF: "pdf" };
-
-// TODO(api): Excel is a .csv until the backend builds .xlsx files.
-const FORMAT_OPTIONS = [
-    { value: FORMATS.EXCEL, label: "Excel (.csv)" },
-    { value: FORMATS.PDF, label: "PDF" },
-];
-
 const FIELD_ID = "export-report-time";
-// Years offered in "Chọn năm", counting back from this year.
+// How far back "Chọn tháng" and "Chọn năm" go, counting this month / year.
+const MONTH_COUNT = 24;
 const YEAR_COUNT = 5;
 
-// Field label and the name used in its error messages, per report type.
-const FIELD_NAMES = {
-    [REPORT_PERIODS.DAY]: { label: "Chọn ngày", name: "ngày" },
-    [REPORT_PERIODS.MONTH]: { label: "Chọn tháng", name: "tháng" },
-    [REPORT_PERIODS.YEAR]: { label: "Chọn năm", name: "năm" },
+const FIELD_LABELS = {
+    [REPORT_PERIODS.DAY]: "Chọn ngày",
+    [REPORT_PERIODS.MONTH]: "Chọn tháng",
+    [REPORT_PERIODS.YEAR]: "Chọn năm",
 };
 
-// "Xuất báo cáo doanh thu" popup: pick a day, month or year and a file format, then download it.
+const pad = (value) => String(value).padStart(2, "0");
+
+// Newest first: { value: "2026-10-01", label: "10/2026" }.
+const recentMonths = (today) =>
+    Array.from({ length: MONTH_COUNT }, (_, index) => {
+        const month = new Date(today.getFullYear(), today.getMonth() - index, 1);
+        return { value: toDateOnly(month), label: `${pad(month.getMonth() + 1)}/${month.getFullYear()}` };
+    });
+
+// "Xuất báo cáo doanh thu" popup: pick a day, month or year, then download that report as an Excel file.
 // initialPeriod: the period shown on the page (a week falls back to a day).
 const ExportReportPopup = ({ initialPeriod, onClose }) => {
-    const today = toDateOnly(new Date());
-    const thisMonth = today.slice(0, 7);
-    const thisYear = Number(today.slice(0, 4));
+    const [now] = useState(() => new Date());
+    const today = toDateOnly(now);
+    const months = recentMonths(now);
+    const years = Array.from({ length: YEAR_COUNT }, (_, index) => now.getFullYear() - index);
 
     const [type, setType] = useState(TYPE_OPTIONS.some((option) => option.value === initialPeriod) ? initialPeriod : REPORT_PERIODS.DAY);
     const [day, setDay] = useState(today);
-    const [month, setMonth] = useState(thisMonth);
-    const [year, setYear] = useState(thisYear);
-    const [format, setFormat] = useState(FORMATS.EXCEL);
+    const [month, setMonth] = useState(months[0].value);
+    const [year, setYear] = useState(years[0]);
     const [error, setError] = useState(null);
     const [exporting, setExporting] = useState(false);
-
-    const field = FIELD_NAMES[type];
-
-    // Day inside the chosen period, as getReportOffset wants it; null when the field is empty or wrong.
-    const chosenDate = () => {
-        if (type === REPORT_PERIODS.YEAR) return `${year}-01-01`;
-        if (type === REPORT_PERIODS.MONTH) return /^\d{4}-\d{2}$/.test(month) && month <= thisMonth ? `${month}-01` : null;
-        return day && day <= today ? day : null;
-    };
 
     const changeType = (next) => {
         setType(next);
         setError(null);
     };
 
+    // A day inside the chosen period, as getReportOffset wants it.
+    const chosenDate = () => {
+        if (type === REPORT_PERIODS.YEAR) return `${year}-01-01`;
+        if (type === REPORT_PERIODS.MONTH) return month;
+        return day;
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const date = chosenDate();
-        if (!date) {
-            const empty = type === REPORT_PERIODS.DAY ? !day : !month;
-            setError(empty ? requiredMessage(field.name) : invalidMessage(field.name.charAt(0).toUpperCase() + field.name.slice(1)));
+        if (type === REPORT_PERIODS.DAY && (!day || day > today)) {
+            setError(day ? invalidMessage("Ngày") : requiredMessage("ngày"));
             document.getElementById(FIELD_ID)?.focus();
             return;
         }
 
         setExporting(true);
-        const result = await getReport({ period: type, offset: getReportOffset(type, date) });
+        const result = await getReport({ period: type, offset: getReportOffset(type, chosenDate()) });
         setExporting(false);
         if (!result.success) {
             toast.error(result.message ?? GENERIC_ERROR_MESSAGE);
             return;
         }
-        if (format === FORMATS.PDF) printReportPdf(result.data);
-        else downloadReportCsv(result.data);
+        downloadReportExcel(result.data);
         onClose();
-    };
-
-    const inputProps = {
-        id: FIELD_ID,
-        className: "input",
-        "aria-invalid": Boolean(error),
-        "aria-describedby": error ? `${FIELD_ID}-error` : undefined,
     };
 
     return (
@@ -100,12 +89,15 @@ const ExportReportPopup = ({ initialPeriod, onClose }) => {
                     <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={changeType} label="Loại báo cáo" className="self-start" />
                 </div>
 
-                <FormField id={FIELD_ID} label={field.label} required error={error}>
+                <FormField id={FIELD_ID} label={FIELD_LABELS[type]} required error={error}>
                     {type === REPORT_PERIODS.DAY && (
                         <input
-                            {...inputProps}
+                            id={FIELD_ID}
                             type="date"
+                            className="input"
                             max={today}
+                            aria-invalid={Boolean(error)}
+                            aria-describedby={error ? `${FIELD_ID}-error` : undefined}
                             value={day}
                             onChange={(event) => {
                                 setDay(event.target.value);
@@ -114,20 +106,17 @@ const ExportReportPopup = ({ initialPeriod, onClose }) => {
                         />
                     )}
                     {type === REPORT_PERIODS.MONTH && (
-                        <input
-                            {...inputProps}
-                            type="month"
-                            max={thisMonth}
-                            value={month}
-                            onChange={(event) => {
-                                setMonth(event.target.value);
-                                setError(null);
-                            }}
-                        />
+                        <select id={FIELD_ID} className="input num" value={month} onChange={(event) => setMonth(event.target.value)}>
+                            {months.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     )}
                     {type === REPORT_PERIODS.YEAR && (
-                        <select {...inputProps} value={year} onChange={(event) => setYear(Number(event.target.value))}>
-                            {Array.from({ length: YEAR_COUNT }, (_, index) => thisYear - index).map((option) => (
+                        <select id={FIELD_ID} className="input num" value={year} onChange={(event) => setYear(Number(event.target.value))}>
+                            {years.map((option) => (
                                 <option key={option} value={option}>
                                     {option}
                                 </option>
@@ -135,11 +124,6 @@ const ExportReportPopup = ({ initialPeriod, onClose }) => {
                         </select>
                     )}
                 </FormField>
-
-                <div className="field">
-                    <span className="label">Định dạng</span>
-                    <SegmentedControl options={FORMAT_OPTIONS} value={format} onChange={setFormat} label="Định dạng" className="self-start" />
-                </div>
 
                 <div className="modal-actions -mx-6 mt-2 border-t border-border px-6 pt-4">
                     <button type="button" className="btn btn-secondary" disabled={exporting} onClick={onClose}>
