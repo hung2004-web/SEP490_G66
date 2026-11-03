@@ -460,6 +460,8 @@ namespace OZE.Application.Services
                     AppointmentType = x.Appointment.AppointmentType,
                     TimeSlotStart = x.Appointment.TimeSlotStart,
                     CheckInAt = x.Appointment.CheckInAt,
+                    RoomId = GetCurrentRoom(x.Appointment)?.Id,
+                    RoomName = GetCurrentRoom(x.Appointment)?.RoomName,
                     Priority = x.Appointment.Priority,
                     IsLate = x.Group == LateGroup,
                     IsPriorityReturn = x.Group == PriorityReturnGroup,
@@ -650,6 +652,9 @@ namespace OZE.Application.Services
             var priority = request?.Priority ?? PriorityConstants.Normal;
             EnsureValidPriority(priority, request?.Reason);
 
+            // The patient goes to the room of the doctor's shift
+            var room = await FindDoctorRoomAsync(appointment);
+
             var oldStatus = appointment.Status;
             appointment.Status = AppointmentConstants.CheckedInStatus;
             appointment.Priority = priority;
@@ -663,7 +668,7 @@ namespace OZE.Application.Services
                 await _queueService.EnqueueAsync(
                     appointment.Id,
                     QueueConstants.ExaminationType,
-                    null,
+                    room?.Id,
                     appointment.DoctorId,
                     appointment.Priority,
                     request?.Reason,
@@ -673,7 +678,45 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.AppointmentCheckedIn, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status, appointment.Priority }, request?.Reason?.Trim());
 
-            return MapToResponse(appointment);
+            var response = MapToResponse(appointment);
+            response.RoomId = room?.Id;
+            response.RoomName = room?.RoomName;
+            return response;
+        }
+
+        // The room of the doctor's shift: the one running now, else the one the booked slot belongs to, else the next one of the day.
+        // A doctor who has ended the shift takes no more patients; a doctor without a shift today is left without a room.
+        private async Task<Room?> FindDoctorRoomAsync(Appointment appointment)
+        {
+            if (appointment.DoctorId == null)
+            {
+                return null;
+            }
+
+            var shifts = await _appointmentRepository.GetDoctorShiftsAsync(appointment.AppointmentDate, appointment.DoctorId)
+                ?? new List<StaffSchedule>();
+            var now = TimeOnly.FromDateTime(DateTime.Now);
+            var slot = appointment.TimeSlotStart;
+            var shift = shifts.FirstOrDefault(x => x.ShiftStart <= now && now < x.ShiftEnd)
+                ?? shifts.FirstOrDefault(x => slot.HasValue && x.ShiftStart <= slot.Value && slot.Value < x.ShiftEnd)
+                ?? shifts.FirstOrDefault(x => x.ShiftStart > now);
+            if (shift == null)
+            {
+                var hasEnded = await _appointmentRepository.HasEndedShiftAsync(appointment.DoctorId.Value, appointment.AppointmentDate);
+                ConditionGuard.ThrowIf(hasEnded, ErrorConstants.AppointmentMessage.CheckInDoctorShiftEnded);
+            }
+
+            return shift?.Room;
+        }
+
+        // The room the waiting patient was sent to at check-in
+        private static Room? GetCurrentRoom(Appointment appointment)
+        {
+            return appointment.QueueEntries
+                .Where(q => q.QueueType == QueueConstants.ExaminationType && QueueConstants.ActiveStatuses.Contains(q.Status))
+                .OrderByDescending(q => q.CreatedAt)
+                .Select(q => q.Room)
+                .FirstOrDefault();
         }
 
         public async Task<AppointmentResponse> SetPriorityAsync(long id, SetPriorityRequest request, CancellationToken cancellationToken = default)
