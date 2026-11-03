@@ -37,6 +37,14 @@ namespace OZE.Common.Exceptions
         }
     }
 
+    public class TooManyRequestsException : AppException
+    {
+        public TooManyRequestsException(string message)
+            : base(message, HttpStatusCode.TooManyRequests)
+        {
+        }
+    }
+
     public class ForbiddenException : AppException
     {
         public ForbiddenException(string message) 

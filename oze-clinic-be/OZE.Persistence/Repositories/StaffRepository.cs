@@ -65,6 +65,24 @@ namespace OZE.Persistence.Repositories
             return await staff.OrderBy(x => x.FullName).ToListAsync();
         }
 
+        public async Task<bool> HasUpcomingWorkAsync(int staffProfileId, DateOnly today, TimeOnly now)
+        {
+            var hasShifts = await _context.StaffSchedules.AnyAsync(x => x.StaffProfileId == staffProfileId
+                && (x.ScheduleDate > today || (x.ScheduleDate == today && x.ActualEndTime == null && x.ShiftEnd > now)));
+            return hasShifts || await _context.Appointments.AnyAsync(x => x.DoctorId == staffProfileId
+                && x.AppointmentDate >= today
+                && AppointmentConstants.UnfinishedStatuses.Contains(x.Status));
+        }
+
+        public async Task<int> CountActiveStaffInRoleAsync(string role)
+        {
+            return await (from staff in _context.StaffProfiles
+                          join userRole in _context.UserRoles on staff.UserId equals userRole.UserId
+                          join identityRole in _context.Roles on userRole.RoleId equals identityRole.Id
+                          where identityRole.Name == role && staff.IsActive
+                          select staff.Id).CountAsync();
+        }
+
         public async Task<StaffProfile?> GetByUserIdAsync(string userId)
         {
             return await _context.StaffProfiles.FirstOrDefaultAsync(x => x.UserId == userId);

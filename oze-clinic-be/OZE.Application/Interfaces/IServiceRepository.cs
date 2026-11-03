@@ -9,6 +9,8 @@ namespace OZE.Application.Interfaces
         Task<Service?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<Service?> GetByIdAsync(int id, bool asNoTracking, CancellationToken cancellationToken = default);
         Task<Service?> GetByCodeAsync(string serviceCode, CancellationToken cancellationToken = default);
+        // The service is in an appointment of the given day or later that is not finished yet
+        Task<bool> HasOpenAppointmentsAsync(int serviceId, DateOnly today, CancellationToken cancellationToken = default);
         Task<bool> ExistsByCodeAsync(string serviceCode, int? excludeId = null, CancellationToken cancellationToken = default);
         Task<PagedResult<Service>> GetAllAsync(ServiceQueryParameters parameters, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Service>> GetActiveServicesAsync(CancellationToken cancellationToken = default);

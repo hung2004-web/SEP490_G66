@@ -10,6 +10,7 @@ namespace OZE.ProjectBase.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(OZE.Common.Constants.SecurityConstants.AuthRateLimitPolicy)]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -53,7 +54,8 @@ namespace OZE.ProjectBase.Controllers
         public async Task<ActionResult<ApiResponse<AuthResult>>> LoginAsync([FromBody] LoginRequest loginRequest)
         {
             var result = await _authService.LoginAsync(loginRequest);
-            return result.Success ? Ok(result) : BadRequest(result);
+            // Wrong credentials, a locked or a disabled account are not "bad requests": the caller is not authenticated
+            return result.Success ? Ok(result) : Unauthorized(result);
         }
 
         [HttpPost("refresh-token")]
@@ -61,7 +63,7 @@ namespace OZE.ProjectBase.Controllers
         public async Task<ActionResult<ApiResponse<AuthResult>>> RefreshTokenAsync([FromBody] RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
+            return result.Success ? Ok(result) : Unauthorized(result);
         }
 
         [HttpPost("logout")]

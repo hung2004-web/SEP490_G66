@@ -8,6 +8,10 @@ namespace OZE.Application.Interfaces
     {
         // The record is tracked, so its changes are saved together with the account by UserManager.UpdateAsync.
         Task<Patient?> GetByUserIdAsync(string userId);
+        // Locks the account for good, ends its sessions and access tokens
+        Task LockAccountAsync(string userId, CancellationToken cancellationToken = default);
+        // Appointments of the given day or later that are not finished yet
+        Task<bool> HasUnfinishedAppointmentsAsync(int patientId, DateOnly today, CancellationToken cancellationToken = default);
         Task<bool> IsPhoneInUseAsync(IReadOnlyCollection<string> phoneNumbers, int excludedPatientId);
 
         Task<Patient?> GetByIdAsync(int id, bool includeMedicalProfiles = false, bool asNoTracking = false, CancellationToken cancellationToken = default);

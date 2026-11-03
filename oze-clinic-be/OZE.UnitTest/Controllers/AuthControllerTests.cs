@@ -75,7 +75,7 @@ namespace OZE.UnitTest.Controllers
         }
 
         [Fact]
-        public async Task LoginAsync_WhenServiceFails_ShouldReturnBadRequestWithMessage()
+        public async Task LoginAsync_WhenServiceFails_ShouldReturnUnauthorizedWithMessage()
         {
             // Arrange
             _authServiceMock
@@ -86,7 +86,7 @@ namespace OZE.UnitTest.Controllers
             var actionResult = await _controller.LoginAsync(new LoginRequest { Identifier = "a@oze.vn", Password = "wrong" });
 
             // Assert
-            var badRequest = actionResult.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            var badRequest = actionResult.Result.Should().BeOfType<UnauthorizedObjectResult>().Subject;
             badRequest.Value.As<ApiResponse<AuthResult>>().Message.Should().Be(ErrorConstants.AuthMessage.InvalidLogin);
         }
 
@@ -109,7 +109,7 @@ namespace OZE.UnitTest.Controllers
         }
 
         [Fact]
-        public async Task RefreshTokenAsync_WhenTokenInvalid_ShouldReturnBadRequest()
+        public async Task RefreshTokenAsync_WhenTokenInvalid_ShouldReturnUnauthorized()
         {
             // Arrange
             _authServiceMock
@@ -120,7 +120,7 @@ namespace OZE.UnitTest.Controllers
             var actionResult = await _controller.RefreshTokenAsync(new RefreshTokenRequest { RefreshToken = "unknown" });
 
             // Assert
-            actionResult.Result.Should().BeOfType<BadRequestObjectResult>();
+            actionResult.Result.Should().BeOfType<UnauthorizedObjectResult>();
         }
 
         #endregion

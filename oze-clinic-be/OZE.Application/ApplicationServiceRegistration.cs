@@ -23,6 +23,7 @@ namespace OZE.Application
             // Register Services
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddSingleton<IOtpSendLimiter, OtpSendLimiter>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IClinicServiceService, ClinicServiceService>();
             services.AddScoped<IRoomService, RoomService>();
