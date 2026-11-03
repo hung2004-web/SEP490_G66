@@ -24,6 +24,7 @@ namespace OZE.Application
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddSingleton<IOtpSendLimiter, OtpSendLimiter>();
+            services.AddSingleton<IAccessTokenRevocationStore, AccessTokenRevocationStore>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IClinicServiceService, ClinicServiceService>();
             services.AddScoped<IRoomService, RoomService>();

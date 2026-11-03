@@ -568,6 +568,9 @@ namespace OZE.Application.Services
         private static void EnsureOpen(Examination examination)
         {
             ConditionGuard.Ensure(examination.ExaminationStatus == ExaminationConstants.InProgress, ErrorConstants.ExaminationMessage.AlreadyLocked);
+            // Every change also saves the examination row, so its row version is checked: a change racing with
+            // "complete" (or another change) fails with 409 instead of landing on a locked examination
+            examination.UpdatedAt = DateTimeOffset.UtcNow;
         }
 
         private async Task<int> GetSlotMinutesAsync()

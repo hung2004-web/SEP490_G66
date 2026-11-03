@@ -28,7 +28,7 @@ namespace OZE.Controllers
             [FromRoute] long id,
             CancellationToken cancellationToken)
         {
-            var progress = await _treatmentPlanService.GetProgressAsync(id, cancellationToken);
+            var progress = await _treatmentPlanService.GetProgressAsync(id, GetUserId(), cancellationToken);
             return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress));
         }
 
@@ -41,7 +41,7 @@ namespace OZE.Controllers
             [FromRoute] long stageId,
             CancellationToken cancellationToken)
         {
-            var progress = await _treatmentPlanService.StartStageAsync(id, stageId, cancellationToken);
+            var progress = await _treatmentPlanService.StartStageAsync(id, stageId, GetUserId(), cancellationToken);
             return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Start treatment stage success!"));
         }
 
@@ -55,7 +55,7 @@ namespace OZE.Controllers
             [FromBody] UpdateTreatmentStageRequest request,
             CancellationToken cancellationToken)
         {
-            var progress = await _treatmentPlanService.UpdateStageAsync(id, stageId, request, cancellationToken);
+            var progress = await _treatmentPlanService.UpdateStageAsync(id, stageId, request, GetUserId(), cancellationToken);
             return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Update treatment stage success!"));
         }
 

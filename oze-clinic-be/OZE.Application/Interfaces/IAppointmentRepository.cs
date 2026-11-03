@@ -47,6 +47,10 @@ namespace OZE.Application.Interfaces
         Task UpdateAsync(Appointment appointment);
 
         // The appointment is already tracked. The examination insert and the status change are one save.
+        // What an examination holds when the doctor completes it
+        Task<(int Diagnoses, int DraftPrescriptionsWithItems)> GetExaminationCompletionCountsAsync(long examinationId, CancellationToken cancellationToken = default);
+        // A draft prescription with no medication is only a leftover
+        Task RemoveEmptyDraftPrescriptionsAsync(long examinationId, CancellationToken cancellationToken = default);
         Task SaveStartedExaminationAsync(Appointment appointment, Examination examination, CancellationToken cancellationToken = default);
     }
 }

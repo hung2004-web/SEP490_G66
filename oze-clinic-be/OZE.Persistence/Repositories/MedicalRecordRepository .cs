@@ -61,7 +61,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Prescriptions).ThenInclude(p => p.Items)
                 .Include(x => x.TreatmentPlans)
                 .Include(x => x.ImagingRequests).ThenInclude(r => r.Results)
-                .FirstOrDefaultAsync(x => x.Id == examinationId);
+                // The record of a deleted patient is not shown here either, as on the patient's own record
+                .FirstOrDefaultAsync(x => x.Id == examinationId && x.Patient.DeletedAt == null);
         }
 
        
@@ -74,9 +75,10 @@ namespace OZE.Persistence.Repositories
                 return true;
             }
 
+            // A booking not yet confirmed, or one the patient never came to, does not open the record
             return await _context.Appointments
                 .AnyAsync(x => x.PatientId == patientId && x.DoctorId == doctorId
-                    && x.Status != AppointmentConstants.CancelledStatus);
+                    && MedicalRecordConstants.AccessAppointmentStatuses.Contains(x.Status));
         }
     }
 }

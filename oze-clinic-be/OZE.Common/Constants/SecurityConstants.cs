@@ -14,5 +14,11 @@ namespace OZE.Common.Constants
         // Claim in the access token holding the security stamp of the account when the token was issued; a token whose
         // stamp no longer matches (logout, password change, role change, account locked) is refused
         public const string SecurityStampClaim = "sstamp";
+
+        // Codes are counted per purpose, so codes asked for one purpose do not block another
+        public const string OtpPurposeRegister = "register";
+        public const string OtpPurposePasswordReset = "reset";
+        public const string OtpPurposeProfile = "profile";
+        public const string OtpPurposeEmailConfirmation = "confirm-email";
     }
 }

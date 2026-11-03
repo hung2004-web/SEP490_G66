@@ -151,7 +151,7 @@ namespace OZE.Application.Services
             }
 
             // UC-08 step 5.2, BR-006: a new phone number is saved only after the OTP sent to it is verified.
-            _otpSendLimiter?.EnsureCanSend(update.PhoneNumber);
+            _otpSendLimiter?.EnsureCanSend(SecurityConstants.OtpPurposeProfile, update.PhoneNumber);
             update.SessionId = Guid.NewGuid().ToString("N");
             var otp = OtpHelper.Generate();
             update.OtpHash = OtpHelper.Hash(update.SessionId, otp);
@@ -243,6 +243,8 @@ namespace OZE.Application.Services
                 _pendingProfileUpdateStore.Remove(update.SessionId);
                 return ApiResponse<RegisterPendingResponse>.FailureResult(ErrorConstants.ProfileMessage.OtpExpired);
             }
+
+            _otpSendLimiter?.EnsureCanSend(SecurityConstants.OtpPurposeProfile, update.PhoneNumber);
 
             // The previous OTP stays valid if the new one cannot be sent.
             var otp = OtpHelper.Generate();
@@ -340,6 +342,20 @@ namespace OZE.Application.Services
 
             return ApiResponse<UserProfileResponse>.SuccessResult(
                 await ToProfileResponseAsync(user, patient), ErrorConstants.ProfileMessage.ProfileUpdated);
+        }
+
+        // A new confirmation link, for a link that expired or was lost (the email must be confirmed to sign in with it)
+        public async Task<ApiResponse> ResendEmailConfirmationAsync(string userId, string baseUrl)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || string.IsNullOrEmpty(user.Email) || user.EmailConfirmed)
+            {
+                return ApiResponse.FailureResult(ErrorConstants.ProfileMessage.NoEmailToConfirm);
+            }
+
+            _otpSendLimiter?.EnsureCanSend(SecurityConstants.OtpPurposeEmailConfirmation, user.Email);
+            await SendEmailConfirmationAsync(user, baseUrl);
+            return ApiResponse.SuccessResult(ErrorConstants.ProfileMessage.ConfirmationEmailSent);
         }
 
         private async Task SendEmailConfirmationAsync(ApplicationUser user, string baseUrl)

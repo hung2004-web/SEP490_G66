@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
@@ -63,7 +64,7 @@ namespace OZE.Application.Services
             var leavesService = room.Status == RoomConstants.ActiveStatus && request.Status != RoomConstants.ActiveStatus;
             if (leavesService || room.RoomType != request.RoomType)
             {
-                var hasShifts = await _roomRepository.HasUpcomingShiftsAsync(id, DateOnly.FromDateTime(DateTime.Today), TimeOnly.FromDateTime(DateTime.Now));
+                var hasShifts = await _roomRepository.HasUpcomingShiftsAsync(id, DateOnly.FromDateTime(ClinicClock.Today), TimeOnly.FromDateTime(ClinicClock.Now));
                 ConditionGuard.ThrowIf(hasShifts, ErrorConstants.RoomMessage.HasUpcomingShifts);
             }
 

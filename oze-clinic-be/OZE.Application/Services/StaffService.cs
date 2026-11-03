@@ -175,7 +175,7 @@ namespace OZE.Application.Services
         // Taking someone out of a role must not leave planned work without a person, or the clinic without a manager
         private async Task EnsureCanLeaveRoleAsync(StaffProfile staff, string? role)
         {
-            var hasWork = await _staffRepository.HasUpcomingWorkAsync(staff.Id, DateOnly.FromDateTime(DateTime.Today), TimeOnly.FromDateTime(DateTime.Now));
+            var hasWork = await _staffRepository.HasUpcomingWorkAsync(staff.Id, DateOnly.FromDateTime(ClinicClock.Today), TimeOnly.FromDateTime(ClinicClock.Now));
             ConditionGuard.ThrowIf(hasWork, ErrorConstants.StaffMessage.HasUpcomingWork);
             if (role == RoleConstants.ClinicManagerRole)
             {

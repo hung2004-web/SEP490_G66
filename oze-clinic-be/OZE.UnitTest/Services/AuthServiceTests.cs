@@ -1132,11 +1132,46 @@ namespace OZE.UnitTest.Services
                 .ReturnsAsync(user);
         }
 
+        // No code goes out, and the session kept is a decoy no code opens, so the next step answers like a real one
         private void VerifyNothingSentAndNoSessionSaved()
         {
             _smsSenderMock.Verify(s => s.SendSmsAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _emailSenderMock.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _passwordResetStoreMock.Verify(s => s.Save(It.IsAny<PasswordResetSession>(), It.IsAny<TimeSpan>()), Times.Never);
+            _passwordResetStoreMock.Verify(s => s.Save(It.Is<PasswordResetSession>(x => x.UserId == string.Empty), It.IsAny<TimeSpan>()), Times.Once);
+            _passwordResetStoreMock.Verify(s => s.Save(It.Is<PasswordResetSession>(x => x.UserId != string.Empty), It.IsAny<TimeSpan>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ForgotPasswordAsync_WhenPatientPhoneNeverConfirmed_ShouldNotSendCode()
+        {
+            // Arrange: a patient who signed up by email; whoever holds the phone they typed may not be them
+            var user = ActiveUser();
+            user.PhoneNumberConfirmed = false;
+            SetupFindByPhone(user);
+            _userManagerMock.Setup(m => m.IsInRoleAsync(user, RoleConstants.PatientRole)).ReturnsAsync(true);
+
+            // Act
+            var result = await _authService.ForgotPasswordAsync(new ForgotPasswordRequest { Identifier = Phone });
+
+            // Assert
+            result.Success.Should().BeTrue();
+            VerifyNothingSentAndNoSessionSaved();
+        }
+
+        [Fact]
+        public async Task ForgotPasswordAsync_WhenStaffEmailNotConfirmed_ShouldStillSendCode()
+        {
+            // Arrange: staff emails are set by the manager and never go through a confirmation link
+            var user = ActiveUser();
+            user.EmailConfirmed = false;
+            SetupFindByEmail(user);
+
+            // Act
+            var result = await _authService.ForgotPasswordAsync(new ForgotPasswordRequest { Identifier = Email });
+
+            // Assert
+            result.Success.Should().BeTrue();
+            _emailSenderMock.Verify(e => e.SendEmailAsync(Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
@@ -1248,7 +1283,8 @@ namespace OZE.UnitTest.Services
             result.Success.Should().BeFalse();
             result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidPhone);
             _registrationRepositoryMock.Verify(r => r.FindUserByPhoneAsync(It.IsAny<IReadOnlyCollection<string>>()), Times.Never);
-            VerifyNothingSentAndNoSessionSaved();
+            _smsSenderMock.Verify(s => s.SendSmsAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _passwordResetStoreMock.Verify(s => s.Save(It.IsAny<PasswordResetSession>(), It.IsAny<TimeSpan>()), Times.Never);
         }
 
         [Fact]

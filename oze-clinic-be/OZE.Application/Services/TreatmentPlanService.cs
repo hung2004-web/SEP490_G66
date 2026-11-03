@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
@@ -11,21 +12,37 @@ namespace OZE.Application.Services
     {
         private readonly ITreatmentPlanRepository _treatmentPlanRepository;
         private readonly IStaffRepository _staffRepository;
+        private readonly IMedicalRecordRepository _medicalRecordRepository;
 
         public TreatmentPlanService(
             ITreatmentPlanRepository treatmentPlanRepository,
-            IStaffRepository staffRepository)
+            IStaffRepository staffRepository,
+            IMedicalRecordRepository medicalRecordRepository)
         {
             _treatmentPlanRepository = treatmentPlanRepository;
             _staffRepository = staffRepository;
+            _medicalRecordRepository = medicalRecordRepository;
+        }
+
+        // A doctor works only on the plans of patients they examine, like the medical record itself
+        private async Task<StaffProfile> EnsureAccessAsync(string userId, TreatmentPlan plan)
+        {
+            var doctor = await _staffRepository.GetByUserIdAsync(userId);
+            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.DoctorScheduleMessage.DoctorNotFound);
+            var hasAccess = plan.CreatedByDoctorId == doctor!.Id
+                || await _medicalRecordRepository.HasDoctorAccessAsync(doctor.Id, plan.PatientId);
+            ConditionGuard.Ensure<ForbiddenException>(hasAccess, ErrorConstants.TreatmentPlanMessage.NoAccess);
+            return doctor;
         }
 
         public async Task<TreatmentPlanProgressResponse> GetProgressAsync(
             long treatmentPlanId,
+            string userId,
             CancellationToken cancellationToken = default)
         {
             var plan = await _treatmentPlanRepository.GetByIdWithStagesAsync(treatmentPlanId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            await EnsureAccessAsync(userId, plan!);
 
             return ToProgressResponse(plan!);
         }
@@ -33,10 +50,12 @@ namespace OZE.Application.Services
         public async Task<TreatmentPlanProgressResponse> StartStageAsync(
             long treatmentPlanId,
             long stageId,
+            string userId,
             CancellationToken cancellationToken = default)
         {
             var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            await EnsureAccessAsync(userId, plan!);
 
             var stage = plan!.Stages.FirstOrDefault(s => s.Id == stageId);
             ConditionGuard.Ensure<NotFoundException>(stage != null, ErrorConstants.TreatmentPlanMessage.StageNotFound);
@@ -73,10 +92,12 @@ namespace OZE.Application.Services
             long treatmentPlanId,
             long stageId,
             UpdateTreatmentStageRequest request,
+            string userId,
             CancellationToken cancellationToken = default)
         {
             var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            await EnsureAccessAsync(userId, plan!);
 
             var stage = plan!.Stages.FirstOrDefault(s => s.Id == stageId);
             ConditionGuard.Ensure<NotFoundException>(stage != null, ErrorConstants.TreatmentPlanMessage.StageNotFound);
@@ -85,15 +106,20 @@ namespace OZE.Application.Services
                 stage!.StageStatus == TreatmentPlanConstants.StageStatus.InProgress,
                 ErrorConstants.TreatmentPlanMessage.StageNotInProgress);
 
-            var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+            // A field left out of the request keeps its value; an empty note clears it
+            var notes = request.Notes == null ? stage.Notes : (string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim());
+            var actualCost = request.ActualCost ?? stage.ActualCost;
 
             if (request.ActualCost.HasValue)
             {
                 ConditionGuard.Ensure(
                     request.ActualCost.Value >= 0,
                     ErrorConstants.TreatmentPlanMessage.InvalidActualCost);
+            }
 
-                var costDiffers = request.ActualCost.Value != stage.EstimatedCost;
+            if (actualCost.HasValue)
+            {
+                var costDiffers = actualCost.Value != stage.EstimatedCost;
                 ConditionGuard.ThrowIf(
                     costDiffers && notes == null,
                     ErrorConstants.TreatmentPlanMessage.NotesRequiredWhenCostDiffers);
@@ -107,7 +133,7 @@ namespace OZE.Application.Services
             }
 
             stage.Notes = notes;
-            stage.ActualCost = request.ActualCost;
+            stage.ActualCost = actualCost;
             stage.UpdatedAt = now;
 
             await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
@@ -120,7 +146,7 @@ namespace OZE.Application.Services
             DateOnly nextDate,
             DateTimeOffset now)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = DateOnly.FromDateTime(ClinicClock.Now);
             var dateIsValid = nextDate >= today
                 && (!currentStage.ScheduledDate.HasValue || nextDate >= currentStage.ScheduledDate.Value);
             ConditionGuard.Ensure(dateIsValid, ErrorConstants.TreatmentPlanMessage.ScheduledDateInvalid);
@@ -145,6 +171,7 @@ namespace OZE.Application.Services
         {
             var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            var doctor = await EnsureAccessAsync(userId, plan!);
 
             var stage = plan!.Stages.FirstOrDefault(s => s.Id == stageId);
             ConditionGuard.Ensure<NotFoundException>(stage != null, ErrorConstants.TreatmentPlanMessage.StageNotFound);
@@ -155,9 +182,6 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(
                 stage!.StageStatus == TreatmentPlanConstants.StageStatus.InProgress,
                 ErrorConstants.TreatmentPlanMessage.StageNotInProgress);
-
-            var doctor = await _staffRepository.GetByUserIdAsync(userId);
-            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.DoctorScheduleMessage.DoctorNotFound);
 
             var notes = stage.Notes;
             if (request?.Notes != null)
@@ -183,9 +207,9 @@ namespace OZE.Application.Services
             stage.Notes = notes;
             stage.ActualCost = actualCost;
             stage.StageStatus = TreatmentPlanConstants.StageStatus.Completed;
-            stage.ActualDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            stage.ActualDate = DateOnly.FromDateTime(ClinicClock.Now);
             stage.CompletedAt = now;
-            stage.PerformedByDoctorId = doctor!.Id;
+            stage.PerformedByDoctorId = doctor.Id;
             stage.UpdatedAt = now;
 
             var hasOpenStage = plan.Stages.Any(s =>

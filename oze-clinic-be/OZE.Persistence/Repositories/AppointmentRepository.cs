@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
@@ -283,6 +284,21 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
+        public async Task<(int Diagnoses, int DraftPrescriptionsWithItems)> GetExaminationCompletionCountsAsync(long examinationId, CancellationToken cancellationToken = default)
+        {
+            var diagnoses = await _context.ClinicalDiagnoses.CountAsync(x => x.ExaminationId == examinationId, cancellationToken);
+            var drafts = await _context.Prescriptions.CountAsync(x => x.ExaminationId == examinationId
+                && x.Status == PrescriptionConstants.Draft && x.Items.Any(), cancellationToken);
+            return (diagnoses, drafts);
+        }
+
+        public async Task RemoveEmptyDraftPrescriptionsAsync(long examinationId, CancellationToken cancellationToken = default)
+        {
+            await _context.Prescriptions
+                .Where(x => x.ExaminationId == examinationId && x.Status == PrescriptionConstants.Draft && !x.Items.Any())
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
         public async Task<bool> HasAppointmentInServiceAsync(int doctorId, DateOnly date)
         {
             return await _context.Appointments
@@ -295,7 +311,7 @@ namespace OZE.Persistence.Repositories
         {
             // An appointment of a day that has passed is not counted: the patient did not come and nobody closed it,
             // and a checked-in one can no longer be cancelled or examined, so it would block the patient for good
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
             return await _context.Appointments
                 .AnyAsync(x => x.PatientId == patientId
                     && x.AppointmentDate >= today
