@@ -490,6 +490,17 @@ namespace OZE.Application.Services
             var activeToken = await _refreshTokenRepository.GetActiveTokenAsync(request.RefreshToken);
             if (activeToken == null)
             {
+                // BR-102: deactivation revokes every refresh token, so tell the client the account is disabled (MSG80)
+                // instead of a plain invalid token.
+                var knownToken = await _refreshTokenRepository.GetByTokenAsync(request.RefreshToken);
+                if (knownToken != null)
+                {
+                    var owner = await _userManager.FindByIdAsync(knownToken.UserId);
+                    if (owner != null && IsPermanentlyDisabled(owner))
+                        return ApiResponse<AuthResult>.FailureWithCode(
+                            ErrorConstants.AuthMessage.AccountDisabled, ErrorConstants.AuthCode.AccountDisabled);
+                }
+
                 return ApiResponse<AuthResult>.FailureResult(ErrorConstants.AuthMessage.InvalidRefreshToken);
             }
 
