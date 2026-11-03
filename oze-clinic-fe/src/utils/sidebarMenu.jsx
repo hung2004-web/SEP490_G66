@@ -59,6 +59,7 @@ const SIDEBAR_MENU = {
                 { key: "work-shifts", label: "Phân ca", to: ROUTES.ADMIN_WORK_SHIFTS },
                 { key: "leave-requests", label: "Đơn xin nghỉ", to: ROUTES.ADMIN_LEAVE_REQUESTS, badge: SIDEBAR_BADGES.PENDING_LEAVES },
                 { key: "refunds", label: "Duyệt hoàn tiền", to: ROUTES.ADMIN_REFUNDS, badge: SIDEBAR_BADGES.PENDING_REFUNDS },
+                { key: "debts", label: "Công nợ", to: ROUTES.ADMIN_DEBTS },
             ],
         },
         {
@@ -75,7 +76,10 @@ const SIDEBAR_MENU = {
             key: "system",
             label: "Hệ thống",
             icon: Shield,
-            children: [{ key: "system-logs", label: "Nhật ký hệ thống", to: ROUTES.ADMIN_SYSTEM_LOGS }],
+            children: [
+                { key: "system-logs", label: "Nhật ký hệ thống", to: ROUTES.ADMIN_SYSTEM_LOGS },
+                { key: "settings", label: "Cấu hình hệ thống", to: ROUTES.ADMIN_SETTINGS },
+            ],
         },
     ],
     [USER_ROLES.DOCTOR]: [
