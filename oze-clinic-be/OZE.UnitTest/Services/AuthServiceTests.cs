@@ -793,6 +793,11 @@ namespace OZE.UnitTest.Services
         private void SetupOldToken(UserRefreshToken? token)
         {
             _refreshTokenRepositoryMock.Setup(r => r.GetActiveTokenAsync(OldRefreshToken)).ReturnsAsync(token);
+            if (token != null)
+            {
+                // The old token is still active, so revoking it succeeds
+                _refreshTokenRepositoryMock.Setup(r => r.TryRevokeAsync(token.Id, It.IsAny<DateTimeOffset>())).ReturnsAsync(true);
+            }
         }
 
         private static RefreshTokenRequest OldTokenRequest() => new() { RefreshToken = OldRefreshToken };
@@ -827,8 +832,25 @@ namespace OZE.UnitTest.Services
             await _authService.RefreshTokenAsync(OldTokenRequest());
 
             // Assert: the old token cannot be used again
-            oldToken.RevokedAt.Should().NotBeNull();
-            _refreshTokenRepositoryMock.Verify(r => r.UpdateAsync(oldToken), Times.Once);
+            _refreshTokenRepositoryMock.Verify(r => r.TryRevokeAsync(oldToken.Id, It.IsAny<DateTimeOffset>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WhenAnotherCallRevokedTheTokenFirst_ShouldFailWithoutNewToken()
+        {
+            // Arrange: two calls with the same token at once; the other one revoked it first
+            var oldToken = ActiveOldToken();
+            SetupOldToken(oldToken);
+            _refreshTokenRepositoryMock.Setup(r => r.TryRevokeAsync(oldToken.Id, It.IsAny<DateTimeOffset>())).ReturnsAsync(false);
+            SetupFindById(ActiveUser());
+
+            // Act
+            var result = await _authService.RefreshTokenAsync(OldTokenRequest());
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidRefreshToken);
+            _refreshTokenRepositoryMock.Verify(r => r.AddAsync(It.IsAny<UserRefreshToken>()), Times.Never);
         }
 
         [Fact]
@@ -1014,8 +1036,9 @@ namespace OZE.UnitTest.Services
             var result = await _authService.ConfirmEmailAsync(UserId, EncodeForLink(RawEmailToken));
 
             // Assert
+            // The same answer as a bad code, so the link does not tell which accounts exist
             result.Success.Should().BeFalse();
-            result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
+            result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidConfirmationLink);
             _userManagerMock.Verify(m => m.ConfirmEmailAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
         }
 
@@ -1049,7 +1072,7 @@ namespace OZE.UnitTest.Services
 
             // Assert
             result.Success.Should().BeFalse();
-            result.Message.Should().StartWith("Invalid confirmation token");
+            result.Message.Should().Be(ErrorConstants.AuthMessage.InvalidConfirmationLink);
             _userManagerMock.Verify(m => m.ConfirmEmailAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
         }
 
@@ -1187,7 +1210,7 @@ namespace OZE.UnitTest.Services
         }
 
         [Fact]
-        public async Task ForgotPasswordAsync_WhenEmailNotFound_ShouldFail()
+        public async Task ForgotPasswordAsync_WhenEmailNotFound_ShouldAnswerLikeAnyAccountWithoutSending()
         {
             // Arrange
             SetupFindByEmail(null);
@@ -1196,13 +1219,14 @@ namespace OZE.UnitTest.Services
             var result = await _authService.ForgotPasswordAsync(new ForgotPasswordRequest { Identifier = Email });
 
             // Assert
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
+            // The same answer as for a real account, so the endpoint does not tell which accounts exist
+            result.Success.Should().BeTrue();
+            result.Data!.SessionId.Should().NotBeNullOrEmpty();
             VerifyNothingSentAndNoSessionSaved();
         }
 
         [Fact]
-        public async Task ForgotPasswordAsync_WhenPhoneNotFound_ShouldFail()
+        public async Task ForgotPasswordAsync_WhenPhoneNotFound_ShouldAnswerLikeAnyAccountWithoutSending()
         {
             // Arrange
             SetupFindByPhone(null);
@@ -1211,13 +1235,14 @@ namespace OZE.UnitTest.Services
             var result = await _authService.ForgotPasswordAsync(new ForgotPasswordRequest { Identifier = Phone });
 
             // Assert
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
+            // The same answer as for a real account, so the endpoint does not tell which accounts exist
+            result.Success.Should().BeTrue();
+            result.Data!.SessionId.Should().NotBeNullOrEmpty();
             VerifyNothingSentAndNoSessionSaved();
         }
 
         [Fact]
-        public async Task ForgotPasswordAsync_WhenRegistrationNotVerified_ShouldFail()
+        public async Task ForgotPasswordAsync_WhenRegistrationNotVerified_ShouldAnswerLikeAnyAccountWithoutSending()
         {
             // Arrange: a patient who never finished OTP registration has no password to recover
             var user = PendingRegistrationUser();
@@ -1228,8 +1253,9 @@ namespace OZE.UnitTest.Services
             var result = await _authService.ForgotPasswordAsync(new ForgotPasswordRequest { Identifier = Email });
 
             // Assert
-            result.Success.Should().BeFalse();
-            result.Message.Should().Be(ErrorConstants.AuthMessage.UserNotFound);
+            // The same answer as for a real account, so the endpoint does not tell which accounts exist
+            result.Success.Should().BeTrue();
+            result.Data!.SessionId.Should().NotBeNullOrEmpty();
             VerifyNothingSentAndNoSessionSaved();
         }
 

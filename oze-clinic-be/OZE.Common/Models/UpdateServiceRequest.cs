@@ -23,6 +23,7 @@ namespace OZE.Common.Models
         [MaxLength(20, ErrorMessage = "RequiredRoomType cannot exceed 20 characters")]
         public string? RequiredRoomType { get; set; }
 
-        public bool IsActive { get; set; }
+        // Left out (null) keeps the current state, so a form that does not send it does not turn the service off
+        public bool? IsActive { get; set; }
     }
 }

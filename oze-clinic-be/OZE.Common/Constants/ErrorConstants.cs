@@ -10,6 +10,10 @@ namespace OZE.Common.Constants
     {
         public static class AuthMessage
         {
+            public const string OtpTooManyRequests = "Too many codes were requested for this phone number or email. Please try again later";
+            public const string TooManyRequests = "Too many requests. Please wait a moment and try again";
+            public const string OtpAlreadyUsed = "This code has already been used. Continue with the new password";
+            public const string InvalidConfirmationLink = "The confirmation link is invalid or has expired";
             public const string EmailNotFound = "Email not found in system";
             public const string EmailCantSent = "Could not send the email. Please try again later.";
             public const string UserExist = "User is exist in system";
@@ -74,6 +78,7 @@ namespace OZE.Common.Constants
 
         public static class RoomMessage
         {
+            public const string HasUpcomingShifts = "This room still has shifts from now on; move them to another room before taking it out of service or changing its type";
             public const string RoomNotFound = "Room not found";
             public const string RoomNameExist = "Room name already exists";
             public const string InvalidRoomType = "Room type must be one of: GeneralTreatment, MinorSurgery, XRay";
@@ -84,6 +89,7 @@ namespace OZE.Common.Constants
         // Update profile (UC-08). Texts follow the System Messages table of SRS Report 3.
         public static class ProfileMessage
         {
+            public const string ProfileChangedMeanwhile = "Your profile was changed after this code was sent. Please make the change again";
             // MSG64
             public const string ProfileUpdated = "Update profile success!";
             // MSG66
@@ -98,6 +104,8 @@ namespace OZE.Common.Constants
         // Manage User (UC-44). Texts follow the System Messages table of SRS Report 3.
         public static class StaffMessage
         {
+            public const string HasUpcomingWork = "This staff member still has shifts or appointments from now on; move or cancel them first";
+            public const string LastManager = "The clinic must keep at least one active clinic manager";
             // MSG07
             public const string RoleRequired = "Please enter role.";
             public const string LicenseNumberRequired = "Please enter license number.";
@@ -170,6 +178,7 @@ namespace OZE.Common.Constants
 
         public static class ServiceMessage
         {
+            public const string HasOpenAppointments = "This service is in appointments that are not finished yet; it cannot be turned off now";
             public const string ServiceNotFound = "Service not found in system";
             public const string ServiceCodeExist = "Service code already exists in system";
             public const string ServiceInUse = "Cannot delete service because it is currently linked to existing invoices or treatment plan stages. Please deactivate the service instead.";
@@ -249,6 +258,7 @@ namespace OZE.Common.Constants
         }
         public static class PatientMessage
         {
+            public const string HasOpenAppointments = "This patient has appointments that are not finished yet; cancel or complete them first";
             public const string PatientNotFound = "Patient not found in system";
             public const string PhoneExist = "Phone number already exists in system";
             public const string InvalidGender = "Gender must be one of: Male, Female, Other";

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
@@ -14,6 +16,25 @@ namespace OZE.Persistence.Repositories
         public PatientRepository(AppIdentityDbContext context)
         {
             _context = context;
+        }
+
+        public async Task LockAccountAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            var newStamp = Guid.NewGuid().ToString();
+            await _context.Users.Where(x => x.Id == userId).ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.LockoutEnabled, true)
+                .SetProperty(x => x.LockoutEnd, DateTimeOffset.MaxValue)
+                .SetProperty(x => x.SecurityStamp, newStamp), cancellationToken);
+            var now = DateTimeOffset.UtcNow;
+            await _context.UserRefreshTokens.Where(x => x.UserId == userId && x.RevokedAt == null)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.RevokedAt, now), cancellationToken);
+        }
+
+        public async Task<bool> HasUnfinishedAppointmentsAsync(int patientId, DateOnly today, CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments.AnyAsync(x => x.PatientId == patientId
+                && x.AppointmentDate >= today
+                && AppointmentConstants.UnfinishedStatuses.Contains(x.Status), cancellationToken);
         }
 
         public async Task<Patient?> GetByUserIdAsync(string userId)
@@ -121,7 +142,9 @@ namespace OZE.Persistence.Repositories
             }
 
             var trimmed = phone.Trim();
-            var query = _context.Patients.AsNoTracking().Where(p => p.PhoneNumber == trimmed && p.DeletedAt == null);
+            // The same number may be stored as +84..., 84... or 0..., so every form is looked for
+            var variants = PhoneNumberHelper.TryNormalize(trimmed, out var e164) ? PhoneNumberHelper.GetLookupVariants(e164) : new[] { trimmed };
+            var query = _context.Patients.AsNoTracking().Where(p => p.PhoneNumber != null && variants.Contains(p.PhoneNumber) && p.DeletedAt == null);
             if (excludeId.HasValue)
             {
                 query = query.Where(p => p.Id != excludeId.Value);

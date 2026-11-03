@@ -26,6 +26,14 @@ namespace OZE.Persistence.Repositories
                 .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken && x.RevokedAt == null && x.ExpiryDate > DateTimeOffset.UtcNow);
         }
 
+        public async Task<bool> TryRevokeAsync(Guid id, DateTimeOffset revokedAt)
+        {
+            var rows = await _context.UserRefreshTokens
+                .Where(x => x.Id == id && x.RevokedAt == null)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.RevokedAt, revokedAt));
+            return rows == 1;
+        }
+
         public async Task AddAsync(UserRefreshToken refreshToken)
         {
             await _context.UserRefreshTokens.AddAsync(refreshToken);

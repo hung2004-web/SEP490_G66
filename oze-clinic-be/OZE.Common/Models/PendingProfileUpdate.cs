@@ -6,6 +6,8 @@ namespace OZE.Common.Models
         public string SessionId { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
         public string SecurityStamp { get; set; } = string.Empty;
+        // When the profile was last saved before the code was sent; a later save makes this change out of date
+        public DateTimeOffset? ProfileUpdatedAt { get; set; }
         public string FullName { get; set; } = string.Empty;
         public DateOnly DateOfBirth { get; set; }
         public string Gender { get; set; } = string.Empty;

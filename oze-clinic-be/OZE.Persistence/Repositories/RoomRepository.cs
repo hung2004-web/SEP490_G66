@@ -38,6 +38,12 @@ namespace OZE.Persistence.Repositories
             return await rooms.OrderBy(x => x.RoomName).ToListAsync();
         }
 
+        public async Task<bool> HasUpcomingShiftsAsync(int roomId, DateOnly today, TimeOnly now)
+        {
+            return await _context.StaffSchedules.AnyAsync(x => x.RoomId == roomId
+                && (x.ScheduleDate > today || (x.ScheduleDate == today && x.ActualEndTime == null && x.ShiftEnd > now)));
+        }
+
         public async Task<Room?> GetByIdAsync(int id)
         {
             return await _context.Rooms.FirstOrDefaultAsync(x => x.Id == id);

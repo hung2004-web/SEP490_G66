@@ -178,7 +178,13 @@ namespace OZE.Application.Services
             service.ReferencePrice = request.ReferencePrice;
             service.EstimatedMinutes = request.EstimatedMinutes;
             service.RequiredRoomType = normalizedRoomType;
-            service.IsActive = request.IsActive;
+            var newIsActive = request.IsActive ?? service.IsActive;
+            if (service.IsActive && !newIsActive
+                && await _serviceRepository.HasOpenAppointmentsAsync(service.Id, DateOnly.FromDateTime(DateTime.Today), cancellationToken))
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.HasOpenAppointments);
+            }
+            service.IsActive = newIsActive;
             service.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _serviceRepository.UpdateAsync(service, cancellationToken);
@@ -208,6 +214,12 @@ namespace OZE.Application.Services
                 var unchangedDto = _mapper.Map<ServiceDto>(service);
                 var unchangedStatusText = isActive ? "activated" : "deactivated";
                 return ApiResponse<ServiceDto>.SuccessResult(unchangedDto, $"Service {unchangedStatusText} successfully");
+            }
+
+            // Turning it off while unfinished appointments still use it would leave them on a service nobody can book or see
+            if (!isActive && await _serviceRepository.HasOpenAppointmentsAsync(service.Id, DateOnly.FromDateTime(DateTime.Today), cancellationToken))
+            {
+                return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.HasOpenAppointments);
             }
 
             service.IsActive = isActive;

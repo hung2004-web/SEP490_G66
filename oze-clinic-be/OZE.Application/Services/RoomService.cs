@@ -59,6 +59,14 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(RoomConstants.Statuses.Contains(request.Status), ErrorConstants.RoomMessage.InvalidStatus);
             ConditionGuard.ThrowIf(await _roomRepository.IsRoomNameInUseAsync(roomName, id), ErrorConstants.RoomMessage.RoomNameExist);
 
+            // Shifts already planned in the room keep it: it cannot leave service or change its type under them
+            var leavesService = room.Status == RoomConstants.ActiveStatus && request.Status != RoomConstants.ActiveStatus;
+            if (leavesService || room.RoomType != request.RoomType)
+            {
+                var hasShifts = await _roomRepository.HasUpcomingShiftsAsync(id, DateOnly.FromDateTime(DateTime.Today), TimeOnly.FromDateTime(DateTime.Now));
+                ConditionGuard.ThrowIf(hasShifts, ErrorConstants.RoomMessage.HasUpcomingShifts);
+            }
+
             room.RoomName = roomName;
             room.RoomType = request.RoomType;
             room.Status = request.Status;
