@@ -51,7 +51,7 @@ const runRefresh = (seenRefreshToken) => withRefreshLock(async () => {
         const changed = outcomeAfterRefresh(sentRefreshToken);
         if (changed) return changed;
         if (error.response?.status === 400 && typeof error.response.data?.success === "boolean") {
-            return { outcome: REFRESH_OUTCOME.EXPIRED };
+            return { outcome: REFRESH_OUTCOME.EXPIRED, code: error.response.data.code };
         }
         return { outcome: REFRESH_OUTCOME.FAILED, error, errorPageShown: false };
     }
@@ -67,8 +67,8 @@ const retryRequest = (config, error) => {
     return api.request(config);
 };
 
-const expireSession = (error) => {
-    showSessionExpired();
+const expireSession = (error, code) => {
+    showSessionExpired(code);
     return Promise.reject(error);
 };
 
@@ -85,7 +85,7 @@ const handleUnauthorized = async (error) => {
     const result = await refreshPromise;
 
     if (result.outcome === REFRESH_OUTCOME.RETRY) return retryRequest(config, error);
-    if (result.outcome === REFRESH_OUTCOME.EXPIRED) return expireSession(error);
+    if (result.outcome === REFRESH_OUTCOME.EXPIRED) return expireSession(error, result.code);
     if (result.outcome === REFRESH_OUTCOME.FAILED) {
         const status = getErrorStatus(result.error);
         if (!config.skipErrorPage && !result.errorPageShown && ERROR_PAGE_STATUSES.includes(status)) {
