@@ -19,6 +19,7 @@ import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import RoomManagement from "../pages/admin/RoomManagement";
 import ServiceManagement from "../pages/admin/ServiceManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
+import WorkShiftManagement from "../pages/admin/WorkShiftManagement";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
@@ -116,7 +117,8 @@ const ROLE_PAGES = {
     ),
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />,
-    [ROUTES.ADMIN_STAFF]: <StaffManagement />
+    [ROUTES.ADMIN_STAFF]: <StaffManagement />,
+    [ROUTES.ADMIN_WORK_SHIFTS]: <WorkShiftManagement />
 }
 
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
@@ -140,7 +142,6 @@ const COMING_SOON_TITLES = {
     [ROUTES.RECEPTION_INVOICES]: "Thanh toán",
     [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
     [ROUTES.ADMIN_ROLES]: "Vai trò",
-    [ROUTES.ADMIN_WORK_SHIFTS]: "Phân ca",
     [ROUTES.ADMIN_LEAVE_REQUESTS]: "Đơn xin nghỉ",
     [ROUTES.ADMIN_REFUNDS]: "Duyệt hoàn tiền",
     [ROUTES.ADMIN_SYSTEM_LOGS]: "Nhật ký hệ thống",

@@ -15,6 +15,9 @@ namespace OZE.Common.Models
         // Null for a walk-in, who has no booked time
         public TimeOnly? TimeSlotStart { get; set; }
         public DateTimeOffset? CheckInAt { get; set; }
+        // The room the patient was sent to at check-in
+        public int? RoomId { get; set; }
+        public string? RoomName { get; set; }
         // 0 normal, 1 high, 2 urgent; a higher level is seen first
         public int Priority { get; set; }
         // A booked patient who checked in after the allowed delay; a walk-in is never "late"

@@ -98,6 +98,12 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<bool> HasEndedShiftAsync(int doctorId, DateOnly date)
+        {
+            return await _context.StaffSchedules
+                .AnyAsync(x => x.StaffProfileId == doctorId && x.ScheduleDate == date && x.ActualEndTime != null);
+        }
+
         public async Task<List<StaffSchedule>> GetDoctorShiftsAsync(DateOnly date, int? doctorId)
         {
             // Doctor role ids, joined through Identity tables
@@ -111,7 +117,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.StaffProfile)
                 .Include(x => x.Room)
                 .Where(x => x.ScheduleDate == date
-                    && x.IsPresent != false                    
+                    && x.IsPresent != false
+                    && x.ActualEndTime == null
                     && x.StaffProfile.IsActive
                     && doctorUserIds.Contains(x.StaffProfile.UserId)
                     && x.Room != null && x.Room.Status == RoomConstants.ActiveStatus);
@@ -169,6 +176,8 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x.Variant)
                 .Include(x => x.Examination)
                     .ThenInclude(x => x.ImagingRequests)
+                .Include(x => x.QueueEntries)
+                    .ThenInclude(x => x.Room)
                 .Where(x => x.AppointmentDate == date && x.Status == AppointmentConstants.CheckedInStatus);
 
             if (doctorId.HasValue)
@@ -226,6 +235,13 @@ namespace OZE.Persistence.Repositories
                 .AnyAsync(x => x.DoctorId == doctorId
                     && x.AppointmentDate == date
                     && x.Status == AppointmentConstants.InServiceStatus);
+        }
+
+        public async Task<bool> HasUnfinishedAppointmentAsync(int patientId)
+        {
+            return await _context.Appointments
+                .AnyAsync(x => x.PatientId == patientId
+                    && AppointmentConstants.UnfinishedStatuses.Contains(x.Status));
         }
 
         public async Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default)

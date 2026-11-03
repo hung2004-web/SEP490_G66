@@ -23,6 +23,10 @@ namespace OZE.Application.Interfaces
         Task<AppointmentResponse> ConfirmAppointmentAsync(long id, CancellationToken cancellationToken = default);
         // request is optional: without it the patient is checked in with normal priority
         Task<AppointmentResponse> CheckInAppointmentAsync(long id, CheckInRequest? request, CancellationToken cancellationToken = default);
+
+        // A patient without a booking: finds or creates the patient record by phone, creates the appointment already
+        // checked in, sends the patient to the room of the doctor's shift and into the queue
+        Task<AppointmentResponse> CreateWalkInAsync(WalkInRequest request, string? createdByUserId, CancellationToken cancellationToken = default);
         // Changes the waiting-list priority of a patient who is checked in and still waiting
         Task<AppointmentResponse> SetPriorityAsync(long id, SetPriorityRequest request, CancellationToken cancellationToken = default);
         // The signed-in doctor opens the visit for one of their checked-in appointments

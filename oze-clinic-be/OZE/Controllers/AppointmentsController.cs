@@ -64,6 +64,20 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Registers a patient who comes without a booking: the patient is checked in at once, sent to the room of the
+        /// doctor's shift and put in the queue. A phone that already has a record uses that record.
+        /// </summary>
+        [HttpPost("walk-in")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> CreateWalkInAsync(
+            [FromBody] WalkInRequest request,
+            CancellationToken cancellationToken)
+        {
+            var appointment = await _appointmentService.CreateWalkInAsync(request, CurrentUserId, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment, "Đã đăng ký khám và đưa vào hàng chờ"));
+        }
+
+        /// <summary>
         /// Retrieves a paginated list of appointments with optional filtering by date, doctor, patient, status, and search keyword.
         /// </summary>
         [HttpGet]
