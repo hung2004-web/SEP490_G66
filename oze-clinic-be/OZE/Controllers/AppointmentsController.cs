@@ -90,6 +90,20 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// A checked-in patient who left without being seen: marked NO_SHOW and taken out of the queue.
+        /// </summary>
+        [HttpPost("{id:long}/no-show")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> MarkNoShowAsync(
+            [FromRoute] long id,
+            [FromBody] MarkNoShowRequest? request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.MarkNoShowAsync(id, request, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Patient marked as NO_SHOW"));
+        }
+
+        /// <summary>
         /// Moves a waiting patient to another doctor who has a shift today. The patient goes to the room of that shift.
         /// </summary>
         [HttpPost("{id:long}/reassign-doctor")]

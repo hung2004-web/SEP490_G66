@@ -52,8 +52,9 @@ namespace OZE.Application.Interfaces
             string? doctorUserId = null,
             CancellationToken cancellationToken = default);
 
-        // A doctor who ended the shift is off duty: no new patients to call or to examine, only the ones already examined
-        // (back from the X-ray) are still theirs. An examination in progress is finished as usual.
+        // A doctor is on duty only between "start shift" and "end shift". Off duty (not started yet, or ended) there are no new
+        // patients to call or to examine; the ones already examined (back from the X-ray) are still theirs, and an examination
+        // in progress is finished as usual.
         Task<bool> IsDoctorOffDutyAsync(int staffId, CancellationToken cancellationToken = default);
 
         // A doctor (doctorUserId) is only handed the patients booked with that doctor in the examination queue

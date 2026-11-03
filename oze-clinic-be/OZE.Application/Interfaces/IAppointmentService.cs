@@ -32,6 +32,9 @@ namespace OZE.Application.Interfaces
         // and gets a new number at the end of that doctor's queue
         Task<AppointmentResponse> ReassignDoctorAsync(long id, ReassignDoctorRequest request, CancellationToken cancellationToken = default);
 
+        // A checked-in patient who left without being seen: NO_SHOW, out of the queue (any day, so an old one can be closed too)
+        Task<AppointmentResponse> MarkNoShowAsync(long id, MarkNoShowRequest? request, CancellationToken cancellationToken = default);
+
         // A patient without a booking: finds or creates the patient record by phone, creates the appointment already
         // checked in, sends the patient to the room of the doctor's shift and into the queue
         Task<AppointmentResponse> CreateWalkInAsync(WalkInRequest request, string? createdByUserId, CancellationToken cancellationToken = default);

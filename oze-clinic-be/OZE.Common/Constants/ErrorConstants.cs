@@ -224,7 +224,9 @@ namespace OZE.Common.Constants
             public const string CheckInWrongDay = "Check-in is only possible on the day of the appointment";
             public const string CheckInDoctorShiftEnded = "The doctor has already ended the shift today";
             public const string DoctorHasNoShiftToday = "The doctor has no shift to see this patient today";
-            public const string DoctorShiftEndedCannotStart = "Your shift has ended. Only patients you have already examined can still be seen; ask the manager to reopen the shift for new ones";
+            public const string DoctorNotOnShiftCannotStart = "You are not on a shift now. Start your shift to see new patients; only patients you have already examined can still be seen";
+            public const string NoShowOnlyWaiting = "Only a patient who is checked in and waiting can be marked as not there";
+            public const string NoShowAlreadyExamined = "The doctor has already started on this patient; the doctor completes the examination instead";
             public const string ReassignOnlyWaiting = "Only a patient who is checked in and waiting can be moved to another doctor";
             public const string ReassignAlreadyExamined = "This patient was already seen by the doctor and stays with that doctor";
             public const string ReassignWrongDay = "A patient can only be moved to another doctor on the day of the appointment";
@@ -327,7 +329,7 @@ namespace OZE.Common.Constants
         {
             public const string EntryNotFound = "Queue number not found";
             public const string OnlyCalledCanBeSkipped = "Only a number that has been called can be skipped";
-            public const string DoctorShiftEnded = "Your shift has ended. Only patients you have already examined can still be called";
+            public const string DoctorNotOnShift = "You are not on a shift now. Start your shift to call new patients; only patients you have already examined can still be called";
             public const string OnlyWaitingCanBeCalled = "Only a number that is waiting can be called";
             public const string NotInTodayQueue = "This number is not in today's queue";
             public const string NotYourPatientToCall = "You can only call your own patients";

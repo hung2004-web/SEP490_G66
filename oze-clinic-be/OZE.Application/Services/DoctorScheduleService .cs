@@ -123,7 +123,9 @@ namespace OZE.Application.Services
             var response = new EndShiftResponse { ShiftId = shift.Id, ActualStartTime = shift.ActualStartTime };
             // What the patients were before, kept in the log so the shift can be reopened
             var restorable = new List<RestorableAppointment>();
-            // Patients who have to be told: the ones waiting in the clinic and the ones booked for a time still to come
+            // Patients who have to be told: the ones waiting in the clinic and the ones booked for a time still to come.
+            // Someone already told when the shift was ended before (and then reopened) is not told again.
+            var alreadyNotified = (await GetLastShiftEndedAsync(shift.Id))?.Notified ?? new List<long>();
             var toNotify = new List<(Appointment Appointment, bool Waiting)>();
             // Someone who was already seen (e.g. back from the X-ray) is not "not examined"
             foreach (var appointment in open.Where(a => a.Examination == null && ShiftTimeHelper.IsInShift(a, shift)))
@@ -156,9 +158,16 @@ namespace OZE.Application.Services
             await _workShiftRepository.SaveChangesAsync();
 
             response.ActualEndTime = shift.ActualEndTime;
-            await LogAsync(AuditConstants.ShiftEnded, shift.Id, new { shift.ActualEndTime, NoShow = restorable.Count, Restorable = restorable });
+            var newlyNotified = toNotify.Where(x => !alreadyNotified.Contains(x.Appointment.Id)).ToList();
+            await LogAsync(AuditConstants.ShiftEnded, shift.Id, new
+            {
+                shift.ActualEndTime,
+                NoShow = restorable.Count,
+                Restorable = restorable,
+                Notified = alreadyNotified.Concat(newlyNotified.Select(x => x.Appointment.Id)).Distinct().ToList()
+            });
 
-            await NotifyShiftEndedAsync(doctor.FullName, toNotify);
+            await NotifyShiftEndedAsync(doctor.FullName, newlyNotified);
             return response;
         }
 
@@ -249,31 +258,37 @@ namespace OZE.Application.Services
         // The patients the last end of that shift marked NO_SHOW, with what they were before
         private async Task<List<RestorableAppointment>> GetRestorableAsync(long shiftId)
         {
+            return (await GetLastShiftEndedAsync(shiftId))?.Restorable ?? new List<RestorableAppointment>();
+        }
+
+        // What the last end of that shift wrote in the log, or null
+        private async Task<ShiftEndedValues?> GetLastShiftEndedAsync(long shiftId)
+        {
             if (_auditLogRepository == null)
             {
-                return new List<RestorableAppointment>();
+                return null;
             }
 
             var ended = await _auditLogRepository.GetLatestAsync(AuditConstants.ShiftEnded, AuditConstants.StaffScheduleEntity, shiftId.ToString());
             if (string.IsNullOrWhiteSpace(ended?.NewValues))
             {
-                return new List<RestorableAppointment>();
+                return null;
             }
 
             try
             {
-                var values = JsonSerializer.Deserialize<ShiftEndedValues>(ended.NewValues, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return values?.Restorable ?? new List<RestorableAppointment>();
+                return JsonSerializer.Deserialize<ShiftEndedValues>(ended.NewValues, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (JsonException)
             {
-                return new List<RestorableAppointment>();
+                return null;
             }
         }
 
         private sealed record RestorableAppointment(long Id, string Status);
 
-        private sealed record ShiftEndedValues(List<RestorableAppointment>? Restorable);
+        // Notified: every patient told so far about the end of this shift, so nobody is told twice
+        private sealed record ShiftEndedValues(List<RestorableAppointment>? Restorable, List<long>? Notified);
 
         private async Task<(StaffProfile Doctor, StaffSchedule Shift)> GetOwnShiftOfTodayAsync(string userId, long shiftId)
         {

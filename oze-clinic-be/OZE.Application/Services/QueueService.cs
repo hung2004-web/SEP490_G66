@@ -136,7 +136,7 @@ namespace OZE.Application.Services
             }
 
             var entries = await _queueRepository.GetActiveEntriesAsync(queueType, roomId, assignedStaffId, cancellationToken);
-            // A doctor who ended the shift is only handed patients already examined (back from the X-ray)
+            // A doctor off duty (shift not started, or ended) is only handed patients already examined (back from the X-ray)
             foreach (var next in entries.Where(x => x.Status == QueueConstants.Waiting && (!offDuty || x.Appointment?.Examination != null)))
             {
                 var calledAt = DateTimeOffset.UtcNow;
@@ -174,7 +174,7 @@ namespace OZE.Application.Services
                 ConditionGuard.Ensure<NotFoundException>(staffId != null, ErrorConstants.AppointmentMessage.DoctorProfileNotFound);
                 ConditionGuard.Ensure<ForbiddenException>(entry.AssignedStaffId == staffId, ErrorConstants.QueueMessage.NotYourPatientToCall);
                 ConditionGuard.ThrowIf(entry.Appointment?.Examination == null && await IsDoctorOffDutyAsync(staffId!.Value, cancellationToken),
-                    ErrorConstants.QueueMessage.DoctorShiftEnded);
+                    ErrorConstants.QueueMessage.DoctorNotOnShift);
             }
 
             // Numbers of earlier days are history, they cannot be called any more
@@ -198,7 +198,7 @@ namespace OZE.Application.Services
 
         public async Task<bool> IsDoctorOffDutyAsync(int staffId, CancellationToken cancellationToken = default)
         {
-            return await _queueRepository.IsOffDutyAsync(staffId, DateOnly.FromDateTime(DateTime.Today), TimeOnly.FromDateTime(DateTime.Now), cancellationToken);
+            return await _queueRepository.IsOffDutyAsync(staffId, DateOnly.FromDateTime(DateTime.Today), cancellationToken);
         }
 
         public async Task<QueueEntryResponse> SkipAsync(

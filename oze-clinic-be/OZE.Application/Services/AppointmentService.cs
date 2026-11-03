@@ -450,7 +450,8 @@ namespace OZE.Application.Services
             var today = DateOnly.FromDateTime(DateTime.Today);
             var waiting = await _appointmentRepository.GetWaitingAppointmentsAsync(today, doctorId, cancellationToken);
 
-            // A doctor who ended the shift has no waiting list any more, except patients already examined (back from the X-ray)
+            // A doctor sees the waiting list only while on shift (started and not ended); off duty, only the patients
+            // already examined (back from the X-ray) are listed
             if (doctorUserId != null && doctorId.HasValue && _queueService != null
                 && await _queueService.IsDoctorOffDutyAsync(doctorId.Value, cancellationToken))
             {
@@ -782,12 +783,13 @@ namespace OZE.Application.Services
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
             await _appointmentRepository.UpdateAsync(appointment);
 
-            // Out of the queue of the doctor who left, to the end of the queue of the new one (the priority goes along)
+            // Out of the queue of the doctor who left, to the end of the queue of the new one (the priority and its reason go along)
+            QueueEntry? oldEntry = null;
             if (_queueService != null)
             {
-                await _queueService.UpdateStatusAsync(appointment.Id, QueueConstants.ExaminationType, QueueConstants.Cancelled, cancellationToken);
+                oldEntry = await _queueService.UpdateStatusAsync(appointment.Id, QueueConstants.ExaminationType, QueueConstants.Cancelled, cancellationToken);
             }
-            await EnterExaminationQueueAsync(appointment, room, null, cancellationToken);
+            await EnterExaminationQueueAsync(appointment, room, oldEntry?.Notes, cancellationToken);
 
             await _auditLogService.LogAsync(AuditConstants.AppointmentDoctorReassigned, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { DoctorId = oldDoctorId }, new { DoctorId = newDoctorId, RoomId = room?.Id });
@@ -798,6 +800,31 @@ namespace OZE.Application.Services
             response.RoomId = room?.Id;
             response.RoomName = room?.RoomName;
             return response;
+        }
+
+        public async Task<AppointmentResponse> MarkNoShowAsync(long id, MarkNoShowRequest? request, CancellationToken cancellationToken = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithExaminationAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(appointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+
+            ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.NoShowOnlyWaiting);
+            // A patient the doctor has started on is finished by the doctor, not dropped
+            ConditionGuard.ThrowIf(appointment.Examination != null, ErrorConstants.AppointmentMessage.NoShowAlreadyExamined);
+
+            var oldStatus = appointment.Status;
+            appointment.Status = AppointmentConstants.NoShowStatus;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+            await _appointmentRepository.UpdateAsync(appointment);
+
+            if (_queueService != null)
+            {
+                await _queueService.UpdateStatusAsync(appointment.Id, QueueConstants.ExaminationType, QueueConstants.Cancelled, cancellationToken);
+            }
+
+            await _auditLogService.LogAsync(AuditConstants.AppointmentNoShow, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
+                new { Status = oldStatus }, new { appointment.Status }, request?.Reason?.Trim());
+
+            return MapToResponse(appointment);
         }
 
         public async Task<AppointmentResponse> CreateWalkInAsync(WalkInRequest request, string? createdByUserId, CancellationToken cancellationToken = default)
@@ -897,6 +924,8 @@ namespace OZE.Application.Services
                 DoctorName = shift.StaffProfile?.FullName ?? string.Empty,
                 Date = today
             }, lines);
+            response.TimeSlotStart = null;
+            response.TimeSlotEnd = null;
             response.CheckInAt = appointment.CheckInAt;
             response.RoomId = room?.Id;
             response.RoomName = room?.RoomName;
@@ -996,11 +1025,12 @@ namespace OZE.Application.Services
             ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.OnlyCheckedInCanBeStarted);
             ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.ExaminationWrongDay);
 
-            // A doctor who ended the shift takes no new patient; one already examined (back from the X-ray) is still theirs
+            // A doctor takes new patients only after starting the shift and until ending it; one already examined
+            // (back from the X-ray) is still theirs
             if (appointment.Examination == null && _queueService != null)
             {
                 ConditionGuard.ThrowIf(await _queueService.IsDoctorOffDutyAsync(doctorId!.Value, cancellationToken),
-                    ErrorConstants.AppointmentMessage.DoctorShiftEndedCannotStart);
+                    ErrorConstants.AppointmentMessage.DoctorNotOnShiftCannotStart);
             }
 
             // One patient at a time: the doctor must finish the current examination first
@@ -1162,8 +1192,8 @@ namespace OZE.Application.Services
                 }).ToList(),
                 AppointmentType = appointment.AppointmentType,
                 AppointmentDate = appointment.AppointmentDate,
-                TimeSlotStart = appointment.TimeSlotStart ?? default,
-                TimeSlotEnd = appointment.TimeSlotEnd ?? default,
+                TimeSlotStart = appointment.TimeSlotStart,
+                TimeSlotEnd = appointment.TimeSlotEnd,
                 Status = appointment.Status,
                 CheckInAt = appointment.CheckInAt,
                 CancellationReason = appointment.CancellationReason,
