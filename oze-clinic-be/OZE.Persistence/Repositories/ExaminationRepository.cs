@@ -17,7 +17,9 @@ namespace OZE.Persistence.Repositories
         public Task<Examination?> GetForWorkAsync(long examinationId, CancellationToken cancellationToken = default)
         {
             // Not AsNoTracking: the caller changes the examination and its children, then saves once
+            // Split: one query per collection, instead of one row for every combination of services, diagnoses, teeth and medications
             return _context.Examinations
+                .AsSplitQuery()
                 .Include(x => x.Appointment)
                     .ThenInclude(x => x.ServiceItems)
                         .ThenInclude(x => x.Service)

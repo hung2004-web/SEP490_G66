@@ -33,7 +33,8 @@ namespace OZE.Persistence.Configurations
                    .HasConstraintName("FK_Prescriptions_Doctors")
                    .OnDelete(DeleteBehavior.NoAction);
 
-            builder.HasIndex(x => x.ExaminationId).HasDatabaseName("IX_Prescriptions_ExaminationId");
+            // One prescription per examination: a double click cannot create a second one nobody sees
+            builder.HasIndex(x => x.ExaminationId).IsUnique().HasDatabaseName("IX_Prescriptions_ExaminationId");
             builder.HasIndex(x => new { x.PatientId, x.CreatedAt })
                    .HasDatabaseName("IX_Prescriptions_PatientId")
                    .IsDescending(false, true);

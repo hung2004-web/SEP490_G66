@@ -89,6 +89,8 @@ namespace OZE.Common.Constants
         // Update profile (UC-08). Texts follow the System Messages table of SRS Report 3.
         public static class ProfileMessage
         {
+            public const string NoEmailToConfirm = "There is no email waiting for confirmation";
+            public const string ConfirmationEmailSent = "A new confirmation link has been sent to your email";
             public const string ProfileChangedMeanwhile = "Your profile was changed after this code was sent. Please make the change again";
             // MSG64
             public const string ProfileUpdated = "Update profile success!";
@@ -190,6 +192,7 @@ namespace OZE.Common.Constants
         // Track Treatment Progress (UC-52 / SCRUM-351). Texts follow System Messages where applicable.
         public static class TreatmentPlanMessage
         {
+            public const string NoAccess = "You do not have access to this patient's treatment plan";
             // MSG67
             public const string PlanNotFound = "Treatment plan not found.";
             public const string StageNotFound = "Treatment stage not found.";
@@ -209,6 +212,7 @@ namespace OZE.Common.Constants
         }
         public static class AppointmentMessage
         {
+            public const string RecordChangedMeanwhile = "This record was changed by someone else. Please reload and try again";
             public const string ServiceNotFound = "Service not found";
             public const string ServiceInactive = "This service is not available for booking";
             public const string PatientProfileNotFound = "No patient profile is linked to this account";
@@ -302,6 +306,8 @@ namespace OZE.Common.Constants
         // Writing the content of an examination: services, notes and diagnoses
         public static class ExaminationMessage
         {
+            public const string NothingRecorded = "Please record at least a diagnosis or clinical notes before completing the examination";
+            public const string PrescriptionNotFinalized = "Please finalize the prescription, or delete it, before completing the examination";
             public const string NotExaminingDoctor = "You can only work on the examinations you are performing";
             public const string AlreadyLocked = "This examination is already completed and locked, it can no longer be edited";
             public const string ChiefComplaintTooLong = "The reason for the visit is too long";

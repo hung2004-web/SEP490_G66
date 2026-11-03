@@ -53,7 +53,7 @@ namespace OZE.Application.Services
         {
             var doctor = await GetDoctorAsync(userId);
 
-            var fromDate = query.FromDate ?? GetStartOfWeek(DateOnly.FromDateTime(DateTime.Today));
+            var fromDate = query.FromDate ?? GetStartOfWeek(DateOnly.FromDateTime(ClinicClock.Today));
             var toDate = query.ToDate ?? fromDate.AddDays(WorkShiftConstants.DaysInWeek - 1);
             ConditionGuard.Ensure(fromDate <= toDate, ErrorConstants.DoctorScheduleMessage.InvalidDateRange);
             ConditionGuard.Ensure(toDate.DayNumber - fromDate.DayNumber < WorkShiftConstants.DaysInWeek,
@@ -87,15 +87,22 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(shift.ActualStartTime == null, ErrorConstants.DoctorScheduleMessage.ShiftAlreadyStarted);
 
             // The clock-in follows the time the shift was scheduled for
-            var now = TimeOnly.FromDateTime(DateTime.Now);
+            var now = TimeOnly.FromDateTime(ClinicClock.Now);
             ConditionGuard.Ensure(now < shift.ShiftEnd, ErrorConstants.DoctorScheduleMessage.ShiftOverCannotStart);
             // TimeSpan, not TimeOnly: a shift that starts just after midnight must not wrap around to the evening before
             ConditionGuard.Ensure(now.ToTimeSpan() >= shift.ShiftStart.ToTimeSpan() - TimeSpan.FromMinutes(WorkShiftConstants.ClockInEarlyMinutes),
                 ErrorConstants.DoctorScheduleMessage.ShiftTooEarlyToStart);
 
+            // Two doctors cannot work in the same room at once, as when a shift is reopened
+            if (shift.RoomId.HasValue)
+            {
+                var roomInUse = await _workShiftRepository.HasRunningShiftInRoomAsync(shift.RoomId.Value, shift.ScheduleDate, shift.Id);
+                ConditionGuard.ThrowIf(roomInUse, ErrorConstants.DoctorScheduleMessage.RoomInUse);
+            }
+
             shift.IsPresent = true;
             shift.AbsenceReason = null;
-            shift.ActualStartTime = TimeOnly.FromDateTime(DateTime.Now);
+            shift.ActualStartTime = TimeOnly.FromDateTime(ClinicClock.Now);
             shift.UpdatedAt = DateTimeOffset.UtcNow;
             _workShiftRepository.Update(shift);
             await _workShiftRepository.SaveChangesAsync();
@@ -112,7 +119,7 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(shift.ActualStartTime != null, ErrorConstants.DoctorScheduleMessage.ShiftNotStarted);
             ConditionGuard.Ensure(shift.ActualEndTime == null, ErrorConstants.DoctorScheduleMessage.ShiftAlreadyEnded);
 
-            var now = DateTime.Now;
+            var now = ClinicClock.Now;
             var nowTime = TimeOnly.FromDateTime(now);
             var open = await _appointmentRepository.GetDoctorOpenAppointmentsAsync(doctor.Id, shift.ScheduleDate);
 
@@ -205,8 +212,8 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(shift!.ActualEndTime != null, ErrorConstants.DoctorScheduleMessage.ShiftNotEnded);
 
             // Only while the shift is still on: a morning shift cannot be taken back in the afternoon
-            ConditionGuard.Ensure(shift.ScheduleDate == DateOnly.FromDateTime(DateTime.Today)
-                && TimeOnly.FromDateTime(DateTime.Now) < shift.ShiftEnd, ErrorConstants.DoctorScheduleMessage.ShiftTimeOver);
+            ConditionGuard.Ensure(shift.ScheduleDate == DateOnly.FromDateTime(ClinicClock.Today)
+                && TimeOnly.FromDateTime(ClinicClock.Now) < shift.ShiftEnd, ErrorConstants.DoctorScheduleMessage.ShiftTimeOver);
 
             // The room belongs to whoever is working in it now; reopening never takes it from another doctor
             if (shift.RoomId.HasValue)
@@ -297,7 +304,7 @@ namespace OZE.Application.Services
             // Another doctor's shift returns 404 too, so its existence is not revealed
             ConditionGuard.Ensure<NotFoundException>(shift != null && shift.StaffProfileId == doctor.Id,
                 ErrorConstants.DoctorScheduleMessage.ShiftNotFound);
-            ConditionGuard.Ensure(shift!.ScheduleDate == DateOnly.FromDateTime(DateTime.Today), ErrorConstants.DoctorScheduleMessage.ShiftNotToday);
+            ConditionGuard.Ensure(shift!.ScheduleDate == DateOnly.FromDateTime(ClinicClock.Today), ErrorConstants.DoctorScheduleMessage.ShiftNotToday);
             return (doctor, shift);
         }
 

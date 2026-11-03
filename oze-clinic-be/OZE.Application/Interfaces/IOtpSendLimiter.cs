@@ -5,6 +5,6 @@ namespace OZE.Application.Interfaces
     {
         // Throws TooManyRequestsException when the contact already got the most codes allowed in the window;
         // otherwise counts this send
-        void EnsureCanSend(string contact);
+        void EnsureCanSend(string purpose, string contact);
     }
 }

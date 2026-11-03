@@ -180,7 +180,7 @@ namespace OZE.Application.Services
             service.RequiredRoomType = normalizedRoomType;
             var newIsActive = request.IsActive ?? service.IsActive;
             if (service.IsActive && !newIsActive
-                && await _serviceRepository.HasOpenAppointmentsAsync(service.Id, DateOnly.FromDateTime(DateTime.Today), cancellationToken))
+                && await _serviceRepository.HasOpenAppointmentsAsync(service.Id, DateOnly.FromDateTime(ClinicClock.Today), cancellationToken))
             {
                 return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.HasOpenAppointments);
             }
@@ -217,7 +217,7 @@ namespace OZE.Application.Services
             }
 
             // Turning it off while unfinished appointments still use it would leave them on a service nobody can book or see
-            if (!isActive && await _serviceRepository.HasOpenAppointmentsAsync(service.Id, DateOnly.FromDateTime(DateTime.Today), cancellationToken))
+            if (!isActive && await _serviceRepository.HasOpenAppointmentsAsync(service.Id, DateOnly.FromDateTime(ClinicClock.Today), cancellationToken))
             {
                 return ApiResponse<ServiceDto>.FailureResult(ErrorConstants.ServiceMessage.HasOpenAppointments);
             }

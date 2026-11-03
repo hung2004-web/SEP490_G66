@@ -199,14 +199,14 @@ namespace OZE.Application.Services
         // excludeAppointmentId: the appointment being rescheduled, so it does not block its own new time
         private async Task<List<AvailableSlotResponse>> FindSlotsAsync(List<BookingLine> lines, DateOnly date, int? doctorId, long? excludeAppointmentId = null)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
             var maxDaysAhead = await GetIntConfigAsync(ConfigKeyConstants.BookingMaxDaysAhead);
             ConditionGuard.Ensure(date >= today, ErrorConstants.AppointmentMessage.PastDate);
             ConditionGuard.Ensure(date <= today.AddDays(maxDaysAhead), ErrorConstants.AppointmentMessage.TooFarAhead);
 
             var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
             var minHoursAhead = await GetIntConfigAsync(ConfigKeyConstants.BookingMinHoursAhead);
-            var earliestStart = DateTime.Now.AddHours(minHoursAhead);
+            var earliestStart = ClinicClock.Now.AddHours(minHoursAhead);
             // Services are done one after another, so the slot must fit their total time
             var duration = TimeSpan.FromMinutes(lines.Sum(l => l.GetMinutes(slotMinutes)));
 
@@ -443,7 +443,7 @@ namespace OZE.Application.Services
             }
 
             var lateMinutes = await GetIntConfigAsync(ConfigKeyConstants.CheckInLateMinutes);
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
             var waiting = await _appointmentRepository.GetWaitingAppointmentsAsync(today, doctorId, cancellationToken);
 
             // A doctor sees the waiting list only while on shift (started and not ended); off duty, only the patients
@@ -659,7 +659,7 @@ namespace OZE.Application.Services
             ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.PendingStatus, ErrorConstants.AppointmentMessage.CheckInNeedsConfirmation);
             ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.ConfirmedStatus, ErrorConstants.AppointmentMessage.OnlyConfirmedCanBeCheckedIn);
             // A patient may arrive at any time of that day, early or late; the waiting order decides who is seen first
-            ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.CheckInWrongDay);
+            ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(ClinicClock.Today), ErrorConstants.AppointmentMessage.CheckInWrongDay);
 
             var priority = request?.Priority ?? PriorityConstants.Normal;
             EnsureValidPriority(priority, request?.Reason);
@@ -688,7 +688,7 @@ namespace OZE.Application.Services
 
         public async Task<List<NeedsAttentionResponse>> GetNeedsAttentionAsync(CancellationToken cancellationToken = default)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
             var shifts = await _appointmentRepository.GetEndedShiftsAsync(today);
             if (shifts.Count == 0)
             {
@@ -758,7 +758,7 @@ namespace OZE.Application.Services
             ConditionGuard.ThrowIf(appointment!.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.ReassignOnlyWaiting);
             // A patient the doctor has already examined (back from the X-ray) belongs to that examination
             ConditionGuard.ThrowIf(appointment.Examination != null, ErrorConstants.AppointmentMessage.ReassignAlreadyExamined);
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
             ConditionGuard.ThrowIf(appointment.AppointmentDate != today, ErrorConstants.AppointmentMessage.ReassignWrongDay);
             var newDoctorId = request.DoctorId!.Value;
             ConditionGuard.ThrowIf(appointment.DoctorId == newDoctorId, ErrorConstants.AppointmentMessage.ReassignSameDoctor);
@@ -826,7 +826,7 @@ namespace OZE.Application.Services
             ConditionGuard.ThrowIf(email != null && (email.Length > 256 || !new EmailAddressAttribute().IsValid(email)),
                 ErrorConstants.AuthMessage.EmailInvalid);
             ConditionGuard.Ensure(PatientConstants.Gender.TryNormalize(request.Gender, out var gender), ErrorConstants.PatientMessage.InvalidGender);
-            ConditionGuard.Ensure(request.DateOfBirth == null || request.DateOfBirth.Value <= DateOnly.FromDateTime(DateTime.Today),
+            ConditionGuard.Ensure(request.DateOfBirth == null || request.DateOfBirth.Value <= DateOnly.FromDateTime(ClinicClock.Today),
                 ErrorConstants.PatientMessage.InvalidDateOfBirth);
 
             // Normal unless the desk says otherwise; above normal needs a reason, like at check-in
@@ -836,7 +836,7 @@ namespace OZE.Application.Services
             var lines = await ResolveBookingLinesAsync(request.ServiceId, request.VariantId);
 
             // The patient is seen by the doctor they asked for, in the room of that doctor's shift
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
             var shift = await FindDoctorShiftAsync(request.DoctorId!.Value, today, null,
                 RequiredRoomTypeOf(lines.Select(l => l.Service.RequiredRoomType)));
             ConditionGuard.Ensure(shift != null, ErrorConstants.AppointmentMessage.DoctorNoSuitableShiftToday);
@@ -951,7 +951,7 @@ namespace OZE.Application.Services
             var shifts = (await _appointmentRepository.GetDoctorShiftsAsync(date, doctorId) ?? new List<StaffSchedule>())
                 .Where(x => x.Room?.RoomType == requiredRoomType)
                 .ToList();
-            var now = TimeOnly.FromDateTime(DateTime.Now);
+            var now = TimeOnly.FromDateTime(ClinicClock.Now);
             var shift = shifts.FirstOrDefault(x => slot.HasValue && x.ShiftStart <= slot.Value && slot.Value < x.ShiftEnd)
                 ?? shifts.FirstOrDefault(x => x.ShiftStart <= now && now < x.ShiftEnd)
                 ?? shifts.FirstOrDefault(x => x.ShiftStart > now);
@@ -1024,7 +1024,7 @@ namespace OZE.Application.Services
             // The waiting list of a doctor contains only that doctor's checked-in patients
             ConditionGuard.Ensure<ForbiddenException>(appointment!.DoctorId == doctorId, ErrorConstants.AppointmentMessage.NotAssignedDoctor);
             ConditionGuard.ThrowIf(appointment.Status != AppointmentConstants.CheckedInStatus, ErrorConstants.AppointmentMessage.OnlyCheckedInCanBeStarted);
-            ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(DateTime.Today), ErrorConstants.AppointmentMessage.ExaminationWrongDay);
+            ConditionGuard.ThrowIf(appointment.AppointmentDate != DateOnly.FromDateTime(ClinicClock.Today), ErrorConstants.AppointmentMessage.ExaminationWrongDay);
 
             // A doctor takes new patients only after starting the shift and until ending it; one already examined
             // (back from the X-ray) is still theirs
@@ -1102,6 +1102,14 @@ namespace OZE.Application.Services
             ConditionGuard.ThrowIf(examination!.ExaminationStatus != ExaminationConstants.InProgress,
                 ErrorConstants.AppointmentMessage.ExaminationAlreadyLocked);
 
+            // A locked record cannot be filled in later: it must say something, and a prescription with medications
+            // must be final, otherwise it would stay a draft for ever
+            var (diagnoses, draftPrescriptions) = await _appointmentRepository.GetExaminationCompletionCountsAsync(examination.Id, cancellationToken);
+            ConditionGuard.ThrowIf(diagnoses == 0 && string.IsNullOrWhiteSpace(examination.ClinicalNotes),
+                ErrorConstants.ExaminationMessage.NothingRecorded);
+            ConditionGuard.ThrowIf(draftPrescriptions > 0, ErrorConstants.ExaminationMessage.PrescriptionNotFinalized);
+            await _appointmentRepository.RemoveEmptyDraftPrescriptionsAsync(examination.Id, cancellationToken);
+
             var now = DateTimeOffset.UtcNow;
             var oldStatus = appointment.Status;
             examination.ExaminationStatus = "Locked";
@@ -1150,7 +1158,7 @@ namespace OZE.Application.Services
         {
             var cutoffHours = await GetIntConfigAsync(ConfigKeyConstants.BookingCancelCutoffHours);
             var startsAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart ?? default);
-            ConditionGuard.ThrowIf(startsAt - DateTime.Now < TimeSpan.FromHours(cutoffHours), errorMessage);
+            ConditionGuard.ThrowIf(startsAt - ClinicClock.Now < TimeSpan.FromHours(cutoffHours), errorMessage);
         }
 
         // Only an appointment that has not started yet can be cancelled or checked in

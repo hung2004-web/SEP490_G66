@@ -14,10 +14,12 @@ namespace OZE.ProjectBase.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IAccessTokenRevocationStore? _revocationStore;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IAccessTokenRevocationStore? revocationStore = null)
         {
             _authService = authService;
+            _revocationStore = revocationStore;
         }
 
         [HttpPost("register")]
@@ -84,6 +86,16 @@ namespace OZE.ProjectBase.Controllers
             }
 
             var result = await _authService.LogoutAsync(userId, refreshToken);
+            if (result.Success)
+            {
+                // The access token sent with the logout ends now, not when it expires
+                var tokenId = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti);
+                var expires = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Exp);
+                if (_revocationStore != null && !string.IsNullOrEmpty(tokenId) && long.TryParse(expires, out var exp))
+                {
+                    _revocationStore.Revoke(tokenId, DateTimeOffset.FromUnixTimeSeconds(exp));
+                }
+            }
             return result.Success ? Ok(result) : BadRequest(result);
         }
 

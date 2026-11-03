@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using Microsoft.Extensions.Logging;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
@@ -48,7 +49,7 @@ namespace OZE.Application.Services
             };
 
             // The number is given by the repository, together with saving, so desks checking in together never share one
-            var created = await _queueRepository.AddWithNextNumberAsync(entry, DateOnly.FromDateTime(DateTime.Today), cancellationToken);
+            var created = await _queueRepository.AddWithNextNumberAsync(entry, DateOnly.FromDateTime(ClinicClock.Today), cancellationToken);
             _logger.LogInformation("Enqueued appointment {AppointmentId} to {QueueType} queue as number {QueueNumber}",
                 appointmentId, queueType, created.QueueNumber);
 
@@ -178,7 +179,7 @@ namespace OZE.Application.Services
             }
 
             // Numbers of earlier days are history, they cannot be called any more
-            ConditionGuard.Ensure(DateOnly.FromDateTime(entry!.CreatedAt.LocalDateTime) == DateOnly.FromDateTime(DateTime.Today), ErrorConstants.QueueMessage.NotInTodayQueue);
+            ConditionGuard.Ensure(DateOnly.FromDateTime(entry!.CreatedAt.LocalDateTime) == DateOnly.FromDateTime(ClinicClock.Today), ErrorConstants.QueueMessage.NotInTodayQueue);
             ConditionGuard.Ensure(entry.Status == QueueConstants.Waiting, ErrorConstants.QueueMessage.OnlyWaitingCanBeCalled);
 
             var calledAt = DateTimeOffset.UtcNow;
@@ -198,7 +199,7 @@ namespace OZE.Application.Services
 
         public async Task<bool> IsDoctorOffDutyAsync(int staffId, CancellationToken cancellationToken = default)
         {
-            return await _queueRepository.IsOffDutyAsync(staffId, DateOnly.FromDateTime(DateTime.Today), cancellationToken);
+            return await _queueRepository.IsOffDutyAsync(staffId, DateOnly.FromDateTime(ClinicClock.Today), cancellationToken);
         }
 
         public async Task<QueueEntryResponse> SkipAsync(

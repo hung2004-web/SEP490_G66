@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
@@ -67,7 +68,7 @@ namespace OZE.Persistence.Repositories
 
         public async Task<List<QueueEntry>> GetActiveEntriesAsync(string? queueType, int? roomId, int? assignedStaffId, CancellationToken cancellationToken = default)
         {
-            var (today, tomorrow) = DayWindow(DateOnly.FromDateTime(DateTime.Today));
+            var (today, tomorrow) = DayWindow(DateOnly.FromDateTime(ClinicClock.Today));
 
             var query = _context.QueueEntries
                 .AsNoTracking()

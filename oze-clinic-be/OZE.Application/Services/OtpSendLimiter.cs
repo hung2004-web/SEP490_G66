@@ -16,9 +16,9 @@ namespace OZE.Application.Services
             _cache = cache;
         }
 
-        public void EnsureCanSend(string contact)
+        public void EnsureCanSend(string purpose, string contact)
         {
-            var key = "otp-sends:" + contact.Trim().ToLowerInvariant();
+            var key = "otp-sends:" + purpose + ":" + contact.Trim().ToLowerInvariant();
             lock (Gate)
             {
                 // The window starts with the first code and is not pushed back by the next ones

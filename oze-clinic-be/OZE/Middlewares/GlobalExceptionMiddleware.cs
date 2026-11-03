@@ -52,6 +52,12 @@ namespace OZE.ProjectBase.Middlewares
                 statusCode = appException.StatusCode;
                 message = appException.Message;
             }
+            else if (exception is Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                // Two people saved the same record at once (row version check): the later one reloads and tries again
+                statusCode = HttpStatusCode.Conflict;
+                message = OZE.Common.Constants.ErrorConstants.AppointmentMessage.RecordChangedMeanwhile;
+            }
             else if (IsUniqueViolation(exception))
             {
                 // Two requests created the same record at once: the database kept one, the other is told plainly
