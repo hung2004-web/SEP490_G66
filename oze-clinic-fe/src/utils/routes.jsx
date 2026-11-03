@@ -104,18 +104,22 @@ export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_
 
 export const getAppointmentDetailRoute = (appointmentId) => generatePath(ROUTES.APPOINTMENT_DETAIL, { appointmentId: String(appointmentId) });
 
+// Query keys of the Sổ khám bệnh and Lịch sử thanh toán pages; the links below and the pages read the same keys.
+export const MEDICAL_RECORD_QUERY = { TAB: "tab", PLAN: "plan" };
+export const PAYMENT_HISTORY_QUERY = { INVOICE: "invoice" };
+
 // Tabs of the Sổ khám bệnh page (?tab=), named as in the patient prototype.
 export const MEDICAL_RECORD_TABS = { PLAN: "plan" };
 
 // Treatment plans live in the Sổ khám bệnh "Kế hoạch điều trị" tab; with a planId that plan is opened.
 export const getTreatmentPlanRoute = (planId) => {
-    const params = new URLSearchParams({ tab: MEDICAL_RECORD_TABS.PLAN });
-    if (planId != null) params.set("plan", String(planId));
+    const params = new URLSearchParams({ [MEDICAL_RECORD_QUERY.TAB]: MEDICAL_RECORD_TABS.PLAN });
+    if (planId != null) params.set(MEDICAL_RECORD_QUERY.PLAN, String(planId));
     return `${ROUTES.MEDICAL_RECORD}?${params}`;
 };
 
 // The cost of one visit is shown in Lịch sử thanh toán, opened on that invoice.
-export const getPaymentHistoryRoute = (invoiceId) => `${ROUTES.PAYMENT_HISTORY}?${new URLSearchParams({ invoice: String(invoiceId) })}`;
+export const getPaymentHistoryRoute = (invoiceId) => `${ROUTES.PAYMENT_HISTORY}?${new URLSearchParams({ [PAYMENT_HISTORY_QUERY.INVOICE]: String(invoiceId) })}`;
 
 export const getMedicalRecordDetailRoute = (examinationId) => generatePath(ROUTES.MEDICAL_RECORD_DETAIL, { examinationId: String(examinationId) });
 
