@@ -30,11 +30,11 @@ export const REQUEST_TYPES = {
     REFUND: "refund",
 };
 
-// Requests waiting for the manager. submittedAt: local date-time.
+// Requests waiting for the manager. senderDetail: staff role, or the patient code for a refund. submittedAt: local date-time.
 export const MOCK_PENDING_REQUESTS = [
-    { id: 1, type: REQUEST_TYPES.LEAVE, senderName: "BS. Trần Minh Khoa", senderRole: "Bác sĩ", content: "T6 06/11 · Cả ngày · Việc gia đình", submittedAt: "2026-10-27T08:12" },
-    { id: 2, type: REQUEST_TYPES.LEAVE, senderName: "Lê Thị Mai", senderRole: "Lễ tân", content: "T5 05/11 · Ca chiều · Khám sức khoẻ định kỳ", submittedAt: "2026-10-27T16:40" },
-    { id: 3, type: REQUEST_TYPES.LEAVE, senderName: "KTV. Phạm Quốc Bảo", senderRole: "KTV hình ảnh", content: "09 – 13/11 · Phẫu thuật nhỏ", submittedAt: "2026-10-28T07:55" },
-    { id: 4, type: REQUEST_TYPES.REFUND, senderName: "Nguyễn Văn A", senderRole: "BS. Khoa đã duyệt cấp 1", content: "HD000165 · Lấy cao răng · 300.000 ₫", submittedAt: "2026-10-28T09:10" },
-    { id: 5, type: REQUEST_TYPES.REFUND, senderName: "Đỗ Mai Khanh", senderRole: "BS. Hà đã duyệt cấp 1", content: "HD000171 · Trám răng · 800.000 ₫", submittedAt: "2026-10-28T10:02" },
+    { id: 1, type: REQUEST_TYPES.LEAVE, senderName: "Trần Minh Khoa", senderDetail: "Bác sĩ", content: "23/10/2026 · Cả ngày · Việc gia đình", submittedAt: "2026-10-17T08:12" },
+    { id: 2, type: REQUEST_TYPES.LEAVE, senderName: "Lê Thị Mai", senderDetail: "Lễ tân", content: "05/11/2026 · Ca chiều · Khám sức khoẻ định kỳ", submittedAt: "2026-10-18T16:40" },
+    { id: 3, type: REQUEST_TYPES.LEAVE, senderName: "Phạm Quốc Bảo", senderDetail: "KTV chụp X-quang", content: "28/10/2026 · Ca sáng · Phẫu thuật nhỏ", submittedAt: "2026-10-19T07:55" },
+    { id: 4, type: REQUEST_TYPES.REFUND, senderName: "Nguyễn Văn A", senderDetail: "BN000123", content: "HD000165 · cần hoàn 300.000 ₫", submittedAt: "2026-09-25T09:10" },
+    { id: 5, type: REQUEST_TYPES.REFUND, senderName: "Lê Văn Nam", senderDetail: "BN000125", content: "HD000202 · cần hoàn 800.000 ₫", submittedAt: "2026-10-19T09:01" },
 ];
