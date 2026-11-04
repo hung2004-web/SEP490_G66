@@ -4,11 +4,11 @@ import { toast } from "react-toastify";
 import AuditLogDetailPopup from "@/components/popup/auditLog/AuditLogDetailPopup";
 import Badge from "@/components/ui/Badge";
 import FilterSelect from "@/components/ui/FilterSelect";
+import Pagination from "@/components/ui/Pagination";
 import PersonCell from "@/components/ui/PersonCell";
 import SearchInput from "@/components/ui/SearchInput";
-import TablePagination from "@/components/ui/TablePagination";
 import useAsync from "@/hooks/useAsync";
-import { AUDIT_LOG_PAGE_SIZE, getAllAuditLogs, getAuditLogs } from "@/services/auditLogService";
+import { getAllAuditLogs, getAuditLogs } from "@/services/auditLogService";
 import { AUDIT_ACTION_LABELS, AUDIT_ACTION_OPTIONS, AUDIT_ENTITY_OPTIONS } from "@/utils/data/mockAuditLogs";
 import { getClinicDateTimeParts, getClinicToday } from "@/utils/format";
 import { downloadExcel } from "@/utils/reportExport";
@@ -16,7 +16,6 @@ import { downloadExcel } from "@/utils/reportExport";
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 5;
 const COLUMN_COUNT = 8;
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 const entityLabel = (entityType) => AUDIT_ENTITY_OPTIONS.find((option) => option.value === entityType)?.label ?? entityType;
 
@@ -82,13 +81,12 @@ const AuditLogManagement = () => {
     const [action, setAction] = useState("");
     const [entityType, setEntityType] = useState("");
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(AUDIT_LOG_PAGE_SIZE);
     const [viewing, setViewing] = useState(null);
     const [exporting, setExporting] = useState(false);
 
     const { loading, value: result } = useAsync(
-        () => getAuditLogs({ keyword, from, to, action, entityType, page, pageSize }),
-        [keyword, from, to, action, entityType, page, pageSize],
+        () => getAuditLogs({ keyword, from, to, action, entityType, page }),
+        [keyword, from, to, action, entityType, page],
     );
 
     useEffect(() => {
@@ -216,14 +214,11 @@ const AuditLogManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                <TablePagination
-                    data={data}
-                    itemCount={logs.length}
-                    onChange={setPage}
-                    label="Phân trang nhật ký hệ thống"
-                    pageSizeOptions={PAGE_SIZE_OPTIONS}
-                    onPageSizeChange={changeFilter(setPageSize)}
-                />
+                {data?.totalItems > 0 && (
+                    <div className="mt-4 flex justify-end">
+                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang nhật ký hệ thống" />
+                    </div>
+                )}
             </div>
 
             {viewing && <AuditLogDetailPopup log={viewing} onClose={() => setViewing(null)} />}

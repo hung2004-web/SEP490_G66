@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, DoorOpen, Pencil } from "lucide-react";
 import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
 import FilterSelect from "@/components/ui/FilterSelect";
+import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
-import TablePagination from "@/components/ui/TablePagination";
 import useAsync from "@/hooks/useAsync";
 import { getRooms } from "@/services/roomService";
 import { cx } from "@/utils/cx";
@@ -195,7 +195,11 @@ const RoomManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                <TablePagination data={data} itemCount={rooms.length} onChange={setPage} label="Phân trang danh sách phòng" />
+                {data?.totalItems > 0 && (
+                    <div className="mt-4 flex justify-end">
+                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách phòng" />
+                    </div>
+                )}
             </div>
 
             {dialog && <RoomFormPopup room={dialog.room} onClose={() => setDialog(null)} onSaved={handleSaved} />}

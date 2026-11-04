@@ -5,10 +5,10 @@ import LockAccountPopup from "@/components/popup/staff/LockAccountPopup";
 import StaffDetailPopup from "@/components/popup/staff/StaffDetailPopup";
 import StaffFormPopup from "@/components/popup/staff/StaffFormPopup";
 import FilterSelect from "@/components/ui/FilterSelect";
+import Pagination from "@/components/ui/Pagination";
 import PersonCell from "@/components/ui/PersonCell";
 import SearchInput from "@/components/ui/SearchInput";
 import StatusBadge from "@/components/ui/StatusBadge";
-import TablePagination from "@/components/ui/TablePagination";
 import useAsync from "@/hooks/useAsync";
 import { getStaffAccounts, unlockStaffAccount } from "@/services/staffService";
 import { cx } from "@/utils/cx";
@@ -230,7 +230,11 @@ const StaffManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                <TablePagination data={data} itemCount={staff.length} onChange={setPage} label="Phân trang danh sách nhân viên" />
+                {data?.totalItems > 0 && (
+                    <div className="mt-4 flex justify-end">
+                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách nhân viên" />
+                    </div>
+                )}
             </div>
 
             {dialog?.kind === "form" && (
