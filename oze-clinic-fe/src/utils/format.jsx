@@ -14,6 +14,7 @@ const clinicPartsFormatter = new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
 });
 
 const pad = (value) => String(value).padStart(2, "0");
@@ -79,6 +80,12 @@ export const toClinicDateTime = (dateOnly, time) => {
 export const getClinicToday = () => {
     const parts = getClinicParts(new Date());
     return `${parts.year}-${parts.month}-${parts.day}`;
+};
+
+// { date: "19/10/2026", time: "09:12:45" } in clinic time.
+export const getClinicDateTimeParts = (value) => {
+    const parts = getClinicParts(value);
+    return { date: `${parts.day}/${parts.month}/${parts.year}`, time: `${parts.hour}:${parts.minute}:${parts.second}` };
 };
 
 export const formatDateTime = (value) => {

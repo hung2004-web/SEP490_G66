@@ -86,7 +86,7 @@ const ServiceTypesPopup = ({ service, onClose, onChanged }) => {
         <Modal
             title={`Loại dịch vụ · ${service.name}`}
             description={[roomTypeLabel(service.roomType), "giá dịch vụ lấy theo loại rẻ nhất đang hoạt động"].filter(Boolean).join(" · ")}
-            size="md"
+            size="lg"
             onClose={onClose}
             initialFocusRef={closeRef}
         >

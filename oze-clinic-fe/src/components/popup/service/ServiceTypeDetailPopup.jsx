@@ -19,7 +19,7 @@ const ServiceTypeDetailPopup = ({ type, service, onClose }) => {
     const closeRef = useRef(null);
 
     return (
-        <Modal title="Chi tiết loại dịch vụ" onClose={onClose} initialFocusRef={closeRef}>
+        <Modal title="Chi tiết loại dịch vụ" size="lg" onClose={onClose} initialFocusRef={closeRef}>
             <div className="mt-6">
                 <p className="num text-caption text-muted">{type.code}</p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2">
