@@ -18,6 +18,7 @@ import MyAppointments from "../pages/patient/MyAppointments";
 import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import AuditLogManagement from "../pages/admin/AuditLogManagement";
 import LeaveRequestManagement from "../pages/admin/LeaveRequestManagement";
+import RefundRequestManagement from "../pages/admin/RefundRequestManagement";
 import RoomManagement from "../pages/admin/RoomManagement";
 import ServiceManagement from "../pages/admin/ServiceManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
@@ -124,7 +125,8 @@ const ROLE_PAGES = {
     [ROUTES.ADMIN_WORK_SHIFTS]: <WorkShiftManagement />,
     [ROUTES.ADMIN_SETTINGS]: <SystemSettings />,
     [ROUTES.ADMIN_SYSTEM_LOGS]: <AuditLogManagement />,
-    [ROUTES.ADMIN_LEAVE_REQUESTS]: <LeaveRequestManagement />
+    [ROUTES.ADMIN_LEAVE_REQUESTS]: <LeaveRequestManagement />,
+    [ROUTES.ADMIN_REFUNDS]: <RefundRequestManagement />
 }
 
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
@@ -148,7 +150,6 @@ const COMING_SOON_TITLES = {
     [ROUTES.RECEPTION_INVOICES]: "Thanh toán",
     [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
     [ROUTES.ADMIN_ROLES]: "Vai trò",
-    [ROUTES.ADMIN_REFUNDS]: "Duyệt hoàn tiền",
     [ROUTES.ADMIN_DEBTS]: "Công nợ",
 }
 

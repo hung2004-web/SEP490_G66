@@ -29,9 +29,3 @@ export const REQUEST_TYPES = {
     LEAVE: "leave",
     REFUND: "refund",
 };
-
-// Refunds waiting for the manager (leave requests come from leaveRequestService). senderDetail: the patient code. submittedAt: local date-time.
-export const MOCK_PENDING_REFUNDS = [
-    { id: 4, type: REQUEST_TYPES.REFUND, senderName: "Nguyễn Văn A", senderDetail: "BN000123", content: "HD000165 · cần hoàn 300.000 ₫", submittedAt: "2026-09-25T09:10" },
-    { id: 5, type: REQUEST_TYPES.REFUND, senderName: "Lê Văn Nam", senderDetail: "BN000125", content: "HD000202 · cần hoàn 800.000 ₫", submittedAt: "2026-10-19T09:01" },
-];

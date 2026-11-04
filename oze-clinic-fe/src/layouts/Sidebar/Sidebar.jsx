@@ -8,6 +8,7 @@ import useSession from "@/hooks/useSession";
 import { getPendingRequests } from "@/services/adminReportService";
 import { getDoctorPendingCounts } from "@/services/doctorWorkService";
 import { LEAVE_REQUESTS_CHANGED_EVENT } from "@/services/leaveRequestService";
+import { REFUND_REQUESTS_CHANGED_EVENT } from "@/services/refundRequestService";
 import { cx } from "@/utils/cx";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
 import { GUEST_HEADER_TEXT, USER_ROLES } from "@/utils/messages";
@@ -64,7 +65,11 @@ const useSidebarBadges = (role) => {
     useEffect(() => {
         const refresh = () => setVersion((current) => current + 1);
         window.addEventListener(LEAVE_REQUESTS_CHANGED_EVENT, refresh);
-        return () => window.removeEventListener(LEAVE_REQUESTS_CHANGED_EVENT, refresh);
+        window.addEventListener(REFUND_REQUESTS_CHANGED_EVENT, refresh);
+        return () => {
+            window.removeEventListener(LEAVE_REQUESTS_CHANGED_EVENT, refresh);
+            window.removeEventListener(REFUND_REQUESTS_CHANGED_EVENT, refresh);
+        };
     }, []);
     const { value } = useAsync(() => BADGE_LOADERS[role]?.() ?? Promise.resolve({}), [role, version]);
     return value ?? {};
