@@ -194,10 +194,7 @@ const LeaveRequestManagement = () => {
                     </table>
                 </div>
                 {data?.totalItems > 0 && (
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                        <p className="num text-caption text-muted">
-                            Hiển thị {firstNumber}–{firstNumber + requests.length - 1} trên {data.totalItems}
-                        </p>
+                    <div className="mt-4 flex justify-end">
                         <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang đơn xin nghỉ" />
                     </div>
                 )}
