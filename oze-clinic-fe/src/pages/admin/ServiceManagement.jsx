@@ -5,8 +5,8 @@ import DeactivateServicePopup from "@/components/popup/service/DeactivateService
 import ServiceFormPopup from "@/components/popup/service/ServiceFormPopup";
 import ServiceTypesPopup from "@/components/popup/service/ServiceTypesPopup";
 import FilterSelect from "@/components/ui/FilterSelect";
+import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
-import TablePagination from "@/components/ui/TablePagination";
 import Toggle from "@/components/ui/Toggle";
 import useAsync from "@/hooks/useAsync";
 import { activateService, getServices } from "@/services/serviceManagementService";
@@ -257,7 +257,11 @@ const ServiceManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                <TablePagination data={data} itemCount={services.length} onChange={setPage} label="Phân trang danh sách dịch vụ" />
+                {data?.totalItems > 0 && (
+                    <div className="mt-4 flex justify-end">
+                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang danh sách dịch vụ" />
+                    </div>
+                )}
             </div>
 
             {editor && (
