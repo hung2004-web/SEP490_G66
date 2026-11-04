@@ -7,6 +7,7 @@ import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
 import { getPendingRequests } from "@/services/adminReportService";
 import { getDoctorPendingCounts } from "@/services/doctorWorkService";
+import { LEAVE_REQUESTS_CHANGED_EVENT } from "@/services/leaveRequestService";
 import { cx } from "@/utils/cx";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
 import { GUEST_HEADER_TEXT, USER_ROLES } from "@/utils/messages";
@@ -59,7 +60,13 @@ const BADGE_LOADERS = {
 
 // Counts shown next to children with a `badge` (see SIDEBAR_BADGES).
 const useSidebarBadges = (role) => {
-    const { value } = useAsync(() => BADGE_LOADERS[role]?.() ?? Promise.resolve({}), [role]);
+    const [version, setVersion] = useState(0);
+    useEffect(() => {
+        const refresh = () => setVersion((current) => current + 1);
+        window.addEventListener(LEAVE_REQUESTS_CHANGED_EVENT, refresh);
+        return () => window.removeEventListener(LEAVE_REQUESTS_CHANGED_EVENT, refresh);
+    }, []);
+    const { value } = useAsync(() => BADGE_LOADERS[role]?.() ?? Promise.resolve({}), [role, version]);
     return value ?? {};
 };
 

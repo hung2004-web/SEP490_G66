@@ -1,5 +1,7 @@
 import { formatDate, toDateOnly } from "../utils/format";
-import { MOCK_APPOINTMENT_RATES, MOCK_DEBTS, MOCK_PENDING_REQUESTS, MOCK_REVENUE_SHARES } from "../utils/data/mockAdminReport";
+import { MOCK_APPOINTMENT_RATES, MOCK_DEBTS, MOCK_PENDING_REFUNDS, MOCK_REVENUE_SHARES, REQUEST_TYPES } from "../utils/data/mockAdminReport";
+import { leaveSlotLabel } from "../utils/data/mockShifts";
+import { pendingLeaveRequests } from "./leaveRequestService";
 
 // TODO(api): mock only. The numbers are made up from the date, so the same day always gives the same figures.
 const MOCK_DELAY_MS = 300;
@@ -202,5 +204,13 @@ export const getReport = async ({ period = REPORT_PERIODS.WEEK, offset = 0 } = {
 
 export const getPendingRequests = async () => {
     await wait(MOCK_DELAY_MS);
-    return success(MOCK_PENDING_REQUESTS.map((request) => ({ ...request })));
+    const leaves = pendingLeaveRequests().map((request) => ({
+        id: request.id,
+        type: REQUEST_TYPES.LEAVE,
+        senderName: request.senderName,
+        senderDetail: request.senderRole,
+        content: `${formatDate(request.date)} · ${leaveSlotLabel(request.slot)} · ${request.reason}`,
+        submittedAt: request.submittedAt,
+    }));
+    return success([...leaves, ...MOCK_PENDING_REFUNDS.map((request) => ({ ...request }))]);
 };

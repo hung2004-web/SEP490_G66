@@ -129,7 +129,7 @@ const LeaveRequestDetailPopup = ({ request, substituteOptions, onClose, onApprov
                 )}
                 {request.status === LEAVE_REQUEST_STATUSES.APPROVED && (
                     <FormField id="leave-substitute" label="Người thay">
-                        <input id="leave-substitute" className="input" disabled value={request.substituteName} />
+                        <input id="leave-substitute" className="input" disabled value={request.substituteName ?? "—"} />
                     </FormField>
                 )}
                 {rejected && (

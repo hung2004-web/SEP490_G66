@@ -30,11 +30,8 @@ export const REQUEST_TYPES = {
     REFUND: "refund",
 };
 
-// Requests waiting for the manager. senderDetail: staff role, or the patient code for a refund. submittedAt: local date-time.
-export const MOCK_PENDING_REQUESTS = [
-    { id: 1, type: REQUEST_TYPES.LEAVE, senderName: "Trần Minh Khoa", senderDetail: "Bác sĩ", content: "23/10/2026 · Cả ngày · Việc gia đình", submittedAt: "2026-10-17T08:12" },
-    { id: 2, type: REQUEST_TYPES.LEAVE, senderName: "Lê Thị Mai", senderDetail: "Lễ tân", content: "05/11/2026 · Ca chiều · Khám sức khoẻ định kỳ", submittedAt: "2026-10-18T16:40" },
-    { id: 3, type: REQUEST_TYPES.LEAVE, senderName: "Phạm Quốc Bảo", senderDetail: "KTV chụp X-quang", content: "28/10/2026 · Ca sáng · Phẫu thuật nhỏ", submittedAt: "2026-10-19T07:55" },
+// Refunds waiting for the manager (leave requests come from leaveRequestService). senderDetail: the patient code. submittedAt: local date-time.
+export const MOCK_PENDING_REFUNDS = [
     { id: 4, type: REQUEST_TYPES.REFUND, senderName: "Nguyễn Văn A", senderDetail: "BN000123", content: "HD000165 · cần hoàn 300.000 ₫", submittedAt: "2026-09-25T09:10" },
     { id: 5, type: REQUEST_TYPES.REFUND, senderName: "Lê Văn Nam", senderDetail: "BN000125", content: "HD000202 · cần hoàn 800.000 ₫", submittedAt: "2026-10-19T09:01" },
 ];
