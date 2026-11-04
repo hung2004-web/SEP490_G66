@@ -19,6 +19,7 @@ namespace OZE.Application.MappingProfiles
             CreateMap<UpdatePatientRequest, Patient>();
             CreateMap<PatientMedicalProfile, PatientMedicalProfileDto>();
             CreateMap<CreateMedicalProfileRequest, PatientMedicalProfile>();
+            CreateMap<Room, RoomResponse>();
         }
     }
 }
