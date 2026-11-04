@@ -2,6 +2,7 @@ import { formatDate, toDateOnly } from "../utils/format";
 import { USER_ROLES } from "../utils/messages";
 import { MOCK_ROOMS, ROOM_STATUSES, ROOM_TYPES } from "../utils/data/mockRooms";
 import {
+    LEAVE_REQUEST_STATUSES,
     MOCK_ABSENCES,
     MOCK_LEAVES,
     MOCK_SHIFT_TEMPLATE,
@@ -92,7 +93,7 @@ const shiftTime = (time, minutes) => {
 };
 
 const thisMonday = startOfWeek(new Date());
-const mockDate = ({ week, weekday }) => toDateOnly(addDays(thisMonday, week * 7 + weekday));
+export const mockDate = ({ week, weekday }) => toDateOnly(addDays(thisMonday, week * 7 + weekday));
 
 const leaves = MOCK_LEAVES.map((leave) => ({ ...leave, date: mockDate(leave) }));
 const unassignedKeys = new Set(MOCK_UNASSIGNED.map((item) => keyOf(mockDate(item), item.slot, item.roomId)));
@@ -131,7 +132,7 @@ const staffById = (id) => MOCK_STAFF.find((member) => member.id === id);
 const roleLabel = (role) => SHIFT_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? "";
 
 // Titles such as "BS." are left out of the schedule.
-const displayName = (fullName) => fullName.replace(/^(BS|KTV)\.\s*/, "");
+export const displayName = (fullName) => fullName.replace(/^(BS|KTV)\.\s*/, "");
 
 const toStaff = (member) => ({
     id: member.id,
@@ -261,6 +262,26 @@ export const getShiftCandidates = async ({ date, slot, roomId }) => {
     });
     candidates.sort((a, b) => AVAILABILITY_ORDER.indexOf(a.availability) - AVAILABILITY_ORDER.indexOf(b.availability));
     return success(candidates);
+};
+
+const leaveSlots = (slot) => (slot ? [slot] : SHIFT_SLOT_OPTIONS.map((option) => option.value));
+
+// Active staff of the same role who are free for the whole leave (slot null = the whole day).
+export const leaveSubstitutes = ({ staffId, role, date, slot }) =>
+    activeStaffWithRole(role).filter(
+        (member) =>
+            member.id !== staffId &&
+            leaveSlots(slot).every((value) => !leaveOf(member.id, date, value) && !otherRoomOf(member.id, date, value, null)),
+    );
+
+// An approved request takes the person off the shifts of that leave and hands them to the substitute.
+export const applyApprovedLeave = ({ requestId, staffId, date, slot, substituteId }) => {
+    leaves.push({ requestId, staffId, date, slot, status: LEAVE_REQUEST_STATUSES.APPROVED });
+    for (const value of leaveSlots(slot)) {
+        for (const room of activeRooms()) {
+            if (assignmentOf(date, value, room.id) === staffId) assignments.set(keyOf(date, value, room.id), substituteId);
+        }
+    }
 };
 
 // Staff who can be given a monthly schedule.
