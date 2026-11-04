@@ -38,13 +38,22 @@ export const MOCK_SHIFT_TEMPLATE = {
 };
 
 export const LEAVE_REQUEST_STATUSES = {
+    PENDING: "pending",
     APPROVED: "approved",
+    REJECTED: "rejected",
 };
 
-// For the badge in "Chi tiết ca". Only approved requests take a person off a shift.
+// Only approved requests take a person off a shift.
 export const LEAVE_REQUEST_STATUS_LABELS = {
+    [LEAVE_REQUEST_STATUSES.PENDING]: { label: "Chờ duyệt", badge: "badge-warning" },
     [LEAVE_REQUEST_STATUSES.APPROVED]: { label: "Đã duyệt", badge: "badge-success" },
+    [LEAVE_REQUEST_STATUSES.REJECTED]: { label: "Từ chối", badge: "badge-danger" },
 };
+
+// The part of the day a leave request covers. slot null = the whole day.
+export const LEAVE_SLOT_OPTIONS = [{ value: null, label: "Cả ngày" }, ...SHIFT_SLOT_OPTIONS];
+
+export const leaveSlotLabel = (slot) => LEAVE_SLOT_OPTIONS.find((option) => option.value === slot)?.label ?? "";
 
 // The entries below are placed relative to today: week 0 = this week, 1 = next week; weekday 0 = Monday ... 6 = Sunday.
 
