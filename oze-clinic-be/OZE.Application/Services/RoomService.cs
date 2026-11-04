@@ -1,3 +1,4 @@
+using AutoMapper;
 using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
@@ -11,22 +12,24 @@ namespace OZE.Application.Services
     public class RoomService : IRoomService
     {
         private readonly IRoomRepository _roomRepository;
+        private readonly IMapper _mapper;
 
-        public RoomService(IRoomRepository roomRepository)
+        public RoomService(IRoomRepository roomRepository, IMapper mapper)
         {
             _roomRepository = roomRepository;
+            _mapper = mapper;
         }
 
         public async Task<List<RoomResponse>> GetRoomsAsync(RoomQueryRequest query)
         {
             var rooms = await _roomRepository.GetAllAsync(query);
-            return rooms.Select(ToResponse).ToList();
+            return _mapper.Map<List<RoomResponse>>(rooms);
         }
 
         public async Task<RoomResponse> GetRoomByIdAsync(int id)
         {
             var room = await GetExistingRoomAsync(id);
-            return ToResponse(room);
+            return _mapper.Map<RoomResponse>(room);
         }
 
         public async Task<RoomResponse> CreateRoomAsync(CreateRoomRequest request)
@@ -48,7 +51,7 @@ namespace OZE.Application.Services
             await _roomRepository.AddAsync(room);
             await _roomRepository.SaveChangesAsync();
 
-            return ToResponse(room);
+            return _mapper.Map<RoomResponse>(room);
         }
 
         public async Task<RoomResponse> UpdateRoomAsync(int id, UpdateRoomRequest request)
@@ -77,7 +80,7 @@ namespace OZE.Application.Services
 
             await _roomRepository.SaveChangesAsync();
 
-            return ToResponse(room);
+            return _mapper.Map<RoomResponse>(room);
         }
 
         public async Task DeleteRoomAsync(int id)
@@ -96,21 +99,6 @@ namespace OZE.Application.Services
             var room = await _roomRepository.GetByIdAsync(id);
             ConditionGuard.Ensure<NotFoundException>(room != null, ErrorConstants.RoomMessage.RoomNotFound);
             return room!;
-        }
-
-        private static RoomResponse ToResponse(Room room)
-        {
-            return new RoomResponse
-            {
-                Id = room.Id,
-                RoomName = room.RoomName,
-                RoomType = room.RoomType,
-                Status = room.Status,
-                Floor = room.Floor,
-                Description = room.Description,
-                CreatedAt = room.CreatedAt,
-                UpdatedAt = room.UpdatedAt
-            };
         }
     }
 }
