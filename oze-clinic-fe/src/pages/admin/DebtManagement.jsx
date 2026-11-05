@@ -25,12 +25,6 @@ const AGE_OPTIONS = toOptions(DEBT_AGE_FILTER_LABELS);
 const SOURCE_OPTIONS = toOptions(DEBT_SOURCE_LABELS);
 const SORT_OPTIONS = [DEBT_SORTS.NEWEST, DEBT_SORTS.LARGEST].map((value) => ({ value, label: DEBT_SORT_LABELS[value] }));
 
-const SORT_DESCRIPTIONS = {
-    [DEBT_SORTS.OLDEST]: "ngày tạo cũ nhất",
-    [DEBT_SORTS.NEWEST]: "ngày tạo mới nhất",
-    [DEBT_SORTS.LARGEST]: "số tiền còn nợ nhiều nhất",
-};
-
 const EXPORT_HEADER = ["Bệnh nhân", "Số điện thoại", "Hoá đơn", "Ngày tạo", "Nguồn", "Phải trả", "Đã trả", "Còn nợ", "Trạng thái"];
 
 const toExportRow = (debt) => [
@@ -151,25 +145,22 @@ const DebtManagement = () => {
                 />
             </div>
 
-            <div className="flex flex-col gap-3">
-                <DebtAgeLegend />
-                <DebtTable
-                    debts={debts}
-                    firstNumber={firstNumber}
-                    loading={loading}
-                    filtered={Boolean(keyword || status || age || source)}
-                    onView={(id) => setSearchParams({ id: String(id) }, { replace: true })}
-                    footer={
-                        data?.totalItems > 0 && (
-                            <>
-                                <span className="num">
-                                    Hiển thị {firstNumber}–{firstNumber + debts.length - 1} / {data.totalItems} hoá đơn · sắp xếp theo {SORT_DESCRIPTIONS[sort]}
-                                </span>
-                                <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang công nợ" />
-                            </>
-                        )
-                    }
-                />
+            <div>
+                <div className="flex flex-col gap-3">
+                    <DebtAgeLegend />
+                    <DebtTable
+                        debts={debts}
+                        firstNumber={firstNumber}
+                        loading={loading}
+                        filtered={Boolean(keyword || status || age || source)}
+                        onView={(id) => setSearchParams({ id: String(id) }, { replace: true })}
+                    />
+                </div>
+                {data?.totalItems > 0 && (
+                    <div className="mt-4 flex justify-end">
+                        <Pagination page={data.page} totalPages={data.totalPages} onChange={setPage} label="Phân trang công nợ" />
+                    </div>
+                )}
             </div>
 
             {viewing && viewing.id === Number(openId) && <DebtDetailPopup key={viewing.id} debt={viewing} onClose={closeDetail} />}

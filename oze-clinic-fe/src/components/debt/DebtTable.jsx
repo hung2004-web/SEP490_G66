@@ -10,8 +10,7 @@ const COLUMN_COUNT = 10;
 // "Công nợ" table; rows older than 30 and 60 days are coloured (see DebtAgeLegend).
 // debts: [{ id, patientName, phone, invoiceNumber, createdAt, totalAmount, paidAmount, remainingAmount, status }].
 // firstNumber: the STT of the first row on this page. filtered: a search or filter is on, which changes the empty message.
-// footer: shown under the rows, e.g. the row count and Pagination.
-const DebtTable = ({ debts = [], firstNumber = 1, loading = false, filtered = false, onView, footer }) => (
+const DebtTable = ({ debts = [], firstNumber = 1, loading = false, filtered = false, onView }) => (
     // Tighter cells than .table, so all ten columns fit at 1366px. relative keeps the sr-only header inside the scroll area.
     <div className="table-wrap relative">
         <table className="table [&_td]:px-3 [&_th]:px-3" aria-busy={loading}>
@@ -89,7 +88,6 @@ const DebtTable = ({ debts = [], firstNumber = 1, loading = false, filtered = fa
                     })}
             </tbody>
         </table>
-        {footer && <div className="table-footer">{footer}</div>}
     </div>
 );
 
