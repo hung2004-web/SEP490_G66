@@ -15,6 +15,9 @@ import { downloadExcel } from "@/utils/reportExport";
 
 const SEARCH_DELAY_MS = 300;
 
+// Fills its grid cell, so the four filters stay the same width. Less padding than .input, so "Sắp xếp: Nợ lâu nhất" fits at 1366px.
+const FILTER_CLASS = "w-full min-w-0 pl-3 pr-2";
+
 const toOptions = (labels) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 
 const STATUS_OPTIONS = Object.entries(DEBT_STATUS_LABELS).map(([value, { label }]) => ({ value, label }));
@@ -125,18 +128,18 @@ const DebtManagement = () => {
                 </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))]">
                 <SearchInput
                     id="debt-search"
                     label="Tìm hoá đơn còn nợ"
                     placeholder="Tìm theo tên, SĐT hoặc số hoá đơn"
                     value={searchInput}
                     onChange={setSearchInput}
-                    className="w-full sm:w-80"
+                    className="col-span-full w-full xl:col-span-1"
                 />
-                <FilterSelect id="debt-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
-                <FilterSelect id="debt-age" label="Thời gian nợ" options={AGE_OPTIONS} value={age} onChange={changeFilter(setAge)} />
-                <FilterSelect id="debt-source" label="Nguồn" options={SOURCE_OPTIONS} value={source} onChange={changeFilter(setSource)} />
+                <FilterSelect id="debt-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} className={FILTER_CLASS} />
+                <FilterSelect id="debt-age" label="Thời gian nợ" options={AGE_OPTIONS} value={age} onChange={changeFilter(setAge)} className={FILTER_CLASS} />
+                <FilterSelect id="debt-source" label="Nguồn" options={SOURCE_OPTIONS} value={source} onChange={changeFilter(setSource)} className={FILTER_CLASS} />
                 <FilterSelect
                     id="debt-sort"
                     label="Sắp xếp"
@@ -144,6 +147,7 @@ const DebtManagement = () => {
                     options={SORT_OPTIONS}
                     value={sort}
                     onChange={changeFilter(setSort)}
+                    className={FILTER_CLASS}
                 />
             </div>
 

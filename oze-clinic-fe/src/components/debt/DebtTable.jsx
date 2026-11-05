@@ -2,7 +2,7 @@ import { ReceiptText } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { DEBT_STATUS_LABELS, getDebtAgeLevel } from "@/utils/data/mockDebts";
 import { cx } from "@/utils/cx";
-import { formatCurrency, formatDate, formatNumber, formatPhone } from "@/utils/format";
+import { formatDate, formatNumber, formatPhone } from "@/utils/format";
 
 const SKELETON_ROW_COUNT = 5;
 const COLUMN_COUNT = 10;
@@ -12,13 +12,16 @@ const COLUMN_COUNT = 10;
 // firstNumber: the STT of the first row on this page. filtered: a search or filter is on, which changes the empty message.
 // footer: shown under the rows, e.g. the row count and Pagination.
 const DebtTable = ({ debts = [], firstNumber = 1, loading = false, filtered = false, onView, footer }) => (
-    <div className="table-wrap">
-        <table className="table" aria-busy={loading}>
+    // Tighter cells than .table, so all ten columns fit at 1366px. relative keeps the sr-only header inside the scroll area.
+    <div className="table-wrap relative">
+        <table className="table [&_td]:px-3 [&_th]:px-3" aria-busy={loading}>
             <thead>
                 <tr>
                     <th scope="col">STT</th>
                     <th scope="col">Bệnh nhân</th>
-                    <th scope="col">Số điện thoại</th>
+                    <th scope="col" className="whitespace-nowrap">
+                        Số điện thoại
+                    </th>
                     <th scope="col">Hoá đơn</th>
                     <th scope="col">Ngày tạo</th>
                     <th scope="col" className="text-right">
@@ -70,7 +73,7 @@ const DebtTable = ({ debts = [], firstNumber = 1, loading = false, filtered = fa
                                 <td className={cx("num whitespace-nowrap", ageLevel?.date)}>{formatDate(debt.createdAt)}</td>
                                 <td className="num whitespace-nowrap text-right">{formatNumber(debt.totalAmount)}</td>
                                 <td className="num whitespace-nowrap text-right">{formatNumber(debt.paidAmount)}</td>
-                                <td className="num whitespace-nowrap text-right font-semibold text-danger">{formatCurrency(debt.remainingAmount)}</td>
+                                <td className="num whitespace-nowrap text-right font-semibold text-danger">{formatNumber(debt.remainingAmount)}</td>
                                 <td className="whitespace-nowrap">
                                     <StatusBadge status={debt.status} labels={DEBT_STATUS_LABELS} />
                                 </td>
