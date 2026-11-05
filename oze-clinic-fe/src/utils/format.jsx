@@ -2,6 +2,8 @@ const WEEKDAYS = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ N
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" });
 
+const numberFormatter = new Intl.NumberFormat("vi-VN");
+
 const CLINIC_TIME_ZONE = "Asia/Ho_Chi_Minh";
 
 const CLINIC_UTC_OFFSET = "+07:00";
@@ -70,6 +72,9 @@ export const formatTime = (value) => (value ? value.slice(0, 5) : "");
 export const formatTimeRange = (start, end) => [formatTime(start), formatTime(end)].filter(Boolean).join(" – ");
 
 export const formatCurrency = (amount) => (Number.isFinite(amount) ? currencyFormatter.format(amount) : "");
+
+// 1500000 -> "1.500.000", for amount columns that leave out the currency symbol.
+export const formatNumber = (amount) => (Number.isFinite(amount) ? numberFormatter.format(amount) : "");
 
 export const toClinicDateTime = (dateOnly, time) => {
     if (!dateOnly || !time) return null;
