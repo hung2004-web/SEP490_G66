@@ -21,7 +21,7 @@ const DebtDetailPopup = ({ debt, onClose }) => {
     const description = [
         `Lập ${formatDate(debt.createdAt)}`,
         debt.treatmentPlanName && `Kế hoạch điều trị: ${debt.treatmentPlanName}`,
-        debt.doctorName && `BS. ${debt.doctorName}`,
+        debt.doctorName,
     ]
         .filter(Boolean)
         .join(" · ");
