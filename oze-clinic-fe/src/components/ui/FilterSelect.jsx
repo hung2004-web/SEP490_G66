@@ -1,9 +1,11 @@
+import { cx } from "@/utils/cx";
+
 // Compact filter dropdown that names itself in the box: "Vai trò: Tất cả", "Vai trò: Bác sĩ".
-// options: [{ value, label }]; "" is the "Tất cả" choice.
-const FilterSelect = ({ id, label, options, value, onChange, allLabel = "Tất cả" }) => (
+// options: [{ value, label }]; "" is the "Tất cả" choice. className replaces the default width, which fits the longest option.
+const FilterSelect = ({ id, label, options, value, onChange, allLabel = "Tất cả", className = "w-auto min-w-40" }) => (
     <select
         id={id}
-        className="input w-auto min-w-40"
+        className={cx("input", className)}
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
