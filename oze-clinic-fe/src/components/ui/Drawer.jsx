@@ -49,8 +49,14 @@ const Drawer = ({ title, eyebrow, description, badge, onClose, children }) => {
         }
     };
 
+    const handleBackdropPointerDown = (event) => {
+        if (event.target !== event.currentTarget) return;
+        event.preventDefault();
+        onClose();
+    };
+
     return (
-        <div className="drawer-backdrop" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
+        <div className="drawer-backdrop" onPointerDown={handleBackdropPointerDown}>
             <div
                 ref={drawerRef}
                 role="dialog"
