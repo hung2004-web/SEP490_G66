@@ -106,7 +106,7 @@ export const getAppointmentDetailRoute = (appointmentId) => generatePath(ROUTES.
 export const MEDICAL_RECORD_QUERY = { TAB: "tab", PLAN: "plan" };
 export const PAYMENT_HISTORY_QUERY = { INVOICE: "invoice" };
 
-export const MEDICAL_RECORD_TABS = { PLAN: "plan" };
+export const MEDICAL_RECORD_TABS = { PLAN: "plan", FILM: "film", TEETH: "teeth", HIST: "hist" };
 
 export const getTreatmentPlanRoute = (planId) => {
     const params = new URLSearchParams({ [MEDICAL_RECORD_QUERY.TAB]: MEDICAL_RECORD_TABS.PLAN });
