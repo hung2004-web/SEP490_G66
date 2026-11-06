@@ -1,5 +1,6 @@
+import { displayText } from "@/utils/medicalRecord";
 import { Printer } from "lucide-react";
-import StatusBadge from "@/components/ui/StatusBadge";
+import RecordStatusBadge from "./RecordStatusBadge";
 import { MEDICAL_RECORD_FILM_PLACE, MEDICAL_RECORD_FILM_STATUS } from "@/utils/messages";
 
 const ToothIcon = () => (
@@ -13,13 +14,13 @@ const FilmCard = ({ film }) => (
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4">
             <div className="min-w-0">
                 <h2 className="card-title">
-                    {film.type ?? "—"} · {film.area ?? "—"}
+                    {displayText(film.type)} · {displayText(film.area)}
                 </h2>
                 <p className="text-caption text-muted">
-                    {film.date ?? "—"} · Chỉ định: {film.doctor ?? "—"}
+                    {displayText(film.date)} · Chỉ định: {displayText(film.doctor)}
                 </p>
             </div>
-            <StatusBadge status={film.status} labels={MEDICAL_RECORD_FILM_STATUS} />
+            <RecordStatusBadge status={film.status} labels={MEDICAL_RECORD_FILM_STATUS} />
         </div>
         <div className="p-5">
             <div className="flex h-55 flex-col items-center justify-center gap-2 rounded-lg bg-surface-navy text-caption text-on-navy-soft">
@@ -28,9 +29,9 @@ const FilmCard = ({ film }) => (
             </div>
             <dl className="mt-3.5 flex flex-col gap-1.5 text-body-sm">
                 {[
-                    ["Nơi chụp", MEDICAL_RECORD_FILM_PLACE[film.place] ?? film.place ?? "—"],
-                    ["Cách nhận", Array.isArray(film.receive) ? film.receive.join(", ") : "—"],
-                    ["Kết luận bác sĩ", film.result ?? "—"],
+                    ["Nơi chụp", MEDICAL_RECORD_FILM_PLACE[film.place] ?? displayText(film.place)],
+                    ["Cách nhận", Array.isArray(film.receive) ? film.receive.map(displayText).join(", ") : "—"],
+                    ["Kết luận bác sĩ", displayText(film.result)],
                 ].map(([label, value]) => (
                     <div key={label} className="flex gap-2.5">
                         <dt className="w-24 shrink-0 text-muted sm:w-30">{label}</dt>

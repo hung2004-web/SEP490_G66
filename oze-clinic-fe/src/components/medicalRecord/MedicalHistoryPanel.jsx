@@ -1,3 +1,4 @@
+import { displayText } from "@/utils/medicalRecord";
 import { Link } from "react-router-dom";
 import { ChevronDown, Lock } from "lucide-react";
 import { cx } from "@/utils/cx";
@@ -12,14 +13,14 @@ const HistorySection = ({ item, collapsed, onToggle }) => (
             className="flex w-full items-center gap-2.5 bg-surface-tint px-3.5 py-2.5 text-left outline-none focus-visible:shadow-focus"
             onClick={onToggle}
         >
-            <span className="flex-1 text-caption font-bold uppercase tracking-wide text-body">{item.title ?? "—"}</span>
-            {item.badge && <span className="badge badge-success">{item.badge}</span>}
+            <span className="flex-1 text-caption font-bold uppercase tracking-wide text-body">{displayText(item.title)}</span>
+            {typeof item.badge === "string" && item.badge && <span className="badge badge-success">{item.badge}</span>}
             <ChevronDown className={cx("size-4 text-muted transition-transform", !collapsed && "rotate-180")} aria-hidden="true" />
         </button>
         {!collapsed && (
             <div className="border-t border-border px-3.5 py-3">
-                <p className="font-semibold text-ink">{item.text ?? "—"}</p>
-                <p className="mb-1 text-caption text-muted">{item.by ?? "—"}</p>
+                <p className="font-semibold text-ink">{displayText(item.text)}</p>
+                <p className="mb-1 text-caption text-muted">{displayText(item.by)}</p>
             </div>
         )}
     </div>

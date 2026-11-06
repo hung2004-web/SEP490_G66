@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { ArrowUpDown, ListFilter, Search, X } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
 import { cx } from "@/utils/cx";
-import { RECORD_FILTER_BUTTON_ID, RECORD_PAGE_SIZE, RECORD_SEARCH_ID, RECORD_SORT_BUTTON_ID, SORT_OPTIONS, countFilters } from "@/utils/medicalRecord";
+import { RECORD_FILTER_BUTTON_ID, RECORD_PAGE_SIZE, RECORD_SEARCH_ID, RECORD_SORT_BUTTON_ID, SORT_OPTIONS, countFilters, displayText } from "@/utils/medicalRecord";
 import { FilterPopover, SortPopover } from "./ExaminationFilterPopover";
 
 const TOOL_BUTTON_CLASS = "btn btn-secondary h-8 px-3";
@@ -40,11 +40,11 @@ const ExaminationList = ({
         pendingFocus.current = null;
         if (request.type === "chip") {
             const chips = chipsRef.current?.querySelectorAll("[data-record-chip]") ?? [];
-            chips[Math.min(request.index, chips.length - 1)]?.focus();
+            chips[Math.min(request.index, chips.length - 1)]?.focus({ preventScroll: true });
             return;
         }
         const active = document.activeElement;
-        if (!active || active === document.body || active.disabled) pagerRef.current?.querySelector('[aria-current="page"]')?.focus();
+        if (!active || active === document.body || active.disabled) pagerRef.current?.querySelector('[aria-current="page"]')?.focus({ preventScroll: true });
     });
 
     const filterCount = countFilters(ui.filters);
@@ -104,7 +104,7 @@ const ExaminationList = ({
                         </button>
                     )}
                 </div>
-                <div className="mt-2 flex flex-wrap justify-end gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                     <div className="relative">
                         <button
                             id={RECORD_FILTER_BUTTON_ID}
@@ -192,9 +192,9 @@ const ExaminationList = ({
                                             {numbers.get(visit.id)}
                                         </span>
                                         <span className="flex min-w-0 flex-col">
-                                            <span className="num text-body-sm font-semibold text-ink">{visit.date ?? "—"}</span>
+                                            <span className="num text-body-sm font-semibold text-ink">{displayText(visit.date)}</span>
                                             <span className="text-caption text-muted">
-                                                {visit.wd ?? "—"} · {visit.service ?? "—"}
+                                                {displayText(visit.wd)} · {displayText(visit.service)}
                                             </span>
                                         </span>
                                     </button>

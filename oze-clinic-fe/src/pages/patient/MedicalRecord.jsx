@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useNavigationType, useParams, useSearchParams } from "react-router-dom";
+import { useRef } from "react";
+import { Link } from "react-router-dom";
 import AppointmentTabs from "@/components/appointment/AppointmentTabs";
 import DentalChartPanel from "@/components/medicalRecord/DentalChartPanel";
 import ExaminationList from "@/components/medicalRecord/ExaminationList";
@@ -10,33 +10,26 @@ import NextAppointmentBar from "@/components/medicalRecord/NextAppointmentBar";
 import RecordEmptyCard from "@/components/medicalRecord/RecordEmptyCard";
 import RecordStateBox from "@/components/medicalRecord/RecordStateBox";
 import TreatmentPlanPanel from "@/components/medicalRecord/TreatmentPlanPanel";
-import { getMyMedicalRecord } from "@/services/patientDashboardService";
+import useMedicalRecordNavigation, { INITIAL_UI, focusElement, queryResetPatch } from "@/hooks/useMedicalRecordNavigation";
 import {
     EMPTY_FILTERS,
-    HEADING_STATES,
     PAGE_STATE,
     RECORD_FILTER_BUTTON_ID,
     RECORD_ID_PREFIX,
-    RECORD_NAV_FLAG,
     RECORD_PAGE_SIZE,
     RECORD_SEARCH_ID,
     RECORD_SORT_BUTTON_ID,
-    RECORD_STATUS_BUTTON_ID,
     RECORD_TITLE_ID,
     SHEET_TAB,
-    buildRecordUrl,
     chartOf,
+    displayText,
     filterVisits,
     getCurrentPage,
     getFilterGroups,
-    getPageState,
     getSelection,
-    getShownPair,
     getVisitNumbers,
     newestVisitId,
     nextSelection,
-    normalizeRecord,
-    readRecordUrl,
     resolveTooth,
     sortByDate,
     toToothCode,
@@ -51,37 +44,6 @@ const TABS = [
     { key: MEDICAL_RECORD_TABS.HIST, label: "Tiền sử" },
 ];
 
-const INITIAL_UI = {
-    searchInput: "",
-    keyword: "",
-    filters: EMPTY_FILTERS,
-    sort: "desc",
-    page: 1,
-    pageVisitId: null,
-    selectionLost: false,
-    tooth: null,
-    collapsed: {},
-    popover: null,
-    drawerOpen: false,
-};
-
-const QUERY_RESET = { searchInput: "", keyword: "", filters: EMPTY_FILTERS, sort: "desc", selectionLost: false, pageVisitId: null };
-
-const OWN_STATE = { [RECORD_NAV_FLAG]: true };
-
-const mergeUi = (state, patch) => ({ ...state, ...(typeof patch === "function" ? patch(state) : patch) });
-
-const focusElement = (element) => element?.focus({ preventScroll: true });
-
-const isLostFocus = (element) => !element || element === document.body || !element.isConnected || element.disabled === true;
-
-const describeState = (load, url, ui) => {
-    const page = getPageState(load, url);
-    if (page.state !== PAGE_STATE.CONTENT) return { page, list: [], shown: getShownPair(page.state, ui, [], null, url.tab) };
-    const list = filterVisits(load.data, ui, getFilterGroups(load.data));
-    return { page, list, shown: getShownPair(page.state, ui, list, page.target, url.tab) };
-};
-
 const PANELS = {
     [SHEET_TAB]: ({ data, visit }) => <ExaminationSheet visit={visit} clinic={data.clinic} profile={data.profile} patient={data.patient} />,
     [MEDICAL_RECORD_TABS.PLAN]: ({ data, visit, ui, urlVisitId, handlers }) => {
@@ -91,6 +53,7 @@ const PANELS = {
             <TreatmentPlanPanel
                 plan={plan}
                 visitId={visit.id}
+                visitIds={new Set(data.visits.map((item) => item.id))}
                 urlVisitId={urlVisitId}
                 drawerOpen={ui.drawerOpen}
                 onOpenDrawer={handlers.openDrawer}
@@ -140,127 +103,15 @@ const LoadingSkeleton = () => (
 );
 
 const MedicalRecord = () => {
-    const location = useLocation();
-    const navigationType = useNavigationType();
-    const navigate = useNavigate();
-    const { examinationId } = useParams();
-    const [searchParams] = useSearchParams();
-    const url = readRecordUrl(examinationId, searchParams);
-
-    const [load, setLoad] = useState({ id: 1, status: "loading", data: null });
-    const [ui, setUi] = useReducer(mergeUi, INITIAL_UI);
-    const [navEvent, setNavEvent] = useState(() => ({
-        key: location.key,
-        url,
-        kind: "enter",
-        pageStateAtNav: PAGE_STATE.LOADING,
-        visitChanged: false,
-        tabChanged: false,
-        drawerClosedByPop: false,
-        scrollTop: navigationType !== "POP",
-        focusH1: false,
-    }));
-
-    const h1Ref = useRef(null);
-    const retryRef = useRef(null);
-    const focusedLoadId = useRef(null);
-    const handledLayoutKey = useRef(null);
-    const handledPopKey = useRef(null);
-    const compositionKey = useRef(null);
-
-    if (location.key !== navEvent.key) {
-        const own = location.state?.[RECORD_NAV_FLAG] === true;
-        const kind = navigationType === "POP" ? "pop" : own ? "own" : "enter";
-        const before = describeState(load, navEvent.url, ui);
-        let nextUi = ui;
-        let nextLoad = load;
-        if (kind === "enter") {
-            nextUi = INITIAL_UI;
-            nextLoad = { id: load.id + 1, status: "loading", data: null };
-            setLoad(nextLoad);
-        } else if (kind === "pop") {
-            nextUi = { ...ui, popover: null, drawerOpen: false, selectionLost: false };
-            const target = getPageState(load, url).target;
-            if (target != null && !filterVisits(load.data, nextUi, getFilterGroups(load.data)).some((visit) => visit.id === target)) {
-                nextUi = { ...nextUi, ...QUERY_RESET };
-            }
-        }
-        const after = describeState(nextLoad, url, nextUi);
-        const visitChanged = before.shown.visitId !== after.shown.visitId;
-        if (kind === "pop" && (visitChanged || nextUi.filters !== ui.filters)) nextUi = { ...nextUi, pageVisitId: null };
-        if (nextUi !== ui) setUi(nextUi);
-        setNavEvent({
-            key: location.key,
-            url,
-            kind,
-            pageStateAtNav: before.page.state,
-            visitChanged,
-            tabChanged: before.shown.tab !== after.shown.tab,
-            drawerClosedByPop: kind === "pop" && ui.drawerOpen,
-            scrollTop: kind === "enter" || (kind === "own" && location.state?.scrollTop === true),
-            focusH1: kind === "own" && location.state?.focusH1 === true,
-        });
-    }
-
-    const { page, list } = describeState(load, url, ui);
-    const pageState = page.state;
+    const { url, load, ui, setUi, page, list, pageState, h1Ref, retryRef, navigate, goTo, retry, ownState } = useMedicalRecordNavigation();
+    const compositionVersion = useRef(null);
     const data = load.data;
     const groups = pageState === PAGE_STATE.CONTENT ? getFilterGroups(data) : [];
     const selectedId = pageState === PAGE_STATE.CONTENT ? getSelection(ui, list, page.target) : null;
     const currentPage = getCurrentPage(ui, list, selectedId);
     const newestId = data ? newestVisitId(data.visits) : null;
-    const replaceTo = page.replaceTo;
-
-    useEffect(() => {
-        if (load.status !== "loading") return undefined;
-        const controller = new AbortController();
-        let active = true;
-        const finish = (record) => {
-            if (!active) return;
-            setLoad((current) => (current.id === load.id ? { id: load.id, status: record ? "ready" : "error", data: record } : current));
-        };
-        getMyMedicalRecord({ signal: controller.signal })
-            .then((response) => finish(normalizeRecord(response)))
-            .catch(() => finish(null));
-        return () => {
-            active = false;
-            controller.abort();
-        };
-    }, [load.id, load.status]);
-
-    useEffect(() => {
-        if (load.status === "loading" || focusedLoadId.current === load.id) return;
-        focusedLoadId.current = load.id;
-        const active = document.activeElement;
-        if (active && active !== document.body) return;
-        focusElement(load.status === "error" ? retryRef.current : h1Ref.current);
-    }, [load.id, load.status]);
-
-    useLayoutEffect(() => {
-        if (handledLayoutKey.current === navEvent.key) return;
-        handledLayoutKey.current = navEvent.key;
-        if (navEvent.scrollTop) window.scrollTo(0, 0);
-        if (navEvent.focusH1 && HEADING_STATES.includes(pageState)) focusElement(h1Ref.current);
-    }, [navEvent, pageState]);
-
-    useEffect(() => {
-        if (navEvent.kind !== "pop" || handledPopKey.current === navEvent.key) return;
-        handledPopKey.current = navEvent.key;
-        if (!HEADING_STATES.includes(navEvent.pageStateAtNav) || !HEADING_STATES.includes(pageState)) return;
-        if (navEvent.drawerClosedByPop) {
-            focusElement(document.getElementById(RECORD_STATUS_BUTTON_ID) ?? h1Ref.current);
-            return;
-        }
-        if (navEvent.visitChanged || navEvent.tabChanged || isLostFocus(document.activeElement)) focusElement(h1Ref.current);
-    }, [navEvent, pageState]);
-
-    useEffect(() => {
-        if (replaceTo) navigate(replaceTo, { replace: true, state: OWN_STATE });
-    }, [location.key, replaceTo, navigate]);
 
     const urlVisitId = url.hasId ? url.id : null;
-
-    const goTo = (visitId, tab, options = {}) => navigate(buildRecordUrl(visitId, tab), { ...options, state: { ...OWN_STATE, ...options.state } });
 
     const applyListChange = (patch) => {
         const draft = { ...ui, ...patch };
@@ -282,13 +133,14 @@ const MedicalRecord = () => {
     };
 
     const handleCompositionStart = () => {
-        compositionKey.current = navEvent.key;
+        compositionVersion.current = ui.queryVersion;
     };
 
     const handleCompositionEnd = (event) => {
-        const fromCurrentNav = compositionKey.current === navEvent.key;
-        compositionKey.current = null;
-        if (fromCurrentNav) applyListChange({ searchInput: event.currentTarget.value, keyword: event.currentTarget.value });
+        const queryKept = compositionVersion.current === ui.queryVersion;
+        compositionVersion.current = null;
+        if (queryKept) applyListChange({ searchInput: event.currentTarget.value, keyword: event.currentTarget.value });
+        else setUi({ searchInput: ui.keyword });
     };
 
     const clearSearch = () => {
@@ -354,9 +206,12 @@ const MedicalRecord = () => {
         if (tab !== url.tab) goTo(urlVisitId, tab, { replace: true });
     };
 
-    const openVisitFromLog = () => setUi({ ...QUERY_RESET, popover: null });
+    const openVisitFromLog = () => setUi({ ...queryResetPatch(ui), popover: null });
 
-    const selectToothFromLink = (tooth) => setUi({ tooth: toToothCode(tooth), popover: null });
+    const selectToothFromLink = (tooth) => {
+        const code = toToothCode(tooth);
+        setUi(code == null ? { popover: null } : { tooth: code, popover: null });
+    };
 
     const openDrawer = (event) => {
         focusElement(event.currentTarget);
@@ -372,11 +227,9 @@ const MedicalRecord = () => {
     };
 
     const backToList = () => {
-        setUi(INITIAL_UI);
-        navigate(ROUTES.MEDICAL_RECORD, { replace: true, state: { ...OWN_STATE, focusH1: true } });
+        setUi({ ...INITIAL_UI, queryVersion: ui.queryVersion + 1 });
+        navigate(ROUTES.MEDICAL_RECORD, { replace: true, state: { ...ownState, focusH1: true } });
     };
-
-    const retry = () => setLoad((current) => ({ id: current.id + 1, status: "loading", data: null }));
 
     if (pageState === PAGE_STATE.LOADING) return <LoadingSkeleton />;
 
@@ -487,10 +340,10 @@ const MedicalRecord = () => {
                                 <>
                                     <section className="card-app px-5 py-4">
                                         <h2 className="font-heading text-heading-3 text-ink">
-                                            Phiếu khám #{numbers.get(selectedVisit.id)} · {selectedVisit.wd ?? "—"} {selectedVisit.date ?? "—"}
+                                            Phiếu khám #{numbers.get(selectedVisit.id)} · {displayText(selectedVisit.wd)} {displayText(selectedVisit.date)}
                                         </h2>
                                         <p className="text-caption text-muted">
-                                            {selectedVisit.service ?? "—"} · {selectedVisit.doctor ?? "—"}
+                                            {displayText(selectedVisit.service)} · {displayText(selectedVisit.doctor)}
                                         </p>
                                     </section>
                                     {PANELS[tab](panelContext)}

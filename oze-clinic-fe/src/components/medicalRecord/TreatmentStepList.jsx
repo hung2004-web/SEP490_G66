@@ -1,3 +1,4 @@
+import { displayText } from "@/utils/medicalRecord";
 import { Check } from "lucide-react";
 import { cx } from "@/utils/cx";
 
@@ -24,8 +25,8 @@ const TreatmentStepList = ({ stages }) => (
                         {done && <Check className="size-3" />}
                     </span>
                     <div className="min-w-0">
-                        <p className={cx("text-body-sm", stage.status === "todo" ? "font-medium text-muted" : "font-semibold text-ink")}>{stage.name ?? "—"}</p>
-                        <span className="text-caption text-muted">{stage.note ?? "—"}</span>
+                        <p className={cx("text-body-sm", stage.status === "todo" ? "font-medium text-muted" : "font-semibold text-ink")}>{displayText(stage.name)}</p>
+                        <span className="text-caption text-muted">{displayText(stage.note)}</span>
                     </div>
                 </li>
             );

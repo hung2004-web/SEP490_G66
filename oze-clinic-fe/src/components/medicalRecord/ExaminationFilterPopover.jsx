@@ -31,7 +31,7 @@ const PopoverPanel = ({ label, onDismiss, className, children }) => {
             data-record-popover=""
             role="dialog"
             aria-label={label}
-            className={cx("absolute right-0 top-10 z-20 max-h-115 overflow-auto rounded-lg border border-border bg-canvas p-2 shadow-lg", className)}
+            className={cx("absolute left-0 top-10 z-20 max-h-115 overflow-auto rounded-lg border border-border bg-canvas p-2 shadow-lg", className)}
         >
             {children}
         </div>

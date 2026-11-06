@@ -1,8 +1,10 @@
-import StatusBadge from "@/components/ui/StatusBadge";
 import { cx } from "@/utils/cx";
-import { surfaceText, toToothCode, toothName } from "@/utils/medicalRecord";
+import { displayText, isPermanentTooth, surfaceText, toToothCode, toothName } from "@/utils/medicalRecord";
 import { MEDICAL_RECORD_TOOTH_KIND, MEDICAL_RECORD_TOOTH_STATUS } from "@/utils/messages";
+import RecordStatusBadge from "./RecordStatusBadge";
 import ToothButton from "./ToothButton";
+
+const ROW_FOCUS_CLASS = "focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary";
 
 const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
 const LOWER_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
@@ -113,30 +115,27 @@ const DentalChartPanel = ({ entries, selectedTooth, onSelectTooth }) => {
                         <tbody>
                             {entries.map((entry, index) => {
                                 const tooth = toToothCode(entry.tooth);
-                                const selected = tooth != null && tooth === selectedTooth;
+                                const selectable = isPermanentTooth(tooth);
+                                const selected = selectable && tooth === selectedTooth;
                                 return (
                                     <tr
                                         key={entry.id ?? index}
-                                        tabIndex={0}
-                                        className={cx("cursor-pointer outline-none focus-visible:shadow-focus", selected && "bg-primary-soft")}
-                                        onClick={() => onSelectTooth(tooth)}
-                                        onKeyDown={(event) => selectByKey(event, tooth)}
+                                        tabIndex={selectable ? 0 : undefined}
+                                        className={cx(selectable && "cursor-pointer", ROW_FOCUS_CLASS, selected && "bg-primary-soft")}
+                                        onClick={selectable ? () => onSelectTooth(tooth) : undefined}
+                                        onKeyDown={selectable ? (event) => selectByKey(event, tooth) : undefined}
                                     >
-                                        <td className="py-2">
-                                            <b className="text-ink">{String(entry.tooth ?? "—")}</b>
+                                        <td className={cx("py-2", selected && "border-l-3 border-l-primary")}>
+                                            <b className="text-ink">{displayText(entry.tooth)}</b>
                                             <p className="text-caption text-muted">{toothName(tooth)}</p>
                                         </td>
                                         <td className="text-caption">{entry.surf ? surfaceText(entry.surf) : "Cả răng"}</td>
                                         <td className="py-2">
-                                            {MEDICAL_RECORD_TOOTH_KIND[entry.kind] ?? String(entry.kind ?? "—")}
-                                            <p className="text-caption text-muted">{entry.note}</p>
+                                            {MEDICAL_RECORD_TOOTH_KIND[entry.kind] ?? displayText(entry.kind)}
+                                            <p className="text-caption text-muted">{displayText(entry.note)}</p>
                                         </td>
                                         <td>
-                                            {Object.hasOwn(MEDICAL_RECORD_TOOTH_STATUS, entry.st) ? (
-                                                <StatusBadge status={entry.st} labels={MEDICAL_RECORD_TOOTH_STATUS} />
-                                            ) : (
-                                                String(entry.st ?? "—")
-                                            )}
+                                            <RecordStatusBadge status={entry.st} labels={MEDICAL_RECORD_TOOTH_STATUS} />
                                         </td>
                                     </tr>
                                 );

@@ -1,12 +1,12 @@
 import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CircleCheck, Clock, Info } from "lucide-react";
-import StatusBadge from "@/components/ui/StatusBadge";
 import { cx } from "@/utils/cx";
 import { formatCurrency } from "@/utils/format";
-import { RECORD_NAV_FLAG, RECORD_STATUS_BUTTON_ID, SHEET_TAB, buildRecordUrl, planMoney, teethLinks } from "@/utils/medicalRecord";
+import { RECORD_NAV_FLAG, RECORD_STATUS_BUTTON_ID, SHEET_TAB, buildRecordUrl, planMoney, teethLinks, displayText, isPlainClick } from "@/utils/medicalRecord";
 import { MEDICAL_RECORD_PAYMENT_STATUS, MEDICAL_RECORD_PLAN_STATUS } from "@/utils/messages";
 import { MEDICAL_RECORD_TABS, ROUTES } from "@/utils/routes";
+import RecordStatusBadge from "./RecordStatusBadge";
 import StatusDefinitionDrawer from "./StatusDefinitionDrawer";
 import TreatmentStepList from "./TreatmentStepList";
 
@@ -25,8 +25,8 @@ const PlanAlert = ({ plan }) => {
             <div className="alert alert-info">
                 <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <div>
-                    <p className="font-semibold">Bước tiếp theo: {nextStage.name}</p>
-                    <p>{nextStage.note}</p>
+                    <p className="font-semibold">Bước tiếp theo: {displayText(nextStage.name)}</p>
+                    <p>{displayText(nextStage.note)}</p>
                 </div>
             </div>
         );
@@ -48,7 +48,7 @@ const PlanAlert = ({ plan }) => {
                 <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <div>
                     <p className="font-semibold">Đã hoàn thành kế hoạch</p>
-                    {log.length > 0 && <p>{log.at(-1).next}</p>}
+                    {log.length > 0 && <p>{displayText(log.at(-1).next)}</p>}
                 </div>
             </div>
         );
@@ -58,7 +58,7 @@ const PlanAlert = ({ plan }) => {
 
 const TeethText = ({ teeth, urlVisitId, onToothLink }) => {
     const links = teethLinks(teeth);
-    if (!links) return teeth ?? "—";
+    if (!links) return displayText(teeth);
     return links.map((tooth, index) => (
         <Fragment key={`${index}-${tooth}`}>
             {index > 0 && ", "}
@@ -67,7 +67,7 @@ const TeethText = ({ teeth, urlVisitId, onToothLink }) => {
                 replace
                 state={LINK_STATE}
                 className="font-medium text-primary hover:underline"
-                onClick={() => onToothLink(tooth)}
+                onClick={(event) => isPlainClick(event) && onToothLink(tooth)}
             >
                 {tooth}
             </Link>
@@ -75,7 +75,7 @@ const TeethText = ({ teeth, urlVisitId, onToothLink }) => {
     ));
 };
 
-const TreatmentPlanPanel = ({ plan, visitId, urlVisitId, drawerOpen, onOpenDrawer, onCloseDrawer, onOpenVisit, onToothLink }) => {
+const TreatmentPlanPanel = ({ plan, visitId, visitIds, urlVisitId, drawerOpen, onOpenDrawer, onCloseDrawer, onOpenVisit, onToothLink }) => {
     const stages = Array.isArray(plan.stages) ? plan.stages : [];
     const log = Array.isArray(plan.log) ? plan.log : [];
     const pays = Array.isArray(plan.pays) ? plan.pays : [];
@@ -86,14 +86,14 @@ const TreatmentPlanPanel = ({ plan, visitId, urlVisitId, drawerOpen, onOpenDrawe
             <section className="card-app p-0">
                 <div className={CARD_HEADER_CLASS}>
                     <div className="min-w-0">
-                        <h2 className="font-heading text-heading-3 text-ink">{plan.variant ?? "—"}</h2>
+                        <h2 className="font-heading text-heading-3 text-ink">{displayText(plan.variant)}</h2>
                         <p className="text-caption text-muted">
-                            {plan.svc ?? "—"} · Răng <TeethText teeth={plan.teeth} urlVisitId={urlVisitId} onToothLink={onToothLink} />
-                            {` · ${plan.doctor ?? "—"} · Bắt đầu ${plan.start ?? "—"} · ${plan.dur ?? "—"}`}
+                            {displayText(plan.svc)} · Răng <TeethText teeth={plan.teeth} urlVisitId={urlVisitId} onToothLink={onToothLink} />
+                            {` · ${displayText(plan.doctor)} · Bắt đầu ${displayText(plan.start)} · ${displayText(plan.dur)}`}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <StatusBadge status={plan.status} labels={MEDICAL_RECORD_PLAN_STATUS} />
+                        <RecordStatusBadge status={plan.status} labels={MEDICAL_RECORD_PLAN_STATUS} />
                         <button id={RECORD_STATUS_BUTTON_ID} type="button" className={SMALL_LINK_CLASS} onClick={onOpenDrawer}>
                             <Info className="size-4" aria-hidden="true" />
                             Trạng thái
@@ -103,7 +103,7 @@ const TreatmentPlanPanel = ({ plan, visitId, urlVisitId, drawerOpen, onOpenDrawe
                 <div className="grid gap-6 p-5 lg:grid-cols-2">
                     <div>
                         <p className="text-caption text-muted">Chẩn đoán</p>
-                        <p className="mb-3.5 font-semibold text-ink">{plan.diag ?? "—"}</p>
+                        <p className="mb-3.5 font-semibold text-ink">{displayText(plan.diag)}</p>
                         <PlanAlert plan={plan} />
                     </div>
                     <div>
@@ -131,26 +131,26 @@ const TreatmentPlanPanel = ({ plan, visitId, urlVisitId, drawerOpen, onOpenDrawe
                                     const current = visitId != null && row.visit === visitId;
                                     return (
                                         <tr key={`${index}-${row.date}`} className={cx(current && "bg-primary-soft")}>
-                                            <td className="whitespace-nowrap font-semibold text-ink">
+                                            <td className={cx("whitespace-nowrap font-semibold text-ink", current && "border-l-3 border-l-primary")}>
                                                 {current ? (
                                                     <>
-                                                        {row.date} <span className="badge badge-info">Buổi này</span>
+                                                        {displayText(row.date)} <span className="badge badge-info">Buổi này</span>
                                                     </>
-                                                ) : row.visit != null ? (
+                                                ) : visitIds.has(row.visit) ? (
                                                     <Link
                                                         to={buildRecordUrl(row.visit, SHEET_TAB)}
                                                         state={LINK_STATE}
                                                         className="text-primary hover:underline"
-                                                        onClick={onOpenVisit}
+                                                        onClick={(event) => isPlainClick(event) && onOpenVisit()}
                                                     >
-                                                        {row.date}
+                                                        {displayText(row.date)}
                                                     </Link>
                                                 ) : (
-                                                    <span className="font-normal text-muted">{row.date}</span>
+                                                    <span className="font-normal text-muted">{displayText(row.date)}</span>
                                                 )}
                                             </td>
-                                            <td>{row.action ?? "—"}</td>
-                                            <td className="text-muted">{row.next ?? "—"}</td>
+                                            <td>{displayText(row.action)}</td>
+                                            <td className="text-muted">{displayText(row.next)}</td>
                                         </tr>
                                     );
                                 })}
@@ -165,7 +165,7 @@ const TreatmentPlanPanel = ({ plan, visitId, urlVisitId, drawerOpen, onOpenDrawe
                 <div className={CARD_HEADER_CLASS}>
                     <div>
                         <h2 className="card-title">Dự kiến kinh phí</h2>
-                        <p className="text-caption text-muted">{plan.payRule ?? "—"}</p>
+                        <p className="text-caption text-muted">{displayText(plan.payRule)}</p>
                     </div>
                     {plan.status === "active" && (
                         <Link to={ROUTES.PAYMENT_DEBTS} className={SMALL_LINK_CLASS}>
@@ -201,12 +201,12 @@ const TreatmentPlanPanel = ({ plan, visitId, urlVisitId, drawerOpen, onOpenDrawe
                         <tbody>
                             {pays.map((item, index) => (
                                 <tr key={`${index}-${item.label}`}>
-                                    <td className="whitespace-nowrap font-semibold text-ink">{item.label ?? "—"}</td>
-                                    <td>{item.milestone ?? "—"}</td>
+                                    <td className="whitespace-nowrap font-semibold text-ink">{displayText(item.label)}</td>
+                                    <td>{displayText(item.milestone)}</td>
                                     <td className="whitespace-nowrap text-right">{money(item.amount)}</td>
                                     <td className="py-2">
-                                        <StatusBadge status={item.status} labels={MEDICAL_RECORD_PAYMENT_STATUS} />
-                                        <p className="text-caption text-muted">{item.note}</p>
+                                        <RecordStatusBadge status={item.status} labels={MEDICAL_RECORD_PAYMENT_STATUS} />
+                                        <p className="text-caption text-muted">{displayText(item.note)}</p>
                                     </td>
                                 </tr>
                             ))}

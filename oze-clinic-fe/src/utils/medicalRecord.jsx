@@ -1,4 +1,4 @@
-import { MEDICAL_RECORD_TABS, ROUTES } from "./routes";
+import { MEDICAL_RECORD_QUERY, MEDICAL_RECORD_TABS, ROUTES } from "./routes";
 import { MEDICAL_RECORD_TOOTH_POSITION, MEDICAL_RECORD_TOOTH_QUADRANT, MEDICAL_RECORD_TOOTH_SURFACE } from "./messages";
 
 export const RECORD_NAV_FLAG = "medicalRecordNav";
@@ -34,7 +34,7 @@ export const norm = (value) =>
 
 const dateKey = (value) => {
     const match = String(value ?? "").match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    return match ? `${match[3]}${match[2]}${match[1]}` : "99999999";
+    return match ? `${match[3]}${match[2]}${match[1]}` : "00000000";
 };
 
 const compareDate = (getDate, direction) => (a, b) => {
@@ -48,23 +48,42 @@ export const sortByDate = (items, getDate, direction) => [...items].sort(compare
 export const parseRecordId = (value) => (typeof value === "string" && ID_PATTERN.test(value) ? Number(value) : null);
 
 export const readRecordUrl = (examinationId, searchParams) => {
-    const tabParam = searchParams.get("tab");
+    const tabParam = searchParams.get(MEDICAL_RECORD_QUERY.TAB);
     const tabValid = URL_TABS.includes(tabParam);
     return {
         hasId: examinationId != null && examinationId !== "",
         id: parseRecordId(examinationId),
         tab: tabValid ? tabParam : SHEET_TAB,
-        tabNeedsCleanup: searchParams.has("tab") && !tabValid,
-        planParam: searchParams.get("plan"),
+        tabNeedsCleanup: searchParams.has(MEDICAL_RECORD_QUERY.TAB) && !tabValid,
+        planParam: searchParams.get(MEDICAL_RECORD_QUERY.PLAN),
     };
 };
 
 export const buildRecordUrl = (visitId, tab) =>
-    `${ROUTES.MEDICAL_RECORD}${visitId != null ? `/${visitId}` : ""}${tab && tab !== SHEET_TAB ? `?tab=${tab}` : ""}`;
+    `${ROUTES.MEDICAL_RECORD}${visitId != null ? `/${visitId}` : ""}${tab && tab !== SHEET_TAB ? `?${MEDICAL_RECORD_QUERY.TAB}=${tab}` : ""}`;
 
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
 const objectsOf = (value) => (Array.isArray(value) ? value.filter(isObject) : []);
+
+const isDisplayValue = (value) => typeof value === "string" || (typeof value === "number" && Number.isFinite(value));
+
+export const displayText = (value) => (isDisplayValue(value) ? String(value) : "—");
+
+export const isPlainClick = (event) => event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+
+const uniqueVisits = (visits) => {
+    const seen = new Set();
+    return visits.filter((visit) => {
+        if (!Number.isInteger(visit.id) || visit.id <= 0 || seen.has(visit.id)) return false;
+        seen.add(visit.id);
+        return true;
+    });
+};
+
+const normalizePlan = (plan) => ({ ...plan, stages: objectsOf(plan.stages), log: objectsOf(plan.log), pays: objectsOf(plan.pays) });
+
+const normalizeVisit = (visit) => ({ ...visit, done: Array.isArray(visit.done) ? visit.done.filter(isDisplayValue) : [] });
 
 export const normalizeRecord = (response) => {
     const data = response?.success === true ? response.data : null;
@@ -73,9 +92,9 @@ export const normalizeRecord = (response) => {
         clinic: isObject(data.clinic) ? data.clinic : {},
         patient: isObject(data.patient) ? data.patient : {},
         profile: isObject(data.profile) ? data.profile : {},
-        visits: data.visits,
+        visits: uniqueVisits(data.visits).map(normalizeVisit),
         upcoming: objectsOf(data.upcoming),
-        plans: objectsOf(data.plans),
+        plans: objectsOf(data.plans).map(normalizePlan),
         films: objectsOf(data.films),
         chart: objectsOf(data.chart),
         history: objectsOf(data.history),
