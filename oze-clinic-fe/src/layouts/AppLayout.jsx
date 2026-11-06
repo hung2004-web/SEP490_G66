@@ -16,6 +16,8 @@ const subscribeToDesktop = (onChange) => {
 
 const getIsDesktop = () => window.matchMedia(DESKTOP_QUERY).matches;
 
+const getPageGroupKey = (pathname) => `/${pathname.split("/")[1] ?? ""}`.toLowerCase();
+
 // publicPage: a public page (home, services...) opened by a signed-in patient. Keeps the sidebar, drops the app padding, adds the footer.
 const AppLayout = ({ publicPage = false }) => {
     const location = useLocation();
@@ -49,7 +51,7 @@ const AppLayout = ({ publicPage = false }) => {
                     sidebarToggleRef={toggleRef}
                 />
                 <main className={publicPage ? "flex-1" : "app-content flex-1"}>
-                    <ErrorBoundary key={location.pathname}>
+                    <ErrorBoundary key={getPageGroupKey(location.pathname)}>
                         <Outlet />
                     </ErrorBoundary>
                 </main>
