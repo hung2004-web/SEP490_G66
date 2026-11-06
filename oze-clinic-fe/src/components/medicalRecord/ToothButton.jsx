@@ -58,11 +58,11 @@ const ToothSvg = ({ tooth, state }) => {
                 ))}
             {Object.entries(regions).map(([key, points]) => (
                 <g key={key}>
-                    <polygon points={points} className="fill-white stroke-placeholder" strokeWidth="1" />
+                    <polygon points={points} className="fill-canvas stroke-placeholder" strokeWidth="1" />
                     {fills[key] && <polygon points={points} className={cx(fills[key], "stroke-placeholder")} strokeWidth="1" />}
                 </g>
             ))}
-            <rect x="12" y={top + 10} width="10" height="10" className="fill-white stroke-placeholder" strokeWidth="1" />
+            <rect x="12" y={top + 10} width="10" height="10" className="fill-canvas stroke-placeholder" strokeWidth="1" />
             {fills.C && <rect x="12" y={top + 10} width="10" height="10" className={cx(fills.C, "stroke-placeholder")} strokeWidth="1" />}
             {state.crown && (
                 <rect

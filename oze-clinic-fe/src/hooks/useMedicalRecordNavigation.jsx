@@ -79,8 +79,8 @@ const useMedicalRecordNavigation = () => {
     const h1Ref = useRef(null);
     const retryRef = useRef(null);
     const focusedLoadId = useRef(null);
-    const handledLayoutKey = useRef(null);
-    const handledPopKey = useRef(null);
+    const handledLayoutEvent = useRef(null);
+    const handledPopEvent = useRef(null);
 
     if (location.key !== navEvent.key) {
         const own = location.state?.[RECORD_NAV_FLAG] === true;
@@ -147,15 +147,15 @@ const useMedicalRecordNavigation = () => {
     }, [load.id, load.status]);
 
     useLayoutEffect(() => {
-        if (handledLayoutKey.current === navEvent.key) return;
-        handledLayoutKey.current = navEvent.key;
+        if (handledLayoutEvent.current === navEvent) return;
+        handledLayoutEvent.current = navEvent;
         if (navEvent.scrollTop) window.scrollTo(0, 0);
         if (navEvent.focusH1 && HEADING_STATES.includes(pageState)) focusElement(h1Ref.current);
     }, [navEvent, pageState]);
 
     useEffect(() => {
-        if (navEvent.kind !== "pop" || handledPopKey.current === navEvent.key) return;
-        handledPopKey.current = navEvent.key;
+        if (navEvent.kind !== "pop" || handledPopEvent.current === navEvent) return;
+        handledPopEvent.current = navEvent;
         if (!HEADING_STATES.includes(navEvent.pageStateAtNav) || !HEADING_STATES.includes(pageState)) return;
         if (navEvent.drawerReturn) {
             const button = navEvent.drawerReturn === "button" ? document.getElementById(RECORD_STATUS_BUTTON_ID) : null;
