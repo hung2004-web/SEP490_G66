@@ -18,7 +18,7 @@ const Drawer = ({ title, eyebrow, description, badge, onClose, children }) => {
         drawerRef.current?.focus();
         return () => {
             if (!alreadyLocked) document.body.classList.remove(SCROLL_LOCK_CLASS);
-            returnTarget?.focus?.();
+            returnTarget?.focus?.({ preventScroll: true });
         };
     }, []);
 
