@@ -35,7 +35,7 @@ namespace OZE.Application.Services
         public async Task<RoomResponse> CreateRoomAsync(CreateRoomRequest request)
         {
             var roomName = request.RoomName.Trim();
-            ConditionGuard.Ensure(RoomConstants.RoomTypes.Contains(request.RoomType), ErrorConstants.RoomMessage.InvalidRoomType);
+            EnsureValidRoomType(request.RoomType);
             ConditionGuard.ThrowIf(await _roomRepository.IsRoomNameInUseAsync(roomName), ErrorConstants.RoomMessage.RoomNameExist);
 
             var room = new Room
@@ -43,8 +43,8 @@ namespace OZE.Application.Services
                 RoomName = roomName,
                 RoomType = request.RoomType,
                 Status = RoomConstants.ActiveStatus,
-                Floor = request.Floor?.Trim(),
-                Description = request.Description?.Trim(),
+                Floor = TrimToNull(request.Floor),
+                Description = TrimToNull(request.Description),
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
@@ -59,7 +59,7 @@ namespace OZE.Application.Services
             var room = await GetExistingRoomAsync(id);
             var roomName = request.RoomName.Trim();
 
-            ConditionGuard.Ensure(RoomConstants.RoomTypes.Contains(request.RoomType), ErrorConstants.RoomMessage.InvalidRoomType);
+            EnsureValidRoomType(request.RoomType);
             ConditionGuard.Ensure(RoomConstants.Statuses.Contains(request.Status), ErrorConstants.RoomMessage.InvalidStatus);
             ConditionGuard.ThrowIf(await _roomRepository.IsRoomNameInUseAsync(roomName, id), ErrorConstants.RoomMessage.RoomNameExist);
 
@@ -74,8 +74,8 @@ namespace OZE.Application.Services
             room.RoomName = roomName;
             room.RoomType = request.RoomType;
             room.Status = request.Status;
-            room.Floor = request.Floor?.Trim();
-            room.Description = request.Description?.Trim();
+            room.Floor = TrimToNull(request.Floor);
+            room.Description = TrimToNull(request.Description);
             room.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _roomRepository.SaveChangesAsync();
@@ -99,6 +99,17 @@ namespace OZE.Application.Services
             var room = await _roomRepository.GetByIdAsync(id);
             ConditionGuard.Ensure<NotFoundException>(room != null, ErrorConstants.RoomMessage.RoomNotFound);
             return room!;
+        }
+
+        private static void EnsureValidRoomType(string roomType)
+        {
+            ConditionGuard.Ensure(RoomConstants.RoomTypes.Contains(roomType), ErrorConstants.RoomMessage.InvalidRoomType);
+        }
+
+        // Blank optional text is stored as null, not as an empty string
+        private static string? TrimToNull(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
     }
 }

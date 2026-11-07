@@ -20,7 +20,6 @@ namespace OZE.ProjectBase.Controllers
         }
 
         [HttpGet]
-
         public async Task<ActionResult<ApiResponse<List<RoomResponse>>>> GetRoomsAsync([FromQuery] RoomQueryRequest query)
         {
             var rooms = await _roomService.GetRoomsAsync(query);
@@ -38,20 +37,21 @@ namespace OZE.ProjectBase.Controllers
         public async Task<ActionResult<ApiResponse<RoomResponse>>> CreateRoomAsync([FromBody] CreateRoomRequest request)
         {
             var room = await _roomService.CreateRoomAsync(request);
-            return Ok(ApiResponse<RoomResponse>.SuccessResult(room, "Room created successfully"));
+            return Ok(ApiResponse<RoomResponse>.SuccessResult(room, ErrorConstants.RoomMessage.RoomCreated));
         }
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<ApiResponse<RoomResponse>>> UpdateRoomAsync(int id, [FromBody] UpdateRoomRequest request)
         {
             var room = await _roomService.UpdateRoomAsync(id, request);
-            return Ok(ApiResponse<RoomResponse>.SuccessResult(room, "Room updated successfully"));
+            return Ok(ApiResponse<RoomResponse>.SuccessResult(room, ErrorConstants.RoomMessage.RoomUpdated));
         }
+
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<ApiResponse>> DeleteRoomAsync(int id)
         {
             await _roomService.DeleteRoomAsync(id);
-            return Ok(ApiResponse.SuccessResult("Room deleted successfully"));
+            return Ok(ApiResponse.SuccessResult(ErrorConstants.RoomMessage.RoomDeleted));
         }
     }
 }
