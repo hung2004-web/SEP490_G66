@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using OZE.Common.Constants;
 
 namespace OZE.Common.Models
 {
@@ -9,6 +10,8 @@ namespace OZE.Common.Models
         public string RoomName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Room type is required")]
+        [AllowedValues(RoomTypeConstants.GeneralTreatment, RoomTypeConstants.MinorSurgery, RoomTypeConstants.XRay,
+            ErrorMessage = ErrorConstants.RoomMessage.InvalidRoomType)]
         public string RoomType { get; set; } = string.Empty;
 
         [MaxLength(20, ErrorMessage = "Floor must not exceed 20 characters")]
