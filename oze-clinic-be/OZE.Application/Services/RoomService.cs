@@ -61,7 +61,12 @@ namespace OZE.Application.Services
 
             EnsureValidRoomType(request.RoomType);
             ConditionGuard.Ensure(RoomConstants.Statuses.Contains(request.Status), ErrorConstants.RoomMessage.InvalidStatus);
-            ConditionGuard.ThrowIf(await _roomRepository.IsRoomNameInUseAsync(roomName, id, cancellationToken), ErrorConstants.RoomMessage.RoomNameExist);
+            // The database compares names without case, so a name that only changes case cannot clash with another room
+            var nameChanged = !string.Equals(room.RoomName, roomName, StringComparison.OrdinalIgnoreCase);
+            if (nameChanged)
+            {
+                ConditionGuard.ThrowIf(await _roomRepository.IsRoomNameInUseAsync(roomName, id, cancellationToken), ErrorConstants.RoomMessage.RoomNameExist);
+            }
 
             // Shifts already planned in the room keep it: it cannot leave service or change its type under them
             var leavesService = room.Status == RoomConstants.ActiveStatus && request.Status != RoomConstants.ActiveStatus;

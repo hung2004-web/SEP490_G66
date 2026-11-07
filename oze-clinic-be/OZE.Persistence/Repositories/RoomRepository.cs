@@ -59,10 +59,12 @@ namespace OZE.Persistence.Repositories
             return _context.Rooms.AnyAsync(x => x.RoomName == roomName && x.Id != excludeRoomId, cancellationToken);
         }
 
-        public async Task<bool> IsRoomInUseAsync(int id, CancellationToken cancellationToken = default)
+        // One round trip: the room has a schedule or a queue entry
+        public Task<bool> IsRoomInUseAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _context.StaffSchedules.AnyAsync(x => x.RoomId == id, cancellationToken)
-                || await _context.QueueEntries.AnyAsync(x => x.RoomId == id, cancellationToken);
+            return _context.Rooms.AnyAsync(r => r.Id == id
+                && (_context.StaffSchedules.Any(x => x.RoomId == id) || _context.QueueEntries.Any(x => x.RoomId == id)),
+                cancellationToken);
         }
 
         public async Task AddAsync(Room room, CancellationToken cancellationToken = default)

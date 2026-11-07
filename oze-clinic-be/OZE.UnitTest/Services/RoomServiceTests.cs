@@ -138,6 +138,35 @@ namespace OZE.UnitTest.Services
                 Times.Never);
         }
 
+        [Theory]
+        [InlineData("P.101")]
+        [InlineData("p.101")]
+        public async Task UpdateRoomAsync_ShouldSkipNameCheck_WhenNameIsUnchangedIgnoringCase(string roomName)
+        {
+            ArrangeRoom();
+            var request = UpdateRequest();
+            request.RoomName = roomName;
+
+            await _service.UpdateRoomAsync(5, request);
+
+            _roomRepositoryMock.Verify(
+                r => r.IsRoomNameInUseAsync(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateRoomAsync_ShouldThrow_WhenNewNameIsTaken()
+        {
+            ArrangeRoom();
+            _roomRepositoryMock.Setup(r => r.IsRoomNameInUseAsync("P.202", 5, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            var request = UpdateRequest();
+            request.RoomName = "P.202";
+
+            var act = () => _service.UpdateRoomAsync(5, request);
+
+            await act.Should().ThrowAsync<BadRequestException>().WithMessage(ErrorConstants.RoomMessage.RoomNameExist);
+        }
+
         [Fact]
         public async Task UpdateRoomAsync_ShouldDeactivate_WhenNoUpcomingShifts()
         {
