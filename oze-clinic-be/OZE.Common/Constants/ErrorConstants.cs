@@ -389,6 +389,28 @@ namespace OZE.Common.Constants
             public const string TechnicianNotificationTitle = "New imaging request";
             public const string TechnicianNotificationMessage = "Imaging request ({0}) for {1} has been submitted.";
         }
+
+        public static class InvoiceMessage
+        {
+            public const string PatientRequired = "Please select a patient.";
+            public const string PatientNotFound = "Patient not found.";
+            public const string ItemsRequired = "Please add at least one invoice item.";
+            public const string ServiceNameRequired = "Please enter service name.";
+            public const string QuantityInvalid = "Quantity must be greater than 0.";
+            public const string UnitPriceInvalid = "Unit price must be greater than or equal to 0.";
+            public const string DiscountInvalid = "Discount amount is invalid.";
+            public const string DiscountExceedsTotal = "Discount amount cannot exceed the invoice total.";
+            public const string AppointmentNotFound = "Appointment not found.";
+            public const string AppointmentPatientMismatch = "The appointment does not belong to this patient.";
+            public const string TreatmentPlanNotFound = "Treatment plan not found.";
+            public const string TreatmentPlanPatientMismatch = "The treatment plan does not belong to this patient.";
+            public const string StageNotFound = "Treatment plan stage not found.";
+            public const string StagePlanMismatch = "The treatment plan stage does not belong to the selected treatment plan.";
+            public const string ServiceNotFound = "Service not found.";
+            public const string OpenInvoiceExistsForAppointment = "An open invoice already exists for this appointment.";
+            public const string InvoiceCreated = "Invoice has been created.";
+            public const string InvoiceNotFound = "Invoice not found.";
+        }
     }
 }
 
