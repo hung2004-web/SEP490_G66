@@ -78,15 +78,15 @@ namespace OZE.Common.Constants
 
         public static class RoomMessage
         {
-            public const string HasUpcomingShifts = "This room still has shifts from now on; move them to another room before taking it out of service or changing its type";
-            public const string RoomNotFound = "Room not found";
-            public const string RoomNameExist = "Room name already exists";
-            public const string InvalidRoomType = "Room type must be one of: GeneralTreatment, MinorSurgery, XRay";
-            public const string InvalidStatus = "Room status must be one of: Active, Maintenance, Inactive";
-            public const string RoomInUse = "Room is used by schedules or queue entries and cannot be deleted. Set its status to Inactive instead";
-            public const string RoomCreated = "Room created successfully";
-            public const string RoomUpdated = "Room updated successfully";
-            public const string RoomDeleted = "Room deleted successfully";
+            public const string HasUpcomingShifts = "This room still has upcoming shifts. Move them to another room before changing its type or taking it out of service.";
+            public const string RoomNotFound = "Room not found.";
+            public const string RoomNameExist = "A room with this name already exists.";
+            public const string InvalidRoomType = "Room type must be GeneralTreatment, MinorSurgery or XRay.";
+            public const string InvalidStatus = "Room status must be Active, Maintenance or Inactive.";
+            public const string RoomInUse = "This room has schedule or queue history and cannot be deleted. Set its status to Inactive instead.";
+            public const string RoomCreated = "Room created successfully.";
+            public const string RoomUpdated = "Room updated successfully.";
+            public const string RoomDeleted = "Room deleted successfully.";
         }
 
         // Update profile (UC-08). Texts follow the System Messages table of SRS Report 3.
