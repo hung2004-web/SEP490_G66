@@ -1,5 +1,8 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
+using OZE.Common.Exceptions;
 using OZE.Common.Models;
 using OZE.Domain.Entities;
 using OZE.Persistence.DbContexts;
@@ -72,9 +75,24 @@ namespace OZE.Persistence.Repositories
             _context.Rooms.Remove(room);
         }
 
-        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            return _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (IsDuplicateRoomName(ex))
+            {
+                // Two requests passed the name check at the same time; the unique index kept the first one
+                throw new BadRequestException(ErrorConstants.RoomMessage.RoomNameExist);
+            }
+        }
+
+        private static bool IsDuplicateRoomName(DbUpdateException exception)
+        {
+            return exception.InnerException is SqlException sql
+                && (sql.Number == 2601 || sql.Number == 2627)
+                && sql.Message.Contains("IX_Rooms_RoomName", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
