@@ -11,7 +11,7 @@ import ShiftInfoTable from "./ShiftInfoTable";
 
 const actualTimes = (cell) => (cell.checkIn ? `${cell.checkIn} – ${cell.checkOut ?? "…"}` : "");
 
-// TODO: point at the request's own page once "Đơn xin nghỉ" is built.
+// "Đơn xin nghỉ" opens the request given in ?id=.
 const leaveRequestUrl = (requestId) => `${ROUTES.ADMIN_LEAVE_REQUESTS}?id=${requestId}`;
 
 // Rows after "Trạng thái", which depend on the status.
