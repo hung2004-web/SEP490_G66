@@ -17,6 +17,7 @@ import ComingSoonPage from "../pages/common/ComingSoonPage";
 import MyAppointments from "../pages/patient/MyAppointments";
 import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import MedicalRecord from "../pages/patient/MedicalRecord";
+import BookAppointment from "../pages/patient/BookAppointment";
 import AuditLogManagement from "../pages/admin/AuditLogManagement";
 import LeaveRequestManagement from "../pages/admin/LeaveRequestManagement";
 import RefundRequestManagement from "../pages/admin/RefundRequestManagement";
@@ -121,6 +122,12 @@ const ROLE_PAGES = {
             <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
+    [ROUTES.BOOK_APPOINTMENT]: (
+        <Routes>
+            <Route index element={<BookAppointment />} />
+            <Route path="*" element={NOT_FOUND} />
+        </Routes>
+    ),
     [ROUTES.MEDICAL_RECORD]: (
         <Routes>
             <Route path=":examinationId?" element={<MedicalRecord />} />
@@ -188,7 +195,6 @@ function AppRoutes() {
                 </Route>
                 <Route element={<RequireRole />}>
                     <Route element={<AppLayout />}>
-                        {token && <Route path={ROUTES.BOOK_APPOINTMENT} element={<ComingSoonPage title="Đặt lịch hẹn" />} />}
                         {renderRoutes(sharedRoutes)}
                         {ROLE_ROUTES.map(({ roles, paths }) => (
                             <Route key={roles.join()} element={<RequireRole roles={roles} />}>
