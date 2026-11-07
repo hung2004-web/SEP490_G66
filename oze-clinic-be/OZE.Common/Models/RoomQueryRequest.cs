@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OZE.Common.Models
+﻿namespace OZE.Common.Models
 {
+    // Filters for the room list; empty values are ignored
     public class RoomQueryRequest
     {
-        public string? Keyword { get; set; } = string.Empty;
-        public string? RoomType { get; set; } = string.Empty;
-        public string? Status { get; set; } = string.Empty;
+        public string? Keyword { get; set; }
+        public string? RoomType { get; set; }
+        public string? Status { get; set; }
     }
 }
