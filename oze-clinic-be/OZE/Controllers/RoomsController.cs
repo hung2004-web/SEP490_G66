@@ -5,7 +5,7 @@ using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 
-namespace OZE.ProjectBase.Controllers
+namespace OZE.Controllers
 {
     [ApiController]
     [Authorize(Roles = RoleConstants.ClinicManagerRole)]
