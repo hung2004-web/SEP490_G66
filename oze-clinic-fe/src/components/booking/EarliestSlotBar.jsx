@@ -5,7 +5,7 @@ import { BOOKING_TEXT } from "@/utils/messages";
 
 const EarliestSlotBar = ({ earliest, selected, updatedAt, busy, pickBusy, onPick, onRefresh }) => (
     <div className="mt-3.5 flex flex-wrap items-center gap-2.5 rounded-md border border-border bg-canvas py-2 pr-2 pl-3">
-        <p className="min-w-55 flex-1 text-body-sm text-body">
+        <p className="min-w-0 flex-1 basis-55 text-body-sm text-body">
             {BOOKING_TEXT.EARLIEST}{" "}
             {earliest?.slotStart && (
                 <strong className="font-semibold text-ink">

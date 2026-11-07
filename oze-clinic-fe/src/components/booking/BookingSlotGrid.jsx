@@ -5,6 +5,7 @@ import { BOOKING_TEXT } from "@/utils/messages";
 
 const WARNING_ID = "booking-slot-warning";
 const ERROR_ID = "booking-slot-error";
+const LIVE_WARNING_ID = "booking-slot-warning-live";
 
 const SESSIONS = [
     { label: BOOKING_TEXT.MORNING, test: (slot) => slot.slotStart < NOON },
@@ -77,15 +78,16 @@ const BookingSlotGrid = ({ slots, busy, error, selected, warning, warningLive, s
     };
 
     return (
-        <fieldset id={BOOKING_IDS.SLOTS} tabIndex={-1} className="mt-7 min-w-0" aria-required="true" aria-busy={busy || undefined} aria-describedby={`${WARNING_ID} ${ERROR_ID}`}>
+        <fieldset id={BOOKING_IDS.SLOTS} tabIndex={-1} className="mt-7 min-w-0" aria-required="true" aria-busy={busy || undefined} aria-describedby={`${WARNING_ID} ${LIVE_WARNING_ID} ${ERROR_ID}`}>
             <legend className="font-heading text-heading-3 text-ink">
                 {BOOKING_TEXT.SLOT}
                 <span className="text-danger" aria-hidden="true">
                     {" *"}
                 </span>
             </legend>
-            <div id={WARNING_ID} role={warningLive ? "alert" : undefined}>
-                {warning && <p className="alert alert-warning mt-3">{warning}</p>}
+            <div id={WARNING_ID}>{warning && !warningLive && <p className="alert alert-warning mt-3">{warning}</p>}</div>
+            <div id={LIVE_WARNING_ID} role="alert">
+                {warning && warningLive && <p className="alert alert-warning mt-3">{warning}</p>}
             </div>
             {renderBody()}
             <p id={ERROR_ID} className="mt-2 text-body-sm font-medium text-danger empty:hidden">

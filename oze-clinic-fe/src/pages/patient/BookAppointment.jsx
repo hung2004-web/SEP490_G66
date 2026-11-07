@@ -281,7 +281,9 @@ const BookAppointment = () => {
         <>
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">{BOOKING_TEXT.TITLE}</h1>
+                    <h1 id={BOOKING_IDS.PAGE_TITLE} tabIndex={-1} className="page-title">
+                        {BOOKING_TEXT.TITLE}
+                    </h1>
                     <p className="page-description">{BOOKING_TEXT.DESCRIPTION}</p>
                 </div>
             </div>

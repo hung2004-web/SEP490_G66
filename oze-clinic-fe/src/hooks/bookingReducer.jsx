@@ -64,10 +64,10 @@ export const createInitialState = (today) => ({
     focusSeq: 0,
 });
 
-const requestFocus = (state, targets, waitFor = null) => ({
+const requestFocus = (state, targets, waitFor = null, interim = null) => ({
     ...state,
     focusSeq: state.focusSeq + 1,
-    focusRequest: { targets, waitFor, seq: state.focusSeq + 1 },
+    focusRequest: { targets, waitFor, interim, seq: state.focusSeq + 1 },
 });
 
 const announce = (state, text) => ({ ...state, live: { text, seq: state.live.seq + 1 } });
@@ -145,7 +145,7 @@ const loadContext = (state, result) => {
     return empty || unfinished ? requestFocus(next, [BOOKING_IDS.STATE_TITLE]) : next;
 };
 
-const reload = (state, { kind, today, focus, waitFor = null }) => {
+const reload = (state, { kind, today, focus, waitFor = null, interim = null }) => {
     const next = {
         ...state,
         ...CLEARED_MESSAGES,
@@ -153,7 +153,7 @@ const reload = (state, { kind, today, focus, waitFor = null }) => {
         version: state.version + 1,
         cause: mergeCause(state.cause, { kind, prevDay: state.day, prevSlot: state.slot }),
     };
-    return focus ? requestFocus(next, focus, waitFor) : next;
+    return focus ? requestFocus(next, focus, waitFor, interim) : next;
 };
 
 const goWeek = (state, { weekStart, focus }) => {
@@ -240,7 +240,7 @@ export const bookingReducer = (state, action) => {
                 slot: null,
                 cause: null,
                 focusSeq: state.focusSeq + 1,
-                focusRequest: { targets: [BOOKING_IDS.SERVICE, BOOKING_IDS.STATE_TITLE], waitFor: "ready", seq: state.focusSeq + 1 },
+                focusRequest: { targets: [BOOKING_IDS.SERVICE, BOOKING_IDS.STATE_TITLE], waitFor: "ready", interim: BOOKING_IDS.PAGE_TITLE, seq: state.focusSeq + 1 },
             };
         case "RANGE_LOADED": {
             if (action.key !== rangeKeyOf(state)) return state;
@@ -310,7 +310,7 @@ export const bookingReducer = (state, action) => {
             const earliest = getEarliest(state.today, state.range.days);
             if (!earliest) return state;
             const next = { ...state, ...CLEARED_MESSAGES, weekStart: weekStartOf(earliest.date), day: earliest.date, slot: earliest.slotStart, cause: null };
-            return requestFocus(next, [slotId(earliest.slotStart), BOOKING_IDS.SLOTS], "slots");
+            return requestFocus(next, [slotId(earliest.slotStart), BOOKING_IDS.SLOTS], "slots", BOOKING_IDS.SLOTS);
         }
         case "RELOAD":
             return reload(state, action);

@@ -14,6 +14,8 @@ const isUsable = (element) => element && !element.disabled && element.getAttribu
 const useBookingForm = () => {
     const [state, dispatch] = useReducer(bookingReducer, null, () => createInitialState(getClinicToday()));
     const handledFocus = useRef(0);
+    const interimFocus = useRef({ seq: 0, element: null });
+    const sending = useRef(false);
 
     const rangeKey = rangeKeyOf(state);
     const slotsKey = slotsKeyOf(state);
@@ -59,10 +61,22 @@ const useBookingForm = () => {
     useLayoutEffect(() => {
         const request = state.focusRequest;
         if (!request || handledFocus.current === request.seq) return;
-        if (request.waitFor === "slots" && slotsBusy) return;
-        if (request.waitFor === "range" && rangeBusy) return;
-        if (request.waitFor === "ready" && (state.page.status === "loading" || rangeBusy)) return;
+        const waiting =
+            (request.waitFor === "slots" && slotsBusy) ||
+            (request.waitFor === "range" && rangeBusy) ||
+            (request.waitFor === "ready" && (state.page.status === "loading" || rangeBusy));
+        if (waiting) {
+            if (request.interim && interimFocus.current.seq !== request.seq) {
+                const element = document.getElementById(request.interim);
+                if (isUsable(element)) element.focus();
+                interimFocus.current = { seq: request.seq, element: isUsable(element) ? element : null };
+            }
+            return;
+        }
         handledFocus.current = request.seq;
+        const held = interimFocus.current.seq === request.seq ? interimFocus.current.element : null;
+        const moved = held && document.activeElement !== held && document.activeElement !== document.body;
+        if (moved) return;
         const target = request.targets.map((id) => document.getElementById(id)).find(isUsable);
         target?.focus();
     });
@@ -71,7 +85,7 @@ const useBookingForm = () => {
     const earliest = getEarliest(today, state.range.days);
 
     const submit = async () => {
-        if (state.submitting || (state.day && busy)) return;
+        if (sending.current || state.submitting || (state.day && busy)) return;
         const pending = getPendingSelection(services, state.items, state.pickService, state.pickVariant);
         const serviceError = pending ? BOOKING_TEXT.SERVICE_PENDING(pending) : state.items.length ? null : BOOKING_TEXT.SERVICE_REQUIRED;
         const slotError = state.slot ? null : BOOKING_TEXT.SLOT_REQUIRED;
@@ -84,9 +98,11 @@ const useBookingForm = () => {
             return;
         }
         const snapshot = { day: state.day, slot: state.slot, doctorId: state.doctorId };
+        sending.current = true;
         dispatch({ type: "SUBMIT_START" });
         const payload = buildBookingPayload({ items: state.items, services, date: state.day, slotStart: state.slot, doctorId: state.doctorId, note: state.note });
         const result = await createBooking(payload).catch(() => failedResult);
+        sending.current = false;
         dispatch({ type: "SUBMIT_DONE", result, today: getClinicToday(), snapshot });
         if (result.success) {
             window.scrollTo(0, 0);
@@ -130,7 +146,7 @@ const useBookingForm = () => {
         selectSlot: (slot) => dispatch({ type: "SELECT_SLOT", slot }),
         pickEarliest: () => !rangeBusy && dispatch({ type: "PICK_EARLIEST" }),
         refresh: () => dispatch({ type: "RELOAD", kind: "refresh", today: getClinicToday(), focus: null }),
-        retryDays: () => dispatch({ type: "RELOAD", kind: "retry", today: getClinicToday(), focus: [dayId(state.day), BOOKING_IDS.WEEK_BUTTON, BOOKING_IDS.STATE_TITLE], waitFor: "ready" }),
+        retryDays: () => dispatch({ type: "RELOAD", kind: "retry", today: getClinicToday(), focus: [dayId(state.day), BOOKING_IDS.WEEK_BUTTON, BOOKING_IDS.STATE_TITLE], waitFor: "ready", interim: BOOKING_IDS.PAGE_TITLE }),
         retrySlots: () => dispatch({ type: "RELOAD", kind: "retry", today: getClinicToday(), focus: [BOOKING_IDS.SLOTS] }),
         submit,
     };

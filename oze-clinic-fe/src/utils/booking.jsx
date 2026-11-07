@@ -24,6 +24,7 @@ export const BOOKING_IDS = {
     SLOTS_RETRY: "booking-slots-retry",
     SUBMIT: "booking-submit",
     STATE_TITLE: "booking-state-title",
+    PAGE_TITLE: "booking-title",
 };
 
 export const dayId = (date) => `booking-day-${date}`;

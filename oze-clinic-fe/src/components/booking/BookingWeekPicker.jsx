@@ -12,8 +12,8 @@ const rowAria = (week) =>
     `${BOOKING_TEXT.WEEK_ROW(week.week, weekRangeText(week.weekStart, true))}${week.hasToday ? BOOKING_TEXT.WEEK_ROW_TODAY : ""}${week.usable ? "" : BOOKING_TEXT.WEEK_ROW_OUTSIDE}`;
 
 const dayClass = (day, current) => {
+    if (day.isToday) return current ? "font-bold underline" : "font-bold text-warning underline";
     if (current) return "";
-    if (day.isToday) return "font-bold text-warning underline";
     return day.otherMonth ? "text-muted" : "";
 };
 
