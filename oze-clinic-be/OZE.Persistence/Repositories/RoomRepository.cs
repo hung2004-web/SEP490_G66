@@ -15,9 +15,9 @@ namespace OZE.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<List<Room>> GetAllAsync(RoomQueryRequest query)
+        public async Task<List<Room>> GetAllAsync(RoomQueryRequest query, CancellationToken cancellationToken = default)
         {
-            var rooms = _context.Rooms.AsNoTracking().AsQueryable();
+            var rooms = _context.Rooms.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
@@ -35,34 +35,36 @@ namespace OZE.Persistence.Repositories
                 rooms = rooms.Where(x => x.Status == query.Status);
             }
 
-            return await rooms.OrderBy(x => x.RoomName).ToListAsync();
+            return await rooms.OrderBy(x => x.RoomName).ToListAsync(cancellationToken);
         }
 
-        public async Task<bool> HasUpcomingShiftsAsync(int roomId, DateOnly today, TimeOnly now)
+        public Task<bool> HasUpcomingShiftsAsync(int roomId, DateOnly today, TimeOnly now, CancellationToken cancellationToken = default)
         {
-            return await _context.StaffSchedules.AnyAsync(x => x.RoomId == roomId
-                && (x.ScheduleDate > today || (x.ScheduleDate == today && x.ActualEndTime == null && x.ShiftEnd > now)));
+            return _context.StaffSchedules.AnyAsync(x => x.RoomId == roomId
+                && (x.ScheduleDate > today || (x.ScheduleDate == today && x.ActualEndTime == null && x.ShiftEnd > now)),
+                cancellationToken);
         }
 
-        public async Task<Room?> GetByIdAsync(int id)
+        // FindAsync returns a room already tracked by this request without another query
+        public async Task<Room?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _context.Rooms.FirstOrDefaultAsync(x => x.Id == id);
+            return await _context.Rooms.FindAsync(new object[] { id }, cancellationToken);
         }
 
-        public async Task<bool> IsRoomNameInUseAsync(string roomName, int? excludeRoomId = null)
+        public Task<bool> IsRoomNameInUseAsync(string roomName, int? excludeRoomId = null, CancellationToken cancellationToken = default)
         {
-            return await _context.Rooms.AnyAsync(x => x.RoomName == roomName && x.Id != excludeRoomId);
+            return _context.Rooms.AnyAsync(x => x.RoomName == roomName && x.Id != excludeRoomId, cancellationToken);
         }
 
-        public async Task<bool> IsRoomInUseAsync(int id)
+        public async Task<bool> IsRoomInUseAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _context.StaffSchedules.AnyAsync(x => x.RoomId == id)
-                || await _context.QueueEntries.AnyAsync(x => x.RoomId == id);
+            return await _context.StaffSchedules.AnyAsync(x => x.RoomId == id, cancellationToken)
+                || await _context.QueueEntries.AnyAsync(x => x.RoomId == id, cancellationToken);
         }
 
-        public async Task AddAsync(Room room)
+        public async Task AddAsync(Room room, CancellationToken cancellationToken = default)
         {
-            await _context.Rooms.AddAsync(room);
+            await _context.Rooms.AddAsync(room, cancellationToken);
         }
 
         public void Remove(Room room)
@@ -70,9 +72,9 @@ namespace OZE.Persistence.Repositories
             _context.Rooms.Remove(room);
         }
 
-        public async Task SaveChangesAsync()
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            await _context.SaveChangesAsync();
+            return _context.SaveChangesAsync(cancellationToken);
         }
     }
 }
