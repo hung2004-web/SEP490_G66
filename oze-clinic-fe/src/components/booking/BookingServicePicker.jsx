@@ -24,7 +24,7 @@ const VariantOptions = ({ service, items }) => {
     if (!service.variants.length) return <option value="">{BOOKING_TEXT.VARIANT_NOT_NEEDED}</option>;
     return (
         <>
-            <option value="">{BOOKING_TEXT.VARIANT_PLACEHOLDER(service.name)}</option>
+            <option value="">{BOOKING_TEXT.VARIANT_PLACEHOLDER}</option>
             {service.variants.map((variant) => {
                 const chosen = hasItem(items, service.id, variant.id);
                 return (
