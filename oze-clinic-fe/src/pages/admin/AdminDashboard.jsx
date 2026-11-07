@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CalendarCheck, Inbox, Stethoscope, UserPlus, Wallet } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { CalendarCheck,Inbox, Stethoscope, UserPlus, Wallet } from "lucide-react";
 import BarChart from "@/components/chart/BarChart";
 import DonutChart from "@/components/chart/DonutChart";
 import ExportReportPopup from "@/components/popup/report/ExportReportPopup";
@@ -11,6 +12,7 @@ import useAsync from "@/hooks/useAsync";
 import { REPORT_PERIODS, getPendingRequests, getReport, getReportOffset } from "@/services/adminReportService";
 import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
 import { formatCurrency, formatDateTime } from "@/utils/format";
+import { ROUTES } from "@/utils/routes";
 
 const PERIOD_OPTIONS = [
     { value: REPORT_PERIODS.DAY, label: "Ngày" },
@@ -30,6 +32,11 @@ const CHART_TEXTS = {
 const REQUEST_TYPE_BADGES = {
     [REQUEST_TYPES.LEAVE]: { label: "Xin nghỉ", badge: "badge-info" },
     [REQUEST_TYPES.REFUND]: { label: "Hoàn tiền", badge: "badge-warning" },
+};
+
+const REQUEST_PAGES = {
+    [REQUEST_TYPES.LEAVE]: ROUTES.ADMIN_LEAVE_REQUESTS,
+    [REQUEST_TYPES.REFUND]: ROUTES.ADMIN_REFUNDS,
 };
 
 const MILLION = 1_000_000;
@@ -117,6 +124,7 @@ const DebtCard = ({ debts, loading, onViewAll }) => (
 );
 
 const AdminDashboard = () => {
+    const navigate = useNavigate();
     const [period, setPeriod] = useState(REPORT_PERIODS.WEEK);
     const [offset, setOffset] = useState(0);
     const [exportOpen, setExportOpen] = useState(false);
@@ -132,8 +140,7 @@ const AdminDashboard = () => {
         setOffset(0);
     };
 
-    // TODO: open the leave / refund request once those pages exist.
-    const openRequest = () => {};
+    const openRequest = (request) => navigate(`${REQUEST_PAGES[request.type]}?id=${request.id}`);
 
     // TODO: open the "Danh sách công nợ" drawer once it is built.
     const openDebts = () => {};
@@ -308,7 +315,7 @@ const AdminDashboard = () => {
                             {!requestsLoading &&
                                 requests.map((request) => {
                                     return (
-                                        <tr key={request.id}>
+                                        <tr key={`${request.type}-${request.id}`}>
                                             <td>
                                                 <StatusBadge status={request.type} labels={REQUEST_TYPE_BADGES} />
                                             </td>

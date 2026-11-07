@@ -4,9 +4,16 @@ import { Button } from '@/components/ui/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { register } from '../../services/authService';
-import { VERIFICATION_METHOD, VERIFICATION_METHOD_OPTIONS } from '../../utils/messages';
+import { getClinicToday } from '../../utils/format';
+import { PROFILE_LIMITS, VALIDATION_MESSAGES, VERIFICATION_METHOD, VERIFICATION_METHOD_OPTIONS } from '../../utils/messages';
 import { ROUTES } from '../../utils/routes';
 import { validatePhone, validatePassword, requiredMessage, isRequiredEmpty, validateEmail, normalizePhone } from '../../utils/validation';
+
+// Only the backend can tell these, and they belong next to the field.
+const SERVER_FIELD_ERRORS = {
+  [VALIDATION_MESSAGES.PHONE_IN_USE]: 'phone',
+  [VALIDATION_MESSAGES.EMAIL_IN_USE]: 'email'
+};
 
 const Register = () => {
   const navigate = useNavigate();
@@ -37,8 +44,11 @@ const Register = () => {
   const validate = () => {
     const newErrors = {};
     if (isRequiredEmpty(values.fullname)) newErrors.fullname = requiredMessage("họ và tên");
+    else if (values.fullname.trim().length > PROFILE_LIMITS.FULL_NAME_MAX) newErrors.fullname = VALIDATION_MESSAGES.FULL_NAME_TOO_LONG;
+
     if (isRequiredEmpty(values.birthdate)) newErrors.birthdate = requiredMessage("ngày sinh");
-    
+    else if (values.birthdate > getClinicToday()) newErrors.birthdate = VALIDATION_MESSAGES.BIRTHDATE_IN_FUTURE;
+
     const phoneErr = validatePhone(values.phone);
     if (phoneErr) newErrors.phone = phoneErr;
     
@@ -47,7 +57,8 @@ const Register = () => {
     // The OTP can only go to the email when one is given.
     else if (values.method === VERIFICATION_METHOD.EMAIL && isRequiredEmpty(values.email)) newErrors.email = requiredMessage("email");
     
-    const passErr = validatePassword(values.password);
+    // The backend treats a password of only spaces as empty.
+    const passErr = isRequiredEmpty(values.password) ? requiredMessage("mật khẩu") : validatePassword(values.password);
     if (passErr) newErrors.password = passErr;
     
     if (isRequiredEmpty(values.confirm_password)) {
@@ -97,6 +108,8 @@ const Register = () => {
             resendAvailableAt: result.data.resendAvailableAt
           }
         });
+      } else if (SERVER_FIELD_ERRORS[result.message]) {
+        setErrors({ [SERVER_FIELD_ERRORS[result.message]]: result.message });
       } else {
         toast.error(result.message);
       }

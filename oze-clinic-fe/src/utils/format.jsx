@@ -2,6 +2,8 @@ const WEEKDAYS = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ N
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" });
 
+const numberFormatter = new Intl.NumberFormat("vi-VN");
+
 const CLINIC_TIME_ZONE = "Asia/Ho_Chi_Minh";
 
 const CLINIC_UTC_OFFSET = "+07:00";
@@ -14,6 +16,7 @@ const clinicPartsFormatter = new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
 });
 
 const pad = (value) => String(value).padStart(2, "0");
@@ -70,6 +73,9 @@ export const formatTimeRange = (start, end) => [formatTime(start), formatTime(en
 
 export const formatCurrency = (amount) => (Number.isFinite(amount) ? currencyFormatter.format(amount) : "");
 
+// 1500000 -> "1.500.000", for amount columns that leave out the currency symbol.
+export const formatNumber = (amount) => (Number.isFinite(amount) ? numberFormatter.format(amount) : "");
+
 export const toClinicDateTime = (dateOnly, time) => {
     if (!dateOnly || !time) return null;
     const date = new Date(`${String(dateOnly).slice(0, 10)}T${time}${CLINIC_UTC_OFFSET}`);
@@ -79,6 +85,12 @@ export const toClinicDateTime = (dateOnly, time) => {
 export const getClinicToday = () => {
     const parts = getClinicParts(new Date());
     return `${parts.year}-${parts.month}-${parts.day}`;
+};
+
+// { date: "19/10/2026", time: "09:12:45" } in clinic time.
+export const getClinicDateTimeParts = (value) => {
+    const parts = getClinicParts(value);
+    return { date: `${parts.day}/${parts.month}/${parts.year}`, time: `${parts.hour}:${parts.minute}:${parts.second}` };
 };
 
 export const formatDateTime = (value) => {

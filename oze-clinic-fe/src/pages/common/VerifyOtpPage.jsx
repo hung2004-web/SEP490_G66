@@ -260,6 +260,18 @@ const VerifyOtpPage = () => {
                             Hủy thay đổi
                         </button>
                     )}
+
+                    {/* The way out once the OTP session is over: resending cannot revive it. */}
+                    {isRegister && (
+                        <button
+                            type="button"
+                            disabled={busy}
+                            className="btn btn-secondary btn-lg mt-3 w-full"
+                            onClick={() => navigate(ROUTES.REGISTER, { replace: true })}
+                        >
+                            Đăng ký lại
+                        </button>
+                    )}
                 </form>
             </Card>
         </section>

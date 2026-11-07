@@ -1,6 +1,6 @@
 import api from "./api";
-import { BACKEND_LOGIN_CODES, GENERIC_ERROR_MESSAGE, MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
-import { getDefaultMockUserId, getMockCurrentUser, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
+import { BACKEND_LOGIN_CODES, BACKEND_ROLE_NAMES, GENERIC_ERROR_MESSAGE, MESSAGES, VALIDATION_MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
+import { getDefaultMockUserId, getMockCurrentUser, getMockUsers, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
 import { clearSession, getSessionRefreshToken, getSessionToken, isAccessTokenExpired, saveSession, sessionFromAuthResult } from "./sessionStore";
 
@@ -26,7 +26,8 @@ const sendLogout = (refreshToken) => {
     api.post("/api/Auth/logout", { refreshToken }, AUTH_REQUEST_CONFIG).catch(() => { });
 };
 
-const completeSignIn = (body) => {
+// mockUserId: the signed-in mock account; for an API sign-in, the default mock user of the role.
+const completeSignIn = (body, mockUserId) => {
     if (body?.success !== true) return loginFailure(body?.code);
 
     const data = body.data;
@@ -40,16 +41,48 @@ const completeSignIn = (body) => {
         return failure(GENERIC_ERROR_MESSAGE);
     }
 
-    setMockCurrentUserId(getDefaultMockUserId(session.role));
+    setMockCurrentUserId(mockUserId ?? getDefaultMockUserId(session.role));
     saveSession(session);
     return success({ role: session.role });
 };
+
+const MOCK_SESSION_MINUTES = 60;
+
+const toBase64Url = (value) =>
+    btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(value))))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+
+// Unsigned token with the claims sessionStore reads (sub, role, FullName, exp). Only the frontend reads it.
+const mockAccessToken = (user) => {
+    const header = toBase64Url({ alg: "none", typ: "JWT" });
+    const payload = toBase64Url({
+        sub: user.id,
+        role: BACKEND_ROLE_NAMES[user.role],
+        FullName: user.fullname,
+        exp: Math.floor(Date.now() / 1000) + MOCK_SESSION_MINUTES * 60,
+    });
+    return `${header}.${payload}.mock`;
+};
+
+// Mock accounts in utils/data/mockData (password "password123"), used when the API cannot be reached.
+const mockSignIn = async ({ identifier, password }) => {
+    await wait(MOCK_DELAY_MS);
+    const user = getMockUsers().find((candidate) => candidate.phone === identifier || candidate.email === identifier);
+    if (!user || user.password !== password) return loginFailure(BACKEND_LOGIN_CODES.INVALID_CREDENTIALS);
+    return completeSignIn(success({ token: mockAccessToken(user), refreshToken: `mock-refresh-${user.id}` }), user.id);
+};
+
+// No ApiResponse (network error, timeout, missing VITE_API_URL) or a server error such as the database being down.
+const isApiUnavailable = (error) => typeof error.response?.data?.success !== "boolean" || error.response.status >= 500;
 
 export const signIn = async ({ identifier, password }) => {
     try {
         const response = await api.post("/api/Auth/login", { identifier, password }, AUTH_REQUEST_CONFIG);
         return completeSignIn(response.data);
     } catch (error) {
+        if (isApiUnavailable(error)) return mockSignIn({ identifier, password });
         return loginFailure(error.response?.data?.code);
     }
 };
@@ -67,16 +100,44 @@ export const signOut = () => {
 
 const GENERIC_ERROR = "Có lỗi xảy ra, vui lòng thử lại sau.";
 
-// The backend answers 400 with the same ApiResponse shape, so screens only check result.success.
-// Statuses in ERROR_PAGE_STATUSES are already sent to the error page by the interceptor in "./api".
+const PHONE_EXISTS_PATTERN = /^Patient with phone number .+ already exists/;
+
+// The texts of ErrorConstants.AuthMessage that Register can show. TODO(be): match stable codes once these responses have them.
+const REGISTER_MESSAGES = {
+    "Full name is invalid. Please check again.": invalidMessage("Họ và tên"),
+    "Date of birth is invalid. Please check again.": invalidMessage("Ngày sinh"),
+    "Phone number is invalid. Please check again.": VALIDATION_MESSAGES.PHONE_INVALID,
+    "Email is invalid. Please check again.": VALIDATION_MESSAGES.EMAIL_INVALID,
+    "Email already exists in the system.": VALIDATION_MESSAGES.EMAIL_IN_USE,
+    "OTP is invalid. Please check again.": invalidMessage("Mã xác minh"),
+    "OTP has been sent to your phone number.": "Mã xác minh đã được gửi đến số điện thoại của bạn.",
+    "OTP has been sent to your email.": "Mã xác minh đã được gửi đến email của bạn.",
+    "Could not send the OTP. Please try again later.": "Không thể gửi mã xác minh. Vui lòng thử lại sau.",
+    "OTP has expired. Please register again.": "Mã xác minh đã hết hạn. Vui lòng đăng ký lại.",
+    "Please wait before requesting another OTP.": "Vui lòng chờ một lát trước khi yêu cầu mã mới.",
+    "This phone number belongs to more than one patient record. Please contact the reception desk.":
+        "Số điện thoại này thuộc nhiều hồ sơ bệnh nhân. Vui lòng liên hệ quầy lễ tân.",
+    "Too many codes were requested for this phone number or email. Please try again later":
+        "Bạn đã yêu cầu quá nhiều mã cho số điện thoại hoặc email này. Vui lòng thử lại sau.",
+    "Too many requests. Please wait a moment and try again": "Có quá nhiều yêu cầu. Vui lòng chờ một lát rồi thử lại.",
+    "Create account success!": "Tạo tài khoản thành công!",
+};
+
+const withVietnameseMessage = (body) => {
+    if (PHONE_EXISTS_PATTERN.test(body.message)) return { ...body, message: VALIDATION_MESSAGES.PHONE_IN_USE };
+    return { ...body, message: REGISTER_MESSAGES[body.message] ?? (body.success ? body.message : GENERIC_ERROR) };
+};
+
+// The backend answers failures with the same ApiResponse shape, so screens only check result.success.
+// Every failure stays on the screen, also 429 and 5xx, which would otherwise leave the form for the error page.
 const postApi = async (url, body) => {
     try {
-        const response = await api.post(url, body);
-        return response.data;
+        const response = await api.post(url, body, AUTH_REQUEST_CONFIG);
+        return withVietnameseMessage(response.data);
     } catch (error) {
         // Anything that is not an ApiResponse (e.g. the HTML 404 page when VITE_API_URL is missing) gets a generic message.
         const data = error.response?.data;
-        return typeof data?.success === "boolean" ? data : failure(GENERIC_ERROR);
+        return typeof data?.success === "boolean" ? withVietnameseMessage(data) : failure(GENERIC_ERROR);
     }
 };
 
