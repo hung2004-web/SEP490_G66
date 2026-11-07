@@ -11,7 +11,7 @@ import useSession from "@/hooks/useSession";
 import { getMyAppointments, getMyInvoices, getMyTreatmentPlans } from "@/services/patientDashboardService";
 import { formatCurrency, formatDate, formatTime, formatWeekday, toDateOnly } from "@/utils/format";
 import { APPOINTMENT_STATUS, EXAMINATION_STATUS, PAYMENT_STATUS, PLAN_STATUS, STAGE_STATUS } from "@/utils/messages";
-import { ROUTES } from "@/utils/routes";
+import { ROUTES, getTreatmentPlanRoute } from "@/utils/routes";
 
 const EMPTY_VALUE = "—";
 const NEXT_APPOINTMENTS_LIMIT = 3;
@@ -167,7 +167,7 @@ const PatientDashboard = () => {
                     label="Kế hoạch đang điều trị"
                     value={planStat.value}
                     caption={planStat.caption}
-                    to={ROUTES.TREATMENT_PLANS}
+                    to={getTreatmentPlanRoute()}
                     loading={plans.loading}
                 />
                 <StatCard
@@ -181,7 +181,7 @@ const PatientDashboard = () => {
                               ? `${unpaidInvoices.length} hóa đơn · thanh toán tại quầy`
                               : "Không có hóa đơn chưa thanh toán"
                     }
-                    to={ROUTES.INVOICES}
+                    to={ROUTES.PAYMENT_DEBTS}
                     loading={invoices.loading}
                 />
             </div>

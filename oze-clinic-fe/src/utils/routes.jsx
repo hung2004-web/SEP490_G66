@@ -19,13 +19,12 @@ export const ROUTES = {
     CHANGE_PASSWORD: "/change-password",
     DASHBOARD: "/dashboard",
     APPOINTMENTS: "/appointments",
-    TREATMENT_PLANS: "/treatment-plans",
     MEDICAL_RECORD: "/medical-record",
-    INVOICES: "/invoices",
     APPOINTMENT_DETAIL: "/appointments/:appointmentId",
-    TREATMENT_PLAN_DETAIL: "/treatment-plans/:planId",
-    INVOICE_DETAIL: "/invoices/:invoiceId",
     MEDICAL_RECORD_DETAIL: "/medical-record/:examinationId",
+    PAYMENT_DEBTS: "/payments/debts",
+    PAYMENT_HISTORY: "/payments/history",
+    REFUND_REQUESTS: "/payments/refunds",
     // Staff pages use a prefix per role so they never clash with the patient pages above.
     WORK_SCHEDULE: "/work-schedule",
     DOCTOR_APPOINTMENTS: "/doctor/appointments",
@@ -58,7 +57,7 @@ export const ROUTES = {
 export const ROLE_ROUTES = [
     {
         roles: [USER_ROLES.PATIENT],
-        paths: [ROUTES.APPOINTMENTS, ROUTES.TREATMENT_PLANS, ROUTES.MEDICAL_RECORD, ROUTES.INVOICES]
+        paths: [ROUTES.APPOINTMENTS, ROUTES.MEDICAL_RECORD, ROUTES.PAYMENT_DEBTS, ROUTES.PAYMENT_HISTORY, ROUTES.REFUND_REQUESTS]
     },
     {
         roles: [USER_ROLES.DOCTOR],
@@ -104,9 +103,18 @@ export const getServiceDetailRoute = (serviceId) => generatePath(ROUTES.SERVICE_
 
 export const getAppointmentDetailRoute = (appointmentId) => generatePath(ROUTES.APPOINTMENT_DETAIL, { appointmentId: String(appointmentId) });
 
-export const getTreatmentPlanDetailRoute = (planId) => generatePath(ROUTES.TREATMENT_PLAN_DETAIL, { planId: String(planId) });
+export const MEDICAL_RECORD_QUERY = { TAB: "tab", PLAN: "plan" };
+export const PAYMENT_HISTORY_QUERY = { INVOICE: "invoice" };
 
-export const getInvoiceDetailRoute = (invoiceId) => generatePath(ROUTES.INVOICE_DETAIL, { invoiceId: String(invoiceId) });
+export const MEDICAL_RECORD_TABS = { PLAN: "plan", FILM: "film", TEETH: "teeth", HIST: "hist" };
+
+export const getTreatmentPlanRoute = (planId) => {
+    const params = new URLSearchParams({ [MEDICAL_RECORD_QUERY.TAB]: MEDICAL_RECORD_TABS.PLAN });
+    if (planId != null) params.set(MEDICAL_RECORD_QUERY.PLAN, String(planId));
+    return `${ROUTES.MEDICAL_RECORD}?${params}`;
+};
+
+export const getPaymentHistoryRoute = (invoiceId) => `${ROUTES.PAYMENT_HISTORY}?${new URLSearchParams({ [PAYMENT_HISTORY_QUERY.INVOICE]: String(invoiceId) })}`;
 
 export const getMedicalRecordDetailRoute = (examinationId) => generatePath(ROUTES.MEDICAL_RECORD_DETAIL, { examinationId: String(examinationId) });
 

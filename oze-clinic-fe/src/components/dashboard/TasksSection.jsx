@@ -4,7 +4,7 @@ import DetailLink from "@/components/ui/DetailLink";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCurrency, formatDate } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE, INVOICE_PAYMENT_STATUS, TREATMENT_PLAN_STATUS } from "@/utils/messages";
-import { getInvoiceDetailRoute, getTreatmentPlanDetailRoute } from "@/utils/routes";
+import { ROUTES, getTreatmentPlanRoute } from "@/utils/routes";
 
 const TITLE_ID = "patient-dashboard-tasks";
 
@@ -20,7 +20,7 @@ const describeTask = (task) => {
             statusLabels: TREATMENT_PLAN_STATUS,
             linkLabel: "Xem kế hoạch",
             linkContext: task.planName,
-            to: getTreatmentPlanDetailRoute(task.id),
+            to: getTreatmentPlanRoute(task.id),
         };
     }
 
@@ -33,9 +33,9 @@ const describeTask = (task) => {
         ]),
         status: task.status,
         statusLabels: INVOICE_PAYMENT_STATUS,
-        linkLabel: "Xem hóa đơn",
+        linkLabel: "Xem công nợ",
         linkContext: task.invoiceNumber,
-        to: getInvoiceDetailRoute(task.id),
+        to: ROUTES.PAYMENT_DEBTS,
     };
 };
 

@@ -1,4 +1,5 @@
 import { getMockCurrentUser } from "../utils/data/mockData";
+import { buildEmptyMedicalRecordData, buildMedicalRecordData } from "../utils/data/mockMedicalRecord";
 import { MOCK_DASHBOARD_PATIENT_ID, MOCK_DOCTORS, MOCK_VISIT_SUMMARIES, buildPatientDashboardData } from "../utils/data/mockPatientDashboard";
 import { getClinicToday, parseDateOnly, toClinicDateTime, toDateOnly } from "../utils/format";
 import { APPOINTMENT_CHANGE_DEADLINE_HOURS, APPOINTMENT_STATUS, BOOKING_MAX_DAYS_AHEAD, GENERIC_ERROR_MESSAGE } from "../utils/messages";
@@ -32,6 +33,17 @@ const loadMock = async (pick, emptyValue = []) => {
     if (mode === "error") return failure(GENERIC_ERROR_MESSAGE);
     if (getMockCurrentUser()?.id !== MOCK_DASHBOARD_PATIENT_ID || mode === "empty") return success(emptyValue);
     return success(pick(buildPatientDashboardData(new Date(), mode)));
+};
+
+const abortError = () => new DOMException("Aborted", "AbortError");
+
+export const getMyMedicalRecord = async ({ signal } = {}) => {
+    await wait(MOCK_DELAY_MS);
+    if (signal?.aborted) throw abortError();
+    const mode = readMockMode();
+    if (mode === "error") return failure(GENERIC_ERROR_MESSAGE);
+    if (getMockCurrentUser()?.id !== MOCK_DASHBOARD_PATIENT_ID || mode === "empty") return success(buildEmptyMedicalRecordData());
+    return success(buildMedicalRecordData(mode));
 };
 
 const applyPatch = (appointment) =>

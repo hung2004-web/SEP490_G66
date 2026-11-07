@@ -68,6 +68,8 @@ export const RESET_PASSWORD_REDIRECT_MS = 3000;
 
 export const CLINIC_HOTLINE = { DISPLAY: "0866 866 010", TEL: "0866866010" };
 
+export const CLINIC_HOTLINES_TEXT = "0866.866.010 – 0866.866.108";
+
 export const CLINIC_EMAIL = "nhakhoaoze@gmail.com";
 
 export const CLINIC_ADDRESS = "Số nhà 55-59, tổ 4, quốc lộ 3, Đông Anh, Hà Nội";
@@ -187,3 +189,110 @@ export const INVOICE_PAYMENT_STATUS = {
 };
 
 export const PAYMENT_METHOD_LABELS = { CASH: "Tiền mặt", BANK_TRANSFER: "Chuyển khoản", QR_TRANSFER: "Chuyển khoản QR" };
+
+export const MEDICAL_RECORD_PLAN_STATUS = {
+    proposed: { label: "Chờ đồng ý", badge: "badge-warning" },
+    active: { label: "Đang điều trị", badge: "badge-info" },
+    paused: { label: "Tạm dừng", badge: "badge-neutral" },
+    done: { label: "Hoàn thành", badge: "badge-success" },
+    stopped: { label: "Đã dừng", badge: "badge-danger" },
+};
+
+export const MEDICAL_RECORD_STAGE_STATUS = {
+    done: { label: "Đã làm", badge: "badge-success" },
+    next: { label: "Bước tiếp theo", badge: "badge-info" },
+    todo: { label: "Chưa đến", badge: "badge-neutral" },
+};
+
+export const MEDICAL_RECORD_PAYMENT_STATUS = {
+    paid: { label: "Đã trả", badge: "badge-success" },
+    due: { label: "Sắp đến hạn", badge: "badge-warning" },
+    overdue: { label: "Quá hạn", badge: "badge-danger" },
+    later: { label: "Chưa đến", badge: "badge-neutral" },
+};
+
+export const MEDICAL_RECORD_TOOTH_STATUS = {
+    condition: { label: "Cần điều trị", badge: "badge-danger" },
+    planned: { label: "Kế hoạch", badge: "badge-danger" },
+    treating: { label: "Đang điều trị", badge: "badge-warning" },
+    done: { label: "Đã điều trị", badge: "badge-info" },
+    watch: { label: "Theo dõi", badge: "badge-neutral" },
+};
+
+export const MEDICAL_RECORD_FILM_STATUS = { concluded: { label: "Đã có kết luận", badge: "badge-success" } };
+
+export const MEDICAL_RECORD_APPOINTMENT_BADGE = {
+    confirmed: "badge-info",
+    pending: "badge-warning",
+    done: "badge-success",
+    cancelled: "badge-neutral",
+    noshow: "badge-danger",
+    checkedin: "badge-info",
+    inservice: "badge-info",
+};
+
+export const MEDICAL_RECORD_FILM_PLACE = { clinic: "Tại phòng khám", partner: "Trung tâm X-quang liên kết" };
+
+export const MEDICAL_RECORD_TOOTH_KIND = {
+    caries: "Sâu răng",
+    filling: "Trám răng",
+    pulp: "Viêm tủy",
+    rct: "Điều trị tủy",
+    crown: "Mão / bọc sứ",
+    wear: "Mẻ, đổi màu",
+    impacted: "Răng mọc lệch",
+};
+
+export const MEDICAL_RECORD_TOOTH_SURFACE = { O: "mặt nhai", I: "rìa cắn", B: "mặt ngoài", L: "mặt trong", P: "mặt trong", M: "mặt gần", D: "mặt xa" };
+
+export const MEDICAL_RECORD_TOOTH_POSITION = [
+    "",
+    "Răng cửa giữa",
+    "Răng cửa bên",
+    "Răng nanh",
+    "Răng hàm nhỏ thứ nhất",
+    "Răng hàm nhỏ thứ hai",
+    "Răng hàm lớn thứ nhất",
+    "Răng hàm lớn thứ hai",
+    "Răng khôn",
+];
+
+export const MEDICAL_RECORD_TOOTH_QUADRANT = ["", "hàm trên bên phải", "hàm trên bên trái", "hàm dưới bên trái", "hàm dưới bên phải"];
+
+export const MEDICAL_RECORD_STATUS_GUIDE = [
+    {
+        title: "Kế hoạch điều trị",
+        labels: MEDICAL_RECORD_PLAN_STATUS,
+        items: [
+            { key: "proposed", meaning: "Bác sĩ đã lập kế hoạch, bệnh nhân chưa đồng ý.", when: "Bác sĩ lập kế hoạch sau khi khám.", patient: "Trao đổi với bác sĩ; đồng ý tại phòng khám (ký trên bệnh án)." },
+            { key: "active", meaning: "Đang thực hiện các bước.", when: "Bệnh nhân đồng ý và bắt đầu bước đầu tiên.", patient: "Theo dõi bước tiếp theo và đợt thanh toán." },
+            { key: "paused", meaning: "Tạm ngưng, kế hoạch vẫn giữ.", when: "Bệnh nhân xin tạm ngưng hoặc chờ điều kiện (ví dụ xét nghiệm).", patient: "Liên hệ phòng khám khi muốn tiếp tục." },
+            { key: "done", meaning: "Đã làm xong tất cả các bước.", when: "Bác sĩ hoàn tất bước cuối.", patient: "Theo dõi lịch tái khám định kỳ (nếu có)." },
+            {
+                key: "stopped",
+                meaning: "Bệnh nhân không tiếp tục kế hoạch.",
+                when: "Bác sĩ báo lý do, chủ phòng khám quyết định quyết toán; phần chưa làm có thể được hoàn tiền.",
+                patient: "Xem quyết toán trong Lịch sử thanh toán.",
+            },
+        ],
+    },
+    {
+        title: "Bước điều trị",
+        labels: MEDICAL_RECORD_STAGE_STATUS,
+        items: [
+            { key: "done", meaning: "Bước đã thực hiện.", when: "Bác sĩ ghi nhận xử trí của buổi khám.", patient: "—" },
+            { key: "next", meaning: "Bước sẽ làm ở buổi kế tiếp.", when: "Bước trước đó đã làm xong.", patient: "Xem ngày hẹn." },
+            { key: "todo", meaning: "Bước còn lại trong kế hoạch.", when: "—", patient: "—" },
+        ],
+    },
+    {
+        title: "Đợt thanh toán",
+        labels: MEDICAL_RECORD_PAYMENT_STATUS,
+        items: [
+            { key: "paid", meaning: "Đã thanh toán đủ đợt này.", when: "Lễ tân xác nhận nhận tiền.", patient: "—" },
+            { key: "due", meaning: "Sắp đến mốc phải thanh toán.", when: "Mốc điều trị gắn với đợt sắp diễn ra (ví dụ buổi gắn mắc cài).", patient: "Chuẩn bị tiền, trả tại quầy hoặc chuyển khoản." },
+            { key: "overdue", meaning: "Đã qua mốc mà chưa thanh toán.", when: "Mốc đã diễn ra, chưa có xác nhận nhận tiền.", patient: "Thanh toán sớm hoặc gọi phòng khám." },
+            { key: "later", meaning: "Đợt của các bước sau.", when: "—", patient: "—" },
+        ],
+    },
+];

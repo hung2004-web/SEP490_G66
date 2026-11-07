@@ -16,6 +16,7 @@ import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
 import MyAppointments from "../pages/patient/MyAppointments";
 import AppointmentDetail from "../pages/patient/AppointmentDetail";
+import MedicalRecord from "../pages/patient/MedicalRecord";
 import AuditLogManagement from "../pages/admin/AuditLogManagement";
 import LeaveRequestManagement from "../pages/admin/LeaveRequestManagement";
 import RefundRequestManagement from "../pages/admin/RefundRequestManagement";
@@ -120,6 +121,12 @@ const ROLE_PAGES = {
             <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
+    [ROUTES.MEDICAL_RECORD]: (
+        <Routes>
+            <Route path=":examinationId?" element={<MedicalRecord />} />
+            <Route path="*" element={NOT_FOUND} />
+        </Routes>
+    ),
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />,
     [ROUTES.ADMIN_STAFF]: <StaffManagement />,
@@ -134,9 +141,9 @@ const ROLE_PAGES = {
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
 const COMING_SOON_TITLES = {
     [ROUTES.APPOINTMENTS]: "Lịch hẹn của tôi",
-    [ROUTES.TREATMENT_PLANS]: "Kế hoạch điều trị",
-    [ROUTES.MEDICAL_RECORD]: "Hồ sơ bệnh án",
-    [ROUTES.INVOICES]: "Hóa đơn",
+    [ROUTES.PAYMENT_DEBTS]: "Công nợ & đợt thanh toán",
+    [ROUTES.PAYMENT_HISTORY]: "Lịch sử thanh toán",
+    [ROUTES.REFUND_REQUESTS]: "Yêu cầu hoàn tiền",
     [ROUTES.DOCTOR_QUEUE]: "Hàng chờ khám",
     [ROUTES.DOCTOR_IMAGING_REVIEWS]: "Duyệt kết quả chụp",
     [ROUTES.DOCTOR_APPOINTMENTS]: "Lịch hẹn khám",

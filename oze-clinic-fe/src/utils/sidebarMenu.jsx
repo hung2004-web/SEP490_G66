@@ -145,24 +145,25 @@ const SIDEBAR_MENU = {
             label: "Lịch hẹn",
             icon: CalendarDays,
             children: [
-                { key: "book-appointment", label: "Đặt lịch hẹn", to: ROUTES.BOOK_APPOINTMENT },
                 { key: "my-appointments", label: "Lịch hẹn của tôi", to: ROUTES.APPOINTMENTS },
+                { key: "book-appointment", label: "Đặt lịch hẹn", to: ROUTES.BOOK_APPOINTMENT },
             ],
         },
         {
             key: "treatment",
             label: "Điều trị",
             icon: ClipboardList,
-            children: [
-                { key: "treatment-plans", label: "Kế hoạch điều trị", to: ROUTES.TREATMENT_PLANS },
-                { key: "medical-record", label: "Hồ sơ bệnh án", to: ROUTES.MEDICAL_RECORD },
-            ],
+            children: [{ key: "medical-record", label: "Sổ khám bệnh", to: ROUTES.MEDICAL_RECORD }],
         },
         {
             key: "billing",
             label: "Thanh toán",
             icon: Receipt,
-            children: [{ key: "invoices", label: "Hóa đơn", to: ROUTES.INVOICES }],
+            children: [
+                { key: "debts", label: "Công nợ & đợt thanh toán", to: ROUTES.PAYMENT_DEBTS },
+                { key: "payment-history", label: "Lịch sử thanh toán", to: ROUTES.PAYMENT_HISTORY },
+                { key: "refund-requests", label: "Yêu cầu hoàn tiền", to: ROUTES.REFUND_REQUESTS },
+            ],
         },
         ACCOUNT_GROUP,
     ],

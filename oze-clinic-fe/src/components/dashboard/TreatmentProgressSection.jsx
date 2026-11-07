@@ -4,7 +4,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { cx } from "@/utils/cx";
 import { formatDate } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE, TREATMENT_STAGE_STATUS } from "@/utils/messages";
-import { ROUTES } from "@/utils/routes";
+import { getTreatmentPlanRoute } from "@/utils/routes";
 
 const TITLE_ID = "patient-dashboard-progress";
 const PLAN_TITLE_ID = "patient-dashboard-progress-plan";
@@ -22,7 +22,7 @@ const TreatmentProgressSection = ({ plan = null, progress = null, loading = fals
             id={TITLE_ID}
             title="Tiến trình điều trị"
             busy={loading}
-            link={loaded && plan && { to: ROUTES.TREATMENT_PLANS, label: "Xem kế hoạch" }}
+            link={loaded && plan && { to: getTreatmentPlanRoute(), label: "Xem kế hoạch" }}
             error={!loading && failed && GENERIC_ERROR_MESSAGE}
             empty={loaded && !plan && { icon: Stethoscope, text: "Bạn chưa có kế hoạch điều trị đang thực hiện." }}
         >
