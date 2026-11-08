@@ -1,7 +1,9 @@
 import { getMockCurrentUser } from "../utils/data/mockData";
 import { buildEmptyMedicalRecordData, buildMedicalRecordData } from "../utils/data/mockMedicalRecord";
+import { buildPatientDebtMock } from "../utils/data/mockPatientDebts";
 import { MOCK_DASHBOARD_PATIENT_ID, MOCK_DOCTORS, MOCK_VISIT_SUMMARIES, buildPatientDashboardData } from "../utils/data/mockPatientDashboard";
 import { getClinicToday, parseDateOnly, toClinicDateTime, toDateOnly } from "../utils/format";
+import { buildDebtItems } from "../utils/patientDebt";
 import { APPOINTMENT_CHANGE_DEADLINE_HOURS, APPOINTMENT_STATUS, BOOKING_MAX_DAYS_AHEAD, GENERIC_ERROR_MESSAGE } from "../utils/messages";
 
 const MOCK_DELAY_MS = 300;
@@ -44,6 +46,15 @@ export const getMyMedicalRecord = async ({ signal } = {}) => {
     if (mode === "error") return failure(GENERIC_ERROR_MESSAGE);
     if (getMockCurrentUser()?.id !== MOCK_DASHBOARD_PATIENT_ID || mode === "empty") return success(buildEmptyMedicalRecordData());
     return success(buildMedicalRecordData(mode));
+};
+
+export const getMyDebts = async ({ signal } = {}) => {
+    await wait(MOCK_DELAY_MS);
+    if (signal?.aborted) throw abortError();
+    const mode = readMockMode();
+    if (mode === "error") return failure(GENERIC_ERROR_MESSAGE);
+    if (getMockCurrentUser()?.id !== MOCK_DASHBOARD_PATIENT_ID || mode === "empty") return success({ items: [] });
+    return success({ items: buildDebtItems(buildMedicalRecordData(mode), buildPatientDebtMock(mode)) });
 };
 
 const applyPatch = (appointment) =>
