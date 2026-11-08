@@ -127,7 +127,10 @@ const usePaymentHistoryNavigation = () => {
 
     useEffect(() => {
         if (settled.current.nav !== navEvent) settled.current = { nav: navEvent, element: document.activeElement };
-        if (load.status === "loading") return;
+        if (load.status === "loading") {
+            if (load.source === "nav" && canTakeFocus(document.activeElement, [navEvent.focusAtNav, settled.current.element])) h1Ref.current?.focus({ preventScroll: true });
+            return;
+        }
         if (handled.current.nav === navEvent && handled.current.loadId === load.id) return;
         const newLoad = handled.current.loadId !== load.id;
         handled.current = { nav: navEvent, loadId: load.id };
