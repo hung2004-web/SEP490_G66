@@ -33,6 +33,16 @@ export const toDateOnly = (date) => `${date.getFullYear()}-${pad(date.getMonth()
 export const getWeekStart = (date = new Date()) =>
     toDateOnly(new Date(date.getFullYear(), date.getMonth(), date.getDate() - ((date.getDay() + 6) % 7)));
 
+export const DAY_MS = 86_400_000;
+
+export const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+
+export const getIsoWeek = (date) => {
+    const thursday = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() + 3 - ((date.getDay() + 6) % 7)));
+    const firstDay = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 1));
+    return { week: Math.ceil(((thursday - firstDay) / DAY_MS + 1) / 7), year: thursday.getUTCFullYear() };
+};
+
 export const parseDateOnly = (value) => {
     if (!value) return null;
     const [year, month, day] = String(value).slice(0, 10).split("-").map(Number);

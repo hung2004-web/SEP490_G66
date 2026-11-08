@@ -57,7 +57,7 @@ export const ROUTES = {
 export const ROLE_ROUTES = [
     {
         roles: [USER_ROLES.PATIENT],
-        paths: [ROUTES.APPOINTMENTS, ROUTES.MEDICAL_RECORD, ROUTES.PAYMENT_DEBTS, ROUTES.PAYMENT_HISTORY, ROUTES.REFUND_REQUESTS]
+        paths: [ROUTES.APPOINTMENTS, ROUTES.BOOK_APPOINTMENT, ROUTES.MEDICAL_RECORD, ROUTES.PAYMENT_DEBTS, ROUTES.PAYMENT_HISTORY, ROUTES.REFUND_REQUESTS]
     },
     {
         roles: [USER_ROLES.DOCTOR],
@@ -115,6 +115,8 @@ export const getTreatmentPlanRoute = (planId) => {
 };
 
 export const getPaymentHistoryRoute = (invoiceId) => `${ROUTES.PAYMENT_HISTORY}?${new URLSearchParams({ [PAYMENT_HISTORY_QUERY.INVOICE]: String(invoiceId) })}`;
+
+export const getPaymentDebtDetailRoute = (debtId) => `${ROUTES.PAYMENT_DEBTS}/${debtId}`;
 
 export const getMedicalRecordDetailRoute = (examinationId) => generatePath(ROUTES.MEDICAL_RECORD_DETAIL, { examinationId: String(examinationId) });
 

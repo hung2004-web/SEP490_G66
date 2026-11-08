@@ -1,12 +1,13 @@
-import { useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { Check } from "lucide-react";
 import { cx } from "@/utils/cx";
 import { SORT_OPTIONS } from "@/utils/medicalRecord";
 
 const isPopoverNode = (node) => node instanceof Element && (node.hasAttribute("data-record-popover") || node.hasAttribute("data-record-popover-opener"));
 
-const PopoverPanel = ({ label, onDismiss, className, children }) => {
+const PopoverPanel = ({ label, openerId, onDismiss, className, children }) => {
     const dismiss = useEffectEvent(onDismiss);
+    const panelRef = useRef(null);
 
     useEffect(() => {
         const handleClick = (event) => {
@@ -18,16 +19,24 @@ const PopoverPanel = ({ label, onDismiss, className, children }) => {
             event.preventDefault();
             dismiss(true);
         };
+        const handleFocusIn = (event) => {
+            const target = event.target;
+            if (panelRef.current?.contains(target) || (target instanceof Element && target.id === openerId)) return;
+            dismiss(false);
+        };
         document.addEventListener("click", handleClick);
         document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener("focusin", handleFocusIn);
         return () => {
             document.removeEventListener("click", handleClick);
             document.removeEventListener("keydown", handleKeyDown);
+            document.removeEventListener("focusin", handleFocusIn);
         };
-    }, []);
+    }, [openerId]);
 
     return (
         <div
+            ref={panelRef}
             data-record-popover=""
             role="dialog"
             aria-label={label}
@@ -38,19 +47,19 @@ const PopoverPanel = ({ label, onDismiss, className, children }) => {
     );
 };
 
-const GROUP_TITLE_CLASS = "mx-1 mb-1.5 mt-0.5 text-caption font-semibold uppercase tracking-wide text-placeholder";
+const GROUP_TITLE_CLASS = "mx-1 mb-1.5 mt-0.5 text-caption font-semibold uppercase tracking-wide";
 
-export const FilterPopover = ({ groups, filters, onToggle, onClear, onDone, onDismiss }) => (
-    <PopoverPanel label="Lọc phiếu khám" onDismiss={onDismiss} className="w-75">
+export const FilterPopover = ({ groups, filters, onToggle, onClear, onDone, onDismiss, openerId, label = "Lọc phiếu khám", dimEmpty = true, className = "w-75", titleClassName = "text-placeholder" }) => (
+    <PopoverPanel label={label} openerId={openerId} onDismiss={onDismiss} className={className}>
         {groups.map((group) => (
             <div key={group.key} className="border-b border-border px-1 pb-2 pt-1.5">
-                <p className={GROUP_TITLE_CLASS}>{group.title}</p>
+                <p className={cx(GROUP_TITLE_CLASS, titleClassName)}>{group.title}</p>
                 {group.options.map((option) => (
                     <label
                         key={option.value}
                         className={cx(
                             "flex cursor-pointer items-center gap-2 rounded-md p-1.5 text-body-sm hover:bg-surface-tint",
-                            option.count === 0 && "opacity-55",
+                            dimEmpty && option.count === 0 && "opacity-55",
                         )}
                     >
                         <input
@@ -60,7 +69,7 @@ export const FilterPopover = ({ groups, filters, onToggle, onClear, onDone, onDi
                             onChange={() => onToggle(group.key, option.value)}
                         />
                         <span>{option.label}</span>
-                        <span className="num ml-auto text-caption text-placeholder">{option.count}</span>
+                        <span className={cx("num ml-auto text-caption", dimEmpty ? "text-placeholder" : "text-muted")}>{option.count}</span>
                     </label>
                 ))}
             </div>
@@ -76,10 +85,10 @@ export const FilterPopover = ({ groups, filters, onToggle, onClear, onDone, onDi
     </PopoverPanel>
 );
 
-export const SortPopover = ({ sort, onSelect, onDismiss }) => (
-    <PopoverPanel label="Sắp xếp theo" onDismiss={onDismiss} className="w-60">
-        <p className={cx(GROUP_TITLE_CLASS, "px-2 py-1")}>Sắp xếp theo</p>
-        {SORT_OPTIONS.map((option) => {
+export const SortPopover = ({ sort, onSelect, onDismiss, openerId, options = SORT_OPTIONS, className = "w-60", titleClassName = "text-placeholder" }) => (
+    <PopoverPanel label="Sắp xếp theo" openerId={openerId} onDismiss={onDismiss} className={className}>
+        <p className={cx(GROUP_TITLE_CLASS, titleClassName, "px-2 py-1")}>Sắp xếp theo</p>
+        {options.map((option) => {
             const active = option.value === sort;
             return (
                 <button
@@ -93,6 +102,7 @@ export const SortPopover = ({ sort, onSelect, onDismiss }) => (
                 >
                     {active ? <Check className="size-3.5" aria-hidden="true" /> : <span className="w-3.5" aria-hidden="true" />}
                     {option.label}
+                    {active && <span className="sr-only"> (đang chọn)</span>}
                 </button>
             );
         })}

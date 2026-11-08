@@ -1,17 +1,6 @@
 import { ArrowLeft, ArrowRight, CalendarCheck, CalendarDays } from "lucide-react";
 import { cx } from "@/utils/cx";
-import { formatDate, formatDayMonth, getWeekStart, parseDateOnly, toDateOnly } from "@/utils/format";
-
-const DAY_MS = 86_400_000;
-
-const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-
-// ISO 8601 week number: weeks start on Monday and week 1 holds the first Thursday of the year.
-const isoWeek = (date) => {
-    const thursday = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() + 3 - ((date.getDay() + 6) % 7)));
-    const firstDay = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 1));
-    return { week: Math.ceil(((thursday - firstDay) / DAY_MS + 1) / 7), year: thursday.getUTCFullYear() };
-};
+import { addDays, formatDate, formatDayMonth, getIsoWeek, getWeekStart, parseDateOnly, toDateOnly } from "@/utils/format";
 
 // Opens the browser's date picker; older browsers just focus the field.
 const openPicker = (input) => {
@@ -28,7 +17,7 @@ const openPicker = (input) => {
 const WeekPicker = ({ id, value, onChange, label = "Chọn tuần", className }) => {
     const monday = parseDateOnly(value);
     const sunday = addDays(monday, 6);
-    const { week, year } = isoWeek(monday);
+    const { week, year } = getIsoWeek(monday);
     const isCurrent = value === getWeekStart();
     const range = `${formatDayMonth(toDateOnly(monday))} – ${formatDate(toDateOnly(sunday))}`;
 
