@@ -215,7 +215,7 @@ const PLANS = [
         pays: [
             pay("Đợt 1", "Trả trước 1/3 trước khi gắn mắc cài", 9000000, "paid", "Đã trả 15/10/2026"),
             pay("Đợt 2", "Trả 2/3 số còn lại khi gắn mắc cài", 12000000, "due", "Đến hạn 05/11/2026"),
-            pay("Đợt 3", "Trả hết sau 6 tháng điều trị", 6000000, "later", "Dự kiến 05/2027"),
+            pay("Đợt 3", "Trả hết sau 6 tháng điều trị", 6000000, "later", "Dự kiến 04/2027"),
         ],
         payRule: "Theo hình thức thanh toán trên bệnh án chỉnh nha",
     },

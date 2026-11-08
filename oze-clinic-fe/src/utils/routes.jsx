@@ -116,6 +116,8 @@ export const getTreatmentPlanRoute = (planId) => {
 
 export const getPaymentHistoryRoute = (invoiceId) => `${ROUTES.PAYMENT_HISTORY}?${new URLSearchParams({ [PAYMENT_HISTORY_QUERY.INVOICE]: String(invoiceId) })}`;
 
+export const getPaymentDebtDetailRoute = (debtId) => `${ROUTES.PAYMENT_DEBTS}/${debtId}`;
+
 export const getMedicalRecordDetailRoute = (examinationId) => generatePath(ROUTES.MEDICAL_RECORD_DETAIL, { examinationId: String(examinationId) });
 
 export const getErrorRoute = (code) => generatePath(ROUTES.ERROR, { code: String(code) });

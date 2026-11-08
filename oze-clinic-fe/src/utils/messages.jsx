@@ -263,6 +263,13 @@ export const MEDICAL_RECORD_TOOTH_POSITION = [
 
 export const MEDICAL_RECORD_TOOTH_QUADRANT = ["", "hàm trên bên phải", "hàm trên bên trái", "hàm dưới bên trái", "hàm dưới bên phải"];
 
+const PAYMENT_STATUS_GUIDE_ITEMS = [
+    { key: "paid", meaning: "Đã thanh toán đủ đợt này.", when: "Lễ tân xác nhận nhận tiền.", patient: "—" },
+    { key: "due", meaning: "Sắp đến mốc phải thanh toán.", when: "Mốc điều trị gắn với đợt sắp diễn ra (ví dụ buổi gắn mắc cài).", patient: "Chuẩn bị tiền, trả tại quầy hoặc chuyển khoản." },
+    { key: "overdue", meaning: "Đã qua mốc mà chưa thanh toán.", when: "Mốc đã diễn ra, chưa có xác nhận nhận tiền.", patient: "Thanh toán sớm hoặc gọi phòng khám." },
+    { key: "later", meaning: "Đợt của các bước sau.", when: "—", patient: "—" },
+];
+
 export const MEDICAL_RECORD_STATUS_GUIDE = [
     {
         title: "Kế hoạch điều trị",
@@ -292,14 +299,153 @@ export const MEDICAL_RECORD_STATUS_GUIDE = [
     {
         title: "Đợt thanh toán",
         labels: MEDICAL_RECORD_PAYMENT_STATUS,
-        items: [
-            { key: "paid", meaning: "Đã thanh toán đủ đợt này.", when: "Lễ tân xác nhận nhận tiền.", patient: "—" },
-            { key: "due", meaning: "Sắp đến mốc phải thanh toán.", when: "Mốc điều trị gắn với đợt sắp diễn ra (ví dụ buổi gắn mắc cài).", patient: "Chuẩn bị tiền, trả tại quầy hoặc chuyển khoản." },
-            { key: "overdue", meaning: "Đã qua mốc mà chưa thanh toán.", when: "Mốc đã diễn ra, chưa có xác nhận nhận tiền.", patient: "Thanh toán sớm hoặc gọi phòng khám." },
-            { key: "later", meaning: "Đợt của các bước sau.", when: "—", patient: "—" },
-        ],
+        items: PAYMENT_STATUS_GUIDE_ITEMS,
     },
 ];
+
+export const PATIENT_DEBT_PAY_TYPE = {
+    installment: { label: "Trả góp", badge: "badge-info" },
+    step: { label: "Trả theo bước", badge: "badge-warning" },
+    once: { label: "Trả một lần", badge: "badge-neutral" },
+};
+
+export const PATIENT_DEBT_STATUS = {
+    open: { label: "Còn nợ", badge: "badge-warning" },
+    overdue: { label: "Quá hạn", badge: "badge-danger" },
+    paid: { label: "Đã thanh toán đủ", badge: "badge-success" },
+};
+
+export const PATIENT_DEBT_STATUS_GUIDE = [
+    {
+        title: "Hình thức thanh toán",
+        labels: PATIENT_DEBT_PAY_TYPE,
+        items: [
+            {
+                key: "installment",
+                meaning: "Tổng giá kế hoạch chia thành nhiều đợt, mỗi đợt gắn với một mốc điều trị và có hạn.",
+                when: "Bác sĩ và bệnh nhân thống nhất khi lập kế hoạch dài (ví dụ niềng răng).",
+                patient: "Chuẩn bị tiền trước mỗi mốc; đợt tới hiện ở đầu mục Lịch trả góp.",
+            },
+            {
+                key: "step",
+                meaning: "Mỗi bước điều trị có giá riêng, làm bước nào thanh toán bước đó.",
+                when: "Kế hoạch nhiều bước nhưng không chia đợt (ví dụ điều trị tủy rồi bọc sứ).",
+                patient: "Thanh toán sau mỗi buổi làm bước.",
+            },
+            { key: "once", meaning: "Dịch vụ lẻ, thanh toán một lần theo phiếu sau buổi khám.", when: "Khám, lấy cao răng, trám răng…", patient: "Thanh toán tại quầy sau buổi khám." },
+        ],
+    },
+    {
+        title: "Trạng thái khoản",
+        labels: PATIENT_DEBT_STATUS,
+        items: [
+            { key: "open", meaning: "Khoản chưa thanh toán đủ, chưa có đợt quá hạn.", when: "Còn đợt hoặc bước chưa trả.", patient: "Theo dõi đợt tới." },
+            { key: "overdue", meaning: "Có đợt hoặc bước đã qua hạn mà chưa trả.", when: "Qua mốc thanh toán chưa có xác nhận nhận tiền.", patient: "Thanh toán sớm hoặc gọi phòng khám." },
+            { key: "paid", meaning: "Không còn số phải trả.", when: "Lần thanh toán cuối được xác nhận.", patient: "—" },
+        ],
+    },
+    {
+        title: "Đợt thanh toán",
+        labels: MEDICAL_RECORD_PAYMENT_STATUS,
+        items: PAYMENT_STATUS_GUIDE_ITEMS,
+    },
+    {
+        title: "Hạn",
+        items: [{ key: "due", term: "Hạn", meaning: "Hạn chót trả hết khoản, bằng ngày tạo cộng 6 tháng. Khác hạn của từng đợt / bước trong trang chi tiết." }],
+    },
+];
+
+export const PATIENT_DEBT_TEXT = {
+    TITLE: "Công nợ & đợt thanh toán",
+    DESCRIPTION: "Các khoản chi phí của bạn và hạn thanh toán, phân loại theo hình thức: trả góp, trả theo bước, trả một lần.",
+    DETAIL_TITLE: "Chi tiết công nợ",
+    DOCUMENT_TITLE: "Công nợ & đợt thanh toán",
+    DOCUMENT_DETAIL: (name) => `${name} – Công nợ`,
+    DOCUMENT_NOT_FOUND: "Không tìm thấy – Công nợ",
+    DOCUMENT_PENDING: "Chi tiết công nợ – Công nợ",
+    LOADING_LIST: "Đang tải công nợ",
+    LOADING_DETAIL: "Đang tải chi tiết công nợ",
+    CRUMB_LOADING: "Đang tải",
+    CRUMB_ERROR: "Lỗi",
+    CRUMB_NOT_FOUND: "Không tìm thấy",
+    BACK: "Danh sách công nợ",
+    ERROR_TITLE: "Không thể tải công nợ",
+    ERROR_TEXT: "Đã có lỗi xảy ra, vui lòng thử lại.",
+    RETRY: "Thử lại",
+    EMPTY_TITLE: "Bạn chưa có khoản nào cần thanh toán",
+    EMPTY_TEXT: "Chi phí chỉ phát sinh sau khi bác sĩ khám và thống nhất với bạn.",
+    NOT_FOUND_TITLE: "Không tìm thấy khoản này",
+    NOT_FOUND_TEXT: "Khoản không tồn tại hoặc bạn không có quyền xem.",
+    BACK_TO_LIST: "Về danh sách công nợ",
+    TYPE_GROUP: "Phân loại theo hình thức thanh toán",
+    TYPE_ALL: "Tất cả",
+    SEARCH: "Tìm khoản, dịch vụ",
+    CLEAR_SEARCH: "Xóa tìm kiếm",
+    FILTER: "Lọc",
+    FILTER_LABEL: "Lọc công nợ",
+    FILTER_UNIT: " lựa chọn",
+    STATUS_GROUP: "Trạng thái",
+    STATUS_HELP: "Trạng thái",
+    SHOWN: (shown, total) => `Hiển thị ${shown}/${total}`,
+    CHIP: (label) => `Trạng thái: ${label}`,
+    REMOVE_CHIP: (label) => `Bỏ lọc ${label}`,
+    CLEAR_ALL: "Xóa tất cả",
+    NO_RESULT: "Không có kết quả phù hợp",
+    NO_RESULT_TEXT: "Thử bỏ bớt bộ lọc hoặc đổi từ khóa.",
+    CLEAR_QUERY: "Xóa tìm kiếm và bộ lọc",
+    TABLE_CAPTION: "Danh sách công nợ",
+    COL_NAME: "Tên dịch vụ",
+    COL_TYPE: "Hình thức thanh toán",
+    COL_TOTAL: "Tổng giá",
+    COL_LEFT: "Còn lại",
+    COL_STATUS: "Trạng thái",
+    COL_DATES: "Ngày tạo / Hạn",
+    COL_ACTION: "Thao tác",
+    DUE: (date) => `Hạn ${date}`,
+    CREATED_DUE: (created, due) => `Ngày tạo ${created} · Hạn ${due}`,
+    LEFT: "Còn lại",
+    TOTAL: "Tổng giá",
+    PAID: "Đã thanh toán",
+    VIEW_DETAIL: "Xem chi tiết",
+    DETAIL_CONTEXT: (name, date) => `${name}, ngày ${date}`,
+    PAGINATION: "Phân trang danh sách công nợ",
+    RANGE: (from, to, total) => `Hiển thị ${from}–${to} / ${total}`,
+    PAY_RULE: (rule) => `Cách thanh toán: ${rule}`,
+    PROGRESS_TEXT: (paid, total) => `${paid} / ${total}`,
+    INSTALLMENT_TITLE: "Lịch trả góp",
+    INSTALLMENT_SUMMARY: (count, paid) => `${count} đợt · đã trả ${paid}`,
+    STEP_TITLE: "Các bước và chi phí",
+    STEP_SUMMARY: "Thanh toán khi làm từng bước",
+    COL_STEP: "Bước",
+    COL_CONTENT: "Nội dung",
+    COL_AMOUNT: "Số tiền",
+    ONCE_TITLE: (date) => `Thanh toán ngày ${date}`,
+    VIEW_RECEIPT: "Xem phiếu",
+    COL_PROCEDURE: "Thủ thuật",
+    COL_LINE_TOTAL: "Thành tiền",
+    PAYMENTS_TITLE: "Các lần đã thanh toán",
+    COL_DATE: "Ngày",
+    COL_METHOD: "Phương thức",
+    COL_RECEIPT: "Phiếu",
+    RECEIPT: "Phiếu",
+    RECEIPT_CONTEXT: (date, amount) => `ngày ${date}, ${amount}`,
+    NO_PAYMENT: "Chưa có lần thanh toán nào.",
+    VIEW_PLAN: "Xem kế hoạch trong Sổ khám bệnh",
+    REFUNDS_TITLE: "Yêu cầu hoàn tiền",
+    ALL_REFUNDS: "Tất cả",
+    REFUND_LINK: (code, label) => `Yêu cầu hoàn tiền ${code} · ${label}`,
+    REFUND_HEAD: (code) => `${code} · `,
+    REFUND_META: (stage, visitDate, createdAt) => `${stage ? `${stage} · ` : ""}phiếu ${visitDate} · tạo ${createdAt}`,
+    VIEW: "Xem",
+    REFUND_CONTEXT: (code) => `yêu cầu ${code}`,
+    NO_REFUND: "Không có yêu cầu hoàn tiền nào cho khoản này.",
+    CONTACT_BEFORE: "Cần hoàn tiền? Vui lòng liên hệ lễ tân hoặc gọi ",
+    CONTACT_AFTER: ".",
+    ONCE_RULE: "Thanh toán sau khi làm",
+    SORT_DUE: "Đến hạn trước",
+    SORT_LEFT: "Còn lại nhiều nhất",
+    SORT_NEW: "Mới nhất trước",
+};
 
 export const BOOKING_ERROR_CODE = {
     PROFILE_NOT_FOUND: "PATIENT_PROFILE_NOT_FOUND",
