@@ -73,7 +73,7 @@ const PatientDebtToolbar = ({
                         onClick={() => onSelectType(option.value)}
                     >
                         {option.label}
-                        <span className="num text-caption font-medium text-muted group-aria-pressed:text-primary">{typeCounts[option.value]}</span>
+                        <span className="num text-caption font-medium text-muted group-hover:text-body group-aria-pressed:text-primary">{typeCounts[option.value]}</span>
                     </button>
                 ))}
             </div>
@@ -178,8 +178,7 @@ const PatientDebtToolbar = ({
                             key={value}
                             type="button"
                             data-debt-chip=""
-                            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-tint py-0.5 pl-2.5 pr-2 text-caption text-body hover:border-danger hover:text-danger"
-                            aria-label={PATIENT_DEBT_TEXT.REMOVE_CHIP(PATIENT_DEBT_STATUS[value].label)}
+                            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-tint py-1 pl-2.5 pr-2 text-caption text-body hover:border-danger hover:text-danger"
                             onClick={() => removeChip(value, index)}
                         >
                             {PATIENT_DEBT_TEXT.CHIP(PATIENT_DEBT_STATUS[value].label)}

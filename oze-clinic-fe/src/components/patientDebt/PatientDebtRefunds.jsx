@@ -23,7 +23,7 @@ const PatientDebtRefunds = ({ item }) => (
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <StatusBadge status={refund.status} labels={REFUND_REQUEST_STATUS_LABELS} />
-                            <DetailLink to={ROUTES.REFUND_REQUESTS} context={PATIENT_DEBT_TEXT.REFUND_CONTEXT(refund.code)}>
+                            <DetailLink to={ROUTES.REFUND_REQUESTS} context={PATIENT_DEBT_TEXT.REFUND_CONTEXT(refund.code)} className="min-h-6 max-md:min-h-11">
                                 {PATIENT_DEBT_TEXT.VIEW}
                             </DetailLink>
                         </div>
@@ -35,7 +35,7 @@ const PatientDebtRefunds = ({ item }) => (
         )}
         <p className="border-t border-border px-5 py-3 text-caption text-muted">
             {PATIENT_DEBT_TEXT.CONTACT_BEFORE}
-            <a href={`tel:${CLINIC_HOTLINE.TEL}`} className="font-semibold text-primary hover:underline">
+            <a href={`tel:${CLINIC_HOTLINE.TEL}`} className="whitespace-nowrap font-semibold text-primary hover:underline">
                 {CLINIC_HOTLINE.DISPLAY}
             </a>
             {PATIENT_DEBT_TEXT.CONTACT_AFTER}

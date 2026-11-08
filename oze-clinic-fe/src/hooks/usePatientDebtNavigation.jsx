@@ -106,7 +106,7 @@ const usePatientDebtNavigation = () => {
         const newLoad = handled.current.loadId !== load.id;
         handled.current = { nav: navEvent, loadId: load.id };
         if (navEvent.kind !== "enter" && !newLoad) return;
-        const allowed = [navEvent.focusAtNav, settled.current.element].filter(Boolean);
+        const allowed = [navEvent.focusAtNav, settled.current.element, newLoad && h1Ref.current].filter(Boolean);
         if (canTakeFocus(document.activeElement, allowed)) {
             if (load.status === "error") {
                 document.getElementById(DEBT_RETRY_ID)?.focus({ preventScroll: true });

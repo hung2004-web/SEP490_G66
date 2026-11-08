@@ -388,7 +388,6 @@ export const PATIENT_DEBT_TEXT = {
     STATUS_HELP: "Trạng thái",
     SHOWN: (shown, total) => `Hiển thị ${shown}/${total}`,
     CHIP: (label) => `Trạng thái: ${label}`,
-    REMOVE_CHIP: (label) => `Bỏ lọc ${label}`,
     CLEAR_ALL: "Xóa tất cả",
     NO_RESULT: "Không có kết quả phù hợp",
     NO_RESULT_TEXT: "Thử bỏ bớt bộ lọc hoặc đổi từ khóa.",

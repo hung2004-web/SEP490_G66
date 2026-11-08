@@ -77,7 +77,7 @@ const liveText = (ready, hasQuery, shown, scopeTotal) => {
 };
 
 const PaymentDebts = () => {
-    const { isList, query, load, items, filtered, item, ui, setUi, h1Ref, navEventKey, fromList, listSearch, navigate, updateList, openDebt, retry } = usePatientDebtNavigation();
+    const { isList, query, load, items, filtered, item, ui, setUi, h1Ref, navEventKey, fromList, listSearch, navigate, updateList, openDebt, retry: reload } = usePatientDebtNavigation();
     const composingAt = useRef(null);
 
     const ready = load.status === "ready";
@@ -85,6 +85,11 @@ const PaymentDebts = () => {
     const scopeTotal = inType(items, query.type).length;
     const hasQuery = Boolean(query.q) || query.status.length > 0;
     const listHref = ROUTES.PAYMENT_DEBTS + (fromList ?? "");
+
+    const retry = () => {
+        h1Ref.current?.focus({ preventScroll: true });
+        reload();
+    };
 
     const closePopover = (openerId) => {
         setUi({ popover: null });
@@ -213,7 +218,7 @@ const PaymentDebts = () => {
                         />
                     </section>
                 )}
-                {ui.drawerOpen && <StatusDefinitionDrawer groups={PATIENT_DEBT_STATUS_GUIDE} onClose={() => setUi({ drawerOpen: false })} />}
+                {ui.drawerOpen && <StatusDefinitionDrawer groups={PATIENT_DEBT_STATUS_GUIDE} titleClassName="text-muted" onClose={() => setUi({ drawerOpen: false })} />}
             </>
         );
     }
@@ -235,15 +240,10 @@ const PaymentDebts = () => {
                 <Breadcrumb items={[{ label: PATIENT_DEBT_TEXT.TITLE, href: listHref }, { label: crumbLast }]} />
             </div>
             {liveRegion}
-            {load.status === "loading" && (
-                <>
-                    {detailTitle(true)}
-                    <DetailSkeleton />
-                </>
-            )}
+            {!item && detailTitle(load.status === "loading")}
+            {load.status === "loading" && <DetailSkeleton />}
             {load.status === "error" && (
                 <>
-                    {detailTitle(false)}
                     <StateBox icon={AlertCircle} title={PATIENT_DEBT_TEXT.ERROR_TITLE} text={PATIENT_DEBT_TEXT.ERROR_TEXT}>
                         <button id={DEBT_RETRY_ID} type="button" className="btn btn-secondary mt-3" onClick={retry}>
                             {PATIENT_DEBT_TEXT.RETRY}
@@ -253,7 +253,6 @@ const PaymentDebts = () => {
             )}
             {ready && !item && (
                 <>
-                    {detailTitle(false)}
                     <StateBox icon={Search} title={PATIENT_DEBT_TEXT.NOT_FOUND_TITLE} text={PATIENT_DEBT_TEXT.NOT_FOUND_TEXT}>
                         <Link to={listHref} state={BACK_STATE} className="btn btn-secondary mt-3" onClick={goBack}>
                             {PATIENT_DEBT_TEXT.BACK_TO_LIST}

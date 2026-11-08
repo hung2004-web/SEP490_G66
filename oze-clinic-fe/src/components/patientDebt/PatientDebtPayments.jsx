@@ -7,7 +7,7 @@ import { ArrowLink, CardNote, DebtCard } from "./PatientDebtCard";
 const TITLE_ID = "payment-debt-payments-title";
 
 const ReceiptLink = ({ payment }) => (
-    <DetailLink to={getPaymentHistoryRoute(payment.visitId)} context={PATIENT_DEBT_TEXT.RECEIPT_CONTEXT(payment.date, formatCurrency(payment.amount))}>
+    <DetailLink to={getPaymentHistoryRoute(payment.visitId)} context={PATIENT_DEBT_TEXT.RECEIPT_CONTEXT(payment.date, formatCurrency(payment.amount))} className="min-h-6 max-md:min-h-11">
         {PATIENT_DEBT_TEXT.RECEIPT}
     </DetailLink>
 );

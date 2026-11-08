@@ -38,11 +38,16 @@ export const toDebtDueDate = (value) => {
     const day = Number(match[1]);
     const month = Number(match[2]) - 1;
     const year = Number(match[3]);
-    const real = new Date(Date.UTC(year, month, day));
+    const utc = (y, m, d) => {
+        const date = new Date(0);
+        date.setUTCFullYear(y, m, d);
+        return date;
+    };
+    const real = utc(year, month, day);
     if (real.getUTCFullYear() !== year || real.getUTCMonth() !== month || real.getUTCDate() !== day) return NO_DATE;
-    const lastDay = new Date(Date.UTC(year, month + 7, 0)).getUTCDate();
-    const due = new Date(Date.UTC(year, month + 6, Math.min(day, lastDay)));
-    return `${pad(due.getUTCDate())}/${pad(due.getUTCMonth() + 1)}/${due.getUTCFullYear()}`;
+    const lastDay = utc(year, month + 7, 0).getUTCDate();
+    const due = utc(year, month + 6, Math.min(day, lastDay));
+    return `${pad(due.getUTCDate())}/${pad(due.getUTCMonth() + 1)}/${String(due.getUTCFullYear()).padStart(4, "0")}`;
 };
 
 export const dateKey = (value) => {
