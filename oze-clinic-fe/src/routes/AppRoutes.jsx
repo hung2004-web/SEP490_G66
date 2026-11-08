@@ -18,6 +18,7 @@ import MyAppointments from "../pages/patient/MyAppointments";
 import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import MedicalRecord from "../pages/patient/MedicalRecord";
 import BookAppointment from "../pages/patient/BookAppointment";
+import PaymentDebts from "../pages/patient/PaymentDebts";
 import AuditLogManagement from "../pages/admin/AuditLogManagement";
 import LeaveRequestManagement from "../pages/admin/LeaveRequestManagement";
 import RefundRequestManagement from "../pages/admin/RefundRequestManagement";
@@ -134,6 +135,12 @@ const ROLE_PAGES = {
             <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
+    [ROUTES.PAYMENT_DEBTS]: (
+        <Routes>
+            <Route path=":debtId?" element={<PaymentDebts />} />
+            <Route path="*" element={NOT_FOUND} />
+        </Routes>
+    ),
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />,
     [ROUTES.ADMIN_STAFF]: <StaffManagement />,
@@ -148,7 +155,6 @@ const ROLE_PAGES = {
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
 const COMING_SOON_TITLES = {
     [ROUTES.APPOINTMENTS]: "Lịch hẹn của tôi",
-    [ROUTES.PAYMENT_DEBTS]: "Công nợ & đợt thanh toán",
     [ROUTES.PAYMENT_HISTORY]: "Lịch sử thanh toán",
     [ROUTES.REFUND_REQUESTS]: "Yêu cầu hoàn tiền",
     [ROUTES.DOCTOR_QUEUE]: "Hàng chờ khám",
