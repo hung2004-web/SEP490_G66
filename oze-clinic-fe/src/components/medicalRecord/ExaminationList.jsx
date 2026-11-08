@@ -122,6 +122,7 @@ const ExaminationList = ({
                             <FilterPopover
                                 groups={groups}
                                 filters={ui.filters}
+                                openerId={RECORD_FILTER_BUTTON_ID}
                                 onToggle={onToggleFilter}
                                 onClear={onClearFilters}
                                 onDone={onDoneFilters}
@@ -141,7 +142,7 @@ const ExaminationList = ({
                             <ArrowUpDown className="size-4" aria-hidden="true" />
                             {sortLabel}
                         </button>
-                        {ui.popover === "sort" && <SortPopover sort={ui.sort} onSelect={onSelectSort} onDismiss={onDismissPopover} />}
+                        {ui.popover === "sort" && <SortPopover sort={ui.sort} openerId={RECORD_SORT_BUTTON_ID} onSelect={onSelectSort} onDismiss={onDismissPopover} />}
                     </div>
                 </div>
                 {(chips.length > 0 || ui.searchInput) && (
