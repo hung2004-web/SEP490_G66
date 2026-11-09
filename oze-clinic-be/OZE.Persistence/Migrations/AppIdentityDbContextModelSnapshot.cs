@@ -878,6 +878,100 @@ namespace OZE.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.InstallmentPeriod", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<long>("InstallmentPlanId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long?>("PaymentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Pending");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_InstallmentPeriods_PaymentId")
+                        .HasFilter("[PaymentId] IS NOT NULL");
+
+                    b.HasIndex("DueDate", "Status")
+                        .HasDatabaseName("IX_InstallmentPeriods_DueDate_Status");
+
+                    b.HasIndex("InstallmentPlanId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("IX_InstallmentPeriods_PlanId_Sequence");
+
+                    b.ToTable("InstallmentPeriods", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_InstallmentPeriods_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_InstallmentPeriods_Paid", "[Status] <> 'Paid' OR ([PaymentId] IS NOT NULL AND [PaidAt] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_InstallmentPeriods_Sequence", "[Sequence] > 0");
+
+                            t.HasCheckConstraint("CK_InstallmentPeriods_Status", "[Status] IN ('Pending', 'Paid', 'Overdue')");
+
+                            t.HasCheckConstraint("CK_InstallmentPeriods_Unpaid", "[Status] = 'Paid' OR [PaymentId] IS NULL");
+                        });
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.InstallmentPlan", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<long>("InvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_InstallmentPlans_InvoiceId");
+
+                    b.ToTable("InstallmentPlans", (string)null);
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.Invoice", b =>
                 {
                     b.Property<long>("Id")
@@ -1361,6 +1455,9 @@ namespace OZE.Persistence.Migrations
                         .HasColumnType("datetimeoffset")
                         .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
+                    b.Property<long?>("InstallmentPeriodId")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("InvoiceId")
                         .HasColumnType("bigint");
 
@@ -1383,11 +1480,23 @@ namespace OZE.Persistence.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("PENDING");
 
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Regular");
+
                     b.Property<string>("TransactionReference")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InstallmentPeriodId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Payments_InstallmentPeriodId")
+                        .HasFilter("[InstallmentPeriodId] IS NOT NULL");
 
                     b.HasIndex("InvoiceId")
                         .HasDatabaseName("IX_Payments_InvoiceId");
@@ -1401,7 +1510,11 @@ namespace OZE.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
 
+                            t.HasCheckConstraint("CK_Payments_InstallmentPeriod", "[Purpose] <> 'Installment' OR [InstallmentPeriodId] IS NOT NULL");
+
                             t.HasCheckConstraint("CK_Payments_PaymentMethod", "[PaymentMethod] IN ('CASH', 'BANK_TRANSFER', 'QR_TRANSFER')");
+
+                            t.HasCheckConstraint("CK_Payments_Purpose", "[Purpose] IN ('Deposit', 'Regular', 'Installment')");
 
                             t.HasCheckConstraint("CK_Payments_Status", "[PaymentStatus] IN ('PENDING', 'CONFIRMED', 'FAILED', 'REFUNDED')");
                         });
@@ -1647,6 +1760,10 @@ namespace OZE.Persistence.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<decimal?>("WorkDoneAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceId")
@@ -1663,6 +1780,8 @@ namespace OZE.Persistence.Migrations
                             t.HasCheckConstraint("CK_RefundAdjustments_Status", "[Status] IN ('Pending', 'Approved', 'Rejected', 'Processed')");
 
                             t.HasCheckConstraint("CK_RefundAdjustments_Type", "[RequestType] IN ('Refund', 'Adjustment')");
+
+                            t.HasCheckConstraint("CK_RefundAdjustments_WorkDone", "[WorkDoneAmount] IS NULL OR [WorkDoneAmount] >= 0");
                         });
                 });
 
@@ -2594,6 +2713,44 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("UploadedByTechnician");
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.InstallmentPeriod", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.InstallmentPlan", "InstallmentPlan")
+                        .WithMany("Periods")
+                        .HasForeignKey("InstallmentPlanId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_InstallmentPeriods_Plans");
+
+                    b.HasOne("OZE.Domain.Entities.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_InstallmentPeriods_Payments");
+
+                    b.Navigation("InstallmentPlan");
+
+                    b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.InstallmentPlan", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_InstallmentPlans_CreatedBy");
+
+                    b.HasOne("OZE.Domain.Entities.Invoice", "Invoice")
+                        .WithMany("InstallmentPlans")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_InstallmentPlans_Invoices");
+
+                    b.Navigation("Invoice");
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("OZE.Domain.Entities.Appointment", "Appointment")
@@ -2721,12 +2878,20 @@ namespace OZE.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FK_Payments_ConfirmedBy");
 
+                    b.HasOne("OZE.Domain.Entities.InstallmentPeriod", "InstallmentPeriod")
+                        .WithMany()
+                        .HasForeignKey("InstallmentPeriodId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_Payments_InstallmentPeriods");
+
                     b.HasOne("OZE.Domain.Entities.Invoice", "Invoice")
                         .WithMany("Payments")
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired()
                         .HasConstraintName("FK_Payments_Invoices");
+
+                    b.Navigation("InstallmentPeriod");
 
                     b.Navigation("Invoice");
                 });
@@ -2993,8 +3158,15 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Results");
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.InstallmentPlan", b =>
+                {
+                    b.Navigation("Periods");
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.Invoice", b =>
                 {
+                    b.Navigation("InstallmentPlans");
+
                     b.Navigation("Items");
 
                     b.Navigation("Payments");

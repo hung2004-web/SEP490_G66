@@ -55,15 +55,15 @@ export const dateKey = (value) => {
     return match ? `${match[3]}${match[2]}${match[1]}` : NO_DATE_KEY;
 };
 
-const byNewest = (getDate) => (a, b) => dateKey(getDate(b)).localeCompare(dateKey(getDate(a)));
+export const byNewest = (getDate) => (a, b) => dateKey(getDate(b)).localeCompare(dateKey(getDate(a)));
 
-const lineTotal = (line) => (Number(line.unitPrice) || 0) * (Number(line.quantity) || 0) - (Number(line.discount) || 0);
+export const lineTotal = (line) => (Number(line.unitPrice) || 0) * (Number(line.quantity) || 0) - (Number(line.discount) || 0);
 
-const methodLabel = (code) => (Object.hasOwn(PAYMENT_METHOD_LABELS, code) ? PAYMENT_METHOD_LABELS[code] : NO_DATE);
+export const methodLabel = (code) => (Object.hasOwn(PAYMENT_METHOD_LABELS, code) ? PAYMENT_METHOD_LABELS[code] : NO_DATE);
 
-const receiptOf = (debtMock, visitId) => (Object.hasOwn(debtMock.receipts, visitId) ? debtMock.receipts[visitId] : null);
+export const receiptOf = (debtMock, visitId) => (Object.hasOwn(debtMock.receipts, visitId) ? debtMock.receipts[visitId] : null);
 
-const collectPayments = (debtMock, visitIds) =>
+export const collectPayments = (debtMock, visitIds) =>
     visitIds
         .flatMap((visitId) =>
             (receiptOf(debtMock, visitId)?.payments ?? []).map((item, index) => ({
@@ -76,7 +76,7 @@ const collectPayments = (debtMock, visitIds) =>
         )
         .sort(byNewest((item) => item.date));
 
-const collectRefunds = (debtMock, visitIds, visitDates) =>
+export const collectRefunds = (debtMock, visitIds, visitDates) =>
     debtMock.refunds
         .filter((refund) => visitIds.includes(refund.visitId))
         .map((refund) => ({ ...refund, visitDate: visitDates.get(refund.visitId) ?? NO_DATE }))
