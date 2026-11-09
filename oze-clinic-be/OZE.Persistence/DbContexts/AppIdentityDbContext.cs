@@ -54,6 +54,8 @@ namespace OZE.Persistence.DbContexts
         public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
         public DbSet<Payment> Payments => Set<Payment>();
         public DbSet<RefundAdjustmentRequest> RefundAdjustmentRequests => Set<RefundAdjustmentRequest>();
+        public DbSet<InstallmentPlan> InstallmentPlans => Set<InstallmentPlan>();
+        public DbSet<InstallmentPeriod> InstallmentPeriods => Set<InstallmentPeriod>();
 
         // Communication & Audit
         public DbSet<Notification> Notifications => Set<Notification>();

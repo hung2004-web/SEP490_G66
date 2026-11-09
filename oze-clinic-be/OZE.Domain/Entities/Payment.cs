@@ -8,11 +8,14 @@ namespace OZE.Domain.Entities
         public string PaymentMethod { get; set; } = string.Empty;
         public string? TransactionReference { get; set; }
         public string PaymentStatus { get; set; } = "PENDING";
+        public string Purpose { get; set; } = "Regular";
+        public long? InstallmentPeriodId { get; set; }
         public DateTimeOffset? PaidAt { get; set; }
         public string? ConfirmedByUserId { get; set; }
         public string? Notes { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
 
         public virtual Invoice Invoice { get; set; } = null!;
+        public virtual InstallmentPeriod? InstallmentPeriod { get; set; }
     }
 }
