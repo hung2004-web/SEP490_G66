@@ -44,5 +44,6 @@ namespace OZE.Application.Interfaces
         Task<StartExaminationResponse> StartExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default);
         // The doctor completes the visit, locking the examination and marking the appointment completed
         Task<AppointmentResponse> CompleteExaminationAsync(long id, string doctorUserId, CancellationToken cancellationToken = default);
+        Task<AppointmentResponse> ScheduleFollowUpAsync(long appointmentId, ScheduleFollowUpRequest request, string userId, CancellationToken cancellationToken = default);
     }
 }

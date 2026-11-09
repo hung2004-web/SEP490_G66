@@ -367,6 +367,9 @@ namespace OZE.Persistence.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<long?>("ParentAppointmentId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
@@ -398,6 +401,9 @@ namespace OZE.Persistence.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentAppointmentId")
+                        .HasDatabaseName("IX_Appointments_ParentAppointmentId");
 
                     b.HasIndex("DoctorId", "AppointmentDate")
                         .HasDatabaseName("IX_Appointments_DoctorId_Date")
@@ -706,6 +712,22 @@ namespace OZE.Persistence.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("InProgress");
 
+                    b.Property<long?>("FollowUpAppointmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("FollowUpDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FollowUpNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("FollowUpRemindedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("FollowUpReminderCount")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("LockedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -729,6 +751,9 @@ namespace OZE.Persistence.Migrations
                     b.HasIndex("AppointmentId")
                         .IsUnique()
                         .HasDatabaseName("IX_Examinations_AppointmentId");
+
+                    b.HasIndex("FollowUpDate")
+                        .HasDatabaseName("IX_Examinations_FollowUpDate");
 
                     b.HasIndex("DoctorId", "CreatedAt")
                         .IsDescending(false, true)
@@ -2523,6 +2548,12 @@ namespace OZE.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FK_Appointments_Doctors");
 
+                    b.HasOne("OZE.Domain.Entities.Appointment", "ParentAppointment")
+                        .WithMany()
+                        .HasForeignKey("ParentAppointmentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_Appointments_ParentAppointment");
+
                     b.HasOne("OZE.Domain.Entities.Patient", "Patient")
                         .WithMany("Appointments")
                         .HasForeignKey("PatientId")
@@ -2531,6 +2562,8 @@ namespace OZE.Persistence.Migrations
                         .HasConstraintName("FK_Appointments_Patients");
 
                     b.Navigation("Doctor");
+
+                    b.Navigation("ParentAppointment");
 
                     b.Navigation("Patient");
                 });
@@ -2643,6 +2676,12 @@ namespace OZE.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Examinations_Doctors");
 
+                    b.HasOne("OZE.Domain.Entities.Appointment", "FollowUpAppointment")
+                        .WithMany()
+                        .HasForeignKey("FollowUpAppointmentId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_Examinations_FollowUpAppointments");
+
                     b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("LockedByUserId")
@@ -2659,6 +2698,8 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("Doctor");
+
+                    b.Navigation("FollowUpAppointment");
 
                     b.Navigation("Patient");
                 });

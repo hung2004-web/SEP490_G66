@@ -15,6 +15,7 @@ namespace OZE.Persistence.Configurations
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.ExaminationStatus).HasMaxLength(20).HasDefaultValue("InProgress");
+            builder.Property(x => x.FollowUpNotes).HasMaxLength(500);
             builder.Property(x => x.RowVersion).IsRowVersion();
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
@@ -38,6 +39,11 @@ namespace OZE.Persistence.Configurations
                    .HasForeignKey(x => x.LockedByUserId)
                    .HasConstraintName("FK_Examinations_LockedBy")
                    .OnDelete(DeleteBehavior.NoAction);
+            builder.HasOne(x => x.FollowUpAppointment)
+                   .WithMany()
+                   .HasForeignKey(x => x.FollowUpAppointmentId)
+                   .HasConstraintName("FK_Examinations_FollowUpAppointments")
+                   .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasIndex(x => x.AppointmentId).HasDatabaseName("IX_Examinations_AppointmentId").IsUnique();
             builder.HasIndex(x => new { x.PatientId, x.CreatedAt })
@@ -46,6 +52,7 @@ namespace OZE.Persistence.Configurations
             builder.HasIndex(x => new { x.DoctorId, x.CreatedAt })
                    .HasDatabaseName("IX_Examinations_DoctorId_CreatedAt")
                    .IsDescending(false, true);
+            builder.HasIndex(x => x.FollowUpDate).HasDatabaseName("IX_Examinations_FollowUpDate");
         }
     }
 }
