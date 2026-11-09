@@ -36,7 +36,7 @@ const ToothBox = ({ tooth, entries, selected, onSelect }) => {
             aria-label={`Răng ${tooth}${count ? `, ${count} ghi nhận` : ""}`}
             title={`Răng ${tooth} · ${toothLabel(tooth)}`}
             className={cx(
-                "num relative grid h-10 w-full min-w-0 max-w-[34px] cursor-pointer place-items-center rounded-md border bg-canvas text-caption font-semibold outline-none transition-colors focus-visible:shadow-focus",
+                "num relative grid h-10 w-[34px] shrink-0 cursor-pointer place-items-center rounded-md border bg-canvas text-caption font-semibold outline-none transition-colors focus-visible:shadow-focus",
                 category ? CATEGORY_TONE[category] : "border-border-strong text-ink hover:border-primary",
                 selected && "border-2 border-primary",
             )}
@@ -53,7 +53,7 @@ const ToothBox = ({ tooth, entries, selected, onSelect }) => {
 };
 
 const JawRow = ({ halves, entriesOf, selectedTooth, onSelectTooth }) => (
-    <div className="flex w-full items-center justify-center gap-1">
+    <div className="flex w-full items-center gap-1">
         {halves.map((half, index) => (
             <div key={half[0]} className="contents">
                 {index === 1 && <span aria-hidden="true" className="h-11 w-0.5 shrink-0 bg-border-strong" />}
@@ -80,12 +80,15 @@ const ExamDentalChart = ({ entries = [], chartType, onChartTypeChange, selectedT
             action={<SegmentedControl label="Loại sơ đồ răng" options={CHART_OPTIONS} value={chartType} onChange={onChartTypeChange} />}
             bodyClassName="flex flex-col gap-4"
         >
-            <div className="flex flex-col items-center gap-1.5 overflow-x-auto rounded-[10px] bg-surface-tint px-2 py-3">
+            {/* Fixed-size tooth boxes; on narrow screens the chart scrolls sideways instead of squeezing. */}
+            <div className="overflow-x-auto rounded-[10px] bg-surface-tint px-2 py-3">
+                <div className="mx-auto flex w-max min-w-full flex-col items-center gap-1.5">
                 <p className="text-[11px] font-medium text-muted">Hàm trên</p>
                 <JawRow halves={chart.upper} entriesOf={entriesOf} selectedTooth={selectedTooth} onSelectTooth={onSelectTooth} />
                 <span aria-hidden="true" className="my-1 h-px w-full max-w-140 bg-border" />
                 <JawRow halves={chart.lower} entriesOf={entriesOf} selectedTooth={selectedTooth} onSelectTooth={onSelectTooth} />
                 <p className="text-[11px] font-medium text-muted">Hàm dưới</p>
+                </div>
             </div>
             <div className="flex flex-col gap-1.5">
                 <ul className="flex flex-wrap gap-x-4 gap-y-2 text-caption text-body">

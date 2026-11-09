@@ -24,7 +24,7 @@ const ToothConditionTable = ({ entries = [], selectedTooth, onSelectTooth, onEdi
             {sorted.length === 0 ? (
                 <p className="py-2 text-center text-muted">Chưa có ghi nhận nào. Bấm vào răng trên sơ đồ để thêm.</p>
             ) : (
-                <div className="overflow-x-auto rounded-lg border border-border">
+                <div className="relative overflow-x-auto rounded-lg border border-border">
                     <table className="table">
                         <thead>
                             <tr>

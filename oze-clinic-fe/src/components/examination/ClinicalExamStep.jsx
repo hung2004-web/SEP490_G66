@@ -142,7 +142,12 @@ const ClinicalExamStep = ({ queueId, record, busy = false, onExamChange, onCompl
                 <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => onEnd?.(exam)}>
                     Kết thúc lượt khám
                 </button>
-                <button type="button" className="btn btn-primary" disabled={busy || !canComplete} onClick={complete}>
+                <button
+                    type="button"
+                    className="btn btn-primary h-auto min-h-control py-2 text-center whitespace-normal"
+                    disabled={busy || !canComplete}
+                    onClick={complete}
+                >
                     Hoàn thành & chuyển sang Lập kế hoạch điều trị
                 </button>
             </StepActionBar>

@@ -19,7 +19,7 @@ const DiagnosisSection = ({ items = [], onAdd, onEdit, onRemove }) => (
         {items.length === 0 ? (
             <p className="py-2 text-center text-muted">Chưa có chẩn đoán. Cần ít nhất một chẩn đoán để chuyển sang lập kế hoạch điều trị.</p>
         ) : (
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="relative overflow-x-auto rounded-lg border border-border">
                 <table className="table">
                     <thead>
                         <tr>
