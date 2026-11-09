@@ -4,6 +4,8 @@ namespace OZE.Application.Interfaces
 {
     public interface ITreatmentPlanService
     {
+        Task<TreatmentPlanProgressResponse> CreateAsync(long examinationId, CreateTreatmentPlanRequest request,
+            string userId, CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> GetProgressAsync(long treatmentPlanId,
             string userId, CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> StartStageAsync(long treatmentPlanId, long stageId,
