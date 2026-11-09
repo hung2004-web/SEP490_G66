@@ -159,6 +159,12 @@ export const APPOINTMENT_STATUS = {
 
 export const QUEUE_STATUS = { WAITING: "WAITING", CALLED: "CALLED" };
 
+// Badge of a row in the doctor's exam queue. Keys are QUEUE_STATUS values.
+export const EXAM_QUEUE_STATUS = {
+    [QUEUE_STATUS.WAITING]: { label: "Đang chờ", badge: "badge-neutral" },
+    [QUEUE_STATUS.CALLED]: { label: "Đã gọi", badge: "badge-warning" },
+};
+
 export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress", COMPLETED: "Completed", CANCELLED: "Cancelled" };
 
 export const PLAN_STATUS = { PROPOSED: "Proposed", IN_PROGRESS: "InProgress" };
