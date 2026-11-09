@@ -91,6 +91,46 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Draft -> Proposed: the doctor shows the finished plan to the patient. Editing it later sends it back to draft.
+        /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
+        [HttpPost("{id:long}/propose")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> ProposeAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanService.ProposeAsync(id, GetUserId(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(plan, "Propose treatment plan success!"));
+        }
+
+        /// <summary>
+        /// Proposed -> Approved: records that the patient agreed. Done by the doctor or by reception.
+        /// </summary>
+        [Authorize(Roles = DoctorOrReception)]
+        [HttpPost("{id:long}/approve")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> ApproveAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanService.ApproveAsync(id, GetUserId(), CanViewAll(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(plan, "Approve treatment plan success!"));
+        }
+
+        /// <summary>
+        /// Cancels a proposed, approved or in-progress plan with a reason. Stages not done yet are cancelled.
+        /// </summary>
+        [Authorize(Roles = DoctorOrReception)]
+        [HttpPost("{id:long}/cancel")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> CancelAsync(
+            [FromRoute] long id,
+            [FromBody] CancelTreatmentPlanRequest request,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanService.CancelAsync(id, request, GetUserId(), CanViewAll(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(plan, "Cancel treatment plan success!"));
+        }
+
+        /// <summary>
         /// Returns treatment plan progress: stages with status and overall progress percent (UC-52 / AC1).
         /// </summary>
         [Authorize(Roles = RoleConstants.DoctorRole)]
