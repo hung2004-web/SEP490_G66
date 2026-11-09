@@ -15,9 +15,16 @@ namespace OZE.Domain.Entities
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
 
+        public DateOnly? FollowUpDate { get; set; }
+        public string? FollowUpNotes { get; set; }
+        public long? FollowUpAppointmentId { get; set; }
+        public DateTimeOffset? FollowUpRemindedAt { get; set; }
+        public int FollowUpReminderCount { get; set; }
+
         public virtual Appointment Appointment { get; set; } = null!;
         public virtual Patient Patient { get; set; } = null!;
         public virtual StaffProfile Doctor { get; set; } = null!;
+        public virtual Appointment? FollowUpAppointment { get; set; }
         public virtual ICollection<DentalChartEntry> DentalChartEntries { get; set; } = new List<DentalChartEntry>();
         public virtual ICollection<ClinicalDiagnosis> Diagnoses { get; set; } = new List<ClinicalDiagnosis>();
         public virtual ICollection<ImagingRequest> ImagingRequests { get; set; } = new List<ImagingRequest>();

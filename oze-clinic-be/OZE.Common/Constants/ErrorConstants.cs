@@ -235,6 +235,8 @@ namespace OZE.Common.Constants
             public const string VariantInactive = "This service variant is not available for booking";
             public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";
             public const string ServicesNeedDifferentRooms = "These services need different rooms and cannot be booked in one appointment";
+            public const string DateRequired = "Appointment date is required";
+            public const string SlotRequired = "Appointment time slot is required";
             public const string PastDate = "Appointment date cannot be in the past";
             public const string TooFarAhead = "Appointment date is too far in advance";
             public const string SlotNotAvailable = "This time slot is no longer available. Please choose another time";
@@ -274,6 +276,8 @@ namespace OZE.Common.Constants
             public const string OnlyCheckedInCanBeStarted = "Only a checked-in appointment can be started";
             public const string NotAssignedDoctor = "You can only examine your own appointments";
             public const string ExaminationAlreadyStarted = "This appointment already has an examination";
+            public const string FollowUpAlreadyScheduled = "A follow-up appointment has already been scheduled for this visit";
+            public const string ExaminationNotFoundForAppointment = "No examination was found for this appointment";
         }
         public static class PatientMessage
         {
@@ -353,6 +357,11 @@ namespace OZE.Common.Constants
             public const string PrescriptionItemNotFound = "Medication not found in this prescription";
             public const string PrescriptionFinalized = "The prescription is finalized. Reopen it to change it";
             public const string PrescriptionNothingToFinalize = "Add at least one medication before finalizing the prescription";
+            public const string FollowUpDateMustBeFuture = "Follow-up date must be in the future";
+            public const string FollowUpNotesTooLong = "Follow-up notes are too long";
+            public const string FollowUpAppointmentAlreadyScheduled = "A follow-up appointment has already been scheduled for this examination";
+            public const string FollowUpNotSet = "No follow-up date has been set for this examination";
+            public const string ExaminationNotFound = "Examination not found";
         }
 
         // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.

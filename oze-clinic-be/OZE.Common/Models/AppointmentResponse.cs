@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 
 namespace OZE.Common.Models
 {
     public class AppointmentResponse
     {
         public long Id { get; set; }
+        public string AppointmentCode => $"LH{Id:D6}";
         public int PatientId { get; set; }
         public string PatientCode { get; set; } = string.Empty;
         public string PatientName { get; set; } = string.Empty;
@@ -28,5 +30,9 @@ namespace OZE.Common.Models
         public string? CancellationReason { get; set; }
         public string? Notes { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
+        public long? ParentAppointmentId { get; set; }
+        public long? ExaminationId { get; set; }
+        public string? ExaminationStatus { get; set; }
+        public FollowUpSummaryResponse? FollowUp { get; set; }
     }
 }
