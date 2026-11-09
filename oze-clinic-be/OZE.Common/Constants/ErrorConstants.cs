@@ -426,6 +426,9 @@ namespace OZE.Common.Constants
             public const string InvoiceCancelled = "Invoice has been cancelled.";
             public const string InvoiceNotFound = "Invoice not found.";
             public const string InvoiceNotCancellable = "Invoice cannot be cancelled because a confirmed payment exists.";
+            public const string InvoiceAlreadyCancelled = "Invoice is already cancelled.";
+            public const string InvoiceNotUpdatable = "Invoice cannot be updated in its current state.";
+            public const string InvoiceUpdateEmpty = "Please provide notes, discount, or items to update.";
             public const string InvoiceConcurrencyConflict = "Invoice was modified by another user. Please reload and try again.";
             public const string AccessDenied = "You do not have access to this invoice.";
         }

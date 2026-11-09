@@ -53,7 +53,10 @@ namespace OZE.Persistence.Repositories
             InvoiceQueryParameters parameters,
             CancellationToken cancellationToken = default)
         {
-            var query = _context.Invoices.AsNoTracking().AsQueryable();
+            var query = _context.Invoices
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .AsQueryable();
 
             if (parameters.PatientId.HasValue)
             {
@@ -80,7 +83,8 @@ namespace OZE.Persistence.Repositories
             {
                 var keyword = parameters.SearchKeyword.Trim();
                 query = query.Where(x => x.InvoiceNumber.Contains(keyword)
-                    || (x.Notes != null && x.Notes.Contains(keyword)));
+                    || (x.Notes != null && x.Notes.Contains(keyword))
+                    || (x.Patient != null && x.Patient.FullName.Contains(keyword)));
             }
 
             var totalCount = await query.CountAsync(cancellationToken);
