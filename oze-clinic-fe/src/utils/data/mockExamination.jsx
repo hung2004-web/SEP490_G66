@@ -13,3 +13,14 @@ export const MOCK_EXAM_QUEUE = [
 ];
 
 export const MOCK_EXAM_DONE_COUNT = 2;
+
+// Patient called in (queue number 8), shown by PatientCard.
+export const MOCK_EXAM_PATIENT = { name: "Nguyễn Văn A", code: "BN000123", gender: "male", age: 28, queueNumber: 8 };
+
+export const MOCK_EXAM_PATIENT_STATUS = { label: "Đã gọi · chờ vào phòng", tone: "warning" };
+
+export const MOCK_EXAM_SERVICES = [
+    { id: 1, name: "Khám tổng quát" },
+    { id: 2, name: "Lấy cao răng" },
+    { id: 3, name: "Trám răng" },
+];

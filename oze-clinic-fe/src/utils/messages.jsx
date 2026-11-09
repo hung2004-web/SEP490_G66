@@ -165,6 +165,28 @@ export const EXAM_QUEUE_STATUS = {
     [QUEUE_STATUS.CALLED]: { label: "Đã gọi", badge: "badge-warning" },
 };
 
+// Tabs of the doctor's exam screen, in display order.
+export const EXAM_TAB = {
+    PROFILE: "profile",
+    EXAM: "exam",
+    DIAGNOSIS: "diagnosis",
+    TREATMENT_PLAN: "treatmentPlan",
+    TREATMENT: "treatment",
+    PRESCRIPTION: "prescription",
+};
+
+export const EXAM_TABS = [
+    { key: EXAM_TAB.PROFILE, label: "Hồ sơ bệnh nhân" },
+    { key: EXAM_TAB.EXAM, label: "Khám" },
+    { key: EXAM_TAB.DIAGNOSIS, label: "Chẩn đoán" },
+    { key: EXAM_TAB.TREATMENT_PLAN, label: "Kế hoạch điều trị" },
+    { key: EXAM_TAB.TREATMENT, label: "Điều trị" },
+    { key: EXAM_TAB.PRESCRIPTION, label: "Đơn thuốc" },
+];
+
+// Steps of one exam visit, shown by ExamStepper once the exam has started.
+export const EXAM_STEPS = ["Tiếp nhận", "Khám & chẩn đoán", "Lập kế hoạch điều trị", "Điều trị & kê đơn", "Hoàn tất"];
+
 export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress", COMPLETED: "Completed", CANCELLED: "Cancelled" };
 
 export const PLAN_STATUS = { PROPOSED: "Proposed", IN_PROGRESS: "InProgress" };
