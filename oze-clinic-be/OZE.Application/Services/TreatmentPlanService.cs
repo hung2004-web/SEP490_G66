@@ -95,6 +95,94 @@ namespace OZE.Application.Services
             return ToProgressResponse(created!);
         }
 
+        public async Task<TreatmentPlanProgressResponse> UpdateAsync(
+            long treatmentPlanId,
+            UpdateTreatmentPlanRequest request,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            await EnsureAccessAsync(userId, plan!);
+
+            // Once approved the plan is a commitment with the patient; changes then go through a new version
+            ConditionGuard.Ensure(plan!.Status == TreatmentPlanConstants.Draft || plan.Status == TreatmentPlanConstants.Proposed,
+                ErrorConstants.TreatmentPlanMessage.PlanNotEditable);
+            var invoiced = await _treatmentPlanRepository.IsInvoicedAsync(plan.Id, cancellationToken);
+            ConditionGuard.ThrowIf(invoiced, ErrorConstants.TreatmentPlanMessage.PlanInvoiced);
+
+            var validStages = await ValidateStagesAsync(request.Stages, cancellationToken);
+
+            // A stage sent with an id is kept and changed, one left out is removed, one without an id is new
+            var keptIds = request.Stages.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToList();
+            ConditionGuard.Ensure(keptIds.Count == keptIds.Distinct().Count(), ErrorConstants.TreatmentPlanMessage.DuplicateStage);
+            var existingStages = plan.Stages.ToDictionary(s => s.Id);
+            ConditionGuard.Ensure<NotFoundException>(keptIds.All(existingStages.ContainsKey), ErrorConstants.TreatmentPlanMessage.StageNotFound);
+
+            foreach (var removedStage in plan.Stages.Where(s => !keptIds.Contains(s.Id)).ToList())
+            {
+                plan.Stages.Remove(removedStage);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            for (var i = 0; i < validStages.Count; i++)
+            {
+                var stageId = request.Stages[i].Id;
+                TreatmentPlanStage stage;
+                if (stageId.HasValue)
+                {
+                    stage = existingStages[stageId.Value];
+                    stage.UpdatedAt = now;
+                }
+                else
+                {
+                    stage = new TreatmentPlanStage
+                    {
+                        StageStatus = TreatmentPlanConstants.StageStatus.Scheduled,
+                        CreatedAt = now
+                    };
+                    plan.Stages.Add(stage);
+                }
+
+                ApplyStage(stage, validStages[i], i + 1);
+            }
+
+            plan.PlanName = request.PlanName.Trim();
+            plan.Description = Clean(request.Description);
+            SetTotals(plan);
+
+            // A plan already shown to the patient goes back to draft: the patient has to see the new version
+            if (plan.Status == TreatmentPlanConstants.Proposed)
+            {
+                plan.Status = TreatmentPlanConstants.Draft;
+            }
+
+            plan.UpdatedAt = now;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+
+            var updated = await _treatmentPlanRepository.GetByIdWithStagesAsync(plan.Id, cancellationToken);
+            return ToProgressResponse(updated!);
+        }
+
+        public async Task DeleteAsync(
+            long treatmentPlanId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            await EnsureAccessAsync(userId, plan!);
+
+            // Only a draft is thrown away; a plan the patient has seen is cancelled instead, so its history stays
+            ConditionGuard.Ensure(plan!.Status == TreatmentPlanConstants.Draft, ErrorConstants.TreatmentPlanMessage.OnlyDraftCanBeDeleted);
+            var invoiced = await _treatmentPlanRepository.IsInvoicedAsync(plan.Id, cancellationToken);
+            ConditionGuard.ThrowIf(invoiced, ErrorConstants.TreatmentPlanMessage.PlanInvoiced);
+
+            _treatmentPlanRepository.Remove(plan);
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task<TreatmentPlanProgressResponse> GetDetailAsync(
             long treatmentPlanId,
             string userId,

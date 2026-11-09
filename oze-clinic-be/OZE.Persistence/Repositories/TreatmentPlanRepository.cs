@@ -94,6 +94,20 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        // Billed on the plan itself or on one of its stages
+        public async Task<bool> IsInvoicedAsync(long treatmentPlanId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Invoices.AnyAsync(x => x.TreatmentPlanId == treatmentPlanId, cancellationToken)
+                || await _context.InvoiceItems.AnyAsync(x => x.TreatmentPlanStage != null
+                    && x.TreatmentPlanStage.TreatmentPlanId == treatmentPlanId, cancellationToken);
+        }
+
+        // Stages go with the plan (cascade)
+        public void Remove(TreatmentPlan plan)
+        {
+            _context.TreatmentPlans.Remove(plan);
+        }
+
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             await _context.SaveChangesAsync(cancellationToken);

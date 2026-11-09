@@ -12,6 +12,8 @@ namespace OZE.Application.Interfaces
         Task AddAsync(TreatmentPlan plan, CancellationToken cancellationToken = default);
         Task<bool> PatientExistsAsync(int patientId, CancellationToken cancellationToken = default);
         Task<List<TreatmentPlanSummaryResponse>> GetByPatientAsync(int patientId, bool includeClosed, CancellationToken cancellationToken = default);
+        Task<bool> IsInvoicedAsync(long treatmentPlanId, CancellationToken cancellationToken = default);
+        void Remove(TreatmentPlan plan);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

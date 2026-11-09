@@ -11,6 +11,9 @@ namespace OZE.Application.Interfaces
             CancellationToken cancellationToken = default);
         Task<List<TreatmentPlanSummaryResponse>> GetByPatientAsync(int patientId, bool includeClosed, string userId, bool canViewAll,
             CancellationToken cancellationToken = default);
+        Task<TreatmentPlanProgressResponse> UpdateAsync(long treatmentPlanId, UpdateTreatmentPlanRequest request,
+            string userId, CancellationToken cancellationToken = default);
+        Task DeleteAsync(long treatmentPlanId, string userId, CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> GetProgressAsync(long treatmentPlanId,
             string userId, CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> StartStageAsync(long treatmentPlanId, long stageId,
