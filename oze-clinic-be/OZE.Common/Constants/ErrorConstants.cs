@@ -212,6 +212,9 @@ namespace OZE.Common.Constants
             public const string ScheduledDateInvalid = "Scheduled date is invalid. Please check again.";
             // MSG67
             public const string NextStageNotFound = "Next treatment stage not found.";
+            public const string OpenPlanExists = "This examination already has an open treatment plan.";
+            public const string StagesRequired = "Please add at least one treatment stage.";
+            public const string InvalidEstimatedCost = "Estimated cost is invalid. Please check again.";
         }
         public static class AppointmentMessage
         {
