@@ -20,6 +20,8 @@ namespace OZE.Persistence.Configurations
             builder.Property(x => x.TotalStages).HasDefaultValue(0);
             builder.Property(x => x.EstimatedTotalCost).HasPrecision(18, 2).HasDefaultValue(0m);
             builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Draft");
+            builder.Property(x => x.CancellationReason).HasMaxLength(500);
+            builder.Property(x => x.CancelledByUserId).HasMaxLength(450);
             builder.Property(x => x.RowVersion).IsRowVersion();
             builder.Property(x => x.CreatedAt).HasDefaultValueSql("SYSDATETIMEOFFSET()");
 

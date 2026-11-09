@@ -7,6 +7,7 @@ namespace OZE.Domain.Entities
         public long? PaymentId { get; set; }
         public string RequestType { get; set; } = string.Empty;
         public decimal Amount { get; set; }
+        public decimal? WorkDoneAmount { get; set; }
         public string Reason { get; set; } = string.Empty;
         public string Status { get; set; } = "Pending";
         public string RequestedByUserId { get; set; } = string.Empty;

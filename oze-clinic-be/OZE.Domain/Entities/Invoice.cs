@@ -25,5 +25,6 @@ namespace OZE.Domain.Entities
         public virtual ICollection<InvoiceItem> Items { get; set; } = new List<InvoiceItem>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
         public virtual ICollection<RefundAdjustmentRequest> RefundAdjustmentRequests { get; set; } = new List<RefundAdjustmentRequest>();
+        public virtual ICollection<InstallmentPlan> InstallmentPlans { get; set; } = new List<InstallmentPlan>();
     }
 }

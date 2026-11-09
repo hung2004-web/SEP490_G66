@@ -13,15 +13,18 @@ namespace OZE.Application.Services
         private readonly ITreatmentPlanRepository _treatmentPlanRepository;
         private readonly IStaffRepository _staffRepository;
         private readonly IMedicalRecordRepository _medicalRecordRepository;
+        private readonly IServiceRepository _serviceRepository;
 
         public TreatmentPlanService(
             ITreatmentPlanRepository treatmentPlanRepository,
             IStaffRepository staffRepository,
-            IMedicalRecordRepository medicalRecordRepository)
+            IMedicalRecordRepository medicalRecordRepository,
+            IServiceRepository serviceRepository)
         {
             _treatmentPlanRepository = treatmentPlanRepository;
             _staffRepository = staffRepository;
             _medicalRecordRepository = medicalRecordRepository;
+            _serviceRepository = serviceRepository;
         }
 
         // A doctor works only on the plans of patients they examine, like the medical record itself
@@ -33,6 +36,284 @@ namespace OZE.Application.Services
                 || await _medicalRecordRepository.HasDoctorAccessAsync(doctor.Id, plan.PatientId);
             ConditionGuard.Ensure<ForbiddenException>(hasAccess, ErrorConstants.TreatmentPlanMessage.NoAccess);
             return doctor;
+        }
+
+        public async Task<TreatmentPlanProgressResponse> CreateAsync(
+            long examinationId,
+            CreateTreatmentPlanRequest request,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var doctor = await _staffRepository.GetByUserIdAsync(userId);
+            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.DoctorScheduleMessage.DoctorNotFound);
+
+            // Only the examining doctor plans, and only while the examination is still open
+            var examination = await _treatmentPlanRepository.GetExaminationAsync(examinationId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
+            ConditionGuard.Ensure<ForbiddenException>(examination!.DoctorId == doctor!.Id, ErrorConstants.ExaminationMessage.NotExaminingDoctor);
+            ConditionGuard.Ensure(examination.ExaminationStatus == ExaminationConstants.InProgress, ErrorConstants.ExaminationMessage.AlreadyLocked);
+
+            var hasOpenPlan = await _treatmentPlanRepository.HasOpenPlanAsync(examinationId, cancellationToken);
+            ConditionGuard.ThrowIf(hasOpenPlan, ErrorConstants.TreatmentPlanMessage.OpenPlanExists);
+
+            var validStages = await ValidateStagesAsync(request.Stages, cancellationToken);
+
+            var now = DateTimeOffset.UtcNow;
+            var plan = new TreatmentPlan
+            {
+                ExaminationId = examination.Id,
+                PatientId = examination.PatientId,
+                CreatedByDoctorId = doctor.Id,
+                PlanName = request.PlanName.Trim(),
+                Description = Clean(request.Description),
+                Status = TreatmentPlanConstants.Draft,
+                CreatedAt = now
+            };
+
+            foreach (var validStage in validStages)
+            {
+                var stage = new TreatmentPlanStage
+                {
+                    StageStatus = TreatmentPlanConstants.StageStatus.Scheduled,
+                    CreatedAt = now
+                };
+                ApplyStage(stage, validStage, plan.Stages.Count + 1);
+                plan.Stages.Add(stage);
+            }
+
+            SetTotals(plan);
+
+            // Saving the examination row checks its row version: two plans created at once, or a plan racing
+            // with "complete examination", end in 409 instead of slipping past the checks above
+            examination.UpdatedAt = now;
+
+            await _treatmentPlanRepository.AddAsync(plan, cancellationToken);
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+
+            // Read back with service names for the response
+            var created = await _treatmentPlanRepository.GetByIdWithStagesAsync(plan.Id, cancellationToken);
+            return ToProgressResponse(created!);
+        }
+
+        public async Task<TreatmentPlanProgressResponse> UpdateAsync(
+            long treatmentPlanId,
+            UpdateTreatmentPlanRequest request,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            await EnsureAccessAsync(userId, plan!);
+
+            // Once approved the plan is a commitment with the patient; changes then go through a new version
+            ConditionGuard.Ensure(plan!.Status == TreatmentPlanConstants.Draft || plan.Status == TreatmentPlanConstants.Proposed,
+                ErrorConstants.TreatmentPlanMessage.PlanNotEditable);
+            var invoiced = await _treatmentPlanRepository.IsInvoicedAsync(plan.Id, cancellationToken);
+            ConditionGuard.ThrowIf(invoiced, ErrorConstants.TreatmentPlanMessage.PlanInvoiced);
+
+            var validStages = await ValidateStagesAsync(request.Stages, cancellationToken);
+
+            // A stage sent with an id is kept and changed, one left out is removed, one without an id is new
+            var keptIds = request.Stages.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToList();
+            ConditionGuard.Ensure(keptIds.Count == keptIds.Distinct().Count(), ErrorConstants.TreatmentPlanMessage.DuplicateStage);
+            var existingStages = plan.Stages.ToDictionary(s => s.Id);
+            ConditionGuard.Ensure<NotFoundException>(keptIds.All(existingStages.ContainsKey), ErrorConstants.TreatmentPlanMessage.StageNotFound);
+
+            foreach (var removedStage in plan.Stages.Where(s => !keptIds.Contains(s.Id)).ToList())
+            {
+                plan.Stages.Remove(removedStage);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            for (var i = 0; i < validStages.Count; i++)
+            {
+                var stageId = request.Stages[i].Id;
+                TreatmentPlanStage stage;
+                if (stageId.HasValue)
+                {
+                    stage = existingStages[stageId.Value];
+                    stage.UpdatedAt = now;
+                }
+                else
+                {
+                    stage = new TreatmentPlanStage
+                    {
+                        StageStatus = TreatmentPlanConstants.StageStatus.Scheduled,
+                        CreatedAt = now
+                    };
+                    plan.Stages.Add(stage);
+                }
+
+                ApplyStage(stage, validStages[i], i + 1);
+            }
+
+            plan.PlanName = request.PlanName.Trim();
+            plan.Description = Clean(request.Description);
+            SetTotals(plan);
+
+            // A plan already shown to the patient goes back to draft: the patient has to see the new version
+            if (plan.Status == TreatmentPlanConstants.Proposed)
+            {
+                plan.Status = TreatmentPlanConstants.Draft;
+            }
+
+            plan.UpdatedAt = now;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+
+            var updated = await _treatmentPlanRepository.GetByIdWithStagesAsync(plan.Id, cancellationToken);
+            return ToProgressResponse(updated!);
+        }
+
+        public async Task DeleteAsync(
+            long treatmentPlanId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            await EnsureAccessAsync(userId, plan!);
+
+            // Only a draft is thrown away; a plan the patient has seen is cancelled instead, so its history stays
+            ConditionGuard.Ensure(plan!.Status == TreatmentPlanConstants.Draft, ErrorConstants.TreatmentPlanMessage.OnlyDraftCanBeDeleted);
+            var invoiced = await _treatmentPlanRepository.IsInvoicedAsync(plan.Id, cancellationToken);
+            ConditionGuard.ThrowIf(invoiced, ErrorConstants.TreatmentPlanMessage.PlanInvoiced);
+
+            _treatmentPlanRepository.Remove(plan);
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+        }
+
+        // Draft -> Proposed: the doctor has finished the plan and shows it to the patient
+        public async Task<TreatmentPlanProgressResponse> ProposeAsync(
+            long treatmentPlanId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await LoadForStatusChangeAsync(treatmentPlanId, userId, canViewAll: false, cancellationToken);
+            ConditionGuard.Ensure(plan.Status == TreatmentPlanConstants.Draft, ErrorConstants.TreatmentPlanMessage.OnlyDraftCanBeProposed);
+            ConditionGuard.Ensure(plan.Stages.Count > 0, ErrorConstants.TreatmentPlanMessage.StagesRequired);
+
+            plan.Status = TreatmentPlanConstants.Proposed;
+            plan.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
+        // Proposed -> Approved: the patient agreed. From here the stages can be started and billed
+        public async Task<TreatmentPlanProgressResponse> ApproveAsync(
+            long treatmentPlanId,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await LoadForStatusChangeAsync(treatmentPlanId, userId, canViewAll, cancellationToken);
+            ConditionGuard.Ensure(plan.Status == TreatmentPlanConstants.Proposed, ErrorConstants.TreatmentPlanMessage.OnlyProposedCanBeApproved);
+
+            var now = DateTimeOffset.UtcNow;
+            plan.Status = TreatmentPlanConstants.Approved;
+            plan.ApprovedAt = now;
+            plan.UpdatedAt = now;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
+        // Proposed / Approved / InProgress -> Cancelled: stages not done yet are cancelled, completed ones stay as history
+        public async Task<TreatmentPlanProgressResponse> CancelAsync(
+            long treatmentPlanId,
+            CancelTreatmentPlanRequest request,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await LoadForStatusChangeAsync(treatmentPlanId, userId, canViewAll, cancellationToken);
+            var cancellable = plan.Status == TreatmentPlanConstants.Proposed
+                || plan.Status == TreatmentPlanConstants.Approved
+                || plan.Status == TreatmentPlanConstants.InProgress;
+            ConditionGuard.Ensure(cancellable, ErrorConstants.TreatmentPlanMessage.PlanNotCancellable);
+
+            var reason = Clean(request.Reason);
+            ConditionGuard.Ensure(reason != null, ErrorConstants.TreatmentPlanMessage.CancelReasonRequired);
+
+            // Stopping in the middle of a stage would leave the treatment record half written
+            var stageInProgress = plan.Stages.Any(s => s.StageStatus == TreatmentPlanConstants.StageStatus.InProgress);
+            ConditionGuard.ThrowIf(stageInProgress, ErrorConstants.TreatmentPlanMessage.StageStillInProgress);
+
+            var now = DateTimeOffset.UtcNow;
+            foreach (var stage in plan.Stages.Where(s => s.StageStatus == TreatmentPlanConstants.StageStatus.Scheduled))
+            {
+                stage.StageStatus = TreatmentPlanConstants.StageStatus.Cancelled;
+                stage.UpdatedAt = now;
+            }
+
+            plan.Status = TreatmentPlanConstants.Cancelled;
+            plan.CancellationReason = reason;
+            plan.CancelledAt = now;
+            plan.CancelledByUserId = userId;
+            plan.UpdatedAt = now;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
+        private async Task<TreatmentPlan> LoadForStatusChangeAsync(
+            long treatmentPlanId,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            if (!canViewAll)
+            {
+                await EnsureAccessAsync(userId, plan!);
+            }
+
+            return plan!;
+        }
+
+        public async Task<TreatmentPlanProgressResponse> GetDetailAsync(
+            long treatmentPlanId,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            if (!canViewAll)
+            {
+                await EnsureAccessAsync(userId, plan!);
+            }
+
+            return ToProgressResponse(plan!);
+        }
+
+        public async Task<List<TreatmentPlanSummaryResponse>> GetByPatientAsync(
+            int patientId,
+            bool includeClosed,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var patientExists = await _treatmentPlanRepository.PatientExistsAsync(patientId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(patientExists, ErrorConstants.MedicalRecordMessage.PatientNotFound);
+
+            if (!canViewAll)
+            {
+                var doctor = await _staffRepository.GetByUserIdAsync(userId);
+                ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.DoctorScheduleMessage.DoctorNotFound);
+                var hasAccess = await _medicalRecordRepository.HasDoctorAccessAsync(doctor!.Id, patientId);
+                ConditionGuard.Ensure<ForbiddenException>(hasAccess, ErrorConstants.TreatmentPlanMessage.NoAccess);
+            }
+
+            var plans = await _treatmentPlanRepository.GetByPatientAsync(patientId, includeClosed, cancellationToken);
+            foreach (var plan in plans)
+            {
+                plan.ProgressPercent = ProgressPercent(plan.CompletedStages, plan.TotalStages - plan.CancelledStages);
+            }
+
+            return plans;
         }
 
         public async Task<TreatmentPlanProgressResponse> GetProgressAsync(
@@ -225,6 +506,69 @@ namespace OZE.Application.Services
             return ToProgressResponse(plan);
         }
 
+        private sealed record ValidStage(CreateTreatmentPlanStageRequest Request, Service Service, decimal Cost);
+
+        // Checks every stage before anything changes: services exist and are active, costs are not negative,
+        // dates are not in the past and do not go back before an earlier stage
+        private async Task<List<ValidStage>> ValidateStagesAsync(
+            IReadOnlyList<CreateTreatmentPlanStageRequest>? stageRequests,
+            CancellationToken cancellationToken)
+        {
+            ConditionGuard.Ensure(stageRequests != null && stageRequests.Count > 0, ErrorConstants.TreatmentPlanMessage.StagesRequired);
+            ConditionGuard.Ensure<NotFoundException>(stageRequests!.All(s => s.ServiceId.HasValue), ErrorConstants.AppointmentMessage.ServiceNotFound);
+
+            var services = (await _serviceRepository.GetByIdsAsync(stageRequests.Select(s => s.ServiceId!.Value), cancellationToken))
+                .ToDictionary(s => s.Id);
+
+            var today = DateOnly.FromDateTime(ClinicClock.Now);
+            DateOnly? previousDate = null;
+            var validStages = new List<ValidStage>();
+            foreach (var stageRequest in stageRequests)
+            {
+                ConditionGuard.Ensure<NotFoundException>(services.TryGetValue(stageRequest.ServiceId!.Value, out var service),
+                    ErrorConstants.AppointmentMessage.ServiceNotFound);
+                ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
+
+                // A cost left out takes the price list; the doctor may set another one for this patient
+                var cost = stageRequest.EstimatedCost ?? service.ReferencePrice;
+                ConditionGuard.Ensure(cost >= 0, ErrorConstants.TreatmentPlanMessage.InvalidEstimatedCost);
+
+                var date = stageRequest.ScheduledDate;
+                if (date.HasValue)
+                {
+                    ConditionGuard.Ensure(date.Value >= today && (!previousDate.HasValue || date.Value >= previousDate.Value),
+                        ErrorConstants.TreatmentPlanMessage.ScheduledDateInvalid);
+                    previousDate = date;
+                }
+
+                validStages.Add(new ValidStage(stageRequest, service, cost));
+            }
+
+            return validStages;
+        }
+
+        private static void ApplyStage(TreatmentPlanStage stage, ValidStage validStage, int stageNumber)
+        {
+            stage.StageNumber = stageNumber;
+            stage.StageName = Clean(validStage.Request.StageName) ?? validStage.Service.ServiceName;
+            stage.Description = Clean(validStage.Request.Description);
+            stage.ServiceId = validStage.Service.Id;
+            stage.EstimatedCost = validStage.Cost;
+            stage.ScheduledDate = validStage.Request.ScheduledDate;
+        }
+
+        // Totals are worked out by the server, never taken from the client
+        private static void SetTotals(TreatmentPlan plan)
+        {
+            plan.TotalStages = plan.Stages.Count;
+            plan.EstimatedTotalCost = plan.Stages.Sum(s => s.EstimatedCost);
+        }
+
+        private static string? Clean(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+
         private static TreatmentPlanProgressResponse ToProgressResponse(TreatmentPlan plan)
         {
             var stages = plan.Stages
@@ -237,10 +581,12 @@ namespace OZE.Application.Services
                 s.StageStatus == TreatmentPlanConstants.StageStatus.Cancelled);
             var nonCancelledCount = stages.Count - cancelledStages;
 
-            // BR-134: completed / stages that are not cancelled
-            var progressPercent = nonCancelledCount == 0
-                ? 0m
-                : Math.Round((decimal)completedStages / nonCancelledCount * 100m, 2);
+            var nextStage = stages.FirstOrDefault(s =>
+                s.StageStatus == TreatmentPlanConstants.StageStatus.InProgress
+                || s.StageStatus == TreatmentPlanConstants.StageStatus.Scheduled);
+            var completedCost = stages
+                .Where(s => s.StageStatus == TreatmentPlanConstants.StageStatus.Completed)
+                .Sum(s => s.ActualCost ?? s.EstimatedCost);
 
             return new TreatmentPlanProgressResponse
             {
@@ -248,12 +594,33 @@ namespace OZE.Application.Services
                 PlanName = plan.PlanName,
                 Status = plan.Status,
                 PlanVersion = plan.PlanVersion,
+                Description = plan.Description,
+                ExaminationId = plan.ExaminationId,
+                PatientId = plan.PatientId,
+                PatientName = plan.Patient?.FullName,
+                CreatedByDoctorId = plan.CreatedByDoctorId,
+                CreatedByDoctorName = plan.CreatedByDoctor?.FullName,
+                EstimatedTotalCost = plan.EstimatedTotalCost,
+                CompletedCost = completedCost,
+                CreatedAt = plan.CreatedAt,
+                ApprovedAt = plan.ApprovedAt,
+                CancellationReason = plan.CancellationReason,
+                CancelledAt = plan.CancelledAt,
                 TotalStages = stages.Count,
                 CompletedStages = completedStages,
                 CancelledStages = cancelledStages,
-                ProgressPercent = progressPercent,
+                ProgressPercent = ProgressPercent(completedStages, nonCancelledCount),
+                NextStage = nextStage == null ? null : ToStageResponse(nextStage),
                 Stages = stages.Select(ToStageResponse).ToList()
             };
+        }
+
+        // BR-134: completed / stages that are not cancelled
+        private static decimal ProgressPercent(int completedStages, int nonCancelledCount)
+        {
+            return nonCancelledCount == 0
+                ? 0m
+                : Math.Round((decimal)completedStages / nonCancelledCount * 100m, 2);
         }
 
         private static TreatmentPlanStageResponse ToStageResponse(TreatmentPlanStage stage)
