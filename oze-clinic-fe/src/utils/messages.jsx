@@ -157,12 +157,13 @@ export const APPOINTMENT_STATUS = {
     NO_SHOW: "NO_SHOW",
 };
 
-export const QUEUE_STATUS = { WAITING: "WAITING", CALLED: "CALLED" };
+export const QUEUE_STATUS = { WAITING: "WAITING", CALLED: "CALLED", IN_EXAMINATION: "IN_EXAMINATION" };
 
 // Badge of a row in the doctor's exam queue. Keys are QUEUE_STATUS values.
 export const EXAM_QUEUE_STATUS = {
     [QUEUE_STATUS.WAITING]: { label: "Đang chờ", badge: "badge-neutral" },
     [QUEUE_STATUS.CALLED]: { label: "Đã gọi", badge: "badge-warning" },
+    [QUEUE_STATUS.IN_EXAMINATION]: { label: "Đang khám", badge: "badge-info" },
 };
 
 // Tabs of the doctor's exam screen, in display order.
@@ -186,6 +187,50 @@ export const EXAM_TABS = [
 
 // Steps of one exam visit, shown by ExamStepper once the exam has started.
 export const EXAM_STEPS = ["Lập hồ sơ bệnh án", "Khám & Chẩn đoán", "Lập kế hoạch điều trị", "Điều trị", "Kê đơn thuốc"];
+
+// Heading of each step's content, same order as EXAM_STEPS.
+export const EXAM_STEP_TITLES = ["Bổ sung tiền sử bệnh", "Khám lâm sàng & chẩn đoán", "Lập kế hoạch điều trị", "Thực hiện điều trị", "Kê đơn thuốc"];
+
+// Medical history checklists of step 1. The doctor can also type items not in the list.
+export const HISTORY_ALLERGY_OPTIONS = [
+    "Penicillin",
+    "Amoxicillin",
+    "Cephalosporin",
+    "Thuốc tê (Lidocaine)",
+    "Aspirin / NSAIDs",
+    "Latex (găng cao su)",
+    "Kim loại (Niken)",
+    "Iod",
+];
+
+export const HISTORY_CONDITION_OPTIONS = [
+    "Bệnh tim mạch",
+    "Tăng huyết áp",
+    "Tiểu đường",
+    "Hen suyễn / bệnh phổi",
+    "Viêm gan / bệnh gan",
+    "Bệnh thận",
+    "Rối loạn đông máu",
+    "Động kinh",
+    "Bệnh tuyến giáp",
+    "Loãng xương",
+    "Ung thư / xạ trị vùng đầu cổ",
+    "Bệnh truyền nhiễm (HIV, lao…)",
+];
+
+// Shown in the condition checklist for female patients only.
+export const HISTORY_FEMALE_CONDITION_OPTIONS = ["Đang mang thai", "Đang cho con bú"];
+
+export const HISTORY_DENTAL_OPTIONS = [
+    "Ê buốt răng",
+    "Chảy máu chân răng",
+    "Từng nhổ răng",
+    "Từng điều trị tủy",
+    "Từng niềng răng",
+    "Nghiến răng khi ngủ",
+    "Từng phẫu thuật răng miệng",
+    "Đau khớp thái dương hàm",
+];
 
 // Common symptoms the doctor can tick in the "Khám" tab.
 export const EXAM_SYMPTOMS = [

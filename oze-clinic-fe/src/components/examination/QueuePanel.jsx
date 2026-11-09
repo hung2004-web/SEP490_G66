@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { ChevronsLeft, ChevronsRight, Users } from "lucide-react";
 import { cx } from "@/utils/cx";
+import { isQueueBusy, queueNumberTone } from "@/utils/examination";
 import { QUEUE_STATUS } from "@/utils/messages";
 import QueueDoneFooter from "./QueueDoneFooter";
 import QueueItem from "./QueueItem";
@@ -24,7 +25,7 @@ const QueuePanel = ({
     onOpenDone,
 }) => {
     const titleId = useId();
-    const canCall = !items.some((item) => item.status === QUEUE_STATUS.CALLED);
+    const canCall = !isQueueBusy(items);
     const CollapseIcon = collapsed ? ChevronsRight : ChevronsLeft;
 
     const collapseButton = onToggleCollapse && (
@@ -56,7 +57,7 @@ const QueuePanel = ({
                                 aria-pressed={item.id === selectedId}
                                 className={cx(
                                     "num grid size-9 cursor-pointer place-items-center rounded-md font-semibold outline-none focus-visible:shadow-focus",
-                                    item.id === selectedId ? "bg-warning text-on-primary" : "bg-surface-muted text-ink hover:bg-surface-tint",
+                                    queueNumberTone(item.status, item.id === selectedId),
                                 )}
                                 onClick={() => onSelect?.(item.id)}
                             >
@@ -76,7 +77,7 @@ const QueuePanel = ({
                     <h2 id={titleId} className="font-semibold text-ink">
                         Hàng chờ · {shift?.roomName ?? "Phòng khám"}
                     </h2>
-                    <p className="text-caption text-muted">{shiftText(shift, items.length)}</p>
+                    <p className="text-caption text-muted">{shiftText(shift, items.filter((item) => item.status !== QUEUE_STATUS.IN_EXAMINATION).length)}</p>
                 </div>
                 {collapseButton}
             </div>

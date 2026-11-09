@@ -6,7 +6,7 @@ import ClinicalExamSection from "./ClinicalExamSection";
 const DiagnosisSection = ({ items = [], onAdd, onRemove }) => (
     <ClinicalExamSection
         title="Chẩn đoán xác định"
-        bodyClassName="p-0"
+        flush
         action={
             onAdd && (
                 <button type="button" className="btn btn-secondary h-8 px-3 text-caption" onClick={onAdd}>

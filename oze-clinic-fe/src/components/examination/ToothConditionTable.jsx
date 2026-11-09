@@ -16,7 +16,7 @@ const ToothConditionTable = ({ entries = [], selectedTooth, onSelectEntry }) => 
     };
 
     return (
-        <ClinicalExamSection title="Tình trạng răng hiện tại" action={<span className="num text-caption text-muted">{entries.length} ghi nhận</span>} bodyClassName="p-0">
+        <ClinicalExamSection title="Tình trạng răng hiện tại" action={<span className="num text-caption text-muted">{entries.length} ghi nhận</span>} flush>
             {sorted.length === 0 ? (
                 <p className="px-5 py-6 text-center text-muted">Chưa có ghi nhận nào. Bấm vào răng trên sơ đồ để thêm.</p>
             ) : (

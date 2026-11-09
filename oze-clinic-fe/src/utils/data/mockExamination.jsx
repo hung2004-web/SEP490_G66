@@ -1,6 +1,6 @@
 import { QUEUE_STATUS } from "../messages";
 
-// Sample data for the doctor's exam screen components (queue, patient header, exam tab).
+// Sample data for the doctor's exam screen (/doctor/queue): queue of the shift and one record per patient.
 
 export const MOCK_EXAM_SHIFT = { name: "Ca sáng", start: "08:00", end: "12:00", roomName: "Phòng khám" };
 
@@ -14,27 +14,106 @@ export const MOCK_EXAM_QUEUE = [
 
 export const MOCK_EXAM_DONE_COUNT = 2;
 
-// Patient called in (queue number 8), shown by PatientCard.
-export const MOCK_EXAM_PATIENT = { name: "Nguyễn Văn A", code: "BN000123", gender: "male", age: 28, queueNumber: 8 };
+const GENERAL_CHECKUP = { id: 1, name: "Khám tổng quát" };
+const SCALING = { id: 2, name: "Lấy cao răng" };
+const FILLING = { id: 3, name: "Trám răng" };
+const ROOT_CANAL = { id: 4, name: "Điều trị tủy" };
+const WHITENING = { id: 5, name: "Tẩy trắng răng" };
 
-export const MOCK_EXAM_PATIENT_STATUS = { label: "Đã gọi · chờ vào phòng", tone: "warning" };
-
-export const MOCK_EXAM_SERVICES = [
-    { id: 1, name: "Khám tổng quát" },
-    { id: 2, name: "Lấy cao răng" },
-    { id: 3, name: "Trám răng" },
-];
-
-// What reception recorded at check-in, shown by ExamPreStart.
-export const MOCK_EXAM_INTAKE = {
-    allergies: ["Penicillin"],
-    reason: "Đau răng hàm dưới, muốn lấy cao răng",
-    conditions: ["Viêm xoang"],
-    checkInAt: "08:21",
-    appointmentTime: "08:30",
+// Visit record per queue entry (key = queue id): patient, booked services, check-in, history, previous visits.
+// visits[].historyItems: what "Bổ sung" copies into the dental history.
+export const MOCK_EXAM_RECORDS = {
+    1: {
+        encounterCode: "LK-1019-012",
+        patient: {
+            code: "BN000123",
+            name: "Nguyễn Văn A",
+            gender: "male",
+            birthdate: "1998-05-14",
+            age: 28,
+            phone: "0912345678",
+            emergencyPhone: "0912777345",
+            address: "Số 12, Đại Mỗ, Nam Từ Liêm, Hà Nội",
+        },
+        services: [GENERAL_CHECKUP, SCALING, FILLING],
+        intake: { reason: "Đau răng hàm dưới, muốn lấy cao răng", checkInAt: "08:21", appointmentTime: "08:30" },
+        history: { allergies: ["Penicillin"], conditions: ["Tăng huyết áp"], dental: ["Ê buốt răng", "Từng nhổ răng"] },
+        visits: [
+            { id: 9001, date: "15/07/2026", doctor: "BS. Trần Minh Khoa", summary: "Lấy cao răng định kỳ · Cao răng (K03.6)", historyItems: [] },
+            { id: 9002, date: "02/03/2026", doctor: "BS. Lê Thu Hà", summary: "Ê buốt răng 36 · Sâu ngà răng 36 (K02.1)", historyItems: ["Ê buốt răng", "Từng trám răng 36"] },
+        ],
+    },
+    2: {
+        encounterCode: "LK-1019-013",
+        patient: {
+            code: "BN000187",
+            name: "Lý Thanh Tâm",
+            gender: "male",
+            birthdate: "1985-11-02",
+            age: 41,
+            phone: "0903456123",
+            emergencyPhone: "",
+            address: "45 Trần Duy Hưng, Cầu Giấy, Hà Nội",
+        },
+        services: [ROOT_CANAL],
+        intake: { reason: "Đau nhức răng hàm trên bên phải về đêm", checkInAt: "08:35", appointmentTime: "09:00" },
+        history: { allergies: [], conditions: ["Tiểu đường"], dental: ["Từng điều trị tủy"] },
+        visits: [{ id: 9010, date: "10/01/2026", doctor: "BS. Trần Minh Khoa", summary: "Viêm tủy răng 16 · Điều trị tủy (K04.0)", historyItems: ["Từng điều trị tủy"] }],
+    },
+    3: {
+        encounterCode: "LK-1019-014",
+        patient: {
+            code: "BN000204",
+            name: "Mai Thị Lan",
+            gender: "female",
+            birthdate: "1996-03-21",
+            age: 30,
+            phone: "0987001234",
+            emergencyPhone: "0987001999",
+            address: "8 Kim Mã, Ba Đình, Hà Nội",
+        },
+        services: [GENERAL_CHECKUP, WHITENING],
+        intake: { reason: "Muốn tẩy trắng răng", checkInAt: "08:42", appointmentTime: null },
+        history: { allergies: [], conditions: ["Đang cho con bú"], dental: [] },
+        visits: [],
+    },
+    4: {
+        encounterCode: "LK-1019-015",
+        patient: {
+            code: "BN000211",
+            name: "Đinh Thu Hà",
+            gender: "female",
+            birthdate: "2001-08-09",
+            age: 25,
+            phone: "0978222333",
+            emergencyPhone: "",
+            address: "102 Nguyễn Văn Cừ, Long Biên, Hà Nội",
+        },
+        services: [SCALING],
+        intake: { reason: "Lấy cao răng định kỳ", checkInAt: "08:50", appointmentTime: "09:30" },
+        history: { allergies: ["Latex (găng cao su)"], conditions: [], dental: ["Chảy máu chân răng"] },
+        visits: [{ id: 9020, date: "20/02/2026", doctor: "BS. Lê Thu Hà", summary: "Viêm lợi · Lấy cao răng (K05.1)", historyItems: ["Chảy máu chân răng"] }],
+    },
+    5: {
+        encounterCode: "LK-1019-016",
+        patient: {
+            code: "BN000230",
+            name: "Ngô Minh Anh",
+            gender: "male",
+            birthdate: "2010-12-30",
+            age: 15,
+            phone: "0966777888",
+            emergencyPhone: "0966777000",
+            address: "3 Lê Văn Lương, Thanh Xuân, Hà Nội",
+        },
+        services: [GENERAL_CHECKUP, FILLING],
+        intake: { reason: "Răng cửa bị mẻ khi chơi thể thao", checkInAt: "09:02", appointmentTime: null },
+        history: { allergies: [], conditions: ["Hen suyễn / bệnh phổi"], dental: [] },
+        visits: [],
+    },
 };
 
-// Findings on the exam chart (same shape as the medical record chart), shown by ExamDentalChart / ToothConditionTable.
+// Sample findings of step 2 ("Khám & chẩn đoán") for the first patient.
 export const MOCK_EXAM_TOOTH_ENTRIES = [
     { id: 1, tooth: 36, surf: "OD", kind: "caries", st: "condition", note: "Sâu ngà mặt nhai – xa" },
     { id: 2, tooth: 46, kind: "pulp", st: "condition", note: "Đau tự phát về đêm, nghi viêm tủy" },
