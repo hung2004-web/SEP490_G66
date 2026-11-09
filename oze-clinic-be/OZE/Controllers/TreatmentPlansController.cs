@@ -21,6 +21,19 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Creates a draft treatment plan for an open examination; stages are built from services, numbered in the order sent.
+        /// </summary>
+        [HttpPost("~/api/examinations/{examinationId:long}/treatment-plans")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> CreateAsync(
+            [FromRoute] long examinationId,
+            [FromBody] CreateTreatmentPlanRequest request,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanService.CreateAsync(examinationId, request, GetUserId(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(plan, "Create treatment plan success!"));
+        }
+
+        /// <summary>
         /// Returns treatment plan progress: stages with status and overall progress percent (UC-52 / AC1).
         /// </summary>
         [HttpGet("{id:long}/progress")]
