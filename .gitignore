@@ -11,3 +11,9 @@
 
 ## Local ASP.NET config (secrets, connection strings)
 **/appsettings.Development.json
+
+# BMAD Method - Local AI configuration
+/_bmad/
+/_bmad-output/
+/.agents/skills/
+/AGENTS.md
