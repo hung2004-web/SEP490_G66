@@ -1,59 +1,73 @@
-import RecordStatusBadge from "@/components/medicalRecord/RecordStatusBadge";
 import { cx } from "@/utils/cx";
-import { displayText, surfaceText, toToothCode, toothName } from "@/utils/medicalRecord";
-import { MEDICAL_RECORD_TOOTH_KIND, MEDICAL_RECORD_TOOTH_STATUS } from "@/utils/messages";
+import { surfacesText } from "@/utils/examination";
 import ClinicalExamSection from "./ClinicalExamSection";
 
-const ROW_FOCUS_CLASS = "focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary";
+const linkButton = "cursor-pointer rounded text-caption font-semibold outline-none hover:underline focus-visible:shadow-focus";
 
-// "Tình trạng răng hiện tại": the findings recorded on the chart. Clicking a row opens it in the editor.
-const ToothConditionTable = ({ entries = [], selectedTooth, onSelectEntry }) => {
-    const sorted = [...entries].sort((a, b) => toToothCode(a.tooth) - toToothCode(b.tooth));
-    const selectByKey = (event, entry) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        onSelectEntry?.(entry);
-    };
+// "Tình trạng răng hiện tại": findings of this visit grouped by tooth (number shown on the tooth's first row).
+// entries: [{ id, tooth, condition, surfaces, note }].
+const ToothConditionTable = ({ entries = [], selectedTooth, onSelectTooth, onEdit, onRemove }) => {
+    const sorted = [...entries].sort((a, b) => Number(a.tooth) - Number(b.tooth));
+    const toothCount = new Set(entries.map((entry) => Number(entry.tooth))).size;
 
     return (
-        <ClinicalExamSection title="Tình trạng răng hiện tại" action={<span className="num text-caption text-muted">{entries.length} ghi nhận</span>} flush>
+        <ClinicalExamSection
+            title="Tình trạng răng hiện tại"
+            action={
+                entries.length > 0 && (
+                    <span className="num rounded-full bg-surface-tint px-2 py-0.5 text-[11px] font-medium text-body">
+                        {entries.length} tình trạng · {toothCount} răng
+                    </span>
+                )
+            }
+        >
             {sorted.length === 0 ? (
-                <p className="px-5 py-6 text-center text-muted">Chưa có ghi nhận nào. Bấm vào răng trên sơ đồ để thêm.</p>
+                <p className="py-2 text-center text-muted">Chưa có ghi nhận nào. Bấm vào răng trên sơ đồ để thêm.</p>
             ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-lg border border-border">
                     <table className="table">
                         <thead>
                             <tr>
                                 <th scope="col">Răng</th>
                                 <th scope="col">Tình trạng</th>
                                 <th scope="col">Mặt răng</th>
-                                <th scope="col">Trạng thái</th>
-                                <th scope="col">Ghi chú</th>
+                                <th scope="col">Mô tả</th>
+                                <th scope="col">
+                                    <span className="sr-only">Thao tác</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {sorted.map((entry, index) => {
-                                const tooth = toToothCode(entry.tooth);
-                                const selected = tooth === selectedTooth;
+                                const tooth = Number(entry.tooth);
+                                const firstOfTooth = index === 0 || Number(sorted[index - 1].tooth) !== tooth;
                                 return (
-                                    <tr
-                                        key={entry.id ?? index}
-                                        tabIndex={0}
-                                        aria-selected={selected}
-                                        className={cx("cursor-pointer", ROW_FOCUS_CLASS)}
-                                        onClick={() => onSelectEntry?.(entry)}
-                                        onKeyDown={(event) => selectByKey(event, entry)}
-                                    >
-                                        <td className={cx("py-2", selected && "border-l-3 border-l-primary")}>
-                                            <b className="num text-ink">{displayText(entry.tooth)}</b>
-                                            <p className="text-caption text-muted">{toothName(tooth)}</p>
+                                    <tr key={entry.id} aria-selected={tooth === selectedTooth}>
+                                        <td className={cx("w-16", !firstOfTooth && "border-t-transparent")}>
+                                            {firstOfTooth && (
+                                                <button
+                                                    type="button"
+                                                    className="num cursor-pointer rounded font-semibold text-ink outline-none hover:text-primary focus-visible:shadow-focus"
+                                                    aria-label={`Chọn răng ${tooth} trên sơ đồ`}
+                                                    onClick={() => onSelectTooth?.(tooth)}
+                                                >
+                                                    {tooth}
+                                                </button>
+                                            )}
                                         </td>
-                                        <td>{MEDICAL_RECORD_TOOTH_KIND[entry.kind] ?? displayText(entry.kind)}</td>
-                                        <td className="text-caption">{entry.surf ? surfaceText(entry.surf) : "Cả răng"}</td>
-                                        <td>
-                                            <RecordStatusBadge status={entry.st} labels={MEDICAL_RECORD_TOOTH_STATUS} />
+                                        <td className="min-w-32">{entry.condition}</td>
+                                        <td className="num whitespace-nowrap">{surfacesText(entry.surfaces)}</td>
+                                        <td className="min-w-56 text-caption">{entry.note || "—"}</td>
+                                        <td className="whitespace-nowrap text-right">
+                                            <span className="inline-flex gap-3">
+                                                <button type="button" className={`${linkButton} text-primary`} onClick={() => onEdit?.(entry)}>
+                                                    Sửa
+                                                </button>
+                                                <button type="button" className={`${linkButton} text-danger`} onClick={() => onRemove?.(entry)}>
+                                                    Xoá
+                                                </button>
+                                            </span>
                                         </td>
-                                        <td className="min-w-48 text-caption">{displayText(entry.note || null)}</td>
                                     </tr>
                                 );
                             })}

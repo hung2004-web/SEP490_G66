@@ -1,4 +1,4 @@
-import { MOCK_EXAM_DONE_COUNT, MOCK_EXAM_QUEUE, MOCK_EXAM_RECORDS, MOCK_EXAM_SHIFT } from "../utils/data/mockExamination";
+import { EMPTY_EXAM_DRAFT, MOCK_EXAM_DONE_COUNT, MOCK_EXAM_DRAFTS, MOCK_EXAM_QUEUE, MOCK_EXAM_RECORDS, MOCK_EXAM_SHIFT } from "../utils/data/mockExamination";
 import { isQueueBusy } from "../utils/examination";
 import { QUEUE_STATUS } from "../utils/messages";
 
@@ -14,7 +14,17 @@ const failure = (message) => ({ success: false, message, data: null, errors: nul
 const state = {
     queue: MOCK_EXAM_QUEUE.map((item) => ({ ...item })),
     doneCount: MOCK_EXAM_DONE_COUNT,
-    records: structuredClone(MOCK_EXAM_RECORDS),
+    records: Object.fromEntries(
+        Object.entries(MOCK_EXAM_RECORDS).map(([id, record]) => [id, { ...structuredClone(record), exam: structuredClone(MOCK_EXAM_DRAFTS[id] ?? EMPTY_EXAM_DRAFT) }]),
+    ),
+    nextFilmNumber: 331,
+};
+
+const pad2 = (value) => String(value).padStart(2, "0");
+
+const clockNow = () => {
+    const now = new Date();
+    return `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
 };
 
 const snapshot = () => ({
@@ -31,7 +41,7 @@ export const getExamWorkspace = async () => {
     return success(snapshot());
 };
 
-// Everything the exam screen shows about one patient in the queue.
+// Everything the exam screen shows about one patient in the queue, including the step 2 draft (record.exam).
 export const getExamRecord = async (queueId) => {
     await wait(MOCK_DELAY_MS);
     const record = state.records[queueId];
@@ -99,4 +109,38 @@ export const endExamination = async (queueId) => {
     state.queue = state.queue.filter((entry) => entry.id !== queueId);
     state.doneCount += 1;
     return success(snapshot(), `Đã kết thúc lượt khám của ${item.patientName}.`);
+};
+
+// Draft save of step 2. exam: { symptoms, note, entries, films, diagnoses }.
+export const saveExamDraft = async (queueId, exam) => {
+    await wait(MOCK_DELAY_MS);
+    const record = state.records[queueId];
+    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
+    record.exam = structuredClone(exam);
+    return success({ savedAt: Date.now() });
+};
+
+// Sends an X-ray order to the imaging technician: one request per selected type.
+// request: { types: [], area, purpose, needPrint }. Returns the new films.
+export const requestXray = async (queueId, request) => {
+    await wait(MOCK_DELAY_MS);
+    const record = state.records[queueId];
+    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
+    if (!request.types?.length || !request.area?.trim()) return failure("Chọn loại chụp và nhập vùng / răng cần chụp.");
+    const sentAt = clockNow();
+    const films = request.types.map((type) => {
+        const number = state.nextFilmNumber++;
+        return {
+            id: `film-${number}`,
+            code: `YC${String(number).padStart(6, "0")}`,
+            type,
+            area: request.area.trim(),
+            purpose: request.purpose?.trim() ?? "",
+            needPrint: Boolean(request.needPrint),
+            status: "requested",
+            sentAt,
+        };
+    });
+    record.exam.films = [...films, ...record.exam.films];
+    return success(structuredClone(films), `Đã gửi ${films.length} yêu cầu chụp tới kỹ thuật viên.`);
 };

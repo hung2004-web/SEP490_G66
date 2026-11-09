@@ -196,23 +196,28 @@ export const MOCK_EXAM_RECORDS = {
     },
 };
 
-// Sample findings of step 2 ("Khám & chẩn đoán") for the first patient.
-export const MOCK_EXAM_TOOTH_ENTRIES = [
-    { id: 1, tooth: 36, surf: "OD", kind: "caries", st: "condition", note: "Sâu ngà mặt nhai – xa" },
-    { id: 2, tooth: 46, kind: "pulp", st: "condition", note: "Đau tự phát về đêm, nghi viêm tủy" },
-    { id: 3, tooth: 26, surf: "O", kind: "filling", st: "done", note: "Miếng trám composite cũ còn tốt" },
-    { id: 4, tooth: 38, kind: "impacted", st: "watch", note: "Răng khôn mọc lệch, theo dõi" },
-];
+// Step 2 "Khám & chẩn đoán" draft of each visit (key = queue id). Patients not listed start empty.
+// entries: tooth findings { id, tooth, condition (free text), surfaces: ["O", "D"], note, replaced? (primary tooth) }.
+// films: X-ray orders { id, code, type, area, purpose, status (XRAY_STATUS key), sentAt?, visitDate? }.
+// diagnoses: { id, code (ICD10_DENTAL), teeth: ["36"], note }.
+export const MOCK_EXAM_DRAFTS = {
+    1: {
+        symptoms: ["Ê buốt khi ăn nóng / lạnh", "Đau khi nhai", "Sưng lợi"],
+        note: "",
+        entries: [
+            { id: 1, tooth: 36, condition: "Sâu răng", surfaces: ["O", "D"], note: "Sâu ngà mặt nhai – xa, đáy lỗ sâu sát tủy." },
+            { id: 2, tooth: 36, condition: "Mòn cổ răng", surfaces: ["B"], note: "Mòn cổ răng mặt ngoài, ê khi chải răng." },
+            { id: 3, tooth: 37, condition: "Sâu răng", surfaces: ["O"], note: "Sâu men mặt nhai, thử lạnh ê nhẹ." },
+        ],
+        films: [
+            { id: 1, code: "YC000330", type: "X-quang quanh chóp", area: "Răng 36", purpose: "", status: "requested", sentAt: "09:25" },
+            { id: 2, code: "YC000289", type: "X-quang toàn cảnh", area: "Toàn hàm", purpose: "", status: "reviewed", visitDate: "15/07/2026" },
+        ],
+        diagnoses: [
+            { id: 1, code: "K04.0", teeth: ["36"], note: "Viêm tủy răng 36. Đau tự phát, thử lạnh đau kéo dài > 10 giây." },
+            { id: 2, code: "K03.6", teeth: ["31", "32", "41", "42"], note: "Cao răng mặt trong hàm dưới." },
+        ],
+    },
+};
 
-export const MOCK_EXAM_SYMPTOMS = ["Đau răng", "Ê buốt khi ăn lạnh", "Cao răng nhiều"];
-
-export const MOCK_EXAM_FILMS = [
-    { id: 1, code: "XQ260011", type: "X-quang quanh chóp", area: "Răng 46", status: "concluded", requestedAt: "08:40" },
-    { id: 2, code: "XQ260012", type: "X-quang toàn cảnh (Panorama)", area: "Toàn hàm", status: "requested", requestedAt: "08:52" },
-];
-
-export const MOCK_EXAM_DIAGNOSES = [
-    { id: 1, code: "K02.1", name: "Sâu ngà răng", teeth: "36" },
-    { id: 2, code: "K04.0", name: "Viêm tủy răng", teeth: "46" },
-    { id: 3, code: "K03.6", name: "Cao răng (lắng đọng trên răng)", teeth: "" },
-];
+export const EMPTY_EXAM_DRAFT = { symptoms: [], note: "", entries: [], films: [], diagnoses: [] };

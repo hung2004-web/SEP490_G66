@@ -235,27 +235,93 @@ export const HISTORY_DENTAL_OPTIONS = [
 // Common symptoms the doctor can tick in the "Khám" tab.
 export const EXAM_SYMPTOMS = [
     "Đau răng",
-    "Ê buốt khi ăn lạnh",
-    "Ê buốt khi ăn nóng",
+    "Ê buốt khi ăn nóng / lạnh",
+    "Đau tự phát về đêm",
     "Đau khi nhai",
     "Chảy máu chân răng",
-    "Sưng nướu",
+    "Sưng lợi",
+    "Sưng má / mặt",
     "Hôi miệng",
     "Răng lung lay",
     "Mẻ / vỡ răng",
-    "Cao răng nhiều",
-    "Sưng má",
-    "Há miệng hạn chế",
+    "Lỗ sâu nhìn thấy",
+    "Nhét thức ăn kẽ răng",
+    "Răng đổi màu",
+    "Đau răng khôn",
+    "Đau khớp hàm / há miệng hạn chế",
+    "Loét miệng",
+    "Khô miệng",
+    "Mất răng",
+    "Răng mọc lệch / chen chúc",
 ];
 
-// Tooth findings that are recorded per surface (the others apply to the whole tooth).
-export const EXAM_SURFACE_KINDS = ["caries", "filling", "wear"];
+// Suggestions for the free-text tooth condition of the exam chart.
+export const TOOTH_CONDITION_SUGGESTIONS = [
+    "Sâu răng",
+    "Mòn cổ răng",
+    "Nứt răng",
+    "Mẻ răng",
+    "Răng lung lay",
+    "Viêm tủy",
+    "Đã trám",
+    "Đã điều trị tủy",
+    "Mão / cầu sứ",
+    "Mất răng",
+    "Răng mọc lệch",
+    "Răng ngầm",
+];
 
+// Tooth surfaces of the exam chart, in the order of the design.
+export const EXAM_TOOTH_SURFACES = [
+    { code: "M", label: "gần" },
+    { code: "O", label: "nhai" },
+    { code: "D", label: "xa" },
+    { code: "B", label: "ngoài" },
+    { code: "L", label: "trong" },
+];
+
+// X-ray order statuses: sent to the technician, image taken, image reviewed by the doctor.
 export const XRAY_STATUS = {
-    requested: { label: "Chờ chụp", badge: "badge-warning" },
+    requested: { label: "Chờ chụp", badge: "badge-neutral" },
     captured: { label: "Chờ đọc kết quả", badge: "badge-info" },
-    concluded: { label: "Đã có kết luận", badge: "badge-success" },
+    reviewed: { label: "Đã xem", badge: "badge-success" },
 };
+
+export const XRAY_TYPES = [
+    "Panorama",
+    "Cephalometric",
+    "Chụp ống tủy",
+    "Chụp chỉnh nha 3D",
+    "Chụp mặt thẳng (AP)",
+    "Chụp khớp thái dương hàm (TMJ)",
+    "Chụp khảo sát và giả định đặt Implant",
+    "Chụp Cone beam CT hàm trên",
+    "Chụp Cone beam CT hàm dưới",
+    "Chụp Cone beam CT hai hàm",
+    "Chụp CT xoang hàm mặt",
+];
+
+// ICD-10 codes the doctor picks from in "Chẩn đoán xác định" (dental chapter K00–K08, plus tooth fracture).
+export const ICD10_DENTAL = [
+    { code: "K01.1", name: "Răng ngầm" },
+    { code: "K02.0", name: "Sâu men răng" },
+    { code: "K02.1", name: "Sâu ngà răng" },
+    { code: "K02.2", name: "Sâu xê măng" },
+    { code: "K02.3", name: "Sâu răng ngưng tiến triển" },
+    { code: "K03.0", name: "Mòn răng sinh lý quá mức" },
+    { code: "K03.1", name: "Mòn răng cơ học (mòn cổ răng)" },
+    { code: "K03.6", name: "Cặn bám trên răng" },
+    { code: "K04.0", name: "Viêm tủy răng" },
+    { code: "K04.1", name: "Hoại tử tủy răng" },
+    { code: "K04.4", name: "Viêm quanh chóp cấp" },
+    { code: "K04.5", name: "Viêm quanh chóp mạn" },
+    { code: "K05.0", name: "Viêm lợi cấp" },
+    { code: "K05.1", name: "Viêm lợi mạn" },
+    { code: "K05.3", name: "Viêm nha chu mạn" },
+    { code: "K07.3", name: "Bất thường vị trí răng" },
+    { code: "K08.1", name: "Mất răng do nhổ, tai nạn hoặc bệnh nha chu" },
+    { code: "S02.5", name: "Gãy răng" },
+];
 
 export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress", COMPLETED: "Completed", CANCELLED: "Cancelled" };
 

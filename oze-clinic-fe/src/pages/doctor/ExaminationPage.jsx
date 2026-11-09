@@ -27,7 +27,6 @@ import {
     setExamStep,
     startExamination,
 } from "@/services/examinationService";
-import { MOCK_EXAM_DIAGNOSES, MOCK_EXAM_FILMS, MOCK_EXAM_SYMPTOMS, MOCK_EXAM_TOOTH_ENTRIES } from "@/utils/data/mockExamination";
 import { cx } from "@/utils/cx";
 import { EXAM_STEP_TITLES, EXAM_STEPS, EXAM_TAB, EXAM_TABS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
@@ -41,10 +40,6 @@ const NOT_STARTED_STATUS = {
     [QUEUE_STATUS.CALLED]: { label: "Đã gọi · chờ vào phòng", tone: "warning" },
     [QUEUE_STATUS.WAITING]: { label: "Đang chờ", tone: "neutral" },
 };
-
-// Step 2 sample data is only for the first patient of the mock queue.
-const SAMPLE_EXAM = { symptoms: MOCK_EXAM_SYMPTOMS, note: "", entries: MOCK_EXAM_TOOTH_ENTRIES, films: MOCK_EXAM_FILMS, diagnoses: MOCK_EXAM_DIAGNOSES };
-const EMPTY_EXAM = { symptoms: [], note: "", entries: [], films: [], diagnoses: [] };
 
 // Patient shown on the right: the one in the room, else the one called, else the first in line.
 const defaultSelection = (queue) =>
@@ -96,7 +91,7 @@ const NotStartedView = ({ item, record, onHistoryChange }) => {
 };
 
 // Exam in progress: process stepper, patient card with timer, then the content of the step being viewed.
-const InExamView = ({ item, record, busy, onHistoryChange, onStep, onEnd }) => {
+const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onStep, onEnd }) => {
     const current = item.step ?? STEP.HISTORY;
     const [viewing, setViewing] = useState(current);
     const shown = Math.min(viewing, current);
@@ -152,9 +147,10 @@ const InExamView = ({ item, record, busy, onHistoryChange, onStep, onEnd }) => {
             )}
             {shown === STEP.EXAM && (
                 <ClinicalExamStep
-                    allergies={record.history.allergies}
-                    initial={item.id === 1 ? SAMPLE_EXAM : EMPTY_EXAM}
+                    queueId={item.id}
+                    record={record}
                     busy={busy}
+                    onExamChange={onExamChange}
                     onEnd={onEnd}
                     onComplete={() => goTo(STEP.EXAM + 1)}
                 />
@@ -224,7 +220,10 @@ const ExaminationPage = () => {
         if (done) setConfirm(null);
     };
 
-    const updateHistory = (history) => setRecord((current) => (current?.data ? { ...current, data: { ...current.data, history } } : current));
+    // Keeps the page's copy of the record in sync with the drafts edited in the steps.
+    const updateRecord = (key) => (value) => setRecord((current) => (current?.data ? { ...current, data: { ...current.data, [key]: value } } : current));
+    const updateHistory = updateRecord("history");
+    const updateExam = updateRecord("exam");
 
     const renderMain = () => {
         if (loadFailed) return <p role="alert" className="alert alert-danger">{GENERIC_ERROR_MESSAGE}</p>;
@@ -240,6 +239,7 @@ const ExaminationPage = () => {
                     record={record.data}
                     busy={busy}
                     onHistoryChange={updateHistory}
+                    onExamChange={updateExam}
                     onStep={(step) => runAction((id) => setExamStep(id, step), selected.id, keep)}
                     onEnd={() => setConfirm({ type: "end", item: selected })}
                 />

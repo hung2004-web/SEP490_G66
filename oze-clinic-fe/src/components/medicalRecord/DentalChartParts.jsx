@@ -2,7 +2,7 @@ import { cx } from "@/utils/cx";
 import { toToothCode } from "@/utils/medicalRecord";
 import ToothButton from "./ToothButton";
 
-// Pieces of the dental chart shared by the medical record (read only) and the doctor's exam screen (editable).
+// Pieces of the medical record's dental chart (JawLabel, ToothRow, DentalLegend).
 
 const Swatch = ({ tone }) => (
     <span className="size-3.5 shrink-0 overflow-hidden rounded-sm border border-placeholder bg-canvas">
@@ -18,8 +18,7 @@ export const JawLabel = ({ name }) => (
     </div>
 );
 
-// editable: every tooth can be selected, not only teeth that already have entries.
-export const ToothRow = ({ teeth, entries, selectedTooth, onSelect, editable = false }) => (
+export const ToothRow = ({ teeth, entries, selectedTooth, onSelect }) => (
     <div className="relative grid grid-cols-8 gap-x-0.5 gap-y-2 lg:grid-cols-16 lg:gap-y-0.5">
         {teeth.map((tooth) => (
             <ToothButton
@@ -27,7 +26,6 @@ export const ToothRow = ({ teeth, entries, selectedTooth, onSelect, editable = f
                 tooth={tooth}
                 entries={entries.filter((entry) => toToothCode(entry.tooth) === tooth)}
                 selected={selectedTooth === tooth}
-                editable={editable}
                 onSelect={onSelect}
             />
         ))}
@@ -63,11 +61,11 @@ const legendItems = (entries) => {
     ];
 };
 
-// Legend of the symbols used in the chart. By default only symbols present in entries; showAll lists every symbol.
-export const DentalLegend = ({ entries, showAll = false, className }) => (
+// Legend of the symbols used in the chart (only those present in entries).
+export const DentalLegend = ({ entries, className }) => (
     <div className={cx("flex flex-wrap gap-x-4 gap-y-2 text-caption text-body", className)}>
         {legendItems(entries)
-            .filter(([visible]) => showAll || visible)
+            .filter(([visible]) => visible)
             .map(([, symbol, text]) => (
                 <div key={text} className="flex grow basis-60 items-center gap-2">
                     {symbol}
