@@ -6,6 +6,11 @@ namespace OZE.Application.Interfaces
     {
         Task<TreatmentPlanProgressResponse> CreateAsync(long examinationId, CreateTreatmentPlanRequest request,
             string userId, CancellationToken cancellationToken = default);
+        // canViewAll: reception sees every patient; a doctor only the patients they examine
+        Task<TreatmentPlanProgressResponse> GetDetailAsync(long treatmentPlanId, string userId, bool canViewAll,
+            CancellationToken cancellationToken = default);
+        Task<List<TreatmentPlanSummaryResponse>> GetByPatientAsync(int patientId, bool includeClosed, string userId, bool canViewAll,
+            CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> GetProgressAsync(long treatmentPlanId,
             string userId, CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> StartStageAsync(long treatmentPlanId, long stageId,

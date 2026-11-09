@@ -124,6 +124,49 @@ namespace OZE.Application.Services
             return ToProgressResponse(created!);
         }
 
+        public async Task<TreatmentPlanProgressResponse> GetDetailAsync(
+            long treatmentPlanId,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await _treatmentPlanRepository.GetByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            if (!canViewAll)
+            {
+                await EnsureAccessAsync(userId, plan!);
+            }
+
+            return ToProgressResponse(plan!);
+        }
+
+        public async Task<List<TreatmentPlanSummaryResponse>> GetByPatientAsync(
+            int patientId,
+            bool includeClosed,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var patientExists = await _treatmentPlanRepository.PatientExistsAsync(patientId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(patientExists, ErrorConstants.MedicalRecordMessage.PatientNotFound);
+
+            if (!canViewAll)
+            {
+                var doctor = await _staffRepository.GetByUserIdAsync(userId);
+                ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.DoctorScheduleMessage.DoctorNotFound);
+                var hasAccess = await _medicalRecordRepository.HasDoctorAccessAsync(doctor!.Id, patientId);
+                ConditionGuard.Ensure<ForbiddenException>(hasAccess, ErrorConstants.TreatmentPlanMessage.NoAccess);
+            }
+
+            var plans = await _treatmentPlanRepository.GetByPatientAsync(patientId, includeClosed, cancellationToken);
+            foreach (var plan in plans)
+            {
+                plan.ProgressPercent = ProgressPercent(plan.CompletedStages, plan.TotalStages - plan.CancelledStages);
+            }
+
+            return plans;
+        }
+
         public async Task<TreatmentPlanProgressResponse> GetProgressAsync(
             long treatmentPlanId,
             string userId,
@@ -326,10 +369,12 @@ namespace OZE.Application.Services
                 s.StageStatus == TreatmentPlanConstants.StageStatus.Cancelled);
             var nonCancelledCount = stages.Count - cancelledStages;
 
-            // BR-134: completed / stages that are not cancelled
-            var progressPercent = nonCancelledCount == 0
-                ? 0m
-                : Math.Round((decimal)completedStages / nonCancelledCount * 100m, 2);
+            var nextStage = stages.FirstOrDefault(s =>
+                s.StageStatus == TreatmentPlanConstants.StageStatus.InProgress
+                || s.StageStatus == TreatmentPlanConstants.StageStatus.Scheduled);
+            var completedCost = stages
+                .Where(s => s.StageStatus == TreatmentPlanConstants.StageStatus.Completed)
+                .Sum(s => s.ActualCost ?? s.EstimatedCost);
 
             return new TreatmentPlanProgressResponse
             {
@@ -337,12 +382,31 @@ namespace OZE.Application.Services
                 PlanName = plan.PlanName,
                 Status = plan.Status,
                 PlanVersion = plan.PlanVersion,
+                Description = plan.Description,
+                ExaminationId = plan.ExaminationId,
+                PatientId = plan.PatientId,
+                PatientName = plan.Patient?.FullName,
+                CreatedByDoctorId = plan.CreatedByDoctorId,
+                CreatedByDoctorName = plan.CreatedByDoctor?.FullName,
+                EstimatedTotalCost = plan.EstimatedTotalCost,
+                CompletedCost = completedCost,
+                CreatedAt = plan.CreatedAt,
+                ApprovedAt = plan.ApprovedAt,
                 TotalStages = stages.Count,
                 CompletedStages = completedStages,
                 CancelledStages = cancelledStages,
-                ProgressPercent = progressPercent,
+                ProgressPercent = ProgressPercent(completedStages, nonCancelledCount),
+                NextStage = nextStage == null ? null : ToStageResponse(nextStage),
                 Stages = stages.Select(ToStageResponse).ToList()
             };
+        }
+
+        // BR-134: completed / stages that are not cancelled
+        private static decimal ProgressPercent(int completedStages, int nonCancelledCount)
+        {
+            return nonCancelledCount == 0
+                ? 0m
+                : Math.Round((decimal)completedStages / nonCancelledCount * 100m, 2);
         }
 
         private static TreatmentPlanStageResponse ToStageResponse(TreatmentPlanStage stage)
