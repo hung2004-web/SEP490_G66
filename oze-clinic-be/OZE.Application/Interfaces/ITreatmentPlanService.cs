@@ -14,6 +14,12 @@ namespace OZE.Application.Interfaces
         Task<TreatmentPlanProgressResponse> UpdateAsync(long treatmentPlanId, UpdateTreatmentPlanRequest request,
             string userId, CancellationToken cancellationToken = default);
         Task DeleteAsync(long treatmentPlanId, string userId, CancellationToken cancellationToken = default);
+        Task<TreatmentPlanProgressResponse> ProposeAsync(long treatmentPlanId, string userId, CancellationToken cancellationToken = default);
+        // canViewAll: reception records the patient's consent for any patient
+        Task<TreatmentPlanProgressResponse> ApproveAsync(long treatmentPlanId, string userId, bool canViewAll,
+            CancellationToken cancellationToken = default);
+        Task<TreatmentPlanProgressResponse> CancelAsync(long treatmentPlanId, CancelTreatmentPlanRequest request, string userId, bool canViewAll,
+            CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> GetProgressAsync(long treatmentPlanId,
             string userId, CancellationToken cancellationToken = default);
         Task<TreatmentPlanProgressResponse> StartStageAsync(long treatmentPlanId, long stageId,

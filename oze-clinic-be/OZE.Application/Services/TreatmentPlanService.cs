@@ -183,6 +183,96 @@ namespace OZE.Application.Services
             await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
         }
 
+        // Draft -> Proposed: the doctor has finished the plan and shows it to the patient
+        public async Task<TreatmentPlanProgressResponse> ProposeAsync(
+            long treatmentPlanId,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await LoadForStatusChangeAsync(treatmentPlanId, userId, canViewAll: false, cancellationToken);
+            ConditionGuard.Ensure(plan.Status == TreatmentPlanConstants.Draft, ErrorConstants.TreatmentPlanMessage.OnlyDraftCanBeProposed);
+            ConditionGuard.Ensure(plan.Stages.Count > 0, ErrorConstants.TreatmentPlanMessage.StagesRequired);
+
+            plan.Status = TreatmentPlanConstants.Proposed;
+            plan.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
+        // Proposed -> Approved: the patient agreed. From here the stages can be started and billed
+        public async Task<TreatmentPlanProgressResponse> ApproveAsync(
+            long treatmentPlanId,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await LoadForStatusChangeAsync(treatmentPlanId, userId, canViewAll, cancellationToken);
+            ConditionGuard.Ensure(plan.Status == TreatmentPlanConstants.Proposed, ErrorConstants.TreatmentPlanMessage.OnlyProposedCanBeApproved);
+
+            var now = DateTimeOffset.UtcNow;
+            plan.Status = TreatmentPlanConstants.Approved;
+            plan.ApprovedAt = now;
+            plan.UpdatedAt = now;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
+        // Proposed / Approved / InProgress -> Cancelled: stages not done yet are cancelled, completed ones stay as history
+        public async Task<TreatmentPlanProgressResponse> CancelAsync(
+            long treatmentPlanId,
+            CancelTreatmentPlanRequest request,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken = default)
+        {
+            var plan = await LoadForStatusChangeAsync(treatmentPlanId, userId, canViewAll, cancellationToken);
+            var cancellable = plan.Status == TreatmentPlanConstants.Proposed
+                || plan.Status == TreatmentPlanConstants.Approved
+                || plan.Status == TreatmentPlanConstants.InProgress;
+            ConditionGuard.Ensure(cancellable, ErrorConstants.TreatmentPlanMessage.PlanNotCancellable);
+
+            var reason = Clean(request.Reason);
+            ConditionGuard.Ensure(reason != null, ErrorConstants.TreatmentPlanMessage.CancelReasonRequired);
+
+            // Stopping in the middle of a stage would leave the treatment record half written
+            var stageInProgress = plan.Stages.Any(s => s.StageStatus == TreatmentPlanConstants.StageStatus.InProgress);
+            ConditionGuard.ThrowIf(stageInProgress, ErrorConstants.TreatmentPlanMessage.StageStillInProgress);
+
+            var now = DateTimeOffset.UtcNow;
+            foreach (var stage in plan.Stages.Where(s => s.StageStatus == TreatmentPlanConstants.StageStatus.Scheduled))
+            {
+                stage.StageStatus = TreatmentPlanConstants.StageStatus.Cancelled;
+                stage.UpdatedAt = now;
+            }
+
+            plan.Status = TreatmentPlanConstants.Cancelled;
+            plan.CancellationReason = reason;
+            plan.CancelledAt = now;
+            plan.CancelledByUserId = userId;
+            plan.UpdatedAt = now;
+
+            await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            return ToProgressResponse(plan);
+        }
+
+        private async Task<TreatmentPlan> LoadForStatusChangeAsync(
+            long treatmentPlanId,
+            string userId,
+            bool canViewAll,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanRepository.GetTrackedByIdWithStagesAsync(treatmentPlanId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(plan != null, ErrorConstants.TreatmentPlanMessage.PlanNotFound);
+            if (!canViewAll)
+            {
+                await EnsureAccessAsync(userId, plan!);
+            }
+
+            return plan!;
+        }
+
         public async Task<TreatmentPlanProgressResponse> GetDetailAsync(
             long treatmentPlanId,
             string userId,
