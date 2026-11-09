@@ -89,7 +89,8 @@ const ToothSvg = ({ tooth, state }) => {
     );
 };
 
-const ToothButton = ({ tooth, entries, selected, onSelect }) => {
+// editable: the tooth can be selected even without entries (exam screen, where the doctor adds new findings).
+const ToothButton = ({ tooth, entries, selected, onSelect, editable = false }) => {
     const hasEntries = entries.length > 0;
     const state = getToothState(entries);
     const upper = Math.floor(tooth / 10) <= 2;
@@ -97,14 +98,16 @@ const ToothButton = ({ tooth, entries, selected, onSelect }) => {
     return (
         <button
             type="button"
-            disabled={!hasEntries}
+            disabled={!hasEntries && !editable}
+            aria-pressed={editable ? selected : undefined}
             title={`Răng ${tooth} · ${toothName(tooth)}`}
             aria-label={hasEntries ? `Răng ${tooth}: ${statusText}` : `Răng ${tooth}`}
             className={cx(
                 "flex min-w-0 items-center gap-0.5 rounded-lg border px-px py-0.75 outline-none focus-visible:shadow-focus",
                 upper ? "flex-col" : "flex-col-reverse",
                 selected ? "border-primary bg-primary-soft" : "border-transparent",
-                hasEntries ? !selected && "hover:bg-surface-tint" : "cursor-default",
+                hasEntries || editable ? !selected && "hover:bg-surface-tint" : "cursor-default",
+                editable && "cursor-pointer",
             )}
             onClick={() => onSelect(tooth)}
         >

@@ -187,6 +187,31 @@ export const EXAM_TABS = [
 // Steps of one exam visit, shown by ExamStepper once the exam has started.
 export const EXAM_STEPS = ["Lập hồ sơ bệnh án", "Khám & Chẩn đoán", "Lập kế hoạch điều trị", "Điều trị", "Kê đơn thuốc"];
 
+// Common symptoms the doctor can tick in the "Khám" tab.
+export const EXAM_SYMPTOMS = [
+    "Đau răng",
+    "Ê buốt khi ăn lạnh",
+    "Ê buốt khi ăn nóng",
+    "Đau khi nhai",
+    "Chảy máu chân răng",
+    "Sưng nướu",
+    "Hôi miệng",
+    "Răng lung lay",
+    "Mẻ / vỡ răng",
+    "Cao răng nhiều",
+    "Sưng má",
+    "Há miệng hạn chế",
+];
+
+// Tooth findings that are recorded per surface (the others apply to the whole tooth).
+export const EXAM_SURFACE_KINDS = ["caries", "filling", "wear"];
+
+export const XRAY_STATUS = {
+    requested: { label: "Chờ chụp", badge: "badge-warning" },
+    captured: { label: "Chờ đọc kết quả", badge: "badge-info" },
+    concluded: { label: "Đã có kết luận", badge: "badge-success" },
+};
+
 export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress", COMPLETED: "Completed", CANCELLED: "Cancelled" };
 
 export const PLAN_STATUS = { PROPOSED: "Proposed", IN_PROGRESS: "InProgress" };
