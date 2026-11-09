@@ -29,6 +29,7 @@ import ServiceManagement from "../pages/admin/ServiceManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
 import WorkShiftManagement from "../pages/admin/WorkShiftManagement";
 import SystemSettings from "../pages/admin/SystemSettings";
+import ExaminationPage from "../pages/doctor/ExaminationPage";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
@@ -148,6 +149,7 @@ const ROLE_PAGES = {
             <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
+    [ROUTES.DOCTOR_QUEUE]: <ExaminationPage />,
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />,
     [ROUTES.ADMIN_STAFF]: <StaffManagement />,
@@ -163,7 +165,6 @@ const ROLE_PAGES = {
 const COMING_SOON_TITLES = {
     [ROUTES.APPOINTMENTS]: "Lịch hẹn của tôi",
     [ROUTES.REFUND_REQUESTS]: "Yêu cầu hoàn tiền",
-    [ROUTES.DOCTOR_QUEUE]: "Hàng chờ khám",
     [ROUTES.DOCTOR_IMAGING_REVIEWS]: "Duyệt kết quả chụp",
     [ROUTES.DOCTOR_APPOINTMENTS]: "Lịch hẹn khám",
     [ROUTES.DOCTOR_PATIENTS]: "Bệnh nhân",
