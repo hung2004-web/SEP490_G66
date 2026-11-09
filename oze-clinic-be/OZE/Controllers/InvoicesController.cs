@@ -12,10 +12,12 @@ namespace OZE.Controllers
     public class InvoicesController : BaseApiController
     {
         private readonly IInvoiceService _invoiceService;
+        private readonly IPaymentService _paymentService;
 
-        public InvoicesController(IInvoiceService invoiceService)
+        public InvoicesController(IInvoiceService invoiceService, IPaymentService paymentService)
         {
             _invoiceService = invoiceService;
+            _paymentService = paymentService;
         }
 
         /// <summary>
@@ -89,5 +91,20 @@ namespace OZE.Controllers
             var invoice = await _invoiceService.CancelAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
             return Ok(ApiResponse<InvoiceResponse>.SuccessResult(invoice, ErrorConstants.InvoiceMessage.InvoiceCancelled));
         }
+
+        /// <summary>
+        /// Records a payment on an invoice. CASH is confirmed immediately; BANK/QR stay pending.
+        /// </summary>
+        [HttpPost("{id:long}/payments")]
+        [Authorize(Roles = RoleConstants.ReceptionistRole)]
+        public async Task<ActionResult<ApiResponse<PaymentResponse>>> RecordPaymentAsync(
+            [FromRoute] long id,
+            [FromBody] RecordPaymentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var payment = await _paymentService.RecordAsync(id, CurrentUserId ?? string.Empty, request, cancellationToken);
+            return Ok(ApiResponse<PaymentResponse>.SuccessResult(payment, ErrorConstants.PaymentMessage.PaymentRecorded));
+        }
     }
 }
+
