@@ -514,6 +514,8 @@ namespace OZE.Application.Services
                 CompletedCost = completedCost,
                 CreatedAt = plan.CreatedAt,
                 ApprovedAt = plan.ApprovedAt,
+                CancellationReason = plan.CancellationReason,
+                CancelledAt = plan.CancelledAt,
                 TotalStages = stages.Count,
                 CompletedStages = completedStages,
                 CancelledStages = cancelledStages,

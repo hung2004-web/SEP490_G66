@@ -17,6 +17,8 @@ namespace OZE.Common.Models
         public decimal CompletedCost { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? ApprovedAt { get; set; }
+        public string? CancellationReason { get; set; }
+        public DateTimeOffset? CancelledAt { get; set; }
         public int TotalStages { get; set; }
         public int CompletedStages { get; set; }
         public int CancelledStages { get; set; }

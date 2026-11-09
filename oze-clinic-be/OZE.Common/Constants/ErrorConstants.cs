@@ -219,6 +219,11 @@ namespace OZE.Common.Constants
             public const string OnlyDraftCanBeDeleted = "Only a draft treatment plan can be deleted.";
             public const string PlanInvoiced = "This treatment plan already has an invoice, so it can no longer be changed.";
             public const string DuplicateStage = "A treatment stage is listed more than once.";
+            public const string OnlyDraftCanBeProposed = "Only a draft treatment plan can be proposed to the patient.";
+            public const string OnlyProposedCanBeApproved = "Only a proposed treatment plan can be approved.";
+            public const string PlanNotCancellable = "This treatment plan is already completed or cancelled. A draft plan is deleted instead.";
+            public const string StageStillInProgress = "A treatment stage is still in progress. Please complete it before cancelling the plan.";
+            public const string CancelReasonRequired = "Please enter the reason for cancelling the treatment plan.";
         }
         public static class AppointmentMessage
         {
