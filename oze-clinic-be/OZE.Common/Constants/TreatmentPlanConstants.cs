@@ -16,6 +16,9 @@ namespace OZE.Common.Constants
             Draft, Proposed, Approved, InProgress, Completed, Cancelled, Superseded
         };
 
+        // A plan in one of these is still being worked on; an examination holds at most one
+        public static readonly string[] OpenStatuses = { Draft, Proposed, Approved, InProgress };
+
         // Must match CK_TreatmentPlanStages_Status in TreatmentPlanStageConfiguration
         // Stored without space (InProgress) to match existing DB check constraints.
         public static class StageStatus

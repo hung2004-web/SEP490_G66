@@ -28,6 +28,14 @@ namespace OZE.Persistence.Repositories
             return await query.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
         }
 
+        public async Task<List<Service>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
+        {
+            var idList = ids.Distinct().ToList();
+            return await _context.Services.AsNoTracking()
+                .Where(s => idList.Contains(s.Id))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<bool> HasOpenAppointmentsAsync(int serviceId, DateOnly today, CancellationToken cancellationToken = default)
         {
             return await _context.AppointmentServiceItems.AnyAsync(x => x.ServiceId == serviceId

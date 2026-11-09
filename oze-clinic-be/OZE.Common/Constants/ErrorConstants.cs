@@ -212,6 +212,18 @@ namespace OZE.Common.Constants
             public const string ScheduledDateInvalid = "Scheduled date is invalid. Please check again.";
             // MSG67
             public const string NextStageNotFound = "Next treatment stage not found.";
+            public const string OpenPlanExists = "This examination already has an open treatment plan.";
+            public const string StagesRequired = "Please add at least one treatment stage.";
+            public const string InvalidEstimatedCost = "Estimated cost is invalid. Please check again.";
+            public const string PlanNotEditable = "Only a draft or proposed treatment plan can be edited.";
+            public const string OnlyDraftCanBeDeleted = "Only a draft treatment plan can be deleted.";
+            public const string PlanInvoiced = "This treatment plan already has an invoice, so it can no longer be changed.";
+            public const string DuplicateStage = "A treatment stage is listed more than once.";
+            public const string OnlyDraftCanBeProposed = "Only a draft treatment plan can be proposed to the patient.";
+            public const string OnlyProposedCanBeApproved = "Only a proposed treatment plan can be approved.";
+            public const string PlanNotCancellable = "This treatment plan is already completed or cancelled. A draft plan is deleted instead.";
+            public const string StageStillInProgress = "A treatment stage is still in progress. Please complete it before cancelling the plan.";
+            public const string CancelReasonRequired = "Please enter the reason for cancelling the treatment plan.";
         }
         public static class AppointmentMessage
         {
