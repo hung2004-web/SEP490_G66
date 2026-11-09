@@ -56,14 +56,8 @@ namespace OZE.Application.Services
             var hasOpenPlan = await _treatmentPlanRepository.HasOpenPlanAsync(examinationId, cancellationToken);
             ConditionGuard.ThrowIf(hasOpenPlan, ErrorConstants.TreatmentPlanMessage.OpenPlanExists);
 
-            var stageRequests = request.Stages ?? new List<CreateTreatmentPlanStageRequest>();
-            ConditionGuard.Ensure(stageRequests.Count > 0, ErrorConstants.TreatmentPlanMessage.StagesRequired);
-            ConditionGuard.Ensure<NotFoundException>(stageRequests.All(s => s.ServiceId.HasValue), ErrorConstants.AppointmentMessage.ServiceNotFound);
+            var validStages = await ValidateStagesAsync(request.Stages, cancellationToken);
 
-            var services = (await _serviceRepository.GetByIdsAsync(stageRequests.Select(s => s.ServiceId!.Value), cancellationToken))
-                .ToDictionary(s => s.Id);
-
-            var today = DateOnly.FromDateTime(ClinicClock.Now);
             var now = DateTimeOffset.UtcNow;
             var plan = new TreatmentPlan
             {
@@ -71,46 +65,23 @@ namespace OZE.Application.Services
                 PatientId = examination.PatientId,
                 CreatedByDoctorId = doctor.Id,
                 PlanName = request.PlanName.Trim(),
-                Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+                Description = Clean(request.Description),
                 Status = TreatmentPlanConstants.Draft,
                 CreatedAt = now
             };
 
-            DateOnly? previousDate = null;
-            foreach (var stageRequest in stageRequests)
+            foreach (var validStage in validStages)
             {
-                ConditionGuard.Ensure<NotFoundException>(services.TryGetValue(stageRequest.ServiceId!.Value, out var service),
-                    ErrorConstants.AppointmentMessage.ServiceNotFound);
-                ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
-
-                // A cost left out takes the price list; the doctor may set another one for this patient
-                var cost = stageRequest.EstimatedCost ?? service.ReferencePrice;
-                ConditionGuard.Ensure(cost >= 0, ErrorConstants.TreatmentPlanMessage.InvalidEstimatedCost);
-
-                // Dates are optional, but a stage cannot be set in the past or before an earlier stage
-                var date = stageRequest.ScheduledDate;
-                if (date.HasValue)
+                var stage = new TreatmentPlanStage
                 {
-                    ConditionGuard.Ensure(date.Value >= today && (!previousDate.HasValue || date.Value >= previousDate.Value),
-                        ErrorConstants.TreatmentPlanMessage.ScheduledDateInvalid);
-                    previousDate = date;
-                }
-
-                plan.Stages.Add(new TreatmentPlanStage
-                {
-                    StageNumber = plan.Stages.Count + 1,
-                    StageName = string.IsNullOrWhiteSpace(stageRequest.StageName) ? service.ServiceName : stageRequest.StageName.Trim(),
-                    Description = string.IsNullOrWhiteSpace(stageRequest.Description) ? null : stageRequest.Description.Trim(),
-                    ServiceId = service.Id,
-                    EstimatedCost = cost,
                     StageStatus = TreatmentPlanConstants.StageStatus.Scheduled,
-                    ScheduledDate = date,
                     CreatedAt = now
-                });
+                };
+                ApplyStage(stage, validStage, plan.Stages.Count + 1);
+                plan.Stages.Add(stage);
             }
 
-            plan.TotalStages = plan.Stages.Count;
-            plan.EstimatedTotalCost = plan.Stages.Sum(s => s.EstimatedCost);
+            SetTotals(plan);
 
             // Saving the examination row checks its row version: two plans created at once, or a plan racing
             // with "complete examination", end in 409 instead of slipping past the checks above
@@ -355,6 +326,69 @@ namespace OZE.Application.Services
 
             await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
             return ToProgressResponse(plan);
+        }
+
+        private sealed record ValidStage(CreateTreatmentPlanStageRequest Request, Service Service, decimal Cost);
+
+        // Checks every stage before anything changes: services exist and are active, costs are not negative,
+        // dates are not in the past and do not go back before an earlier stage
+        private async Task<List<ValidStage>> ValidateStagesAsync(
+            IReadOnlyList<CreateTreatmentPlanStageRequest>? stageRequests,
+            CancellationToken cancellationToken)
+        {
+            ConditionGuard.Ensure(stageRequests != null && stageRequests.Count > 0, ErrorConstants.TreatmentPlanMessage.StagesRequired);
+            ConditionGuard.Ensure<NotFoundException>(stageRequests!.All(s => s.ServiceId.HasValue), ErrorConstants.AppointmentMessage.ServiceNotFound);
+
+            var services = (await _serviceRepository.GetByIdsAsync(stageRequests.Select(s => s.ServiceId!.Value), cancellationToken))
+                .ToDictionary(s => s.Id);
+
+            var today = DateOnly.FromDateTime(ClinicClock.Now);
+            DateOnly? previousDate = null;
+            var validStages = new List<ValidStage>();
+            foreach (var stageRequest in stageRequests)
+            {
+                ConditionGuard.Ensure<NotFoundException>(services.TryGetValue(stageRequest.ServiceId!.Value, out var service),
+                    ErrorConstants.AppointmentMessage.ServiceNotFound);
+                ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
+
+                // A cost left out takes the price list; the doctor may set another one for this patient
+                var cost = stageRequest.EstimatedCost ?? service.ReferencePrice;
+                ConditionGuard.Ensure(cost >= 0, ErrorConstants.TreatmentPlanMessage.InvalidEstimatedCost);
+
+                var date = stageRequest.ScheduledDate;
+                if (date.HasValue)
+                {
+                    ConditionGuard.Ensure(date.Value >= today && (!previousDate.HasValue || date.Value >= previousDate.Value),
+                        ErrorConstants.TreatmentPlanMessage.ScheduledDateInvalid);
+                    previousDate = date;
+                }
+
+                validStages.Add(new ValidStage(stageRequest, service, cost));
+            }
+
+            return validStages;
+        }
+
+        private static void ApplyStage(TreatmentPlanStage stage, ValidStage validStage, int stageNumber)
+        {
+            stage.StageNumber = stageNumber;
+            stage.StageName = Clean(validStage.Request.StageName) ?? validStage.Service.ServiceName;
+            stage.Description = Clean(validStage.Request.Description);
+            stage.ServiceId = validStage.Service.Id;
+            stage.EstimatedCost = validStage.Cost;
+            stage.ScheduledDate = validStage.Request.ScheduledDate;
+        }
+
+        // Totals are worked out by the server, never taken from the client
+        private static void SetTotals(TreatmentPlan plan)
+        {
+            plan.TotalStages = plan.Stages.Count;
+            plan.EstimatedTotalCost = plan.Stages.Sum(s => s.EstimatedCost);
+        }
+
+        private static string? Clean(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
 
         private static TreatmentPlanProgressResponse ToProgressResponse(TreatmentPlan plan)
