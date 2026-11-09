@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace OZE.Controllers
 {
     [ApiController]
-    [Authorize(Roles = RoleConstants.DoctorRole)]
+    [Authorize]
     [Route("api/[controller]")]
     public class TreatmentPlansController : ControllerBase
     {
@@ -23,6 +23,7 @@ namespace OZE.Controllers
         /// <summary>
         /// Creates a draft treatment plan for an open examination; stages are built from services, numbered in the order sent.
         /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
         [HttpPost("~/api/examinations/{examinationId:long}/treatment-plans")]
         public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> CreateAsync(
             [FromRoute] long examinationId,
@@ -34,8 +35,37 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Returns one treatment plan with its stages, costs and the next stage to perform.
+        /// A doctor sees the plans of patients they examine; reception sees every plan.
+        /// </summary>
+        [Authorize(Roles = DoctorOrReception)]
+        [HttpGet("{id:long}")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> GetDetailAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanService.GetDetailAsync(id, GetUserId(), CanViewAll(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(plan));
+        }
+
+        /// <summary>
+        /// Lists a patient's treatment plans, newest first. Only open plans unless includeClosed is true.
+        /// </summary>
+        [Authorize(Roles = DoctorOrReception)]
+        [HttpGet("~/api/patients/{patientId:int}/treatment-plans")]
+        public async Task<ActionResult<ApiResponse<List<TreatmentPlanSummaryResponse>>>> GetByPatientAsync(
+            [FromRoute] int patientId,
+            [FromQuery] bool includeClosed,
+            CancellationToken cancellationToken)
+        {
+            var plans = await _treatmentPlanService.GetByPatientAsync(patientId, includeClosed, GetUserId(), CanViewAll(), cancellationToken);
+            return Ok(ApiResponse<List<TreatmentPlanSummaryResponse>>.SuccessResult(plans));
+        }
+
+        /// <summary>
         /// Returns treatment plan progress: stages with status and overall progress percent (UC-52 / AC1).
         /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
         [HttpGet("{id:long}/progress")]
         public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> GetProgressAsync(
             [FromRoute] long id,
@@ -48,6 +78,7 @@ namespace OZE.Controllers
         /// <summary>
         /// Starts the next scheduled stage. The stage becomes InProgress; the plan becomes InProgress on the first start (UC-52 step 3–4).
         /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
         [HttpPost("{id:long}/stages/{stageId:long}/start")]
         public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> StartStageAsync(
             [FromRoute] long id,
@@ -61,6 +92,7 @@ namespace OZE.Controllers
         /// <summary>
         /// Updates notes and actual cost of the stage in progress, and optionally schedules the next stage (UC-52 step 5).
         /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
         [HttpPatch("{id:long}/stages/{stageId:long}")]
         public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> UpdateStageAsync(
             [FromRoute] long id,
@@ -75,6 +107,7 @@ namespace OZE.Controllers
         /// <summary>
         /// Completes the stage in progress. The plan becomes Completed when every stage is completed or cancelled (UC-52 step 6–7).
         /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
         [HttpPost("{id:long}/stages/{stageId:long}/complete")]
         public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> CompleteStageAsync(
             [FromRoute] long id,
@@ -85,6 +118,10 @@ namespace OZE.Controllers
             var progress = await _treatmentPlanService.CompleteStageAsync(id, stageId, request, GetUserId(), cancellationToken);
             return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(progress, "Complete treatment stage success!"));
         }
+
+        private const string DoctorOrReception = RoleConstants.DoctorRole + "," + RoleConstants.ReceptionistRole;
+
+        private bool CanViewAll() => User.IsInRole(RoleConstants.ReceptionistRole);
 
         private string GetUserId()
         {
