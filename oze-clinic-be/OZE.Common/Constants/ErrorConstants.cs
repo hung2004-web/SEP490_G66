@@ -215,6 +215,10 @@ namespace OZE.Common.Constants
             public const string OpenPlanExists = "This examination already has an open treatment plan.";
             public const string StagesRequired = "Please add at least one treatment stage.";
             public const string InvalidEstimatedCost = "Estimated cost is invalid. Please check again.";
+            public const string PlanNotEditable = "Only a draft or proposed treatment plan can be edited.";
+            public const string OnlyDraftCanBeDeleted = "Only a draft treatment plan can be deleted.";
+            public const string PlanInvoiced = "This treatment plan already has an invoice, so it can no longer be changed.";
+            public const string DuplicateStage = "A treatment stage is listed more than once.";
         }
         public static class AppointmentMessage
         {
