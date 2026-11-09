@@ -63,6 +63,34 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Saves a draft or proposed plan as sent: stages with an id are kept, new ones are added, missing ones are removed,
+        /// and all are renumbered in order. A proposed plan goes back to draft.
+        /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
+        [HttpPut("{id:long}")]
+        public async Task<ActionResult<ApiResponse<TreatmentPlanProgressResponse>>> UpdateAsync(
+            [FromRoute] long id,
+            [FromBody] UpdateTreatmentPlanRequest request,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _treatmentPlanService.UpdateAsync(id, request, GetUserId(), cancellationToken);
+            return Ok(ApiResponse<TreatmentPlanProgressResponse>.SuccessResult(plan, "Update treatment plan success!"));
+        }
+
+        /// <summary>
+        /// Deletes a draft plan with its stages. Plans the patient has seen are cancelled instead.
+        /// </summary>
+        [Authorize(Roles = RoleConstants.DoctorRole)]
+        [HttpDelete("{id:long}")]
+        public async Task<ActionResult<ApiResponse>> DeleteAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            await _treatmentPlanService.DeleteAsync(id, GetUserId(), cancellationToken);
+            return Ok(ApiResponse.SuccessResult("Delete treatment plan success!"));
+        }
+
+        /// <summary>
         /// Returns treatment plan progress: stages with status and overall progress percent (UC-52 / AC1).
         /// </summary>
         [Authorize(Roles = RoleConstants.DoctorRole)]
