@@ -185,7 +185,7 @@ export const EXAM_TABS = [
 ];
 
 // Steps of one exam visit, shown by ExamStepper once the exam has started.
-export const EXAM_STEPS = ["Tiếp nhận", "Khám & chẩn đoán", "Lập kế hoạch điều trị", "Điều trị & kê đơn", "Hoàn tất"];
+export const EXAM_STEPS = ["Lập hồ sơ bệnh án", "Khám & Chẩn đoán", "Lập kế hoạch điều trị", "Điều trị", "Kê đơn thuốc"];
 
 export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress", COMPLETED: "Completed", CANCELLED: "Cancelled" };
 

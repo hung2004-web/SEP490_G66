@@ -24,3 +24,12 @@ export const MOCK_EXAM_SERVICES = [
     { id: 2, name: "Lấy cao răng" },
     { id: 3, name: "Trám răng" },
 ];
+
+// What reception recorded at check-in, shown by ExamPreStart.
+export const MOCK_EXAM_INTAKE = {
+    allergies: ["Penicillin"],
+    reason: "Đau răng hàm dưới, muốn lấy cao răng",
+    conditions: ["Viêm xoang"],
+    checkInAt: "08:21",
+    appointmentTime: "08:30",
+};
