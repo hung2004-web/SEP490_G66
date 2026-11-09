@@ -1,45 +1,17 @@
-import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { saveMedicalHistory } from "@/services/examinationService";
-import { formatClockTime } from "@/utils/examination";
+import useHistoryAutosave from "@/hooks/useHistoryAutosave";
 import { normalizeText } from "@/utils/format";
 import MedicalHistoryCard from "./MedicalHistoryCard";
 import PatientInfoCard from "./PatientInfoCard";
 import PreviousVisitsCard from "./PreviousVisitsCard";
 import StepActionBar from "./StepActionBar";
 
-const AUTOSAVE_DELAY_MS = 800;
-
-const saveStatusText = ({ saving, savedAt, failed }) => {
-    if (saving) return "Đang lưu nháp…";
-    if (failed) return "Chưa lưu được nháp, hệ thống sẽ thử lại khi bạn sửa tiếp.";
-    return savedAt ? `Đã tự động lưu nháp lúc ${formatClockTime(savedAt)}` : "Tự động lưu nháp";
-};
-
 const mergeItems = (current, extra) => [...current, ...extra.filter((item) => !current.some((entry) => normalizeText(entry) === normalizeText(item)))];
 
 // Step 1 "Lập hồ sơ bệnh án": read-only identity, medical history the doctor completes (saved as a draft
-// shortly after each change), previous visits. onNext / onEnd receive the latest history.
-const MedicalHistoryStep = ({ queueId, record, busy = false, onNext, onEnd }) => {
-    const [history, setHistory] = useState(record.history);
-    const [save, setSave] = useState({ saving: false, savedAt: null, failed: false });
-    const lastSavedRef = useRef(JSON.stringify(record.history));
-
-    useEffect(() => {
-        const json = JSON.stringify(history);
-        if (json === lastSavedRef.current) return undefined;
-        const timer = setTimeout(async () => {
-            setSave((current) => ({ ...current, saving: true }));
-            const response = await saveMedicalHistory(queueId, history);
-            if (response.success) {
-                lastSavedRef.current = json;
-                setSave({ saving: false, savedAt: response.data.savedAt, failed: false });
-            } else {
-                setSave((current) => ({ ...current, saving: false, failed: true }));
-            }
-        }, AUTOSAVE_DELAY_MS);
-        return () => clearTimeout(timer);
-    }, [history, queueId]);
+// shortly after each change), previous visits. onHistoryChange gets every edit; onNext / onEnd receive the latest history.
+const MedicalHistoryStep = ({ queueId, record, busy = false, onHistoryChange, onNext, onEnd }) => {
+    const { history, setHistory, statusText } = useHistoryAutosave(queueId, record.history, onHistoryChange);
 
     const handleSupplement = (visit) => {
         const items = visit.historyItems ?? [];
@@ -56,12 +28,8 @@ const MedicalHistoryStep = ({ queueId, record, busy = false, onNext, onEnd }) =>
         <>
             <PatientInfoCard patient={record.patient} reason={record.intake.reason} />
             <MedicalHistoryCard history={history} gender={record.patient.gender} onChange={setHistory} />
-            <PreviousVisitsCard
-                visits={record.visits}
-                onSupplement={handleSupplement}
-                onView={(visit) => toast.info(`Chi tiết lần khám ${visit.date} sẽ mở ở trang Bệnh nhân (đang xây dựng).`)}
-            />
-            <StepActionBar status={saveStatusText(save)}>
+            <PreviousVisitsCard queueId={queueId} visits={record.visits} onSupplement={handleSupplement} />
+            <StepActionBar status={statusText}>
                 <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => onNext?.(history)}>
                     Chuyển sang Khám
                 </button>

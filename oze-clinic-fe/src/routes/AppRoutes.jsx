@@ -143,16 +143,13 @@ const ROLE_PAGES = {
             <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
-<<<<<<< HEAD
-    [ROUTES.DOCTOR_QUEUE]: <ExaminationPage />,
-=======
     [ROUTES.PAYMENT_HISTORY]: (
         <Routes>
             <Route index element={<PaymentHistory />} />
             <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
->>>>>>> main
+    [ROUTES.DOCTOR_QUEUE]: <ExaminationPage />,
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />,
     [ROUTES.ADMIN_STAFF]: <StaffManagement />,

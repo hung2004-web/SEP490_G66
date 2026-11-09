@@ -5,7 +5,8 @@ import HistoryChecklist from "./HistoryChecklist";
 // "Tiền sử bệnh": allergies, underlying conditions and dental history, completed by the doctor in step 1.
 // history: { allergies: [], conditions: [], dental: [] }; onChange receives the whole updated history.
 // gender "female" adds pregnancy / breastfeeding to the conditions.
-const MedicalHistoryCard = ({ history, gender, readOnly = false, onChange }) => {
+// saveStatus: draft-save text shown at the bottom, for screens without a step action bar.
+const MedicalHistoryCard = ({ history, gender, readOnly = false, saveStatus, onChange }) => {
     const female = gender === "female";
     const conditionOptions = female ? [...HISTORY_CONDITION_OPTIONS, ...HISTORY_FEMALE_CONDITION_OPTIONS] : HISTORY_CONDITION_OPTIONS;
     const update = (key) => (value) => onChange?.({ ...history, [key]: value });
@@ -46,6 +47,11 @@ const MedicalHistoryCard = ({ history, gender, readOnly = false, onChange }) => 
                 placeholder="Tiền sử khác, ví dụ: từng cấy ghép Implant"
                 defaultOpen={false}
             />
+            {saveStatus && (
+                <p className="text-caption text-muted" aria-live="polite">
+                    {saveStatus}
+                </p>
+            )}
         </ClinicalExamSection>
     );
 };

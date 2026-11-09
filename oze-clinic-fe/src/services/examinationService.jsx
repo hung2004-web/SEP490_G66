@@ -38,6 +38,15 @@ export const getExamRecord = async (queueId) => {
     return record ? success(structuredClone(record)) : failure("Không tìm thấy hồ sơ của bệnh nhân này.");
 };
 
+// One previous visit of a patient: diagnoses, work done, treatment plan with its progress, prescription.
+export const getVisitDetail = async (queueId, visitId) => {
+    await wait(MOCK_DELAY_MS);
+    const visit = state.records[queueId]?.visits.find((item) => item.id === visitId);
+    if (!visit?.detail) return failure("Không tìm thấy chi tiết lần khám này.");
+    const { detail, ...summary } = visit;
+    return success(structuredClone({ ...summary, ...detail }));
+};
+
 export const callPatient = async (queueId) => {
     await wait(MOCK_DELAY_MS);
     const item = findItem(queueId);

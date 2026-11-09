@@ -10,6 +10,7 @@ import ExamTabs from "@/components/examination/ExamTabs";
 import ExamTimer from "@/components/examination/ExamTimer";
 import MedicalHistoryCard from "@/components/examination/MedicalHistoryCard";
 import MedicalHistoryStep from "@/components/examination/MedicalHistoryStep";
+import useHistoryAutosave from "@/hooks/useHistoryAutosave";
 import PatientCard from "@/components/examination/PatientCard";
 import PatientInfoCard from "@/components/examination/PatientInfoCard";
 import PreviousVisitsCard from "@/components/examination/PreviousVisitsCard";
@@ -67,10 +68,12 @@ const PendingStep = ({ title, onBack }) => (
     </div>
 );
 
-// Patient called (or still waiting): profile in read-only mode, "Khám" tab tells the doctor to start the exam.
-const NotStartedView = ({ item, record }) => {
+// Patient called (or still waiting): profile with an editable medical history (draft saved automatically),
+// "Khám" tab tells the doctor to start the exam.
+const NotStartedView = ({ item, record, onHistoryChange }) => {
     const [tab, setTab] = useState(EXAM_TAB.EXAM);
-    const { patient, history } = record;
+    const { patient } = record;
+    const { history, setHistory, statusText } = useHistoryAutosave(item.id, record.history, onHistoryChange);
 
     return (
         <>
@@ -81,8 +84,8 @@ const NotStartedView = ({ item, record }) => {
                 {tab === EXAM_TAB.PROFILE ? (
                     <>
                         <PatientInfoCard patient={patient} reason={record.intake.reason} />
-                        <MedicalHistoryCard history={history} gender={patient.gender} readOnly />
-                        <PreviousVisitsCard visits={record.visits} />
+                        <MedicalHistoryCard history={history} gender={patient.gender} saveStatus={statusText} onChange={setHistory} />
+                        <PreviousVisitsCard queueId={item.id} visits={record.visits} />
                     </>
                 ) : (
                     <ExamPreStart intake={{ ...record.intake, allergies: history.allergies, conditions: history.conditions }} />
@@ -139,6 +142,7 @@ const InExamView = ({ item, record, busy, onHistoryChange, onStep, onEnd }) => {
                     queueId={item.id}
                     record={record}
                     busy={busy}
+                    onHistoryChange={onHistoryChange}
                     onNext={handleNextFromHistory}
                     onEnd={(history) => {
                         onHistoryChange(history);
@@ -241,7 +245,7 @@ const ExaminationPage = () => {
                 />
             );
         }
-        return <NotStartedView key={selected.id} item={selected} record={record.data} />;
+        return <NotStartedView key={selected.id} item={selected} record={record.data} onHistoryChange={updateHistory} />;
     };
 
     return (
