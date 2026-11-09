@@ -6,6 +6,9 @@ namespace OZE.Application.Interfaces
     {
         Task<TreatmentPlan?> GetByIdWithStagesAsync(long id, CancellationToken cancellationToken = default);
         Task<TreatmentPlan?> GetTrackedByIdWithStagesAsync(long id, CancellationToken cancellationToken = default);
+        Task<Examination?> GetExaminationAsync(long examinationId, CancellationToken cancellationToken = default);
+        Task<bool> HasOpenPlanAsync(long examinationId, CancellationToken cancellationToken = default);
+        Task AddAsync(TreatmentPlan plan, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }
