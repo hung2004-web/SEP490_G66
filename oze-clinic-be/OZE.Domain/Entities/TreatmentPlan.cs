@@ -13,6 +13,9 @@ namespace OZE.Domain.Entities
         public decimal EstimatedTotalCost { get; set; }
         public string Status { get; set; } = "Draft";
         public DateTimeOffset? ApprovedAt { get; set; }
+        public string? CancellationReason { get; set; }
+        public DateTimeOffset? CancelledAt { get; set; }
+        public string? CancelledByUserId { get; set; }
         public byte[] RowVersion { get; set; } = Array.Empty<byte>();
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
