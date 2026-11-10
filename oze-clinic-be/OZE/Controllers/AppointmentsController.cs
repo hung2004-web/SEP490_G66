@@ -267,5 +267,34 @@ namespace OZE.Controllers
             var result = await _appointmentService.CompleteExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
             return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Examination completed successfully"));
         }
+
+        /// <summary>
+        /// Schedules a follow-up appointment for a finished or in-service visit.
+        /// </summary>
+        [HttpPost("{id:long}/follow-up")]
+        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> ScheduleFollowUpAsync(
+            [FromRoute] long id,
+            [FromBody] ScheduleFollowUpRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.ScheduleFollowUpAsync(id, request, CurrentUserId ?? string.Empty, cancellationToken);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Follow-up appointment scheduled successfully"));
+        }
+
+        /// <summary>
+        /// Retrieves the follow-up reminder list for receptionist and doctors.
+        /// </summary>
+        [HttpGet("follow-ups")]
+        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<PagedResult<FollowUpListItemResponse>>>> GetFollowUpsAsync(
+            [FromQuery] FollowUpQueryParameters query,
+            [FromServices] IExaminationService examinationService,
+            CancellationToken cancellationToken)
+        {
+            var doctorUserId = IsInRole(RoleConstants.DoctorRole) ? CurrentUserId : null;
+            var result = await examinationService.GetFollowUpsAsync(query, doctorUserId, cancellationToken);
+            return Ok(ApiResponse<PagedResult<FollowUpListItemResponse>>.SuccessResult(result));
+        }
     }
 }

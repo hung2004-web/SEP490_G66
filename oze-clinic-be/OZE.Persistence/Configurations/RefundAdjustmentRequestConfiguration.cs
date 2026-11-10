@@ -13,11 +13,15 @@ namespace OZE.Persistence.Configurations
                 t.HasCheckConstraint("CK_RefundAdjustments_Type", "[RequestType] IN ('Refund', 'Adjustment')");
                 t.HasCheckConstraint("CK_RefundAdjustments_Status", "[Status] IN ('Pending', 'Approved', 'Rejected', 'Processed')");
                 t.HasCheckConstraint("CK_RefundAdjustments_Amount", "[Amount] > 0");
+                t.HasCheckConstraint(
+                    "CK_RefundAdjustments_WorkDone",
+                    "[WorkDoneAmount] IS NULL OR [WorkDoneAmount] >= 0");
             });
             builder.HasKey(x => x.Id);
 
             builder.Property(x => x.RequestType).HasMaxLength(20).IsRequired();
             builder.Property(x => x.Amount).HasPrecision(18, 2);
+            builder.Property(x => x.WorkDoneAmount).HasPrecision(18, 2);
             builder.Property(x => x.Reason).IsRequired();
             builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Pending");
             builder.Property(x => x.RejectionReason).HasMaxLength(500);

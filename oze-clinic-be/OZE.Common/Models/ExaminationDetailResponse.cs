@@ -12,6 +12,9 @@ namespace OZE.Common.Models
         public string? ChiefComplaint { get; set; }
         public string? ClinicalNotes { get; set; }
         public string ExaminationStatus { get; set; } = string.Empty;
+        public DateOnly? FollowUpDate { get; set; }
+        public string? FollowUpNotes { get; set; }
+        public FollowUpSummaryResponse? FollowUp { get; set; }
         public List<DiagnosisResponse> Diagnoses { get; set; } = new();
         public List<PrescriptionResponse> Prescriptions { get; set; } = new();
         public List<TreatmentPlanSummaryResponse> TreatmentPlans { get; set; } = new();

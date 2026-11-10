@@ -235,6 +235,8 @@ namespace OZE.Common.Constants
             public const string VariantInactive = "This service variant is not available for booking";
             public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";
             public const string ServicesNeedDifferentRooms = "These services need different rooms and cannot be booked in one appointment";
+            public const string DateRequired = "Appointment date is required";
+            public const string SlotRequired = "Appointment time slot is required";
             public const string PastDate = "Appointment date cannot be in the past";
             public const string TooFarAhead = "Appointment date is too far in advance";
             public const string SlotNotAvailable = "This time slot is no longer available. Please choose another time";
@@ -274,6 +276,8 @@ namespace OZE.Common.Constants
             public const string OnlyCheckedInCanBeStarted = "Only a checked-in appointment can be started";
             public const string NotAssignedDoctor = "You can only examine your own appointments";
             public const string ExaminationAlreadyStarted = "This appointment already has an examination";
+            public const string FollowUpAlreadyScheduled = "A follow-up appointment has already been scheduled for this visit";
+            public const string ExaminationNotFoundForAppointment = "No examination was found for this appointment";
         }
         public static class PatientMessage
         {
@@ -353,6 +357,11 @@ namespace OZE.Common.Constants
             public const string PrescriptionItemNotFound = "Medication not found in this prescription";
             public const string PrescriptionFinalized = "The prescription is finalized. Reopen it to change it";
             public const string PrescriptionNothingToFinalize = "Add at least one medication before finalizing the prescription";
+            public const string FollowUpDateMustBeFuture = "Follow-up date must be in the future";
+            public const string FollowUpNotesTooLong = "Follow-up notes are too long";
+            public const string FollowUpAppointmentAlreadyScheduled = "A follow-up appointment has already been scheduled for this examination";
+            public const string FollowUpNotSet = "No follow-up date has been set for this examination";
+            public const string ExaminationNotFound = "Examination not found";
         }
 
         // Request Imaging (UC-82). Texts follow the System Messages table of SRS Report 3.
@@ -420,9 +429,73 @@ namespace OZE.Common.Constants
             public const string StagePlanMismatch = "The treatment plan stage does not belong to the selected treatment plan.";
             public const string ServiceNotFound = "Service not found.";
             public const string OpenInvoiceExistsForAppointment = "An open invoice already exists for this appointment.";
+            public const string OpenInvoiceExistsForTreatmentPlan = "An open invoice already exists for this treatment plan.";
             public const string InvoiceCreated = "Invoice has been created.";
+            public const string InvoiceUpdated = "Invoice has been updated.";
+            public const string InvoiceCancelled = "Invoice has been cancelled.";
             public const string InvoiceNotFound = "Invoice not found.";
+            public const string InvoiceNotCancellable = "Invoice cannot be cancelled because a confirmed payment exists.";
+            public const string InvoiceConcurrencyConflict = "Invoice was modified by another user. Please reload and try again.";
+            public const string AccessDenied = "You do not have access to this invoice.";
+        }
+
+        public static class PaymentMessage
+        {
+            public const string InvoiceNotFound = "Invoice not found.";
+            public const string InvoiceNotPayable = "Payments cannot be recorded on this invoice.";
+            public const string AmountInvalid = "Payment amount must be greater than 0.";
+            public const string AmountExceedsRemaining = "Payment amount exceeds the remaining balance.";
+            public const string MethodInvalid = "Payment method must be one of: CASH, BANK_TRANSFER, QR_TRANSFER.";
+            public const string PurposeInvalid = "Payment purpose must be one of: Deposit, Regular, Installment.";
+            public const string StatusInvalid = "Payment status must be one of: PENDING, CONFIRMED, FAILED, REFUNDED.";
+            public const string PaymentNotFound = "Payment not found.";
+            public const string PaymentNotPending = "Only pending payments can be confirmed.";
+            public const string PaymentNotConfirmable = "Payment cannot be confirmed.";
+            public const string PaymentNotVoidable = "Payment cannot be voided.";
+            public const string TransactionReferenceDuplicate = "Transaction reference already exists.";
+            public const string PaymentRecorded = "Payment has been recorded.";
+            public const string PaymentConfirmed = "Payment has been confirmed.";
+            public const string PaymentVoided = "Payment has been voided.";
+            public const string InstallmentPeriodRequired = "Installment period is required for installment payments.";
+            public const string InstallmentPeriodInvalid = "Installment period is invalid for this invoice.";
+            public const string AccessDenied = "You do not have access to this payment.";
+            public const string ConcurrencyConflict = "Payment data was modified by another user. Please reload and try again.";
+        }
+
+        public static class RefundMessage
+        {
+            public const string InvoiceNotFound = "Invoice not found.";
+            public const string RequestNotFound = "Refund request not found.";
+            public const string ReasonRequired = "Please enter a reason.";
+            public const string AmountInvalid = "Refund amount must be greater than 0.";
+            public const string TypeInvalid = "Request type must be one of: Refund, Adjustment.";
+            public const string WorkDoneAmountRequired = "Work-done amount is required before approval.";
+            public const string WorkDoneAmountInvalid = "Work-done amount is invalid.";
+            public const string WorkDoneExceedsPaid = "Work-done amount cannot exceed confirmed paid amount.";
+            public const string RequestNotPending = "Only pending refund requests can be processed.";
+            public const string RejectionReasonRequired = "Please enter a rejection reason.";
+            public const string RequestCreated = "Refund request has been created.";
+            public const string RequestApproved = "Refund request has been approved.";
+            public const string RequestRejected = "Refund request has been rejected.";
+            public const string RequestProcessed = "Refund request has been marked as processed.";
+            public const string NoConfirmedPayments = "There are no confirmed payments to refund.";
+            public const string ConcurrencyConflict = "Refund request was modified by another user. Please reload and try again.";
+        }
+
+        public static class InstallmentMessage
+        {
+            public const string InvoiceNotFound = "Invoice not found.";
+            public const string PlanNotFound = "Installment plan not found.";
+            public const string PlanAlreadyExists = "An active installment plan already exists for this invoice.";
+            public const string PeriodsRequired = "Please add at least one installment period.";
+            public const string PeriodAmountInvalid = "Period amount must be greater than 0.";
+            public const string PeriodDueDateInvalid = "Period due date is invalid.";
+            public const string PeriodsExceedRemaining = "Sum of installment periods cannot exceed the remaining balance.";
+            public const string PeriodNotFound = "Installment period not found.";
+            public const string PeriodNotPayable = "Installment period cannot be paid.";
+            public const string PlanCreated = "Installment plan has been created.";
         }
     }
 }
+
 

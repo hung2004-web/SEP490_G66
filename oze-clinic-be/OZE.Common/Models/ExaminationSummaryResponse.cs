@@ -10,5 +10,8 @@ namespace OZE.Common.Models
         public string? ChiefComplaint { get; set; }
         public string? PrimaryDiagnosis { get; set; }
         public string ExaminationStatus { get; set; } = string.Empty;
+        public DateOnly? FollowUpDate { get; set; }
+        public string? FollowUpNotes { get; set; }
+        public string? NextAppointmentText { get; set; }
     }
 }

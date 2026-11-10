@@ -8,10 +8,10 @@ import { ArrowLink, DebtCard } from "./PatientDebtCard";
 
 const TITLE_ID = "payment-debt-refunds-title";
 
-const PatientDebtRefunds = ({ item }) => (
-    <DebtCard titleId={TITLE_ID} title={PATIENT_DEBT_TEXT.REFUNDS_TITLE} aside={<ArrowLink to={ROUTES.REFUND_REQUESTS}>{PATIENT_DEBT_TEXT.ALL_REFUNDS}</ArrowLink>}>
+const PatientDebtRefunds = ({ item, titleId = TITLE_ID, emptyText = PATIENT_DEBT_TEXT.NO_REFUND }) => (
+    <DebtCard titleId={titleId} title={PATIENT_DEBT_TEXT.REFUNDS_TITLE} aside={<ArrowLink to={ROUTES.REFUND_REQUESTS}>{PATIENT_DEBT_TEXT.ALL_REFUNDS}</ArrowLink>}>
         {item.refunds.length ? (
-            <ul aria-labelledby={TITLE_ID} className="divide-y divide-border">
+            <ul aria-labelledby={titleId} className="divide-y divide-border">
                 {item.refunds.map((refund) => (
                     <li key={refund.code} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
                         <div className="min-w-0">
@@ -31,7 +31,7 @@ const PatientDebtRefunds = ({ item }) => (
                 ))}
             </ul>
         ) : (
-            <p className="px-5 py-4 text-muted">{PATIENT_DEBT_TEXT.NO_REFUND}</p>
+            <p className="px-5 py-4 text-muted">{emptyText}</p>
         )}
         <p className="border-t border-border px-5 py-3 text-caption text-muted">
             {PATIENT_DEBT_TEXT.CONTACT_BEFORE}

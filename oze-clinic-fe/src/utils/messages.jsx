@@ -157,7 +157,171 @@ export const APPOINTMENT_STATUS = {
     NO_SHOW: "NO_SHOW",
 };
 
-export const QUEUE_STATUS = { WAITING: "WAITING", CALLED: "CALLED" };
+export const QUEUE_STATUS = { WAITING: "WAITING", CALLED: "CALLED", IN_EXAMINATION: "IN_EXAMINATION" };
+
+// Badge of a row in the doctor's exam queue. Keys are QUEUE_STATUS values.
+export const EXAM_QUEUE_STATUS = {
+    [QUEUE_STATUS.WAITING]: { label: "Đang chờ", badge: "badge-neutral" },
+    [QUEUE_STATUS.CALLED]: { label: "Đã gọi", badge: "badge-warning" },
+    [QUEUE_STATUS.IN_EXAMINATION]: { label: "Đang khám", badge: "badge-info" },
+};
+
+// Tabs of the doctor's exam screen, in display order.
+export const EXAM_TAB = {
+    PROFILE: "profile",
+    EXAM: "exam",
+    DIAGNOSIS: "diagnosis",
+    TREATMENT_PLAN: "treatmentPlan",
+    TREATMENT: "treatment",
+    PRESCRIPTION: "prescription",
+};
+
+export const EXAM_TABS = [
+    { key: EXAM_TAB.PROFILE, label: "Hồ sơ bệnh nhân" },
+    { key: EXAM_TAB.EXAM, label: "Khám" },
+    { key: EXAM_TAB.DIAGNOSIS, label: "Chẩn đoán" },
+    { key: EXAM_TAB.TREATMENT_PLAN, label: "Kế hoạch điều trị" },
+    { key: EXAM_TAB.TREATMENT, label: "Điều trị" },
+    { key: EXAM_TAB.PRESCRIPTION, label: "Đơn thuốc" },
+];
+
+// Steps of one exam visit, shown by ExamStepper once the exam has started.
+export const EXAM_STEPS = ["Lập hồ sơ bệnh án", "Khám & Chẩn đoán", "Lập kế hoạch điều trị", "Điều trị", "Kê đơn thuốc"];
+
+// Heading of each step's content, same order as EXAM_STEPS.
+export const EXAM_STEP_TITLES = ["Bổ sung tiền sử bệnh", "Khám lâm sàng & chẩn đoán", "Lập kế hoạch điều trị", "Thực hiện điều trị", "Kê đơn thuốc"];
+
+// Medical history checklists of step 1. The doctor can also type items not in the list.
+export const HISTORY_ALLERGY_OPTIONS = [
+    "Penicillin",
+    "Amoxicillin",
+    "Cephalosporin",
+    "Thuốc tê (Lidocaine)",
+    "Aspirin / NSAIDs",
+    "Latex (găng cao su)",
+    "Kim loại (Niken)",
+    "Iod",
+];
+
+export const HISTORY_CONDITION_OPTIONS = [
+    "Bệnh tim mạch",
+    "Tăng huyết áp",
+    "Tiểu đường",
+    "Hen suyễn / bệnh phổi",
+    "Viêm gan / bệnh gan",
+    "Bệnh thận",
+    "Rối loạn đông máu",
+    "Động kinh",
+    "Bệnh tuyến giáp",
+    "Loãng xương",
+    "Ung thư / xạ trị vùng đầu cổ",
+    "Bệnh truyền nhiễm (HIV, lao…)",
+];
+
+// Shown in the condition checklist for female patients only.
+export const HISTORY_FEMALE_CONDITION_OPTIONS = ["Đang mang thai", "Đang cho con bú"];
+
+export const HISTORY_DENTAL_OPTIONS = [
+    "Ê buốt răng",
+    "Chảy máu chân răng",
+    "Từng nhổ răng",
+    "Từng điều trị tủy",
+    "Từng niềng răng",
+    "Nghiến răng khi ngủ",
+    "Từng phẫu thuật răng miệng",
+    "Đau khớp thái dương hàm",
+];
+
+// Common symptoms the doctor can tick in the "Khám" tab.
+export const EXAM_SYMPTOMS = [
+    "Đau răng",
+    "Ê buốt khi ăn nóng / lạnh",
+    "Đau tự phát về đêm",
+    "Đau khi nhai",
+    "Chảy máu chân răng",
+    "Sưng lợi",
+    "Sưng má / mặt",
+    "Hôi miệng",
+    "Răng lung lay",
+    "Mẻ / vỡ răng",
+    "Lỗ sâu nhìn thấy",
+    "Nhét thức ăn kẽ răng",
+    "Răng đổi màu",
+    "Đau răng khôn",
+    "Đau khớp hàm / há miệng hạn chế",
+    "Loét miệng",
+    "Khô miệng",
+    "Mất răng",
+    "Răng mọc lệch / chen chúc",
+];
+
+// Suggestions for the free-text tooth condition of the exam chart.
+export const TOOTH_CONDITION_SUGGESTIONS = [
+    "Sâu răng",
+    "Mòn cổ răng",
+    "Nứt răng",
+    "Mẻ răng",
+    "Răng lung lay",
+    "Viêm tủy",
+    "Đã trám",
+    "Đã điều trị tủy",
+    "Mão / cầu sứ",
+    "Mất răng",
+    "Răng mọc lệch",
+    "Răng ngầm",
+];
+
+// Tooth surfaces of the exam chart, in the order of the design.
+export const EXAM_TOOTH_SURFACES = [
+    { code: "M", label: "gần" },
+    { code: "O", label: "nhai" },
+    { code: "D", label: "xa" },
+    { code: "B", label: "ngoài" },
+    { code: "L", label: "trong" },
+];
+
+// X-ray order statuses: sent to the technician, image taken, image reviewed by the doctor.
+export const XRAY_STATUS = {
+    requested: { label: "Chờ chụp", badge: "badge-neutral" },
+    captured: { label: "Chờ đọc kết quả", badge: "badge-info" },
+    reviewed: { label: "Đã xem", badge: "badge-success" },
+};
+
+export const XRAY_TYPES = [
+    "Panorama",
+    "Cephalometric",
+    "Chụp ống tủy",
+    "Chụp chỉnh nha 3D",
+    "Chụp mặt thẳng (AP)",
+    "Chụp khớp thái dương hàm (TMJ)",
+    "Chụp khảo sát và giả định đặt Implant",
+    "Chụp Cone beam CT hàm trên",
+    "Chụp Cone beam CT hàm dưới",
+    "Chụp Cone beam CT hai hàm",
+    "Chụp CT xoang hàm mặt",
+];
+
+// ICD-10 codes the doctor picks from in "Chẩn đoán xác định" (dental chapter K00–K08, plus tooth fracture).
+export const ICD10_DENTAL = [
+    { code: "K01.1", name: "Răng ngầm" },
+    { code: "K02.0", name: "Sâu men răng" },
+    { code: "K02.1", name: "Sâu ngà răng" },
+    { code: "K02.2", name: "Sâu xê măng" },
+    { code: "K02.3", name: "Sâu răng ngưng tiến triển" },
+    { code: "K03.0", name: "Mòn răng sinh lý quá mức" },
+    { code: "K03.1", name: "Mòn răng cơ học (mòn cổ răng)" },
+    { code: "K03.6", name: "Cặn bám trên răng" },
+    { code: "K04.0", name: "Viêm tủy răng" },
+    { code: "K04.1", name: "Hoại tử tủy răng" },
+    { code: "K04.4", name: "Viêm quanh chóp cấp" },
+    { code: "K04.5", name: "Viêm quanh chóp mạn" },
+    { code: "K05.0", name: "Viêm lợi cấp" },
+    { code: "K05.1", name: "Viêm lợi mạn" },
+    { code: "K05.3", name: "Viêm nha chu mạn" },
+    { code: "K07.3", name: "Bất thường vị trí răng" },
+    { code: "K08.1", name: "Mất răng do nhổ, tai nạn hoặc bệnh nha chu" },
+    { code: "S02.5", name: "Gãy răng" },
+];
 
 export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress", COMPLETED: "Completed", CANCELLED: "Cancelled" };
 
@@ -444,6 +608,125 @@ export const PATIENT_DEBT_TEXT = {
     SORT_DUE: "Đến hạn trước",
     SORT_LEFT: "Còn lại nhiều nhất",
     SORT_NEW: "Mới nhất trước",
+};
+
+export const PAYMENT_HISTORY_STATUS = {
+    paid: { label: "Đã thanh toán đủ", badge: "badge-success" },
+    partial: { label: "Thanh toán một phần", badge: "badge-warning" },
+    unpaid: { label: "Chưa thanh toán", badge: "badge-danger" },
+};
+
+export const PAYMENT_HISTORY_STATUS_GUIDE = [
+    {
+        title: "Phiếu khám (thanh toán)",
+        labels: PAYMENT_HISTORY_STATUS,
+        items: [
+            { key: "paid", meaning: "Còn lại của phiếu bằng 0.", when: "Tổng các lần thanh toán bằng tổng sau giảm giá.", patient: "Giữ phiếu, mang theo khi tái khám." },
+            { key: "partial", meaning: "Đã trả một phần, còn lại trả theo đợt.", when: "Kế hoạch trả nhiều đợt (ví dụ niềng răng 3 đợt).", patient: "Xem đợt sắp tới trong Công nợ." },
+            {
+                key: "unpaid",
+                meaning: "Phiếu đã phát sinh chi phí nhưng chưa có lần thanh toán nào.",
+                when: "Sau buổi khám, chưa ghi nhận tiền.",
+                patient: "Thanh toán tại quầy hoặc chuyển khoản.",
+            },
+        ],
+    },
+];
+
+export const PAYMENT_HISTORY_TEXT = {
+    TITLE: "Lịch sử thanh toán",
+    DESCRIPTION: "Chi phí và các lần thanh toán theo từng phiếu khám.",
+    DOCUMENT_RECEIPT: (no) => `Phiếu khám #${no} – Lịch sử thanh toán`,
+    DOCUMENT_NOT_FOUND: "Không tìm thấy phiếu – Lịch sử thanh toán",
+    LOADING: "Đang tải lịch sử thanh toán",
+    ERROR_TITLE: "Không thể tải lịch sử thanh toán",
+    ERROR_TEXT: "Đã có lỗi xảy ra, vui lòng thử lại.",
+    RETRY: "Thử lại",
+    EMPTY_TITLE: "Chưa có phiếu thanh toán nào",
+    EMPTY_TEXT: "Sau mỗi buổi khám có phát sinh chi phí, phiếu khám chữa bệnh sẽ hiện ở đây.",
+    SUM_NET: "Tổng chi phí (sau giảm giá)",
+    SUM_NET_SUB: (count) => `${count} phiếu khám`,
+    SUM_PAID: "Đã thanh toán",
+    SUM_PAID_SUB: (count) => `${count} lần thanh toán`,
+    SUM_LEFT: "Còn lại",
+    SUM_LEFT_LINK: "Xem đợt thanh toán sắp tới",
+    SUM_LEFT_LINK_ZERO: "Xem công nợ",
+    SEARCH: "Tìm thủ thuật, chẩn đoán",
+    CLEAR_SEARCH: "Xóa tìm kiếm",
+    FILTER: "Lọc",
+    FILTER_LABEL: "Lọc phiếu thanh toán",
+    FILTER_UNIT: " lựa chọn",
+    STATUS_GROUP: "Trạng thái",
+    MONTH_GROUP: "Tháng",
+    STATUS_HELP: "Trạng thái",
+    SHOWN: (shown, total) => `Hiển thị ${shown}/${total}`,
+    CHIP_STATUS: (label) => `Trạng thái: ${label}`,
+    CLEAR_ALL: "Xóa tất cả",
+    NO_RESULT: "Không có kết quả phù hợp",
+    NO_RESULT_TEXT: "Thử bỏ bớt bộ lọc hoặc đổi từ khóa.",
+    CLEAR_QUERY: "Xóa tìm kiếm và bộ lọc",
+    SORT_NEW: "Mới nhất trước",
+    SORT_OLD: "Cũ nhất trước",
+    SORT_LEFT: "Còn lại nhiều nhất",
+    SORT_NET: "Chi phí lớn nhất",
+    TABLE_CAPTION: "Danh sách phiếu thanh toán",
+    COL_RECEIPT: "Phiếu khám",
+    COL_COST: "Chi phí",
+    RECEIPT_NO: (no) => `· Phiếu #${no}`,
+    VIEW: (no) => `Xem phiếu #${no}`,
+    VIEWING: (no) => `Đang xem phiếu #${no}`,
+    VIEW_CONTEXT: (date) => ` ngày ${date}`,
+    COST: "Chi phí",
+    PAID: "Đã trả",
+    LEFT: "Còn lại",
+    PAID_LINE: (amount) => `Đã trả ${amount}`,
+    LEFT_LINE: (amount) => `Còn lại ${amount}`,
+    TOTAL: (count) => `Tổng ${count} phiếu`,
+    RANGE: (from, to, total) => `Hiển thị ${from}–${to} / ${total}`,
+    PAGINATION: "Phân trang danh sách phiếu",
+    RECEIPT_TITLE: (no) => `Phiếu khám #${no}`,
+    MEDICAL_RECORD: "Sổ khám",
+    MEDICAL_RECORD_CONTEXT: (no) => ` – xem phiếu khám #${no} trong Sổ khám bệnh`,
+    NOT_FOUND_TITLE: "Không tìm thấy phiếu này",
+    NOT_FOUND_TEXT: "Phiếu không tồn tại hoặc bạn không có quyền xem.",
+    NOT_FOUND_STATUS: "Không tìm thấy phiếu này.",
+    SHOW_LATEST: "Xem phiếu mới nhất",
+    CLINIC: "NHA KHOA OZE",
+    CLINIC_MARK: "O",
+    CLINIC_PHONE: (phone) => `ĐT: ${phone}`,
+    PAPER_TITLE: "PHIẾU KHÁM CHỮA BỆNH",
+    PAPER_DATE: "Ngày khám: ",
+    NAME: "Họ tên",
+    BIRTH_GENDER: "Năm sinh · Giới",
+    PHONE: "Điện thoại",
+    ADDRESS: "Địa chỉ",
+    DIAGNOSIS: "Chẩn đoán",
+    REASON: "Lý do khám",
+    REMAIN_ALL: "Tổng chi phí còn lại",
+    COL_PROCEDURE: "Tên thủ thuật",
+    COL_DETAIL: "Nội dung thủ thuật",
+    COL_QUANTITY: "SL",
+    COL_UNIT_PRICE: "Đ.giá",
+    COL_DISCOUNT: "Giảm",
+    COL_LINE_TOTAL: "T.toán",
+    LINE_META: (quantity, unitPrice, discount) => `SL ${quantity} · Đ.giá ${unitPrice} · Giảm ${discount}`,
+    GROSS: "Tổng phải thanh toán",
+    DISCOUNT: "Tổng giảm giá",
+    NET: "Tổng sau giảm giá",
+    PAID_TOTAL: "Đã thanh toán",
+    LEFT_TOTAL: "Còn lại",
+    APPOINTMENT: "LỊCH HẸN",
+    PAYMENTS: "LỊCH SỬ THANH TOÁN",
+    COL_DATE: "Ngày",
+    COL_PAYER: "Người thanh toán",
+    COL_METHOD: "Hình thức",
+    COL_AMOUNT: "Số tiền",
+    PAYER_METHOD: (payer, method) => `${payer} · ${method}`,
+    NO_PAYMENT: "Chưa có lần thanh toán nào cho phiếu này.",
+    DOCTOR_SIGN: "Bác sĩ khám bệnh",
+    FOOT_REVISIT: "Lần sau tái khám quý khách vui lòng mang theo phiếu khám bệnh này.",
+    FOOT_DEPOSIT: "Tiền cọc không hoàn lại. Chỉ quy đổi sang dịch vụ khác.",
+    NO_REFUND: "Không có yêu cầu hoàn tiền nào cho phiếu này.",
 };
 
 export const BOOKING_ERROR_CODE = {

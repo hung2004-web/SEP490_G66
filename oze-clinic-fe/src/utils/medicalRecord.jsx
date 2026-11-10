@@ -225,7 +225,11 @@ export const toToothCode = (value) => {
     return Number.isInteger(code) ? code : null;
 };
 
-export const isPermanentTooth = (code) => Number.isInteger(code) && code % 10 >= 1 && code % 10 <= 8 && Math.floor(code / 10) >= 1 && Math.floor(code / 10) <= 4;
+// FDI numbers in chart order: patient's right on the left of each row.
+export const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+export const LOWER_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+
+export const isPermanentTooth =(code) => Number.isInteger(code) && code % 10 >= 1 && code % 10 <= 8 && Math.floor(code / 10) >= 1 && Math.floor(code / 10) <= 4;
 
 export const toothName = (code) =>
     isPermanentTooth(code) ? `${MEDICAL_RECORD_TOOTH_POSITION[code % 10]}, ${MEDICAL_RECORD_TOOTH_QUADRANT[Math.floor(code / 10)]}` : "";
