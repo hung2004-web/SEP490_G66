@@ -431,25 +431,7 @@ namespace OZE.Application.Services
                 ParentAppointmentId = appointment.ParentAppointmentId,
                 ExaminationId = appointment.Examination?.Id,
                 ExaminationStatus = appointment.Examination?.ExaminationStatus,
-                FollowUp = appointment.Examination?.FollowUpDate != null || appointment.Examination?.FollowUpAppointmentId != null
-                    ? new FollowUpSummaryResponse
-                    {
-                        FollowUpDate = appointment.Examination.FollowUpDate,
-                        FollowUpNotes = appointment.Examination.FollowUpNotes,
-                        AppointmentId = appointment.Examination.FollowUpAppointmentId,
-                        AppointmentCode = appointment.Examination.FollowUpAppointment != null
-                            ? $"LH{appointment.Examination.FollowUpAppointment.Id:D6}"
-                            : null,
-                        AppointmentDate = appointment.Examination.FollowUpAppointment?.AppointmentDate,
-                        TimeSlotStart = appointment.Examination.FollowUpAppointment?.TimeSlotStart,
-                        TimeSlotEnd = appointment.Examination.FollowUpAppointment?.TimeSlotEnd,
-                        DoctorId = appointment.Examination.FollowUpAppointment?.DoctorId,
-                        DoctorName = appointment.Examination.FollowUpAppointment?.Doctor?.FullName,
-                        Status = appointment.Examination.FollowUpAppointment?.Status,
-                        RemindedAt = appointment.Examination.FollowUpRemindedAt,
-                        ReminderCount = appointment.Examination.FollowUpReminderCount
-                    }
-                    : null
+                FollowUp = appointment.Examination.ToFollowUpSummary()
             };
         }
 
@@ -1309,7 +1291,6 @@ namespace OZE.Application.Services
                 originalAppointment.Examination.FollowUpNotes = request.Notes.Trim();
             }
             originalAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
-            await _appointmentRepository.SaveChangesAsync();
 
             if (!string.IsNullOrEmpty(originalAppointment.Patient.UserId))
             {
@@ -1326,8 +1307,9 @@ namespace OZE.Application.Services
                     CreatedAt = DateTimeOffset.UtcNow
                 };
                 await _appointmentRepository.AddNotificationAsync(notification, cancellationToken);
-                await _appointmentRepository.SaveChangesAsync();
             }
+
+            await _appointmentRepository.SaveChangesAsync();
 
             await _auditLogService.LogAsync(
                 AuditConstants.AppointmentFollowUpScheduled,
@@ -1380,25 +1362,7 @@ namespace OZE.Application.Services
                 ParentAppointmentId = appointment.ParentAppointmentId,
                 ExaminationId = appointment.Examination?.Id,
                 ExaminationStatus = appointment.Examination?.ExaminationStatus,
-                FollowUp = appointment.Examination?.FollowUpDate != null || appointment.Examination?.FollowUpAppointmentId != null
-                    ? new FollowUpSummaryResponse
-                    {
-                        FollowUpDate = appointment.Examination.FollowUpDate,
-                        FollowUpNotes = appointment.Examination.FollowUpNotes,
-                        AppointmentId = appointment.Examination.FollowUpAppointmentId,
-                        AppointmentCode = appointment.Examination.FollowUpAppointment != null
-                            ? $"LH{appointment.Examination.FollowUpAppointment.Id:D6}"
-                            : null,
-                        AppointmentDate = appointment.Examination.FollowUpAppointment?.AppointmentDate,
-                        TimeSlotStart = appointment.Examination.FollowUpAppointment?.TimeSlotStart,
-                        TimeSlotEnd = appointment.Examination.FollowUpAppointment?.TimeSlotEnd,
-                        DoctorId = appointment.Examination.FollowUpAppointment?.DoctorId,
-                        DoctorName = appointment.Examination.FollowUpAppointment?.Doctor?.FullName,
-                        Status = appointment.Examination.FollowUpAppointment?.Status,
-                        RemindedAt = appointment.Examination.FollowUpRemindedAt,
-                        ReminderCount = appointment.Examination.FollowUpReminderCount
-                    }
-                    : null
+                FollowUp = appointment.Examination.ToFollowUpSummary()
             };
         }
     }

@@ -207,5 +207,14 @@ namespace OZE.Controllers
             var result = await _examinationService.RemindFollowUpAsync(CurrentUserId ?? string.Empty, id, cancellationToken);
             return Ok(ApiResponse<FollowUpListItemResponse>.SuccessResult(result, "Follow-up reminder sent successfully"));
         }
+
+        [HttpPost("examinations/follow-ups/remind-due")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.DoctorRole}")]
+        public async Task<ActionResult<ApiResponse<BatchRemindFollowUpResponse>>> RemindDueFollowUpsAsync(
+            [FromQuery] DateOnly? targetDate, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.RemindDueFollowUpsAsync(targetDate, CurrentUserId, cancellationToken);
+            return Ok(ApiResponse<BatchRemindFollowUpResponse>.SuccessResult(result, $"Follow-up reminders sent successfully to {result.RemindedCount} patients."));
+        }
     }
 }

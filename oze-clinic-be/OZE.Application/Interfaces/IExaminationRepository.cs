@@ -21,6 +21,7 @@ namespace OZE.Application.Interfaces
         void RemovePrescription(Prescription prescription);
         Task<Examination?> GetByIdWithFollowUpAsync(long examinationId, CancellationToken cancellationToken = default);
         Task<PagedResult<Examination>> GetFollowUpsAsync(FollowUpQueryParameters parameters, CancellationToken cancellationToken = default);
+        Task<List<Examination>> GetDueFollowUpsAsync(DateOnly targetDate, CancellationToken cancellationToken = default);
         Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
