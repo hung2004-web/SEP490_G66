@@ -4,6 +4,8 @@ import { cx } from "@/utils/cx";
 const TICK_COUNT = 4;
 // With more bars than this (a month of days) only the highest and the latest bar get a number on top.
 const MAX_LABELLED_BARS = 12;
+// On a narrow chart with many bars, only every 5th x-axis label (plus the first and last) stays visible.
+const AXIS_LABEL_STEP = 5;
 
 // Rounds the axis step up to 1, 2, 2.5 or 5 x 10^n, so the tallest bar leaves some room above it.
 const niceStep = (max) => {
@@ -29,6 +31,12 @@ const BarChart = ({ data, title, formatValue = String, previousLabel, onSelect, 
     const latest = filled.at(-1);
     const highest = filled.reduce((best, index) => (best === undefined || data[index].value > data[best].value ? index : best), undefined);
     const labelled = (index) => data.length <= MAX_LABELLED_BARS || index === latest || index === highest;
+    const axisKey = (index) => data.length <= MAX_LABELLED_BARS || index === 0 || index === data.length - 1 || (index + 1) % AXIS_LABEL_STEP === 0;
+    // Tooltips of the outer columns open inwards so they stay inside the card.
+    const tooltipSide = (index) => {
+        if (index < data.length / 3) return "left-0";
+        return index >= (data.length * 2) / 3 ? "right-0" : "";
+    };
 
     // Line through the middle of each column, in a 100 x 100 box stretched over the plot.
     const linePoints = data
@@ -40,7 +48,7 @@ const BarChart = ({ data, title, formatValue = String, previousLabel, onSelect, 
     const Column = onSelect ? "button" : "div";
 
     return (
-        <figure className="m-0">
+        <figure className="relative m-0 @container">
             <div className="relative border-b border-border-strong" style={{ height }}>
                 <div className="absolute inset-0 flex items-end">
                     {data.map((item, index) => (
@@ -70,7 +78,10 @@ const BarChart = ({ data, title, formatValue = String, previousLabel, onSelect, 
                             />
                             {active === index ? (
                                 <span
-                                    className="absolute z-10 mb-1 flex flex-col whitespace-nowrap rounded-md bg-surface-navy px-2.5 py-1.5 text-left text-caption text-on-navy shadow-md"
+                                    className={cx(
+                                        "absolute z-10 mb-1 flex flex-col whitespace-nowrap rounded-md bg-surface-navy px-2.5 py-1.5 text-left text-caption text-on-navy shadow-md",
+                                        tooltipSide(index),
+                                    )}
                                     style={{ bottom: `${Math.max(percent(item.value), percent(item.previous))}%` }}
                                     aria-hidden="true"
                                 >
@@ -125,8 +136,8 @@ const BarChart = ({ data, title, formatValue = String, previousLabel, onSelect, 
 
             {/* X axis */}
             <div className="mt-2 flex" aria-hidden="true">
-                {data.map((item) => (
-                    <div key={item.label} className="min-w-0 flex-1 text-center text-caption text-muted">
+                {data.map((item, index) => (
+                    <div key={item.label} className={cx("min-w-0 flex-1 text-center text-caption text-muted", !axisKey(index) && "@max-xl:invisible")}>
                         <p>{item.label}</p>
                         {item.sublabel && <p className="num text-placeholder">{item.sublabel}</p>}
                     </div>
@@ -134,24 +145,27 @@ const BarChart = ({ data, title, formatValue = String, previousLabel, onSelect, 
             </div>
 
             {/* Same numbers for screen readers */}
-            <table className="sr-only">
-                <caption>{title}</caption>
-                <tbody>
-                    {data.map((item) => (
-                        <tr key={item.label}>
-                            <th scope="row">
-                                {item.label} {item.sublabel}
-                            </th>
-                            <td>{show(item.value)}</td>
-                            {previousLabel && (
-                                <td>
-                                    {previousLabel}: {item.previous == null ? "Chưa có số liệu" : formatValue(item.previous)}
-                                </td>
-                            )}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {/* A <table> ignores sr-only's 1px box, so the wrapper hides it. */}
+            <div className="sr-only">
+                <table>
+                    <caption>{title}</caption>
+                    <tbody>
+                        {data.map((item) => (
+                            <tr key={item.label}>
+                                <th scope="row">
+                                    {item.label} {item.sublabel}
+                                </th>
+                                <td>{show(item.value)}</td>
+                                {previousLabel && (
+                                    <td>
+                                        {previousLabel}: {item.previous == null ? "Chưa có số liệu" : formatValue(item.previous)}
+                                    </td>
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </figure>
     );
 };

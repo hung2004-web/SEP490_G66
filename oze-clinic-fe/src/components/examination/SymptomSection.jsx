@@ -12,7 +12,7 @@ const SymptomSection = ({ options = EXAM_SYMPTOMS, value = [], note = "", onChan
     return (
         <ClinicalExamSection
             title="Triệu chứng"
-            action={value.length > 0 && <span className="num rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary">{value.length} đã chọn</span>}
+            action={value.length > 0 && <span className="num rounded-full bg-primary-soft px-2 py-0.5 text-caption font-medium text-primary">{value.length} đã chọn</span>}
             bodyClassName="flex flex-col gap-4"
         >
             <fieldset>

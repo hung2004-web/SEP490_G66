@@ -103,11 +103,11 @@ const WorkShiftManagement = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <WeekPicker id="shift-week" value={weekStart} onChange={setWeekStart} />
-                <div className="flex flex-wrap items-center gap-3">
-                    <FilterSelect id="shift-room-filter" label="Phòng" options={ROOM_OPTIONS} value={roomId} onChange={setRoomId} />
-                    <FilterSelect id="shift-role-filter" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={setRole} />
-                    <FilterSelect id="shift-status-filter" label="Trạng thái" options={SHIFT_STATUS_OPTIONS} value={status} onChange={setStatus} />
+                <WeekPicker id="shift-week" value={weekStart} onChange={setWeekStart} className="w-full sm:w-auto" />
+                <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+                    <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="shift-room-filter" label="Phòng" options={ROOM_OPTIONS} value={roomId} onChange={setRoomId} />
+                    <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="shift-role-filter" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={setRole} />
+                    <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="shift-status-filter" label="Trạng thái" options={SHIFT_STATUS_OPTIONS} value={status} onChange={setStatus} />
                 </div>
             </div>
 

@@ -3,7 +3,7 @@ import ClinicalExamSection from "./ClinicalExamSection";
 import VisitDetailDialog from "./VisitDetailDialog";
 
 // "Các lần khám trước". visits: [{ id, date, doctor, summary }].
-// queueId: patient in the queue; with it, "Xem chi tiết" opens the visit's diagnoses, plan, progress and prescription.
+// queueId: patient in the queue; "Xem chi tiết" opens the visit's diagnoses, plan, progress and prescription.
 // onSupplement: copy what was found in that visit into this visit's history.
 const PreviousVisitsCard = ({ queueId, visits = [], onSupplement }) => {
     const [openVisit, setOpenVisit] = useState(null);
@@ -27,11 +27,9 @@ const PreviousVisitsCard = ({ queueId, visits = [], onSupplement }) => {
                                     Bổ sung
                                 </button>
                             )}
-                            {queueId != null && (
-                                <button type="button" className="btn btn-secondary" onClick={() => setOpenVisit(visit)}>
-                                    Xem chi tiết
-                                </button>
-                            )}
+                            <button type="button" className="btn btn-secondary" onClick={() => setOpenVisit(visit)}>
+                                Xem chi tiết
+                            </button>
                         </li>
                     ))}
                 </ul>

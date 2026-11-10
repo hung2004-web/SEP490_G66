@@ -10,7 +10,7 @@ const COLUMN_COUNT = 6;
 // firstNumber: the STT of the first row on this page. filtered: a search or filter is on, which changes the empty message.
 const RefundRequestTable = ({ requests = [], firstNumber = 1, loading = false, filtered = false, onView }) => (
     <div className="table-wrap">
-        <table className="table" aria-busy={loading}>
+        <table className="table table-stack" aria-busy={loading}>
             <thead>
                 <tr>
                     <th scope="col">STT</th>
@@ -50,17 +50,17 @@ const RefundRequestTable = ({ requests = [], firstNumber = 1, loading = false, f
                 {!loading &&
                     requests.map((request, index) => (
                         <tr key={request.id}>
-                            <td className="num">{firstNumber + index}</td>
-                            <td className="min-w-40">
+                            <td data-hide-stack className="num">{firstNumber + index}</td>
+                            <td data-primary className="min-w-40">
                                 <p className="font-semibold text-ink">{request.patientName}</p>
                                 <p className="num text-caption text-muted">{request.patientCode}</p>
                             </td>
-                            <td className="num whitespace-nowrap">{request.invoiceNumber}</td>
-                            <td className="num whitespace-nowrap text-right font-semibold text-ink">{formatCurrency(request.paidAmount)}</td>
-                            <td>
+                            <td data-label="Hoá đơn" className="num whitespace-nowrap">{request.invoiceNumber}</td>
+                            <td data-label="Đã thanh toán" className="num whitespace-nowrap text-right font-semibold text-ink">{formatCurrency(request.paidAmount)}</td>
+                            <td data-label="Trạng thái">
                                 <StatusBadge status={request.status} labels={REFUND_REQUEST_STATUS_LABELS} />
                             </td>
-                            <td>
+                            <td data-actions>
                                 <div className="flex items-center justify-end">
                                     <button type="button" className="btn btn-secondary whitespace-nowrap" onClick={() => onView(request.id)}>
                                         Xem chi tiết

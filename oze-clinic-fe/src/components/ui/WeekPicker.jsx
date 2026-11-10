@@ -30,7 +30,8 @@ const WeekPicker = ({ id, value, onChange, label = "Chọn tuần", className })
 
     return (
         <div role="group" aria-label={label} className={cx("flex flex-wrap items-center gap-2", className)}>
-            <div className="relative">
+            {/* Phone: the week box takes the whole first line, the three buttons share the next one. */}
+            <div className="relative w-full sm:w-auto">
                 {/* The real date field sits on top of the box, invisible, so a click opens its picker. */}
                 <input
                     id={id}
@@ -47,10 +48,10 @@ const WeekPicker = ({ id, value, onChange, label = "Chọn tuần", className })
                     }}
                 />
                 <div
-                    className="input pointer-events-none flex w-auto min-w-72 items-center gap-2 peer-focus-visible:border-primary peer-focus-visible:shadow-focus"
+                    className="input pointer-events-none flex w-full min-w-0 items-center gap-2 peer-focus-visible:border-primary peer-focus-visible:shadow-focus sm:w-auto sm:min-w-72"
                     aria-hidden="true"
                 >
-                    <span className="num flex-1 whitespace-nowrap">
+                    <span className="num min-w-0 flex-1 truncate">
                         <span className="font-semibold text-ink">{`Tuần ${week}, ${year}`}</span>
                         <span className="text-muted">{` · ${range}`}</span>
                     </span>
@@ -58,20 +59,20 @@ const WeekPicker = ({ id, value, onChange, label = "Chọn tuần", className })
                 </div>
             </div>
 
-            <button type="button" className="btn btn-secondary" onClick={() => move(-1)}>
+            <button type="button" className="btn btn-secondary flex-1 sm:flex-none" onClick={() => move(-1)}>
                 <ArrowLeft className="size-4" aria-hidden="true" />
                 Tuần trước
             </button>
             <button
                 type="button"
-                className={cx("btn", isCurrent ? "btn-primary" : "btn-secondary")}
+                className={cx("btn flex-1 sm:flex-none", isCurrent ? "btn-primary" : "btn-secondary")}
                 aria-pressed={isCurrent}
                 onClick={() => onChange(getWeekStart())}
             >
                 <CalendarCheck className="size-4" aria-hidden="true" />
                 Tuần hiện tại
             </button>
-            <button type="button" className="btn btn-secondary" onClick={() => move(1)}>
+            <button type="button" className="btn btn-secondary flex-1 sm:flex-none" onClick={() => move(1)}>
                 Tuần sau
                 <ArrowRight className="size-4" aria-hidden="true" />
             </button>

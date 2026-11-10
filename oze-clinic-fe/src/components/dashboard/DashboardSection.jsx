@@ -9,7 +9,7 @@ const DashboardSection = ({ id, title, link, badge, error, empty, busy = false, 
                 <h2 id={id} className="section-title">{title}</h2>
                 {badge}
                 {link && (
-                    <Link to={link.to} className="btn btn-link min-h-11 md:min-h-0">
+                    <Link to={link.to} className="btn btn-link min-h-11 pointer-fine:min-h-0">
                         {link.label}
                         <span aria-hidden="true">›</span>
                     </Link>

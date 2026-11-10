@@ -13,7 +13,7 @@ const COLUMN_COUNT = 10;
 const DebtTable = ({ debts = [], firstNumber = 1, loading = false, filtered = false, onView }) => (
     // Tighter cells than .table, so all ten columns fit at 1366px. relative keeps the sr-only header inside the scroll area.
     <div className="table-wrap relative">
-        <table className="table [&_td]:px-3 [&_th]:px-3" aria-busy={loading}>
+        <table className="table table-stack [&_td]:px-3 [&_th]:px-3" aria-busy={loading}>
             <thead>
                 <tr>
                     <th scope="col">STT</th>
@@ -65,18 +65,18 @@ const DebtTable = ({ debts = [], firstNumber = 1, loading = false, filtered = fa
                         const ageLevel = getDebtAgeLevel(debt.createdAt);
                         return (
                             <tr key={debt.id} className={ageLevel?.row}>
-                                <td className={cx("num", ageLevel?.edge)}>{firstNumber + index}</td>
-                                <td className="min-w-40 font-semibold text-ink">{debt.patientName}</td>
-                                <td className="num whitespace-nowrap">{formatPhone(debt.phone)}</td>
-                                <td className="num font-semibold whitespace-nowrap text-ink">{debt.invoiceNumber}</td>
-                                <td className={cx("num whitespace-nowrap", ageLevel?.date)}>{formatDate(debt.createdAt)}</td>
-                                <td className="num whitespace-nowrap text-right">{formatNumber(debt.totalAmount)}</td>
-                                <td className="num whitespace-nowrap text-right">{formatNumber(debt.paidAmount)}</td>
-                                <td className="num whitespace-nowrap text-right font-semibold text-danger">{formatNumber(debt.remainingAmount)}</td>
-                                <td className="whitespace-nowrap">
+                                <td data-hide-stack className={cx("num", ageLevel?.edge)}>{firstNumber + index}</td>
+                                <td data-primary className="min-w-40 font-semibold text-ink">{debt.patientName}</td>
+                                <td data-label="Số điện thoại" className="num whitespace-nowrap">{formatPhone(debt.phone)}</td>
+                                <td data-label="Hoá đơn" className="num font-semibold whitespace-nowrap text-ink">{debt.invoiceNumber}</td>
+                                <td data-label="Ngày tạo" className={cx("num whitespace-nowrap", ageLevel?.date)}>{formatDate(debt.createdAt)}</td>
+                                <td data-label="Phải trả" className="num whitespace-nowrap text-right">{formatNumber(debt.totalAmount)}</td>
+                                <td data-label="Đã trả" className="num whitespace-nowrap text-right">{formatNumber(debt.paidAmount)}</td>
+                                <td data-label="Còn nợ" className="num whitespace-nowrap text-right font-semibold text-danger">{formatNumber(debt.remainingAmount)}</td>
+                                <td data-label="Trạng thái" className="whitespace-nowrap">
                                     <StatusBadge status={debt.status} labels={DEBT_STATUS_LABELS} />
                                 </td>
-                                <td>
+                                <td data-actions>
                                     <div className="flex items-center justify-end">
                                         <button type="button" className="btn btn-secondary whitespace-nowrap" onClick={() => onView(debt.id)}>
                                             Chi tiết

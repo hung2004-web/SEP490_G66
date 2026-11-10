@@ -22,21 +22,21 @@ const SLOT_OPTIONS = LEAVE_SLOT_OPTIONS.map((option) => ({ value: option.value ?
 
 const LeaveRequestRow = ({ request, number, onView }) => (
     <tr>
-        <td className="num">{number}</td>
-        <td className="min-w-40">
+        <td data-hide-stack className="num">{number}</td>
+        <td data-primary className="min-w-40">
             <p className="font-semibold text-ink">{request.senderName}</p>
             <p className="text-caption text-muted">{request.senderRole}</p>
         </td>
-        <td className="num whitespace-nowrap">
+        <td data-label="Ngày nghỉ" className="num whitespace-nowrap">
             <p className="font-semibold text-ink">{formatDate(request.date)}</p>
             <p className="text-caption text-muted">{leaveSlotLabel(request.slot)}</p>
         </td>
-        <td className="min-w-48">{request.reason}</td>
-        <td className="whitespace-nowrap">{request.substituteName ?? "—"}</td>
-        <td>
+        <td data-label="Lý do" data-block className="min-w-48">{request.reason}</td>
+        <td data-label="Người thay" className="whitespace-nowrap">{request.substituteName ?? "—"}</td>
+        <td data-label="Trạng thái">
             <StatusBadge status={request.status} labels={LEAVE_REQUEST_STATUS_LABELS} />
         </td>
-        <td>
+        <td data-actions>
             <div className="flex items-center justify-end">
                 <button type="button" className="btn btn-secondary whitespace-nowrap" onClick={() => onView(request.id)}>
                     Xem chi tiết
@@ -138,14 +138,14 @@ const LeaveRequestManagement = () => {
                     onChange={setSearchInput}
                     className="w-full sm:w-72"
                 />
-                <FilterSelect id="leave-request-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
-                <FilterSelect id="leave-request-role" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={changeFilter(setRole)} />
-                <FilterSelect id="leave-request-slot" label="Buổi" options={SLOT_OPTIONS} value={slot} onChange={changeFilter(setSlot)} />
+                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="leave-request-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
+                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="leave-request-role" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={changeFilter(setRole)} />
+                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="leave-request-slot" label="Buổi" options={SLOT_OPTIONS} value={slot} onChange={changeFilter(setSlot)} />
             </div>
 
             <div>
                 <div className="table-wrap">
-                    <table className="table" aria-busy={loading}>
+                    <table className="table table-stack" aria-busy={loading}>
                         <thead>
                             <tr>
                                 <th scope="col">STT</th>

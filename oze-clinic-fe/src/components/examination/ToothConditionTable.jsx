@@ -15,7 +15,7 @@ const ToothConditionTable = ({ entries = [], selectedTooth, onSelectTooth, onEdi
             title="Tình trạng răng hiện tại"
             action={
                 entries.length > 0 && (
-                    <span className="num rounded-full bg-surface-tint px-2 py-0.5 text-[11px] font-medium text-body">
+                    <span className="num rounded-full bg-surface-tint px-2 py-0.5 text-caption font-medium text-body">
                         {entries.length} tình trạng · {toothCount} răng
                     </span>
                 )

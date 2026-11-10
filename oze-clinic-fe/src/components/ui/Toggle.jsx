@@ -35,6 +35,8 @@ const Toggle = ({ checked = false, onChange, label, disabled = false, className 
             onClick={handleClick}
             className={cx(
                 "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60",
+                // Touch screens: an invisible 44px-tall hit area around the 24px switch.
+                "pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:-inset-y-2.5 pointer-coarse:before:content-['']",
                 on ? "bg-primary" : "bg-border-strong",
                 className,
             )}

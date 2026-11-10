@@ -149,7 +149,7 @@ const ROLE_PAGES = {
             <Route path="*" element={NOT_FOUND} />
         </Routes>
     ),
-    [ROUTES.DOCTOR_QUEUE]: <ExaminationPage />,
+    [ROUTES.DOCTOR_EXAMINATION]: <ExaminationPage />,
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />,
     [ROUTES.ADMIN_STAFF]: <StaffManagement />,
