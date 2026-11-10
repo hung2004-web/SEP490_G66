@@ -26,8 +26,8 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 |---|---|---|---|---|---|---|---|---|
 | 0 | Cover, MethodList, Statistics | 1–3 | 3 | 0 | – | – | – | – |
 | 1 | OZ-AUTH | 4–14 | 11 | 11 | 0 | 0 | 0 | 0 |
-| 2 | OZ-ME | 15–19 | 5 | 0 | 0 | 5 | 0 | 0 |
-| 3 | OZ-PAT | 20–26 | 7 | 0 | 6 | 1 | 0 | 0 |
+| 2 | OZ-ME | 15–19 | 5 | 0 | 5 | 0 | 0 | 0 |
+| 3 | OZ-PAT | 20–26 | 7 | 0 | 7 | 0 | 0 | 0 |
 | 4 | OZ-SVC | 27–35 | 9 | 0 | 8 | 0 | 1 | 0 |
 | 5 | OZ-ROOM, OZ-ROLE, OZ-STAFF, OZ-WS, OZ-DS | 36–60 | 25 | 0 | 0 | 25 | 0 | 0 |
 | 6 | OZ-APPT, OZ-Q | 61–84 | 24 | 0 | 4 | 19 | 1 | 0 |
@@ -35,7 +35,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 8 | OZ-TP, OZ-INV | 114–125 | 12 | 0 | 0 | 7 | 5 | 0 |
 | 9 | OZ-HOME, OZ-CFG, OZ-LEAVE, OZ-NOTIF, OZ-WH | 126–133 | 8 | 0 | 0 | 2 | 6 | 0 |
 | 10 | OZ-SIM | 134–142 | 9 | 0 | 0 | 0 | 0 | 9 |
-| | **Tổng tab hàm** | 4–142 | **139** | **11** | **23** | **81** | **15** | **9** |
+| | **Tổng tab hàm** | 4–142 | **139** | **11** | **29** | **75** | **15** | **9** |
 
 **Thứ tự đề xuất:** đợt 3 → 4 → 7 (phần chụp phim) → 6 (phần có test) → 0, rồi viết test cho các tab ✍️ theo đợt 2 → 5 → 6 → 7 → 8 → 9.
 
@@ -69,11 +69,11 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 
 | # | Tab | Mã | Test trong code | Trạng thái | Người làm | Cập nhật | Ghi chú |
 |---|---|---|---|---|---|---|---|
-| 15 | GetProfile | OZ-ME-01 | 0 | ✍️ | | | `UserService` chưa có test |
-| 16 | UpdateProfile | OZ-ME-02 | 0 | ✍️ | | | |
-| 17 | ResendConfirmEmail | OZ-ME-03 | 0 | ✍️ | | | |
-| 18 | VerifyPhoneOtp | OZ-ME-04 | 0 | ✍️ | | | |
-| 19 | ResendPhoneOtp | OZ-ME-05 | 0 | ✍️ | | | |
+| 15 | GetProfile | OZ-ME-01 | UserServiceTests: 4 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 16 | UpdateProfile | OZ-ME-02 | UserServiceTests: 13 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 17 | ResendConfirmEmail | OZ-ME-03 | UserServiceTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 18 | VerifyPhoneOtp | OZ-ME-04 | UserServiceTests: 10 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 19 | ResendPhoneOtp | OZ-ME-05 | UserServiceTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
 
 ## Đợt 3 – OZ-PAT (Bệnh nhân)
 
@@ -81,7 +81,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 |---|---|---|---|---|---|---|---|
 | 20 | GetPatients | OZ-PAT-01 | PatientServiceTests: 1 (1) | 📝 | | | |
 | 21 | GetPatientById | OZ-PAT-02 | PatientServiceTests: 2 (2) | 📝 | | | |
-| 22 | GetPatientByCode | OZ-PAT-03 | 0 | ✍️ | | | |
+| 22 | GetPatientByCode | OZ-PAT-03 | PatientServiceTests: 4 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
 | 23 | CreatePatient | OZ-PAT-04 | PatientServiceTests: 4 (2) | 📝 | | | |
 | 24 | DeletePatient | OZ-PAT-05 | PatientServiceTests: 1 (1) | 📝 | | | |
 | 25 | AddMedicalProfile | OZ-PAT-06 | PatientServiceTests: 1 (1) | 📝 | | | |
