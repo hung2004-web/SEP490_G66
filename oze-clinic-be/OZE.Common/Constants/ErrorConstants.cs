@@ -290,6 +290,7 @@ namespace OZE.Common.Constants
             public const string InvalidSeverity = "Severity must be one of: Mild, Moderate, Severe";
             public const string InvalidStatus = "Status must be one of: Active, Resolved, Discontinued";
             public const string InvalidDateOfBirth = "Date of birth cannot be in the future";
+            public const string ContactManagedByAccount = "This patient has an account; only the patient can change the phone number or email in the app";
         }
         public static class DoctorScheduleMessage
         {

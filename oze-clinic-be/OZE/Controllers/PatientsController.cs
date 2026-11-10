@@ -87,6 +87,30 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Updates a patient record (for example a walk-in patient who reports a wrong name).
+        /// The phone number and email of a patient with an account are changed only by the patient (PUT /api/me).
+        /// </summary>
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = $"{RoleConstants.ClinicManagerRole},{RoleConstants.ReceptionistRole}")]
+        public async Task<ActionResult<ApiResponse<PatientDto>>> UpdatePatientAsync(
+            [FromRoute] int id,
+            [FromBody] UpdatePatientRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _patientService.UpdatePatientAsync(id, request, cancellationToken);
+            if (!result.Success)
+            {
+                if (result.Message == ErrorConstants.PatientMessage.PatientNotFound)
+                {
+                    return NotFound(result);
+                }
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Soft-deletes a patient record.
         /// </summary>
         [HttpDelete("{id:int}")]
