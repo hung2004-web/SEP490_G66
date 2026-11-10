@@ -303,7 +303,7 @@ export const resolveMaxError = (result, invoice, amount) => {
     const max = fromServer ? Math.min(reported, invoice?.paidAmount ?? reported) : invoice?.maxRefundable;
     if (!Number.isFinite(max)) return { kind: "generic", max: null };
     if (max <= 0) return { kind: "reloadInvoices", max };
-    if (fromServer && max >= amount) return { kind: "generic", max };
+    if (max >= amount) return { kind: "generic", max };
     return { kind: "field", max };
 };
 
