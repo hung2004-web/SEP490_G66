@@ -496,6 +496,14 @@ namespace OZE.Common.Constants
             public const string PeriodNotPayable = "Installment period cannot be paid.";
             public const string PlanCreated = "Installment plan has been created.";
         }
+
+        public static class ReportMessage
+        {
+            public const string DateRangeInvalid = "Report date range is invalid. 'From' must be on or before 'To'.";
+            public const string DateRangeTooLarge = "Report date range cannot exceed 366 days.";
+            public const string DailyRetrieved = "Daily invoice report has been retrieved.";
+            public const string OverviewRetrieved = "Invoice overview report has been retrieved.";
+        }
     }
 }
 

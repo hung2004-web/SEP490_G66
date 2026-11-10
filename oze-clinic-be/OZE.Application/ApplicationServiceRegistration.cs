@@ -49,6 +49,7 @@ namespace OZE.Application
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IRefundService, RefundService>();
             services.AddScoped<IInstallmentService, InstallmentService>();
+            services.AddScoped<IInvoiceReportService, InvoiceReportService>();
             // The audit log reads the signed-in user, IP address and browser from the current request
             services.AddHttpContextAccessor();
             services.AddScoped<IAuditLogService, AuditLogService>();
