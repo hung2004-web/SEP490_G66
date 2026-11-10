@@ -282,6 +282,18 @@ export const XRAY_TYPES = [
     "Chụp CT xoang hàm mặt",
 ];
 
+// Step 3 "Lập kế hoạch điều trị": status of a planned service and of one of its sessions.
+export const PLAN_SERVICE_STATUS = {
+    notStarted: { label: "Chưa bắt đầu", badge: "badge-neutral" },
+    inProgress: { label: "Đang điều trị", badge: "badge-info" },
+    done: { label: "Hoàn thành", badge: "badge-success" },
+};
+
+export const PLAN_SESSION_STATUS = {
+    pending: { label: "Chưa thực hiện", badge: "badge-neutral" },
+    done: { label: "Đã thực hiện", badge: "badge-success" },
+};
+
 // ICD-10 codes the doctor picks from in "Chẩn đoán xác định" (dental chapter K00–K08, plus tooth fracture).
 export const ICD10_DENTAL = [
     { code: "K01.1", name: "Răng ngầm" },
