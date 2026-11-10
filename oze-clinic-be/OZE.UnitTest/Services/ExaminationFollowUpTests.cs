@@ -133,9 +133,9 @@ namespace OZE.UnitTest.Services
         }
 
         [Fact]
-        public async Task SetFollowUpAsync_ShouldThrowBadRequest_WhenExaminationIsCompletedOrLocked()
+        public async Task SetFollowUpAsync_ShouldThrowBadRequest_WhenExaminationIsLocked()
         {
-            var exam = CreateTestExamination(status: ExaminationConstants.Completed);
+            var exam = CreateTestExamination(status: ExaminationConstants.Locked);
             _examinationRepoMock
                 .Setup(r => r.GetForWorkAsync(ExaminationId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(exam);
@@ -146,6 +146,26 @@ namespace OZE.UnitTest.Services
 
             (await act.Should().ThrowAsync<BadRequestException>())
                 .WithMessage(ErrorConstants.ExaminationMessage.AlreadyLocked);
+        }
+
+        [Fact]
+        public async Task SetFollowUpAsync_ShouldSucceed_WhenExaminationIsCompleted()
+        {
+            var exam = CreateTestExamination(status: ExaminationConstants.Completed);
+            _examinationRepoMock
+                .Setup(r => r.GetForWorkAsync(ExaminationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(exam);
+            _examinationRepoMock
+                .Setup(r => r.GetEarlierChartEntriesAsync(It.IsAny<int>(), It.IsAny<DateTimeOffset>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<DentalChartEntry>());
+
+            var futureDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(5));
+            var request = new SaveFollowUpRequest { FollowUpDate = futureDate, FollowUpNotes = "Tái khám sau điều trị" };
+
+            var result = await _service.SetFollowUpAsync(DoctorUserId, ExaminationId, request);
+
+            result.Should().NotBeNull();
+            exam.FollowUpDate.Should().Be(futureDate);
         }
 
         [Fact]
@@ -304,6 +324,62 @@ namespace OZE.UnitTest.Services
             result.RemindedItems.Should().BeEmpty();
 
             _examinationRepoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RemindFollowUpAsync_ShouldThrowBadRequest_WhenSentWithinCooldown()
+        {
+            var exam = CreateTestExamination();
+            exam.FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(3));
+            exam.FollowUpRemindedAt = DateTimeOffset.UtcNow.AddMinutes(-30); // 30 mins ago (< 4 hours)
+
+            _examinationRepoMock
+                .Setup(r => r.GetByIdWithFollowUpAsync(ExaminationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(exam);
+
+            var act = () => _service.RemindFollowUpAsync("staff-1", ExaminationId, force: false);
+
+            await act.Should().ThrowAsync<BadRequestException>()
+                .WithMessage("*recently*");
+        }
+
+        [Fact]
+        public async Task RemindFollowUpAsync_ShouldSucceed_WhenForceIsTrueEvenWithinCooldown()
+        {
+            var exam = CreateTestExamination();
+            exam.FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(3));
+            exam.FollowUpRemindedAt = DateTimeOffset.UtcNow.AddMinutes(-30);
+
+            _examinationRepoMock
+                .Setup(r => r.GetByIdWithFollowUpAsync(ExaminationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(exam);
+
+            var result = await _service.RemindFollowUpAsync("staff-1", ExaminationId, force: true);
+
+            result.Should().NotBeNull();
+            exam.FollowUpReminderCount.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task GetMyFollowUpsAsync_ShouldReturnPatientFollowUps()
+        {
+            var patient = new Patient { Id = 5, UserId = "patient-1" };
+            var exam = CreateTestExamination();
+            exam.FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(7));
+
+            _examinationRepoMock
+                .Setup(r => r.GetPatientByUserIdAsync("patient-1", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(patient);
+
+            _examinationRepoMock
+                .Setup(r => r.GetPatientFollowUpsAsync(patient.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Examination> { exam });
+
+            var result = await _service.GetMyFollowUpsAsync("patient-1");
+
+            result.Should().NotBeNull();
+            result.Should().HaveCount(1);
+            result[0].ExaminationId.Should().Be(exam.Id);
         }
     }
 }

@@ -195,7 +195,7 @@ namespace OZE.UnitTest.Services
             createdAppointment!.ParentAppointmentId.Should().Be(OriginalAppointmentId);
             createdAppointment.AppointmentDate.Should().Be(followUpDate);
             createdAppointment.TimeSlotStart.Should().Be(slotStart);
-            createdAppointment.Status.Should().Be(AppointmentConstants.PendingStatus);
+            createdAppointment.Status.Should().Be(AppointmentConstants.ConfirmedStatus);
 
             original.Examination!.FollowUpAppointmentId.Should().Be(500);
             original.Examination.FollowUpDate.Should().Be(followUpDate);
@@ -296,6 +296,133 @@ namespace OZE.UnitTest.Services
             result.Should().NotBeNull();
             createdAppointment.Should().NotBeNull();
             createdAppointment!.ParentAppointmentId.Should().Be(OriginalAppointmentId);
+        }
+
+        [Fact]
+        public async Task ScheduleFollowUpAsync_ShouldAllowScheduling_WhenPreviousFollowUpWasCancelled()
+        {
+            var original = CreateOriginalAppointment();
+            var cancelledFollowUp = new Appointment
+            {
+                Id = 999,
+                Status = AppointmentConstants.CancelledStatus,
+                AppointmentDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(2))
+            };
+            original.Examination!.FollowUpAppointmentId = 999;
+            original.Examination.FollowUpAppointment = cancelledFollowUp;
+
+            var newFollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(8));
+            var slotStart = new TimeOnly(10, 0);
+
+            _appointmentRepoMock
+                .Setup(r => r.GetByIdWithExaminationAsync(OriginalAppointmentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(original);
+
+            SetupDoctorShift(newFollowUpDate, new TimeOnly(8, 0), new TimeOnly(12, 0));
+
+            _appointmentRepoMock
+                .Setup(r => r.HasUnfinishedAppointmentAsync(_patient.Id, OriginalAppointmentId))
+                .ReturnsAsync(false);
+
+            Appointment? createdAppointment = null;
+            _appointmentRepoMock
+                .Setup(r => r.AddAsync(It.IsAny<Appointment>()))
+                .Callback<Appointment>(a =>
+                {
+                    a.Id = 502;
+                    createdAppointment = a;
+                })
+                .Returns(Task.CompletedTask);
+
+            var request = new ScheduleFollowUpRequest
+            {
+                Date = newFollowUpDate,
+                SlotStart = slotStart,
+                Notes = "Đặt lại lịch tái khám sau khi đã hủy lần trước"
+            };
+
+            var result = await _service.ScheduleFollowUpAsync(OriginalAppointmentId, request, "receptionist-1");
+
+            result.Should().NotBeNull();
+            createdAppointment.Should().NotBeNull();
+            original.Examination.FollowUpAppointmentId.Should().Be(502);
+            original.Examination.FollowUpDate.Should().Be(newFollowUpDate);
+        }
+
+        [Fact]
+        public async Task CancelAppointmentAsync_ShouldClearFollowUpAppointmentId_OnParentExamination()
+        {
+            var original = CreateOriginalAppointment();
+            var followUpAppointment = new Appointment
+            {
+                Id = 777,
+                Status = AppointmentConstants.PendingStatus,
+                AppointmentDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(5)),
+                ParentAppointmentId = OriginalAppointmentId,
+                ParentAppointment = original
+            };
+            original.Examination!.FollowUpAppointmentId = 777;
+
+            _appointmentRepoMock
+                .Setup(r => r.GetByIdWithDetailsAsync(777, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(followUpAppointment);
+
+            var cancelRequest = new CancelAppointmentRequest { Reason = "Bận việc đột xuất" };
+            var result = await _service.CancelAppointmentAsync(777, cancelRequest, "staff-1", null);
+
+            result.Should().NotBeNull();
+            followUpAppointment.Status.Should().Be(AppointmentConstants.CancelledStatus);
+            original.Examination.FollowUpAppointmentId.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task RescheduleAppointmentAsync_ShouldUpdateFollowUpDate_OnParentExamination()
+        {
+            var original = CreateOriginalAppointment();
+            var oldDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(5));
+            var newDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(10));
+            var newSlotStart = new TimeOnly(9, 0);
+
+            var followUpAppointment = new Appointment
+            {
+                Id = 888,
+                Status = AppointmentConstants.ConfirmedStatus,
+                AppointmentDate = oldDate,
+                TimeSlotStart = new TimeOnly(8, 0),
+                TimeSlotEnd = new TimeOnly(8, 30),
+                DoctorId = DoctorId,
+                ParentAppointmentId = OriginalAppointmentId,
+                ParentAppointment = original,
+                ServiceItems = new List<AppointmentServiceItem>
+                {
+                    new() { Service = _generalExamService, ServiceId = _generalExamService.Id }
+                }
+            };
+            original.Examination!.FollowUpAppointmentId = 888;
+            original.Examination.FollowUpDate = oldDate;
+
+            _appointmentRepoMock
+                .Setup(r => r.GetByIdWithDetailsAsync(888, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(followUpAppointment);
+
+            SetupDoctorShift(newDate, new TimeOnly(8, 0), new TimeOnly(12, 0));
+
+            _appointmentRepoMock
+                .Setup(r => r.ExecuteSerializableAsync(It.IsAny<Func<Task<AvailableSlotResponse>>>()))
+                .Returns<Func<Task<AvailableSlotResponse>>>(action => action());
+
+            var request = new RescheduleAppointmentRequest
+            {
+                Date = newDate,
+                SlotStart = newSlotStart,
+                DoctorId = DoctorId
+            };
+
+            var result = await _service.RescheduleAppointmentAsync(888, request, null);
+
+            result.Should().NotBeNull();
+            followUpAppointment.AppointmentDate.Should().Be(newDate);
+            original.Examination.FollowUpDate.Should().Be(newDate);
         }
     }
 }
