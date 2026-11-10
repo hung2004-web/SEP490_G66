@@ -27,20 +27,20 @@ const StaffRow = ({ member, onView, onEdit, onLock, onUnlock }) => {
 
     return (
         <tr>
-            <td className="cell-primary whitespace-nowrap">{member.code}</td>
-            <td className="min-w-56">
+            <td data-label="Mã NV" className="cell-primary whitespace-nowrap">{member.code}</td>
+            <td data-primary className="min-w-56">
                 <PersonCell name={member.fullName} detail={member.email} />
             </td>
-            <td>
+            <td data-label="Vai trò">
                 <span className="chip-queue whitespace-nowrap">{roleLabel(member.role)}</span>
             </td>
-            <td className="num whitespace-nowrap">{formatPhone(member.phone)}</td>
-            <td>
+            <td data-label="Số điện thoại" className="num whitespace-nowrap">{formatPhone(member.phone)}</td>
+            <td data-label="Trạng thái">
                 <span title={locked ? member.lock?.note : undefined}>
                     <StatusBadge status={member.status} labels={ACCOUNT_STATUS_LABELS} />
                 </span>
             </td>
-            <td>
+            <td data-actions>
                 <div className="flex items-center justify-end gap-2">
                     <button
                         type="button"
@@ -165,8 +165,16 @@ const StaffManagement = () => {
                     onChange={setSearchInput}
                     className="w-full sm:w-72"
                 />
-                <FilterSelect id="staff-role" label="Vai trò" options={STAFF_ROLE_OPTIONS} value={role} onChange={changeFilter(setRole)} />
                 <FilterSelect
+                    id="staff-role"
+                    label="Vai trò"
+                    options={STAFF_ROLE_OPTIONS}
+                    value={role}
+                    onChange={changeFilter(setRole)}
+                    className="w-full sm:w-auto sm:min-w-40"
+                />
+                <FilterSelect
+                    className="w-full sm:w-auto sm:min-w-40"
                     id="staff-status"
                     label="Trạng thái"
                     options={ACCOUNT_STATUS_OPTIONS}
@@ -177,7 +185,7 @@ const StaffManagement = () => {
 
             <div>
                 <div className="table-wrap">
-                    <table className="table" aria-busy={loading}>
+                    <table className="table table-stack" aria-busy={loading}>
                         <thead>
                             <tr>
                                 <th scope="col">Mã NV</th>

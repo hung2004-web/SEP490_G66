@@ -101,8 +101,9 @@ const RefundRequestManagement = () => {
                     onChange={setSearchInput}
                     className="w-full sm:w-96"
                 />
-                <FilterSelect id="refund-request-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
+                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="refund-request-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
                 <FilterSelect
+                    className="w-full sm:w-auto sm:min-w-40"
                     id="refund-request-doctor"
                     label="Bác sĩ phụ trách"
                     options={getRefundDoctorOptions()}

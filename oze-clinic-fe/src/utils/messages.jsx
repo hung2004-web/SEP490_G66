@@ -157,7 +157,164 @@ export const APPOINTMENT_STATUS = {
     NO_SHOW: "NO_SHOW",
 };
 
-export const QUEUE_STATUS = { WAITING: "WAITING", CALLED: "CALLED" };
+export const QUEUE_STATUS = { WAITING: "WAITING", CALLED: "CALLED", IN_EXAMINATION: "IN_EXAMINATION" };
+
+// Badge of a row in the doctor's exam queue. Keys are QUEUE_STATUS values.
+export const EXAM_QUEUE_STATUS = {
+    [QUEUE_STATUS.WAITING]: { label: "Đang chờ", badge: "badge-neutral" },
+    [QUEUE_STATUS.CALLED]: { label: "Đã gọi", badge: "badge-warning" },
+    [QUEUE_STATUS.IN_EXAMINATION]: { label: "Đang khám", badge: "badge-info" },
+};
+
+// Steps of one exam visit, shown by ExamStepper once the exam has started.
+export const EXAM_STEPS = ["Lập hồ sơ bệnh án", "Khám & Chẩn đoán", "Lập kế hoạch điều trị", "Điều trị", "Kê đơn thuốc"];
+
+// Heading of each step's content, same order as EXAM_STEPS.
+export const EXAM_STEP_TITLES = ["Bổ sung tiền sử bệnh", "Khám lâm sàng & chẩn đoán", "Lập kế hoạch điều trị", "Thực hiện điều trị", "Kê đơn thuốc"];
+
+// Medical history checklists of step 1. The doctor can also type items not in the list.
+export const HISTORY_ALLERGY_OPTIONS = [
+    "Penicillin",
+    "Amoxicillin",
+    "Cephalosporin",
+    "Thuốc tê (Lidocaine)",
+    "Aspirin / NSAIDs",
+    "Latex (găng cao su)",
+    "Kim loại (Niken)",
+    "Iod",
+];
+
+export const HISTORY_CONDITION_OPTIONS = [
+    "Bệnh tim mạch",
+    "Tăng huyết áp",
+    "Tiểu đường",
+    "Hen suyễn / bệnh phổi",
+    "Viêm gan / bệnh gan",
+    "Bệnh thận",
+    "Rối loạn đông máu",
+    "Động kinh",
+    "Bệnh tuyến giáp",
+    "Loãng xương",
+    "Ung thư / xạ trị vùng đầu cổ",
+    "Bệnh truyền nhiễm (HIV, lao…)",
+];
+
+// Shown in the condition checklist for female patients only.
+export const HISTORY_FEMALE_CONDITION_OPTIONS = ["Đang mang thai", "Đang cho con bú"];
+
+export const HISTORY_DENTAL_OPTIONS = [
+    "Ê buốt răng",
+    "Chảy máu chân răng",
+    "Từng nhổ răng",
+    "Từng điều trị tủy",
+    "Từng niềng răng",
+    "Nghiến răng khi ngủ",
+    "Từng phẫu thuật răng miệng",
+    "Đau khớp thái dương hàm",
+];
+
+// Common symptoms the doctor can tick in the "Khám" tab.
+export const EXAM_SYMPTOMS = [
+    "Đau răng",
+    "Ê buốt khi ăn nóng / lạnh",
+    "Đau tự phát về đêm",
+    "Đau khi nhai",
+    "Chảy máu chân răng",
+    "Sưng lợi",
+    "Sưng má / mặt",
+    "Hôi miệng",
+    "Răng lung lay",
+    "Mẻ / vỡ răng",
+    "Lỗ sâu nhìn thấy",
+    "Nhét thức ăn kẽ răng",
+    "Răng đổi màu",
+    "Đau răng khôn",
+    "Đau khớp hàm / há miệng hạn chế",
+    "Loét miệng",
+    "Khô miệng",
+    "Mất răng",
+    "Răng mọc lệch / chen chúc",
+];
+
+// Suggestions for the free-text tooth condition of the exam chart.
+export const TOOTH_CONDITION_SUGGESTIONS = [
+    "Sâu răng",
+    "Mòn cổ răng",
+    "Nứt răng",
+    "Mẻ răng",
+    "Răng lung lay",
+    "Viêm tủy",
+    "Đã trám",
+    "Đã điều trị tủy",
+    "Mão / cầu sứ",
+    "Mất răng",
+    "Răng mọc lệch",
+    "Răng ngầm",
+];
+
+// Tooth surfaces of the exam chart, in the order of the design.
+export const EXAM_TOOTH_SURFACES = [
+    { code: "M", label: "gần" },
+    { code: "O", label: "nhai" },
+    { code: "D", label: "xa" },
+    { code: "B", label: "ngoài" },
+    { code: "L", label: "trong" },
+];
+
+// X-ray order statuses: sent to the technician, image taken, image reviewed by the doctor.
+export const XRAY_STATUS = {
+    requested: { label: "Chờ chụp", badge: "badge-neutral" },
+    captured: { label: "Chờ đọc kết quả", badge: "badge-info" },
+    reviewed: { label: "Đã xem", badge: "badge-success" },
+};
+
+export const XRAY_TYPES = [
+    "Panorama",
+    "Cephalometric",
+    "Chụp ống tủy",
+    "Chụp chỉnh nha 3D",
+    "Chụp mặt thẳng (AP)",
+    "Chụp khớp thái dương hàm (TMJ)",
+    "Chụp khảo sát và giả định đặt Implant",
+    "Chụp Cone beam CT hàm trên",
+    "Chụp Cone beam CT hàm dưới",
+    "Chụp Cone beam CT hai hàm",
+    "Chụp CT xoang hàm mặt",
+];
+
+// Step 3 "Lập kế hoạch điều trị": status of a planned service and of one of its sessions.
+export const PLAN_SERVICE_STATUS = {
+    notStarted: { label: "Chưa bắt đầu", badge: "badge-neutral" },
+    inProgress: { label: "Đang điều trị", badge: "badge-info" },
+    done: { label: "Hoàn thành", badge: "badge-success" },
+};
+
+export const PLAN_SESSION_STATUS = {
+    pending: { label: "Chưa thực hiện", badge: "badge-neutral" },
+    done: { label: "Đã thực hiện", badge: "badge-success" },
+};
+
+// ICD-10 codes the doctor picks from in "Chẩn đoán xác định" (dental chapter K00–K08, plus tooth fracture).
+export const ICD10_DENTAL = [
+    { code: "K01.1", name: "Răng ngầm" },
+    { code: "K02.0", name: "Sâu men răng" },
+    { code: "K02.1", name: "Sâu ngà răng" },
+    { code: "K02.2", name: "Sâu xê măng" },
+    { code: "K02.3", name: "Sâu răng ngưng tiến triển" },
+    { code: "K03.0", name: "Mòn răng sinh lý quá mức" },
+    { code: "K03.1", name: "Mòn răng cơ học (mòn cổ răng)" },
+    { code: "K03.6", name: "Cặn bám trên răng" },
+    { code: "K04.0", name: "Viêm tủy răng" },
+    { code: "K04.1", name: "Hoại tử tủy răng" },
+    { code: "K04.4", name: "Viêm quanh chóp cấp" },
+    { code: "K04.5", name: "Viêm quanh chóp mạn" },
+    { code: "K05.0", name: "Viêm lợi cấp" },
+    { code: "K05.1", name: "Viêm lợi mạn" },
+    { code: "K05.3", name: "Viêm nha chu mạn" },
+    { code: "K07.3", name: "Bất thường vị trí răng" },
+    { code: "K08.1", name: "Mất răng do nhổ, tai nạn hoặc bệnh nha chu" },
+    { code: "S02.5", name: "Gãy răng" },
+];
 
 export const STAGE_STATUS = { SCHEDULED: "Scheduled", IN_PROGRESS: "InProgress", COMPLETED: "Completed", CANCELLED: "Cancelled" };
 

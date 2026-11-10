@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
 using OZE.Common.Constants;
 using OZE.Domain.Entities;
@@ -42,6 +42,7 @@ namespace OZE.Persistence.Repositories
                 .AsNoTracking()
                 .Include(x => x.Appointment)
                 .Include(x => x.Doctor)
+                .Include(x => x.FollowUpAppointment).ThenInclude(x => x!.Doctor)
                 .Include(x => x.Diagnoses)
                 .Where(x => x.PatientId == patientId)
                 .OrderByDescending(x => x.Appointment.AppointmentDate)
@@ -57,6 +58,7 @@ namespace OZE.Persistence.Repositories
                 .AsSplitQuery()
                 .Include(x => x.Appointment)
                 .Include(x => x.Doctor)
+                .Include(x => x.FollowUpAppointment).ThenInclude(x => x!.Doctor)
                 .Include(x => x.Diagnoses)
                 .Include(x => x.Prescriptions).ThenInclude(p => p.Items)
                 .Include(x => x.TreatmentPlans)

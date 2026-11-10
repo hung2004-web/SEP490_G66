@@ -1,8 +1,10 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cx } from "@/utils/cx";
 
 // "‹ 13/10 – 19/10/2026 ›": steps through periods (day, week, ...). The parent works out the label and the dates.
-const PeriodNavigator = ({ label, onPrevious, onNext, previousDisabled = false, nextDisabled = false }) => (
-    <div className="inline-flex h-control items-center rounded-md border border-border bg-canvas">
+// className: e.g. "w-full" to stretch it; the label then takes the free space.
+const PeriodNavigator = ({ label, onPrevious, onNext, previousDisabled = false, nextDisabled = false, className }) => (
+    <div className={cx("inline-flex h-control items-center rounded-md border border-border bg-canvas", className)}>
         <button
             type="button"
             className="btn btn-icon size-9 hover:bg-surface-tint"
@@ -13,7 +15,7 @@ const PeriodNavigator = ({ label, onPrevious, onNext, previousDisabled = false, 
         >
             <ChevronLeft className="size-4" aria-hidden="true" />
         </button>
-        <span className="num min-w-36 px-1 text-center text-label text-ink" aria-live="polite">
+        <span className="num min-w-0 flex-1 truncate px-1 text-center text-label text-ink sm:min-w-36" aria-live="polite">
             {label}
         </span>
         <button

@@ -19,6 +19,7 @@ namespace OZE.Common.Constants
         public const string AppointmentNoShowReverted = "APPOINTMENT_NO_SHOW_REVERTED";
         public const string StaffScheduleEntity = "StaffSchedule";
         public const string AppointmentEntity = "Appointment";
+        public const string ExaminationEntity = "Examination";
 
         public const string InvoiceEntity = "Invoice";
         public const string PaymentEntity = "Payment";
@@ -35,12 +36,16 @@ namespace OZE.Common.Constants
         public const string PaymentVoided = "PAYMENT_VOIDED";
 
         public const string RefundRequested = "REFUND_REQUESTED";
+        public const string RefundWorkDoneSet = "REFUND_WORK_DONE_SET";
         public const string RefundApproved = "REFUND_APPROVED";
         public const string RefundRejected = "REFUND_REJECTED";
         public const string RefundProcessed = "REFUND_PROCESSED";
 
         public const string InstallmentPlanCreated = "INSTALLMENT_PLAN_CREATED";
         public const string InstallmentPeriodPaid = "INSTALLMENT_PERIOD_PAID";
+
+        public const string ExaminationFollowUpSet = "EXAMINATION_FOLLOW_UP_SET";
+        public const string AppointmentFollowUpScheduled = "APPOINTMENT_FOLLOW_UP_SCHEDULED";
+        public const string FollowUpReminded = "FOLLOW_UP_REMINDED";
     }
 }
-

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OZE.Application.Interfaces;
+using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 using OZE.Persistence.DbContexts;
 
@@ -26,6 +28,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Appointment)
                     .ThenInclude(x => x.ServiceItems)
                         .ThenInclude(x => x.Variant)
+                .Include(x => x.FollowUpAppointment)
+                    .ThenInclude(x => x!.Doctor)
                 .Include(x => x.Diagnoses)
                 .Include(x => x.DentalChartEntries)
                 .Include(x => x.Prescriptions)
@@ -83,6 +87,78 @@ namespace OZE.Persistence.Repositories
         public void RemoveDiagnosis(ClinicalDiagnosis diagnosis)
         {
             _context.ClinicalDiagnoses.Remove(diagnosis);
+        }
+
+        public Task<Examination?> GetByIdWithFollowUpAsync(long examinationId, CancellationToken cancellationToken = default)
+        {
+            return _context.Examinations
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Appointment)
+                .Include(x => x.FollowUpAppointment)
+                    .ThenInclude(x => x!.Doctor)
+                .FirstOrDefaultAsync(x => x.Id == examinationId, cancellationToken);
+        }
+
+        public async Task<PagedResult<Examination>> GetFollowUpsAsync(FollowUpQueryParameters parameters, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Examinations
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Appointment)
+                .Include(x => x.FollowUpAppointment)
+                    .ThenInclude(x => x!.Doctor)
+                .Where(x => x.FollowUpDate != null || x.FollowUpAppointmentId != null);
+
+            if (parameters.FromDate.HasValue)
+            {
+                var from = parameters.FromDate.Value;
+                query = query.Where(x => x.FollowUpDate >= from || (x.FollowUpAppointment != null && x.FollowUpAppointment.AppointmentDate >= from));
+            }
+
+            if (parameters.ToDate.HasValue)
+            {
+                var to = parameters.ToDate.Value;
+                query = query.Where(x => x.FollowUpDate <= to || (x.FollowUpAppointment != null && x.FollowUpAppointment.AppointmentDate <= to));
+            }
+
+            if (parameters.DoctorId.HasValue)
+            {
+                var docId = parameters.DoctorId.Value;
+                query = query.Where(x => x.DoctorId == docId || (x.FollowUpAppointment != null && x.FollowUpAppointment.DoctorId == docId));
+            }
+
+            if (parameters.HasAppointment.HasValue)
+            {
+                query = parameters.HasAppointment.Value
+                    ? query.Where(x => x.FollowUpAppointmentId != null)
+                    : query.Where(x => x.FollowUpAppointmentId == null);
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters.SearchKeyword))
+            {
+                var keyword = parameters.SearchKeyword.Trim();
+                query = query.Where(x => x.Patient.FullName.Contains(keyword)
+                    || x.Patient.PhoneNumber.Contains(keyword)
+                    || x.Patient.PatientCode.Contains(keyword));
+            }
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            var items = await query
+                .OrderBy(x => x.FollowUpDate ?? (x.FollowUpAppointment != null ? x.FollowUpAppointment.AppointmentDate : DateOnly.MaxValue))
+                .ThenByDescending(x => x.CreatedAt)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<Examination>(items, totalCount, parameters.PageNumber, parameters.PageSize);
+        }
+
+        public async Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default)
+        {
+            await _context.Notifications.AddAsync(notification, cancellationToken);
         }
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)

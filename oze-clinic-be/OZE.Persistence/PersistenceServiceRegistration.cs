@@ -53,6 +53,10 @@ namespace OZE.Persistence
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<IQueueRepository, QueueRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IRefundRepository, RefundRepository>();
+            services.AddScoped<IInstallmentRepository, InstallmentRepository>();
+            services.AddScoped<IInvoiceReportRepository, InvoiceReportRepository>();
 
             return services;
         }

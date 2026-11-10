@@ -1,4 +1,4 @@
-﻿using OZE.Common.Models;
+using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 using System;
@@ -42,7 +42,7 @@ namespace OZE.Application.Interfaces
         // True when the doctor already has a patient being examined (IN_SERVICE) on that date
         Task<bool> HasAppointmentInServiceAsync(int doctorId, DateOnly date);
         // True when the patient has an appointment of today or later that is not finished yet
-        Task<bool> HasUnfinishedAppointmentAsync(int patientId);
+        Task<bool> HasUnfinishedAppointmentAsync(int patientId, long? excludeAppointmentId = null);
         Task<PagedResult<Appointment>> GetAppointmentsAsync(AppointmentQueryParameters parameters, CancellationToken cancellationToken = default);
         Task UpdateAsync(Appointment appointment);
 
@@ -52,5 +52,6 @@ namespace OZE.Application.Interfaces
         // A draft prescription with no medication is only a leftover
         Task RemoveEmptyDraftPrescriptionsAsync(long examinationId, CancellationToken cancellationToken = default);
         Task SaveStartedExaminationAsync(Appointment appointment, Examination examination, CancellationToken cancellationToken = default);
+        Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
     }
 }

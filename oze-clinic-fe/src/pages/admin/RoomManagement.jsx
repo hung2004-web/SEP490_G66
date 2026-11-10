@@ -20,15 +20,15 @@ const StatusBadge = ({ status }) => {
 
 const RoomRow = ({ room, index, onEdit }) => (
     <tr>
-        <td className="num">{index}</td>
-        <td className="cell-primary whitespace-nowrap">{room.name}</td>
-        <td className="whitespace-nowrap">{roomTypeLabel(room.type)}</td>
-        <td className="whitespace-nowrap">{room.floor || <span className="text-muted">—</span>}</td>
-        <td>{room.description || <span className="text-muted">—</span>}</td>
-        <td>
+        <td data-hide-stack className="num">{index}</td>
+        <td data-primary className="cell-primary whitespace-nowrap">{room.name}</td>
+        <td data-label="Loại phòng" className="whitespace-nowrap">{roomTypeLabel(room.type)}</td>
+        <td data-label="Tầng" className="whitespace-nowrap">{room.floor || <span className="text-muted">—</span>}</td>
+        <td data-label="Mô tả">{room.description || <span className="text-muted">—</span>}</td>
+        <td data-label="Trạng thái">
             <StatusBadge status={room.status} />
         </td>
-        <td>
+        <td data-actions>
             <div className="flex justify-end">
                 <button
                     type="button"
@@ -126,8 +126,16 @@ const RoomManagement = () => {
                     onChange={setSearchInput}
                     className="w-full sm:w-72"
                 />
-                <FilterSelect id="room-type-filter" label="Loại phòng" options={ROOM_TYPE_OPTIONS} value={type} onChange={changeFilter(setType)} />
                 <FilterSelect
+                    id="room-type-filter"
+                    label="Loại phòng"
+                    options={ROOM_TYPE_OPTIONS}
+                    value={type}
+                    onChange={changeFilter(setType)}
+                    className="w-full sm:w-auto sm:min-w-40"
+                />
+                <FilterSelect
+                    className="w-full sm:w-auto sm:min-w-40"
                     id="room-status-filter"
                     label="Trạng thái"
                     options={ROOM_STATUS_OPTIONS}
@@ -143,7 +151,7 @@ const RoomManagement = () => {
 
             <div>
                 <div className="table-wrap">
-                    <table className="table" aria-busy={loading}>
+                    <table className="table table-stack" aria-busy={loading}>
                         <thead>
                             <tr>
                                 <th scope="col">STT</th>

@@ -23,23 +23,26 @@ const NextPatientCard = ({
         );
     }
 
+    // Lays out by its own width (container query): the action goes beside the patient only when there is room.
     return (
-        <div className="flex flex-col gap-4 rounded-lg border border-border bg-primary-softer p-4 md:flex-row md:items-center md:p-5">
-            <div className="flex min-w-0 flex-1 items-center gap-4">
-                <span className="num flex size-12 shrink-0 items-center justify-center rounded-md bg-primary font-heading text-heading-3 text-on-primary">
-                    <span className="sr-only">Số thứ tự </span>
-                    {queueNumber}
-                </span>
-                <div className="min-w-0">
-                    <p className="text-caption font-semibold text-primary">{eyebrow}</p>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                        <p className="text-heading-3 text-ink">{name}</p>
-                        {tags && <span className="chip-queue num">{tags}</span>}
+        <div className="@container rounded-lg border border-border bg-primary-softer p-4 md:p-5">
+            <div className="flex flex-col gap-4 @lg:flex-row @lg:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-4">
+                    <span className="num flex size-12 shrink-0 items-center justify-center rounded-md bg-primary font-heading text-heading-3 text-on-primary">
+                        <span className="sr-only">Số thứ tự </span>
+                        {queueNumber}
+                    </span>
+                    <div className="min-w-0">
+                        <p className="text-caption font-semibold text-primary">{eyebrow}</p>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                            <p className="text-heading-3 text-ink">{name}</p>
+                            {tags && <span className="chip-queue num">{tags}</span>}
+                        </div>
+                        {detail && <p className="num mt-0.5 text-caption text-muted">{detail}</p>}
                     </div>
-                    {detail && <p className="num mt-0.5 text-caption text-muted">{detail}</p>}
                 </div>
+                {action && <div className="shrink-0">{action}</div>}
             </div>
-            {action && <div className="shrink-0">{action}</div>}
         </div>
     );
 };

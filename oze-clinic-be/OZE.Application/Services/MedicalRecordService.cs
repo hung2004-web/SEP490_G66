@@ -1,4 +1,4 @@
-﻿using OZE.Application.Interfaces;
+using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
@@ -56,7 +56,10 @@ namespace OZE.Application.Services
                     DoctorName = x.Doctor.FullName,
                     ChiefComplaint = x.ChiefComplaint,
                     PrimaryDiagnosis = x.Diagnoses.FirstOrDefault(d => d.IsPrimary)?.DiagnosisName,
-                    ExaminationStatus = x.ExaminationStatus
+                    ExaminationStatus = x.ExaminationStatus,
+                    FollowUpDate = x.FollowUpDate,
+                    FollowUpNotes = x.FollowUpNotes,
+                    NextAppointmentText = x.FollowUpDate.HasValue ? $"Tái khám ngày {x.FollowUpDate.Value:dd/MM/yyyy}{(x.FollowUpAppointmentId != null ? string.Empty : " · chưa xác nhận")}" : null
                 }).ToList()
             };
         }
@@ -76,6 +79,23 @@ namespace OZE.Application.Services
                 ChiefComplaint = exam.ChiefComplaint,
                 ClinicalNotes = exam.ClinicalNotes,
                 ExaminationStatus = exam.ExaminationStatus,
+                FollowUpDate = exam.FollowUpDate,
+                FollowUpNotes = exam.FollowUpNotes,
+                FollowUp = exam.FollowUpDate != null || exam.FollowUpAppointmentId != null ? new FollowUpSummaryResponse
+                {
+                    FollowUpDate = exam.FollowUpDate,
+                    FollowUpNotes = exam.FollowUpNotes,
+                    AppointmentId = exam.FollowUpAppointmentId,
+                    AppointmentCode = exam.FollowUpAppointment != null ? $"LH{exam.FollowUpAppointment.Id:D6}" : null,
+                    AppointmentDate = exam.FollowUpAppointment?.AppointmentDate,
+                    TimeSlotStart = exam.FollowUpAppointment?.TimeSlotStart,
+                    TimeSlotEnd = exam.FollowUpAppointment?.TimeSlotEnd,
+                    DoctorId = exam.FollowUpAppointment?.DoctorId,
+                    DoctorName = exam.FollowUpAppointment?.Doctor?.FullName,
+                    Status = exam.FollowUpAppointment?.Status,
+                    RemindedAt = exam.FollowUpRemindedAt,
+                    ReminderCount = exam.FollowUpReminderCount
+                } : null,
                 Diagnoses = exam.Diagnoses
                     .OrderByDescending(d => d.IsPrimary)
                     .Select(d => new DiagnosisResponse

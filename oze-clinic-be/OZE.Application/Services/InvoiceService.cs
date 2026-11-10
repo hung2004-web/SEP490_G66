@@ -4,6 +4,7 @@ using OZE.Application.Middlewares;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
 using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 
 namespace OZE.Application.Services
@@ -15,19 +16,22 @@ namespace OZE.Application.Services
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly ITreatmentPlanRepository _treatmentPlanRepository;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IAuditLogService _auditLogService;
 
         public InvoiceService(
             IInvoiceRepository invoiceRepository,
             IPatientRepository patientRepository,
             IAppointmentRepository appointmentRepository,
             ITreatmentPlanRepository treatmentPlanRepository,
-            IServiceRepository serviceRepository)
+            IServiceRepository serviceRepository,
+            IAuditLogService auditLogService)
         {
             _invoiceRepository = invoiceRepository;
             _patientRepository = patientRepository;
             _appointmentRepository = appointmentRepository;
             _treatmentPlanRepository = treatmentPlanRepository;
             _serviceRepository = serviceRepository;
+            _auditLogService = auditLogService;
         }
 
         public async Task<InvoiceResponse> CreateAsync(
@@ -59,7 +63,200 @@ namespace OZE.Application.Services
                 treatmentPlan = await _treatmentPlanRepository.GetByIdWithStagesAsync(request.TreatmentPlanId.Value, cancellationToken);
                 ConditionGuard.Ensure<NotFoundException>(treatmentPlan != null, ErrorConstants.InvoiceMessage.TreatmentPlanNotFound);
                 ConditionGuard.Ensure(treatmentPlan!.PatientId == request.PatientId, ErrorConstants.InvoiceMessage.TreatmentPlanPatientMismatch);
+                ConditionGuard.ThrowIf(
+                    await _invoiceRepository.HasOpenInvoiceForTreatmentPlanAsync(request.TreatmentPlanId.Value, cancellationToken),
+                    ErrorConstants.InvoiceMessage.OpenInvoiceExistsForTreatmentPlan);
             }
+
+            var (items, totalAmount) = await BuildItemsAsync(itemRequests, treatmentPlan, cancellationToken);
+            var discountAmount = decimal.Round(request.DiscountAmount, 2, MidpointRounding.AwayFromZero);
+            ConditionGuard.Ensure(discountAmount <= totalAmount, ErrorConstants.InvoiceMessage.DiscountExceedsTotal);
+            var finalAmount = decimal.Round(totalAmount - discountAmount, 2, MidpointRounding.AwayFromZero);
+
+            var invoice = new Invoice
+            {
+                InvoiceNumber = await GenerateUniqueInvoiceNumberAsync(cancellationToken),
+                PatientId = request.PatientId,
+                AppointmentId = request.AppointmentId,
+                TreatmentPlanId = request.TreatmentPlanId,
+                TotalAmount = totalAmount,
+                DiscountAmount = discountAmount,
+                FinalAmount = finalAmount,
+                PaidAmount = 0m,
+                PaymentStatus = InvoiceConstants.Unpaid,
+                Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedByUserId = string.IsNullOrWhiteSpace(createdByUserId) ? null : createdByUserId,
+                Items = items
+            };
+
+            await _invoiceRepository.AddAsync(invoice, cancellationToken);
+            await _invoiceRepository.SaveChangesAsync(cancellationToken);
+
+            await SafeAuditAsync(
+                AuditConstants.InvoiceCreated,
+                invoice.Id.ToString(),
+                null,
+                new { invoice.InvoiceNumber, invoice.PatientId, invoice.FinalAmount, invoice.PaymentStatus });
+
+            return ToResponse(invoice, patient?.FullName);
+        }
+
+        public async Task<InvoiceResponse> GetByIdAsync(
+            long id,
+            string? ownerUserId,
+            CancellationToken cancellationToken = default)
+        {
+            var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(invoice != null, ErrorConstants.InvoiceMessage.InvoiceNotFound);
+            await EnsureOwnedByAsync(invoice!, ownerUserId, cancellationToken);
+            return ToResponse(invoice!);
+        }
+
+        public async Task<PagedResult<InvoiceSummaryResponse>> GetPagedAsync(
+            InvoiceQueryParameters parameters,
+            CancellationToken cancellationToken = default)
+        {
+            var page = await _invoiceRepository.GetPagedAsync(parameters, cancellationToken);
+            var items = page.Items.Select(ToSummary).ToList();
+            return new PagedResult<InvoiceSummaryResponse>(items, page.TotalCount, page.PageNumber, page.PageSize);
+        }
+
+        public async Task<PagedResult<InvoiceSummaryResponse>> GetMyInvoicesAsync(
+            InvoiceQueryParameters parameters,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            var patient = await _patientRepository.GetByUserIdAsync(userId);
+            ConditionGuard.Ensure<NotFoundException>(patient != null, ErrorConstants.InvoiceMessage.PatientNotFound);
+
+            parameters.PatientId = patient!.Id;
+            return await GetPagedAsync(parameters, cancellationToken);
+        }
+
+        public async Task<InvoiceResponse> UpdateAsync(
+            long id,
+            string updatedByUserId,
+            UpdateInvoiceRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(invoice != null, ErrorConstants.InvoiceMessage.InvoiceNotFound);
+            ConditionGuard.ThrowIf(
+                invoice!.PaymentStatus == InvoiceConstants.Cancelled,
+                ErrorConstants.InvoiceMessage.InvoiceNotUpdatable);
+
+            ConditionGuard.ThrowIf(
+                HasConfirmedPayment(invoice),
+                ErrorConstants.InvoiceMessage.InvoiceNotUpdatable);
+
+            ConditionGuard.Ensure(
+                request.Notes != null || request.DiscountAmount.HasValue || request.Items != null,
+                ErrorConstants.InvoiceMessage.InvoiceUpdateEmpty);
+
+            var oldSnapshot = new
+            {
+                invoice.DiscountAmount,
+                invoice.Notes,
+                invoice.FinalAmount,
+                invoice.TotalAmount,
+                ItemCount = invoice.Items.Count
+            };
+
+            if (request.Notes != null)
+            {
+                invoice.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+            }
+
+            if (request.Items != null)
+            {
+                TreatmentPlan? treatmentPlan = null;
+                if (invoice.TreatmentPlanId.HasValue)
+                {
+                    treatmentPlan = await _treatmentPlanRepository.GetByIdWithStagesAsync(invoice.TreatmentPlanId.Value, cancellationToken);
+                }
+
+                var (items, totalAmount) = await BuildItemsAsync(request.Items, treatmentPlan, cancellationToken);
+                invoice.Items.Clear();
+                foreach (var item in items)
+                {
+                    invoice.Items.Add(item);
+                }
+
+                invoice.TotalAmount = totalAmount;
+                var discount = request.DiscountAmount.HasValue
+                    ? decimal.Round(request.DiscountAmount.Value, 2, MidpointRounding.AwayFromZero)
+                    : invoice.DiscountAmount;
+                ConditionGuard.Ensure(discount >= 0, ErrorConstants.InvoiceMessage.DiscountInvalid);
+                ConditionGuard.Ensure(discount <= totalAmount, ErrorConstants.InvoiceMessage.DiscountExceedsTotal);
+                invoice.DiscountAmount = discount;
+                invoice.FinalAmount = decimal.Round(totalAmount - discount, 2, MidpointRounding.AwayFromZero);
+            }
+            else if (request.DiscountAmount.HasValue)
+            {
+                var discount = decimal.Round(request.DiscountAmount.Value, 2, MidpointRounding.AwayFromZero);
+                ConditionGuard.Ensure(discount >= 0, ErrorConstants.InvoiceMessage.DiscountInvalid);
+                ConditionGuard.Ensure(discount <= invoice.TotalAmount, ErrorConstants.InvoiceMessage.DiscountExceedsTotal);
+                invoice.DiscountAmount = discount;
+                invoice.FinalAmount = decimal.Round(invoice.TotalAmount - discount, 2, MidpointRounding.AwayFromZero);
+            }
+
+            invoice.UpdatedAt = DateTimeOffset.UtcNow;
+            _invoiceRepository.Update(invoice);
+            await _invoiceRepository.SaveChangesAsync(cancellationToken);
+
+            await SafeAuditAsync(
+                AuditConstants.InvoiceUpdated,
+                invoice.Id.ToString(),
+                oldSnapshot,
+                new { invoice.DiscountAmount, invoice.Notes, invoice.FinalAmount, invoice.TotalAmount, ItemCount = invoice.Items.Count, updatedByUserId });
+
+            return ToResponse(invoice);
+        }
+
+        public async Task<InvoiceResponse> CancelAsync(
+            long id,
+            string cancelledByUserId,
+            CancellationToken cancellationToken = default)
+        {
+            var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(invoice != null, ErrorConstants.InvoiceMessage.InvoiceNotFound);
+            ConditionGuard.ThrowIf(
+                invoice!.PaymentStatus == InvoiceConstants.Cancelled,
+                ErrorConstants.InvoiceMessage.InvoiceAlreadyCancelled);
+
+            // AD-7 (P2): block only when a CONFIRMED payment exists
+            ConditionGuard.ThrowIf(
+                HasConfirmedPayment(invoice),
+                ErrorConstants.InvoiceMessage.InvoiceNotCancellable);
+
+            foreach (var payment in invoice.Payments.Where(p => p.PaymentStatus == PaymentConstants.Pending))
+            {
+                payment.PaymentStatus = PaymentConstants.Failed;
+            }
+
+            invoice.PaymentStatus = InvoiceConstants.Cancelled;
+            invoice.CancelledAt = DateTimeOffset.UtcNow;
+            invoice.UpdatedAt = DateTimeOffset.UtcNow;
+
+            _invoiceRepository.Update(invoice);
+            await _invoiceRepository.SaveChangesAsync(cancellationToken);
+
+            await SafeAuditAsync(
+                AuditConstants.InvoiceCancelled,
+                invoice.Id.ToString(),
+                null,
+                new { invoice.InvoiceNumber, cancelledByUserId, invoice.CancelledAt });
+
+            return ToResponse(invoice);
+        }
+
+        private async Task<(List<InvoiceItem> Items, decimal TotalAmount)> BuildItemsAsync(
+            List<CreateInvoiceItemRequest> itemRequests,
+            TreatmentPlan? treatmentPlan,
+            CancellationToken cancellationToken)
+        {
+            ConditionGuard.Ensure(itemRequests.Count > 0, ErrorConstants.InvoiceMessage.ItemsRequired);
 
             var items = new List<InvoiceItem>();
             decimal totalAmount = 0m;
@@ -118,31 +315,35 @@ namespace OZE.Application.Services
             }
 
             totalAmount = decimal.Round(totalAmount, 2, MidpointRounding.AwayFromZero);
-            var discountAmount = decimal.Round(request.DiscountAmount, 2, MidpointRounding.AwayFromZero);
-            ConditionGuard.Ensure(discountAmount <= totalAmount, ErrorConstants.InvoiceMessage.DiscountExceedsTotal);
-            var finalAmount = decimal.Round(totalAmount - discountAmount, 2, MidpointRounding.AwayFromZero);
+            return (items, totalAmount);
+        }
 
-            var invoice = new Invoice
+        private async Task EnsureOwnedByAsync(Invoice invoice, string? ownerUserId, CancellationToken cancellationToken)
+        {
+            if (ownerUserId is null)
             {
-                InvoiceNumber = await GenerateUniqueInvoiceNumberAsync(cancellationToken),
-                PatientId = request.PatientId,
-                AppointmentId = request.AppointmentId,
-                TreatmentPlanId = request.TreatmentPlanId,
-                TotalAmount = totalAmount,
-                DiscountAmount = discountAmount,
-                FinalAmount = finalAmount,
-                PaidAmount = 0m,
-                PaymentStatus = InvoiceConstants.Unpaid,
-                Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
-                CreatedAt = DateTimeOffset.UtcNow,
-                CreatedByUserId = string.IsNullOrWhiteSpace(createdByUserId) ? null : createdByUserId,
-                Items = items
-            };
+                return;
+            }
 
-            await _invoiceRepository.AddAsync(invoice, cancellationToken);
-            await _invoiceRepository.SaveChangesAsync(cancellationToken);
+            var patient = await _patientRepository.GetByUserIdAsync(ownerUserId);
+            ConditionGuard.Ensure<ForbiddenException>(
+                patient != null && patient.Id == invoice.PatientId,
+                ErrorConstants.InvoiceMessage.AccessDenied);
+        }
 
-            return ToResponse(invoice);
+        private static bool HasConfirmedPayment(Invoice invoice) =>
+            invoice.Payments.Any(p => p.PaymentStatus == PaymentConstants.Confirmed);
+
+        private async Task SafeAuditAsync(string action, string entityId, object? oldValues, object? newValues)
+        {
+            try
+            {
+                await _auditLogService.LogAsync(action, AuditConstants.InvoiceEntity, entityId, oldValues, newValues);
+            }
+            catch
+            {
+                // Audit must never fail the business operation (ARCHITECTURE-SPINE).
+            }
         }
 
         private async Task<string> GenerateUniqueInvoiceNumberAsync(CancellationToken cancellationToken)
@@ -159,23 +360,49 @@ namespace OZE.Application.Services
             throw new BadRequestException("Could not generate a unique invoice number. Please try again.");
         }
 
-        private static InvoiceResponse ToResponse(Invoice invoice)
+        private static InvoiceSummaryResponse ToSummary(Invoice invoice)
         {
-            return new InvoiceResponse
+            var remaining = Math.Max(0m, invoice.FinalAmount - invoice.PaidAmount);
+            return new InvoiceSummaryResponse
             {
                 Id = invoice.Id,
                 InvoiceNumber = invoice.InvoiceNumber,
                 PatientId = invoice.PatientId,
+                PatientName = invoice.Patient?.FullName,
                 AppointmentId = invoice.AppointmentId,
                 TreatmentPlanId = invoice.TreatmentPlanId,
                 TotalAmount = invoice.TotalAmount,
                 DiscountAmount = invoice.DiscountAmount,
                 FinalAmount = invoice.FinalAmount,
                 PaidAmount = invoice.PaidAmount,
+                RemainingAmount = remaining,
+                PaymentStatus = invoice.PaymentStatus,
+                CreatedAt = invoice.CreatedAt,
+                CancelledAt = invoice.CancelledAt
+            };
+        }
+
+        private static InvoiceResponse ToResponse(Invoice invoice, string? patientName = null)
+        {
+            var remaining = Math.Max(0m, invoice.FinalAmount - invoice.PaidAmount);
+            return new InvoiceResponse
+            {
+                Id = invoice.Id,
+                InvoiceNumber = invoice.InvoiceNumber,
+                PatientId = invoice.PatientId,
+                PatientName = patientName ?? invoice.Patient?.FullName,
+                AppointmentId = invoice.AppointmentId,
+                TreatmentPlanId = invoice.TreatmentPlanId,
+                TotalAmount = invoice.TotalAmount,
+                DiscountAmount = invoice.DiscountAmount,
+                FinalAmount = invoice.FinalAmount,
+                PaidAmount = invoice.PaidAmount,
+                RemainingAmount = remaining,
                 PaymentStatus = invoice.PaymentStatus,
                 Notes = invoice.Notes,
                 CreatedAt = invoice.CreatedAt,
                 CreatedByUserId = invoice.CreatedByUserId,
+                CancelledAt = invoice.CancelledAt,
                 Items = invoice.Items
                     .OrderBy(x => x.SortOrder)
                     .Select(x => new InvoiceItemResponse
@@ -189,6 +416,20 @@ namespace OZE.Application.Services
                         Amount = x.Amount,
                         TreatmentPlanStageId = x.TreatmentPlanStageId,
                         SortOrder = x.SortOrder
+                    })
+                    .ToList(),
+                Payments = invoice.Payments
+                    .OrderByDescending(x => x.CreatedAt)
+                    .Select(x => new InvoicePaymentSummaryResponse
+                    {
+                        Id = x.Id,
+                        Amount = x.Amount,
+                        PaymentMethod = x.PaymentMethod,
+                        PaymentStatus = x.PaymentStatus,
+                        Purpose = x.Purpose,
+                        TransactionReference = x.TransactionReference,
+                        CreatedAt = x.CreatedAt,
+                        PaidAt = x.PaidAt
                     })
                     .ToList()
             };

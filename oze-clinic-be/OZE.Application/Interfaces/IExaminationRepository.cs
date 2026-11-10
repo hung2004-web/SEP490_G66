@@ -1,3 +1,5 @@
+using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 
 namespace OZE.Application.Interfaces
@@ -17,6 +19,9 @@ namespace OZE.Application.Interfaces
         void RemovePrescriptionItem(PrescriptionItem item);
         // Removes the prescription together with all of its medications
         void RemovePrescription(Prescription prescription);
+        Task<Examination?> GetByIdWithFollowUpAsync(long examinationId, CancellationToken cancellationToken = default);
+        Task<PagedResult<Examination>> GetFollowUpsAsync(FollowUpQueryParameters parameters, CancellationToken cancellationToken = default);
+        Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

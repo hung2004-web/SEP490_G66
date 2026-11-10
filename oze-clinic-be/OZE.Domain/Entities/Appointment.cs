@@ -22,9 +22,13 @@ namespace OZE.Domain.Entities
         public string? CreatedByUserId { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
 
+        // Links to the previous appointment if this is a follow-up visit
+        public long? ParentAppointmentId { get; set; }
+
         public virtual Patient Patient { get; set; } = null!;
         public virtual StaffProfile? Doctor { get; set; }
         public virtual Examination? Examination { get; set; }
+        public virtual Appointment? ParentAppointment { get; set; }
         public virtual ICollection<QueueEntry> QueueEntries { get; set; } = new List<QueueEntry>();
         public virtual ICollection<AppointmentServiceItem> ServiceItems { get; set; } = new List<AppointmentServiceItem>();
     }
