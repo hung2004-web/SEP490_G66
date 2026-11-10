@@ -517,13 +517,13 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(stageRequests != null && stageRequests.Count > 0, ErrorConstants.TreatmentPlanMessage.StagesRequired);
             ConditionGuard.Ensure<NotFoundException>(stageRequests!.All(s => s.ServiceId.HasValue), ErrorConstants.AppointmentMessage.ServiceNotFound);
 
-            var services = (await _serviceRepository.GetByIdsAsync(stageRequests.Select(s => s.ServiceId!.Value), cancellationToken))
+            var services = (await _serviceRepository.GetByIdsAsync(stageRequests!.Select(s => s.ServiceId!.Value), cancellationToken))
                 .ToDictionary(s => s.Id);
 
             var today = DateOnly.FromDateTime(ClinicClock.Now);
             DateOnly? previousDate = null;
             var validStages = new List<ValidStage>();
-            foreach (var stageRequest in stageRequests)
+            foreach (var stageRequest in stageRequests!)
             {
                 ConditionGuard.Ensure<NotFoundException>(services.TryGetValue(stageRequest.ServiceId!.Value, out var service),
                     ErrorConstants.AppointmentMessage.ServiceNotFound);

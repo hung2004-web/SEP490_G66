@@ -238,7 +238,7 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Variant)
                 .Include(x => x.Examination)
-                    .ThenInclude(x => x.ImagingRequests)
+                    .ThenInclude(x => x!.ImagingRequests)
                 .Include(x => x.QueueEntries)
                     .ThenInclude(x => x.Room)
                 .Where(x => x.AppointmentDate == date && x.Status == AppointmentConstants.CheckedInStatus);

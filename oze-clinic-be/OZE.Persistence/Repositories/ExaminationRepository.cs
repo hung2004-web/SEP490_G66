@@ -140,7 +140,7 @@ namespace OZE.Persistence.Repositories
             {
                 var keyword = parameters.SearchKeyword.Trim();
                 query = query.Where(x => x.Patient.FullName.Contains(keyword)
-                    || x.Patient.PhoneNumber.Contains(keyword)
+                    || (x.Patient.PhoneNumber != null && x.Patient.PhoneNumber.Contains(keyword))
                     || x.Patient.PatientCode.Contains(keyword));
             }
 
