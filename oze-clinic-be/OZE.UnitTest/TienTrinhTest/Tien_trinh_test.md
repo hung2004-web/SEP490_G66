@@ -85,7 +85,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 23 | CreatePatient | OZ-PAT-04 | Patients/CreatePatientTests: 4 (2) | 📝 | | | |
 | 24 | DeletePatient | OZ-PAT-05 | Patients/DeletePatientTests: 1 (1) | 📝 | | | |
 | 25 | AddMedicalProfile | OZ-PAT-06 | Patients/AddMedicalProfileTests: 1 (1) | 📝 | | | |
-| 26 | UpdatePatient | OZ-PAT-07 | Patients/UpdatePatientTests: 1 | 📝 | | | |
+| 26 | UpdatePatient | OZ-PAT-07 | Patients/UpdatePatientTests: 14 (3) | 📝 | HiepNX | 11/11/2026 | Thêm lại API `PUT api/patients/{id}` (lễ tân, quản lý); chờ điền sheet |
 
 ## Đợt 4 – OZ-SVC (Dịch vụ)
 
