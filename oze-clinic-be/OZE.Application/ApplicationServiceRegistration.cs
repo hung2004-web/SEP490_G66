@@ -16,6 +16,7 @@ namespace OZE.Application
             services.Configure<AuthMessageSenderOptions>(configuration.GetSection("AuthMessageSenderOptions"));
             services.Configure<AuthSmsSenderOptions>(configuration.GetSection("AuthSmsSenderOptions"));
             services.Configure<RegisterOtpSettings>(configuration.GetSection("RegisterOtpSettings"));
+            services.Configure<FollowUpReminderSettings>(configuration.GetSection("FollowUpReminderSettings"));
 
             services.AddMemoryCache();
             services.AddAutoMapper(typeof(OZE.Application.MappingProfiles.BaseMappingObject).Assembly);
@@ -53,6 +54,7 @@ namespace OZE.Application
             // The audit log reads the signed-in user, IP address and browser from the current request
             services.AddHttpContextAccessor();
             services.AddScoped<IAuditLogService, AuditLogService>();
+            services.AddHostedService<OZE.Application.BackgroundServices.FollowUpReminderBackgroundService>();
             return services;
         }
     }

@@ -43,5 +43,6 @@ namespace OZE.Application.Interfaces
         Task<AppointmentResponse> ScheduleFollowUpAppointmentAsync(string userId, long examinationId, ScheduleFollowUpRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<FollowUpListItemResponse>> GetFollowUpsAsync(FollowUpQueryParameters query, string? doctorUserId, CancellationToken cancellationToken = default);
         Task<FollowUpListItemResponse> RemindFollowUpAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
+        Task<BatchRemindFollowUpResponse> RemindDueFollowUpsAsync(DateOnly? targetDate = null, string? initiatedByUserId = null, CancellationToken cancellationToken = default);
     }
 }

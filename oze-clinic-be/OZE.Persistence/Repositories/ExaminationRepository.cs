@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
@@ -147,13 +149,30 @@ namespace OZE.Persistence.Repositories
             var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query
-                .OrderBy(x => x.FollowUpDate ?? (x.FollowUpAppointment != null ? x.FollowUpAppointment.AppointmentDate : DateOnly.MaxValue))
+                .OrderBy(x => x.FollowUpDate ?? (x.FollowUpAppointment != null ? x.FollowUpAppointment.AppointmentDate : null))
                 .ThenByDescending(x => x.CreatedAt)
                 .Skip((parameters.PageNumber - 1) * parameters.PageSize)
                 .Take(parameters.PageSize)
                 .ToListAsync(cancellationToken);
 
             return new PagedResult<Examination>(items, totalCount, parameters.PageNumber, parameters.PageSize);
+        }
+
+        public async Task<List<Examination>> GetDueFollowUpsAsync(DateOnly targetDate, CancellationToken cancellationToken = default)
+        {
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
+            var todayStartUtc = new DateTimeOffset(today.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(ClinicTimeConstants.UtcOffsetHours)).ToUniversalTime();
+
+            return await _context.Examinations
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Appointment)
+                .Include(x => x.FollowUpAppointment)
+                    .ThenInclude(x => x!.Doctor)
+                .Where(x => (x.FollowUpDate == targetDate || (x.FollowUpAppointment != null && x.FollowUpAppointment.AppointmentDate == targetDate))
+                         && (x.FollowUpRemindedAt == null || x.FollowUpRemindedAt < todayStartUtc))
+                .OrderBy(x => x.FollowUpDate)
+                .ToListAsync(cancellationToken);
         }
 
         public async Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default)
