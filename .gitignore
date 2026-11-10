@@ -11,3 +11,8 @@
 
 ## Local ASP.NET config (secrets, connection strings)
 **/appsettings.Development.json
+
+## BMAD Method (local only)
+_bmad/
+_bmad-output/
+.claude/skills/bmad-*/
