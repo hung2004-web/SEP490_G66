@@ -435,6 +435,9 @@ namespace OZE.Common.Constants
             public const string InvoiceCancelled = "Invoice has been cancelled.";
             public const string InvoiceNotFound = "Invoice not found.";
             public const string InvoiceNotCancellable = "Invoice cannot be cancelled because a confirmed payment exists.";
+            public const string InvoiceAlreadyCancelled = "Invoice is already cancelled.";
+            public const string InvoiceNotUpdatable = "Invoice cannot be updated in its current state.";
+            public const string InvoiceUpdateEmpty = "Please provide notes, discount, or items to update.";
             public const string InvoiceConcurrencyConflict = "Invoice was modified by another user. Please reload and try again.";
             public const string AccessDenied = "You do not have access to this invoice.";
         }
@@ -465,19 +468,24 @@ namespace OZE.Common.Constants
         public static class RefundMessage
         {
             public const string InvoiceNotFound = "Invoice not found.";
+            public const string InvoiceNotRefundable = "Refunds cannot be requested on this invoice.";
             public const string RequestNotFound = "Refund request not found.";
             public const string ReasonRequired = "Please enter a reason.";
             public const string AmountInvalid = "Refund amount must be greater than 0.";
             public const string TypeInvalid = "Request type must be one of: Refund, Adjustment.";
+            public const string StatusInvalid = "Refund request status must be one of: Pending, Approved, Rejected, Processed.";
             public const string WorkDoneAmountRequired = "Work-done amount is required before approval.";
             public const string WorkDoneAmountInvalid = "Work-done amount is invalid.";
             public const string WorkDoneExceedsPaid = "Work-done amount cannot exceed confirmed paid amount.";
             public const string RequestNotPending = "Only pending refund requests can be processed.";
+            public const string PendingRequestExists = "A pending refund request already exists for this invoice.";
+            public const string PaymentInvalid = "Payment does not belong to this invoice or is not confirmed.";
             public const string RejectionReasonRequired = "Please enter a rejection reason.";
             public const string RequestCreated = "Refund request has been created.";
             public const string RequestApproved = "Refund request has been approved.";
             public const string RequestRejected = "Refund request has been rejected.";
             public const string RequestProcessed = "Refund request has been marked as processed.";
+            public const string WorkDoneUpdated = "Work-done amount has been updated.";
             public const string NoConfirmedPayments = "There are no confirmed payments to refund.";
             public const string ConcurrencyConflict = "Refund request was modified by another user. Please reload and try again.";
         }
@@ -490,10 +498,20 @@ namespace OZE.Common.Constants
             public const string PeriodsRequired = "Please add at least one installment period.";
             public const string PeriodAmountInvalid = "Period amount must be greater than 0.";
             public const string PeriodDueDateInvalid = "Period due date is invalid.";
+            public const string PeriodSequenceInvalid = "Period sequence must be unique and greater than 0.";
             public const string PeriodsExceedRemaining = "Sum of installment periods cannot exceed the remaining balance.";
+
             public const string PeriodNotFound = "Installment period not found.";
             public const string PeriodNotPayable = "Installment period cannot be paid.";
             public const string PlanCreated = "Installment plan has been created.";
+        }
+
+        public static class ReportMessage
+        {
+            public const string DateRangeInvalid = "Report date range is invalid. 'From' must be on or before 'To'.";
+            public const string DateRangeTooLarge = "Report date range cannot exceed 366 days.";
+            public const string DailyRetrieved = "Daily invoice report has been retrieved.";
+            public const string OverviewRetrieved = "Invoice overview report has been retrieved.";
         }
     }
 }

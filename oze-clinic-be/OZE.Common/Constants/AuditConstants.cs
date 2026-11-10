@@ -36,6 +36,7 @@ namespace OZE.Common.Constants
         public const string PaymentVoided = "PAYMENT_VOIDED";
 
         public const string RefundRequested = "REFUND_REQUESTED";
+        public const string RefundWorkDoneSet = "REFUND_WORK_DONE_SET";
         public const string RefundApproved = "REFUND_APPROVED";
         public const string RefundRejected = "REFUND_REJECTED";
         public const string RefundProcessed = "REFUND_PROCESSED";
