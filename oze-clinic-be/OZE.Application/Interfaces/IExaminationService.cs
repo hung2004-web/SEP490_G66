@@ -1,4 +1,5 @@
 using OZE.Common.Models;
+using OZE.Common.Models.Base;
 
 namespace OZE.Application.Interfaces
 {
@@ -36,5 +37,11 @@ namespace OZE.Application.Interfaces
         Task<List<DiagnosisResponse>> AddDiagnosisAsync(string userId, long examinationId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default);
         Task<List<DiagnosisResponse>> UpdateDiagnosisAsync(string userId, long examinationId, long diagnosisId, SaveDiagnosisRequest request, CancellationToken cancellationToken = default);
         Task<List<DiagnosisResponse>> DeleteDiagnosisAsync(string userId, long examinationId, long diagnosisId, CancellationToken cancellationToken = default);
+
+        // Follow-up (Tái khám)
+        Task<ExaminationWorkResponse> SetFollowUpAsync(string doctorUserId, long examinationId, SaveFollowUpRequest request, CancellationToken cancellationToken = default);
+        Task<AppointmentResponse> ScheduleFollowUpAppointmentAsync(string userId, long examinationId, ScheduleFollowUpRequest request, CancellationToken cancellationToken = default);
+        Task<PagedResult<FollowUpListItemResponse>> GetFollowUpsAsync(FollowUpQueryParameters query, string? doctorUserId, CancellationToken cancellationToken = default);
+        Task<FollowUpListItemResponse> RemindFollowUpAsync(string userId, long examinationId, CancellationToken cancellationToken = default);
     }
 }

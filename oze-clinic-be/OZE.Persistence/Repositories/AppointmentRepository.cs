@@ -131,6 +131,10 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Patient)
                 .Include(x => x.Doctor)
                 .Include(x => x.Examination)
+                    .ThenInclude(x => x!.FollowUpAppointment)
+                        .ThenInclude(x => x!.Doctor)
+                .Include(x => x.ParentAppointment)
+                .Include(x => x.Examination)
                 .Include(x => x.QueueEntries)
                     .ThenInclude(x => x.Room)
                 .Where(x => x.DoctorId != null && doctorIds.Contains(x.DoctorId.Value)
@@ -225,6 +229,10 @@ namespace OZE.Persistence.Repositories
                 .AsNoTracking()
                 .Include(x => x.Patient)
                 .Include(x => x.Doctor)
+                .Include(x => x.Examination)
+                    .ThenInclude(x => x!.FollowUpAppointment)
+                        .ThenInclude(x => x!.Doctor)
+                .Include(x => x.ParentAppointment)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
                 .Include(x => x.ServiceItems)
@@ -264,6 +272,10 @@ namespace OZE.Persistence.Repositories
             return await _context.Appointments
                 .Include(x => x.Patient)
                 .Include(x => x.Doctor)
+                .Include(x => x.Examination)
+                    .ThenInclude(x => x!.FollowUpAppointment)
+                        .ThenInclude(x => x!.Doctor)
+                .Include(x => x.ParentAppointment)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
                 .Include(x => x.ServiceItems)
@@ -276,6 +288,10 @@ namespace OZE.Persistence.Repositories
             return await _context.Appointments
                 .Include(x => x.Patient)
                 .Include(x => x.Doctor)
+                .Include(x => x.Examination)
+                    .ThenInclude(x => x!.FollowUpAppointment)
+                        .ThenInclude(x => x!.Doctor)
+                .Include(x => x.ParentAppointment)
                 .Include(x => x.Examination)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
@@ -307,13 +323,14 @@ namespace OZE.Persistence.Repositories
                     && x.Status == AppointmentConstants.InServiceStatus);
         }
 
-        public async Task<bool> HasUnfinishedAppointmentAsync(int patientId)
+        public async Task<bool> HasUnfinishedAppointmentAsync(int patientId, long? excludeAppointmentId = null)
         {
             // An appointment of a day that has passed is not counted: the patient did not come and nobody closed it,
             // and a checked-in one can no longer be cancelled or examined, so it would block the patient for good
             var today = DateOnly.FromDateTime(ClinicClock.Today);
             return await _context.Appointments
                 .AnyAsync(x => x.PatientId == patientId
+                    && (excludeAppointmentId == null || x.Id != excludeAppointmentId.Value)
                     && x.AppointmentDate >= today
                     && AppointmentConstants.UnfinishedStatuses.Contains(x.Status));
         }
@@ -324,6 +341,10 @@ namespace OZE.Persistence.Repositories
                 .AsNoTracking()
                 .Include(x => x.Patient)
                 .Include(x => x.Doctor)
+                .Include(x => x.Examination)
+                    .ThenInclude(x => x!.FollowUpAppointment)
+                        .ThenInclude(x => x!.Doctor)
+                .Include(x => x.ParentAppointment)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
                 .Include(x => x.ServiceItems)
@@ -415,6 +436,11 @@ namespace OZE.Persistence.Repositories
                 _context.Entry(examination).State = EntityState.Detached;
                 throw new BadRequestException(ErrorConstants.AppointmentMessage.ExaminationAlreadyStarted);
             }
+        }
+
+        public async Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default)
+        {
+            await _context.Notifications.AddAsync(notification, cancellationToken);
         }
 
         private static bool IsDuplicateExamination(DbUpdateException exception)

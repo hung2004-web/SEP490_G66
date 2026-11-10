@@ -142,7 +142,7 @@ namespace OZE.Application.Services
         // getPatientAsync runs inside it so a new patient record is saved together with the appointment
         private async Task<(Appointment Appointment, Patient Patient, AvailableSlotResponse Slot)> CreateBookingAsync(
             List<BookingLine> lines, DateOnly date, TimeOnly slotStart, int? doctorId, string? note,
-            string? createdByUserId, Func<Task<Patient>> getPatientAsync)
+            string? createdByUserId, Func<Task<Patient>> getPatientAsync, long? excludeAppointmentId = null, long? parentAppointmentId = null)
         {
             var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
 
@@ -161,7 +161,7 @@ namespace OZE.Application.Services
                 // A patient without a record yet (Id 0) cannot have one.
                 if (patient.Id != 0)
                 {
-                    ConditionGuard.ThrowIf(await _appointmentRepository.HasUnfinishedAppointmentAsync(patient.Id),
+                    ConditionGuard.ThrowIf(await _appointmentRepository.HasUnfinishedAppointmentAsync(patient.Id, excludeAppointmentId),
                         ErrorConstants.AppointmentMessage.PatientHasUnfinishedAppointment);
                 }
 
@@ -176,6 +176,7 @@ namespace OZE.Application.Services
                     // The slot is held, but the receptionist must confirm the booking before it is approved
                     Status = AppointmentConstants.PendingStatus,
                     Notes = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+                    ParentAppointmentId = parentAppointmentId,
                     CreatedAt = DateTimeOffset.UtcNow,
                     CreatedByUserId = createdByUserId,
                     // Saved together with the appointment in the same transaction
@@ -420,7 +421,29 @@ namespace OZE.Application.Services
                 TimeSlotEnd = slot.SlotEnd,
                 Status = appointment.Status,
                 Notes = appointment.Notes,
-                CreatedAt = appointment.CreatedAt
+                CreatedAt = appointment.CreatedAt,
+                ParentAppointmentId = appointment.ParentAppointmentId,
+                ExaminationId = appointment.Examination?.Id,
+                ExaminationStatus = appointment.Examination?.ExaminationStatus,
+                FollowUp = appointment.Examination?.FollowUpDate != null || appointment.Examination?.FollowUpAppointmentId != null
+                    ? new FollowUpSummaryResponse
+                    {
+                        FollowUpDate = appointment.Examination.FollowUpDate,
+                        FollowUpNotes = appointment.Examination.FollowUpNotes,
+                        AppointmentId = appointment.Examination.FollowUpAppointmentId,
+                        AppointmentCode = appointment.Examination.FollowUpAppointment != null
+                            ? $"LH{appointment.Examination.FollowUpAppointment.Id:D6}"
+                            : null,
+                        AppointmentDate = appointment.Examination.FollowUpAppointment?.AppointmentDate,
+                        TimeSlotStart = appointment.Examination.FollowUpAppointment?.TimeSlotStart,
+                        TimeSlotEnd = appointment.Examination.FollowUpAppointment?.TimeSlotEnd,
+                        DoctorId = appointment.Examination.FollowUpAppointment?.DoctorId,
+                        DoctorName = appointment.Examination.FollowUpAppointment?.Doctor?.FullName,
+                        Status = appointment.Examination.FollowUpAppointment?.Status,
+                        RemindedAt = appointment.Examination.FollowUpRemindedAt,
+                        ReminderCount = appointment.Examination.FollowUpReminderCount
+                    }
+                    : null
             };
         }
 
@@ -1176,6 +1199,71 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<NotFoundException>(appointment.Patient?.UserId == ownerUserId, ErrorConstants.AppointmentMessage.AppointmentNotFound);
         }
 
+        public async Task<AppointmentResponse> ScheduleFollowUpAsync(
+            long appointmentId, ScheduleFollowUpRequest request, string userId, CancellationToken cancellationToken = default)
+        {
+            ConditionGuard.Ensure(request.Date.HasValue, ErrorConstants.AppointmentMessage.DateRequired);
+            ConditionGuard.Ensure(request.SlotStart.HasValue, ErrorConstants.AppointmentMessage.SlotRequired);
+
+            var originalAppointment = await _appointmentRepository.GetByIdWithExaminationAsync(appointmentId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(originalAppointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
+            ConditionGuard.Ensure(originalAppointment!.Examination != null, ErrorConstants.AppointmentMessage.ExaminationNotFoundForAppointment);
+            ConditionGuard.Ensure(originalAppointment.Examination!.FollowUpAppointmentId == null, ErrorConstants.AppointmentMessage.FollowUpAlreadyScheduled);
+
+            ConditionGuard.Ensure(request.Date!.Value > originalAppointment.AppointmentDate, ErrorConstants.ExaminationMessage.FollowUpDateMustBeFuture);
+
+            var doctorId = request.DoctorId ?? originalAppointment.DoctorId;
+            var lines = await ResolveBookingLinesAsync(request.ServiceId, request.VariantId);
+
+            var (appointment, patient, slot) = await CreateBookingAsync(
+                lines, request.Date!.Value, request.SlotStart!.Value, doctorId, request.Notes, userId,
+                () => Task.FromResult(originalAppointment.Patient),
+                excludeAppointmentId: originalAppointment.Id,
+                parentAppointmentId: originalAppointment.Id);
+
+            originalAppointment.Examination.FollowUpAppointmentId = appointment.Id;
+            originalAppointment.Examination.FollowUpDate = appointment.AppointmentDate;
+            if (!string.IsNullOrWhiteSpace(request.Notes))
+            {
+                originalAppointment.Examination.FollowUpNotes = request.Notes.Trim();
+            }
+            originalAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
+            await _appointmentRepository.SaveChangesAsync();
+
+            if (!string.IsNullOrEmpty(originalAppointment.Patient.UserId))
+            {
+                var notification = new Notification
+                {
+                    UserId = originalAppointment.Patient.UserId,
+                    Title = "Lịch hẹn tái khám",
+                    Message = $"Bạn có lịch hẹn tái khám vào ngày {appointment.AppointmentDate:dd/MM/yyyy} lúc {appointment.TimeSlotStart:HH\\:mm}.",
+                    NotificationType = "InApp",
+                    Channel = "InApp",
+                    ReferenceType = "Appointment",
+                    ReferenceId = appointment.Id.ToString(),
+                    DeliveryStatus = "Sent",
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+                await _appointmentRepository.AddNotificationAsync(notification, cancellationToken);
+                await _appointmentRepository.SaveChangesAsync();
+            }
+
+            await _auditLogService.LogAsync(
+                AuditConstants.AppointmentFollowUpScheduled,
+                AuditConstants.AppointmentEntity,
+                appointment.Id.ToString(),
+                newValues: new
+                {
+                    ParentAppointmentId = originalAppointment.Id,
+                    ExaminationId = originalAppointment.Examination.Id,
+                    appointment.AppointmentDate,
+                    appointment.TimeSlotStart,
+                    DoctorId = doctorId
+                });
+
+            return ToResponse(appointment, patient, slot, lines);
+        }
+
         private static AppointmentResponse MapToResponse(Appointment appointment)
         {
             var firstItem = appointment.ServiceItems.FirstOrDefault();
@@ -1207,7 +1295,29 @@ namespace OZE.Application.Services
                 CheckInAt = appointment.CheckInAt,
                 CancellationReason = appointment.CancellationReason,
                 Notes = appointment.Notes,
-                CreatedAt = appointment.CreatedAt
+                CreatedAt = appointment.CreatedAt,
+                ParentAppointmentId = appointment.ParentAppointmentId,
+                ExaminationId = appointment.Examination?.Id,
+                ExaminationStatus = appointment.Examination?.ExaminationStatus,
+                FollowUp = appointment.Examination?.FollowUpDate != null || appointment.Examination?.FollowUpAppointmentId != null
+                    ? new FollowUpSummaryResponse
+                    {
+                        FollowUpDate = appointment.Examination.FollowUpDate,
+                        FollowUpNotes = appointment.Examination.FollowUpNotes,
+                        AppointmentId = appointment.Examination.FollowUpAppointmentId,
+                        AppointmentCode = appointment.Examination.FollowUpAppointment != null
+                            ? $"LH{appointment.Examination.FollowUpAppointment.Id:D6}"
+                            : null,
+                        AppointmentDate = appointment.Examination.FollowUpAppointment?.AppointmentDate,
+                        TimeSlotStart = appointment.Examination.FollowUpAppointment?.TimeSlotStart,
+                        TimeSlotEnd = appointment.Examination.FollowUpAppointment?.TimeSlotEnd,
+                        DoctorId = appointment.Examination.FollowUpAppointment?.DoctorId,
+                        DoctorName = appointment.Examination.FollowUpAppointment?.Doctor?.FullName,
+                        Status = appointment.Examination.FollowUpAppointment?.Status,
+                        RemindedAt = appointment.Examination.FollowUpRemindedAt,
+                        ReminderCount = appointment.Examination.FollowUpReminderCount
+                    }
+                    : null
             };
         }
     }

@@ -1,8 +1,10 @@
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
 using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
 
 namespace OZE.Application.Services
@@ -11,11 +13,19 @@ namespace OZE.Application.Services
     {
         private readonly IExaminationRepository _examinationRepository;
         private readonly IStaffRepository _staffRepository;
+        private readonly IAppointmentService _appointmentService;
+        private readonly IAuditLogService _auditLogService;
 
-        public ExaminationService(IExaminationRepository examinationRepository, IStaffRepository staffRepository)
+        public ExaminationService(
+            IExaminationRepository examinationRepository,
+            IStaffRepository staffRepository,
+            IAppointmentService appointmentService,
+            IAuditLogService auditLogService)
         {
             _examinationRepository = examinationRepository;
             _staffRepository = staffRepository;
+            _appointmentService = appointmentService;
+            _auditLogService = auditLogService;
         }
 
         public async Task<ExaminationWorkResponse> GetAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
@@ -382,6 +392,167 @@ namespace OZE.Application.Services
             return ToDiagnosisResponses(remaining);
         }
 
+        public async Task<ExaminationWorkResponse> SetFollowUpAsync(
+            string doctorUserId, long examinationId, SaveFollowUpRequest request, CancellationToken cancellationToken = default)
+        {
+            var doctor = await _staffRepository.GetByUserIdAsync(doctorUserId);
+            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.MedicalRecordMessage.DoctorNotFound);
+
+            var examination = await _examinationRepository.GetForWorkAsync(examinationId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
+            ConditionGuard.Ensure<ForbiddenException>(examination!.DoctorId == doctor!.Id, ErrorConstants.ExaminationMessage.NotExaminingDoctor);
+
+            if (request.FollowUpDate.HasValue)
+            {
+                var today = DateOnly.FromDateTime(ClinicClock.Today);
+                ConditionGuard.Ensure(request.FollowUpDate.Value > today, ErrorConstants.ExaminationMessage.FollowUpDateMustBeFuture);
+            }
+
+            var notes = Clean(request.FollowUpNotes);
+            ConditionGuard.Ensure(notes == null || notes.Length <= 500, ErrorConstants.ExaminationMessage.FollowUpNotesTooLong);
+
+            var oldDate = examination.FollowUpDate;
+            var oldNotes = examination.FollowUpNotes;
+
+            examination.FollowUpDate = request.FollowUpDate;
+            examination.FollowUpNotes = notes;
+            examination.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+
+            await _auditLogService.LogAsync(
+                AuditConstants.ExaminationFollowUpSet,
+                AuditConstants.ExaminationEntity,
+                examination.Id.ToString(),
+                oldValues: new { FollowUpDate = oldDate, FollowUpNotes = oldNotes },
+                newValues: new { FollowUpDate = examination.FollowUpDate, FollowUpNotes = examination.FollowUpNotes });
+
+            return await BuildWorkResponseAsync(examination, cancellationToken);
+        }
+
+        public async Task<AppointmentResponse> ScheduleFollowUpAppointmentAsync(
+            string userId, long examinationId, ScheduleFollowUpRequest request, CancellationToken cancellationToken = default)
+        {
+            var examination = await _examinationRepository.GetByIdWithFollowUpAsync(examinationId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
+            ConditionGuard.Ensure(examination!.FollowUpAppointmentId == null, ErrorConstants.ExaminationMessage.FollowUpAppointmentAlreadyScheduled);
+
+            return await _appointmentService.ScheduleFollowUpAsync(examination.AppointmentId, request, userId, cancellationToken);
+        }
+
+        public async Task<PagedResult<FollowUpListItemResponse>> GetFollowUpsAsync(
+            FollowUpQueryParameters query, string? doctorUserId, CancellationToken cancellationToken = default)
+        {
+            if (doctorUserId != null)
+            {
+                var doctor = await _staffRepository.GetByUserIdAsync(doctorUserId);
+                if (doctor != null)
+                {
+                    query.DoctorId = doctor.Id;
+                }
+            }
+
+            var paged = await _examinationRepository.GetFollowUpsAsync(query, cancellationToken);
+
+            var items = paged.Items.Select(x => new FollowUpListItemResponse
+            {
+                ExaminationId = x.Id,
+                OriginalAppointmentId = x.AppointmentId,
+                OriginalAppointmentCode = $"LH{x.AppointmentId:D6}",
+                OriginalAppointmentDate = x.Appointment?.AppointmentDate ?? DateOnly.MinValue,
+                PatientId = x.PatientId,
+                PatientCode = x.Patient?.PatientCode ?? string.Empty,
+                PatientName = x.Patient?.FullName ?? string.Empty,
+                PatientPhoneNumber = x.Patient?.PhoneNumber ?? string.Empty,
+                DoctorId = x.DoctorId,
+                DoctorName = x.Doctor?.FullName ?? string.Empty,
+                FollowUpDate = x.FollowUpDate,
+                FollowUpNotes = x.FollowUpNotes,
+                FollowUpAppointmentId = x.FollowUpAppointmentId,
+                FollowUpAppointmentCode = x.FollowUpAppointment != null ? $"LH{x.FollowUpAppointment.Id:D6}" : null,
+                FollowUpAppointmentDate = x.FollowUpAppointment?.AppointmentDate,
+                FollowUpTimeSlotStart = x.FollowUpAppointment?.TimeSlotStart,
+                FollowUpAppointmentStatus = x.FollowUpAppointment?.Status,
+                LastRemindedAt = x.FollowUpRemindedAt,
+                ReminderCount = x.FollowUpReminderCount
+            }).ToList();
+
+            return new PagedResult<FollowUpListItemResponse>(items, paged.TotalCount, paged.PageNumber, paged.PageSize);
+        }
+
+        public async Task<FollowUpListItemResponse> RemindFollowUpAsync(
+            string userId, long examinationId, CancellationToken cancellationToken = default)
+        {
+            var examination = await _examinationRepository.GetByIdWithFollowUpAsync(examinationId, cancellationToken);
+            ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
+
+            var followUpDate = examination!.FollowUpDate ?? examination.FollowUpAppointment?.AppointmentDate;
+            ConditionGuard.Ensure(followUpDate.HasValue, ErrorConstants.ExaminationMessage.FollowUpNotSet);
+
+            var now = DateTimeOffset.UtcNow;
+            examination.FollowUpRemindedAt = now;
+            examination.FollowUpReminderCount += 1;
+            examination.UpdatedAt = now;
+
+            if (!string.IsNullOrEmpty(examination.Patient?.UserId))
+            {
+                var msg = string.IsNullOrWhiteSpace(examination.FollowUpNotes)
+                    ? $"Phòng khám OZE nhắc bạn về lịch hẹn tái khám vào ngày {followUpDate!.Value:dd/MM/yyyy}."
+                    : $"Phòng khám OZE nhắc bạn về lịch hẹn tái khám vào ngày {followUpDate!.Value:dd/MM/yyyy}: {examination.FollowUpNotes}.";
+
+                var notification = new Notification
+                {
+                    UserId = examination.Patient.UserId,
+                    Title = "Nhắc lịch tái khám",
+                    Message = msg,
+                    NotificationType = "InApp",
+                    Channel = "InApp",
+                    ReferenceType = "Examination",
+                    ReferenceId = examination.Id.ToString(),
+                    DeliveryStatus = "Sent",
+                    CreatedAt = now
+                };
+                await _examinationRepository.AddNotificationAsync(notification, cancellationToken);
+            }
+
+            await _examinationRepository.SaveChangesAsync(cancellationToken);
+
+            await _auditLogService.LogAsync(
+                AuditConstants.FollowUpReminded,
+                AuditConstants.ExaminationEntity,
+                examination.Id.ToString(),
+                newValues: new
+                {
+                    examination.PatientId,
+                    FollowUpDate = followUpDate,
+                    ReminderCount = examination.FollowUpReminderCount,
+                    RemindedAt = now
+                });
+
+            return new FollowUpListItemResponse
+            {
+                ExaminationId = examination.Id,
+                OriginalAppointmentId = examination.AppointmentId,
+                OriginalAppointmentCode = $"LH{examination.AppointmentId:D6}",
+                OriginalAppointmentDate = examination.Appointment?.AppointmentDate ?? DateOnly.MinValue,
+                PatientId = examination.PatientId,
+                PatientCode = examination.Patient?.PatientCode ?? string.Empty,
+                PatientName = examination.Patient?.FullName ?? string.Empty,
+                PatientPhoneNumber = examination.Patient?.PhoneNumber ?? string.Empty,
+                DoctorId = examination.DoctorId,
+                DoctorName = examination.Doctor?.FullName ?? string.Empty,
+                FollowUpDate = examination.FollowUpDate,
+                FollowUpNotes = examination.FollowUpNotes,
+                FollowUpAppointmentId = examination.FollowUpAppointmentId,
+                FollowUpAppointmentCode = examination.FollowUpAppointment != null ? $"LH{examination.FollowUpAppointment.Id:D6}" : null,
+                FollowUpAppointmentDate = examination.FollowUpAppointment?.AppointmentDate,
+                FollowUpTimeSlotStart = examination.FollowUpAppointment?.TimeSlotStart,
+                FollowUpAppointmentStatus = examination.FollowUpAppointment?.Status,
+                LastRemindedAt = examination.FollowUpRemindedAt,
+                ReminderCount = examination.FollowUpReminderCount
+            };
+        }
+
         // The service and the variant the request names: both must exist and be active, the variant must belong to the service
         private async Task<(Service Service, ServiceVariant? Variant)> ResolveServiceAsync(SaveExaminationServiceRequest request, CancellationToken cancellationToken)
         {
@@ -617,6 +788,24 @@ namespace OZE.Application.Services
             ExaminationStatus = examination.ExaminationStatus,
             ChiefComplaint = examination.ChiefComplaint,
             ClinicalNotes = examination.ClinicalNotes,
+            FollowUpDate = examination.FollowUpDate,
+            FollowUpNotes = examination.FollowUpNotes,
+            FollowUpAppointmentId = examination.FollowUpAppointmentId,
+            FollowUp = examination.FollowUpDate != null || examination.FollowUpAppointmentId != null ? new FollowUpSummaryResponse
+            {
+                FollowUpDate = examination.FollowUpDate,
+                FollowUpNotes = examination.FollowUpNotes,
+                AppointmentId = examination.FollowUpAppointmentId,
+                AppointmentCode = examination.FollowUpAppointment != null ? $"LH{examination.FollowUpAppointment.Id:D6}" : null,
+                AppointmentDate = examination.FollowUpAppointment?.AppointmentDate,
+                TimeSlotStart = examination.FollowUpAppointment?.TimeSlotStart,
+                TimeSlotEnd = examination.FollowUpAppointment?.TimeSlotEnd,
+                DoctorId = examination.FollowUpAppointment?.DoctorId,
+                DoctorName = examination.FollowUpAppointment?.Doctor?.FullName,
+                Status = examination.FollowUpAppointment?.Status,
+                RemindedAt = examination.FollowUpRemindedAt,
+                ReminderCount = examination.FollowUpReminderCount
+            } : null,
             Services = ToServiceResponses(examination, examination.Appointment.ServiceItems),
             Diagnoses = ToDiagnosisResponses(examination.Diagnoses),
             Prescription = ToPrescriptionResponse(examination)
