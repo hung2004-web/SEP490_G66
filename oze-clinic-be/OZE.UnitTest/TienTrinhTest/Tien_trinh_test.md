@@ -53,52 +53,52 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 
 | # | Tab | Mã | Test trong code | Trạng thái | Người làm | Cập nhật | Ghi chú |
 |---|---|---|---|---|---|---|---|
-| 4 | Register | OZ-AUTH-01 | AuthServiceTests: 14 (2) | ✅ | HiepNX | 10/11/2026 | 14 UTCID, gồm luồng đăng ký + xác thực |
-| 5 | VerifyOtp | OZ-AUTH-02 | AuthServiceTests: 12 (2) | ✅ | HiepNX | 10/11/2026 | |
-| 6 | ResendOtp | OZ-AUTH-03 | AuthServiceTests: 6 (2) | ✅ | HiepNX | 10/11/2026 | |
-| 7 | Login | OZ-AUTH-04 | AuthServiceTests: 16 (2) | ✅ | HiepNX | 10/11/2026 | |
-| 8 | RefreshToken | OZ-AUTH-05 | AuthServiceTests: 13 (2) | ✅ | HiepNX | 10/11/2026 | |
-| 9 | Logout | OZ-AUTH-06 | AuthServiceTests: 7 (5) | ✅ | HiepNX | 10/11/2026 | |
-| 10 | ChangePassword | OZ-AUTH-07 | AuthServiceTests: 9 (3) | ✅ | HiepNX | 10/11/2026 | |
-| 11 | ConfirmEmail | OZ-AUTH-08 | AuthServiceTests: 4 (2) | ✅ | HiepNX | 10/11/2026 | |
-| 12 | ForgotPassword | OZ-AUTH-09 | AuthServiceTests: 13 (2) | ✅ | HiepNX | 10/11/2026 | |
-| 13 | VerifyResetOtp | OZ-AUTH-10 | AuthServiceTests: 9 (2) | ✅ | HiepNX | 10/11/2026 | |
-| 14 | ResetPassword | OZ-AUTH-11 | AuthServiceTests: 9 (2) | ✅ | HiepNX | 10/11/2026 | Gồm 2 test luồng đầy đủ |
+| 4 | Register | OZ-AUTH-01 | Auth/RegisterTests: 14 (2) | ✅ | HiepNX | 10/11/2026 | 14 UTCID, gồm luồng đăng ký + xác thực |
+| 5 | VerifyOtp | OZ-AUTH-02 | Auth/VerifyOtpTests: 12 (2) | ✅ | HiepNX | 10/11/2026 | |
+| 6 | ResendOtp | OZ-AUTH-03 | Auth/ResendOtpTests: 6 (2) | ✅ | HiepNX | 10/11/2026 | |
+| 7 | Login | OZ-AUTH-04 | Auth/LoginTests: 16 (2) | ✅ | HiepNX | 10/11/2026 | |
+| 8 | RefreshToken | OZ-AUTH-05 | Auth/RefreshTokenTests: 13 (2) | ✅ | HiepNX | 10/11/2026 | |
+| 9 | Logout | OZ-AUTH-06 | Auth/LogoutTests: 7 (5) | ✅ | HiepNX | 10/11/2026 | |
+| 10 | ChangePassword | OZ-AUTH-07 | Auth/ChangePasswordTests: 9 (3) | ✅ | HiepNX | 10/11/2026 | |
+| 11 | ConfirmEmail | OZ-AUTH-08 | Auth/ConfirmEmailTests: 4 (2) | ✅ | HiepNX | 10/11/2026 | |
+| 12 | ForgotPassword | OZ-AUTH-09 | Auth/ForgotPasswordTests: 13 (2) | ✅ | HiepNX | 10/11/2026 | |
+| 13 | VerifyResetOtp | OZ-AUTH-10 | Auth/VerifyResetOtpTests: 9 (2) | ✅ | HiepNX | 10/11/2026 | |
+| 14 | ResetPassword | OZ-AUTH-11 | Auth/ResetPasswordTests: 9 (2) | ✅ | HiepNX | 10/11/2026 | Gồm 2 test luồng đầy đủ |
 
 ## Đợt 2 – OZ-ME (Hồ sơ của tôi)
 
 | # | Tab | Mã | Test trong code | Trạng thái | Người làm | Cập nhật | Ghi chú |
 |---|---|---|---|---|---|---|---|
-| 15 | GetProfile | OZ-ME-01 | UserServiceTests: 4 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
-| 16 | UpdateProfile | OZ-ME-02 | UserServiceTests: 13 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
-| 17 | ResendConfirmEmail | OZ-ME-03 | UserServiceTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
-| 18 | VerifyPhoneOtp | OZ-ME-04 | UserServiceTests: 10 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
-| 19 | ResendPhoneOtp | OZ-ME-05 | UserServiceTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 15 | GetProfile | OZ-ME-01 | Me/GetProfileTests: 4 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 16 | UpdateProfile | OZ-ME-02 | Me/UpdateProfileTests: 13 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 17 | ResendConfirmEmail | OZ-ME-03 | Me/ResendConfirmEmailTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 18 | VerifyPhoneOtp | OZ-ME-04 | Me/VerifyPhoneOtpTests: 10 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 19 | ResendPhoneOtp | OZ-ME-05 | Me/ResendPhoneOtpTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
 
 ## Đợt 3 – OZ-PAT (Bệnh nhân)
 
 | # | Tab | Mã | Test trong code | Trạng thái | Người làm | Cập nhật | Ghi chú |
 |---|---|---|---|---|---|---|---|
-| 20 | GetPatients | OZ-PAT-01 | PatientServiceTests: 1 (1) | 📝 | | | |
-| 21 | GetPatientById | OZ-PAT-02 | PatientServiceTests: 2 (2) | 📝 | | | |
-| 22 | GetPatientByCode | OZ-PAT-03 | PatientServiceTests: 4 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
-| 23 | CreatePatient | OZ-PAT-04 | PatientServiceTests: 4 (2) | 📝 | | | |
-| 24 | DeletePatient | OZ-PAT-05 | PatientServiceTests: 1 (1) | 📝 | | | |
-| 25 | AddMedicalProfile | OZ-PAT-06 | PatientServiceTests: 1 (1) | 📝 | | | |
-| 26 | UpdatePatient | OZ-PAT-07 | PatientServiceTests: 1 | 📝 | | | |
+| 20 | GetPatients | OZ-PAT-01 | Patients/GetPatientsTests: 1 (1) | 📝 | | | |
+| 21 | GetPatientById | OZ-PAT-02 | Patients/GetPatientByIdTests: 2 (2) | 📝 | | | |
+| 22 | GetPatientByCode | OZ-PAT-03 | Patients/GetPatientByCodeTests: 4 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 23 | CreatePatient | OZ-PAT-04 | Patients/CreatePatientTests: 4 (2) | 📝 | | | |
+| 24 | DeletePatient | OZ-PAT-05 | Patients/DeletePatientTests: 1 (1) | 📝 | | | |
+| 25 | AddMedicalProfile | OZ-PAT-06 | Patients/AddMedicalProfileTests: 1 (1) | 📝 | | | |
+| 26 | UpdatePatient | OZ-PAT-07 | Patients/UpdatePatientTests: 1 | 📝 | | | |
 
 ## Đợt 4 – OZ-SVC (Dịch vụ)
 
 | # | Tab | Mã | Test trong code | Trạng thái | Người làm | Cập nhật | Ghi chú |
 |---|---|---|---|---|---|---|---|
-| 27 | GetServices | OZ-SVC-01 | ClinicServiceServiceTests: 1 (1) | 📝 | | | |
-| 28 | GetActiveServices | OZ-SVC-02 | ClinicServiceServiceTests: 1 | 📝 | | | |
-| 29 | GetServiceById | OZ-SVC-03 | ClinicServiceServiceTests: 2 | 📝 | | | |
-| 30 | GetServiceByCode | OZ-SVC-04 | ClinicServiceServiceTests: 2 | 📝 | | | |
-| 31 | CreateService | OZ-SVC-05 | ClinicServiceServiceTests: 5 (1) | 📝 | | | |
-| 32 | UpdateService | OZ-SVC-06 | ClinicServiceServiceTests: 2 (1) | 📝 | | | |
-| 33 | ToggleServiceStatus | OZ-SVC-07 | ClinicServiceServiceTests: 2 (1) | 📝 | | | |
-| 34 | DeleteService | OZ-SVC-08 | ClinicServiceServiceTests: 2 (1) | 📝 | | | |
+| 27 | GetServices | OZ-SVC-01 | ClinicServices/GetServicesTests: 1 (1) | 📝 | | | |
+| 28 | GetActiveServices | OZ-SVC-02 | ClinicServices/GetActiveServicesTests: 1 | 📝 | | | |
+| 29 | GetServiceById | OZ-SVC-03 | ClinicServices/GetServiceByIdTests: 2 | 📝 | | | |
+| 30 | GetServiceByCode | OZ-SVC-04 | ClinicServices/GetServiceByCodeTests: 2 | 📝 | | | |
+| 31 | CreateService | OZ-SVC-05 | ClinicServices/CreateServiceTests: 5 (1) | 📝 | | | |
+| 32 | UpdateService | OZ-SVC-06 | ClinicServices/UpdateServiceTests: 2 (1) | 📝 | | | |
+| 33 | ToggleServiceStatus | OZ-SVC-07 | ClinicServices/ToggleServiceStatusTests: 2 (1) | 📝 | | | |
+| 34 | DeleteService | OZ-SVC-08 | ClinicServices/DeleteServiceTests: 2 (1) | 📝 | | | |
 | 35 | ManageServiceVariants | OZ-SVC-09 | 0 | ⛔ | | | Chưa có API quản lý biến thể |
 
 ## Đợt 5 – Quản trị: phòng, vai trò, nhân viên, ca làm, lịch bác sĩ
@@ -143,7 +143,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 66 | GetAppointments | OZ-APPT-06 | 0 (1) | ✍️ | | | Chỉ có test controller |
 | 67 | GetMyAppointments | OZ-APPT-07 | 0 | ✍️ | | | |
 | 68 | GetAppointmentById | OZ-APPT-08 | 0 (3) | ✍️ | | | Chỉ có test controller |
-| 69 | GetWaitingList | OZ-APPT-09 | AppointmentPriorityReturnAndQueueTests: 1 | 📝 | | | |
+| 69 | GetWaitingList | OZ-APPT-09 | Appointments/GetWaitingListTests: 1 | 📝 | | | |
 | 70 | GetNeedsAttention | OZ-APPT-10 | 0 | ✍️ | | | |
 | 71 | ConfirmAppointment | OZ-APPT-11 | 0 | ✍️ | | | |
 | 72 | CancelAppointment | OZ-APPT-12 | 0 (2) | ✍️ | | | Chỉ có test controller |
@@ -152,11 +152,11 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 75 | SetPriority | OZ-APPT-15 | 0 | ✍️ | | | |
 | 76 | MarkNoShow | OZ-APPT-16 | 0 | ✍️ | | | |
 | 77 | ReassignDoctor | OZ-APPT-17 | 0 | ✍️ | | | |
-| 78 | StartExamination | OZ-APPT-18 | AppointmentStartExaminationTests: 8, AppointmentPriorityReturnAndQueueTests: 1 (2) | 📝 | | | |
-| 79 | CompleteExamination | OZ-APPT-19 | AppointmentPriorityReturnAndQueueTests: 4 | 📝 | | | |
+| 78 | StartExamination | OZ-APPT-18 | Appointments/StartExaminationTests: 9 (2) | 📝 | | | |
+| 79 | CompleteExamination | OZ-APPT-19 | Appointments/CompleteExaminationTests: 4 | 📝 | | | |
 | 80 | StaffProxyBooking | OZ-APPT-20 | 0 | ⛔ | | | Lễ tân đặt hộ chưa có API |
 | 81 | GetQueue | OZ-Q-01 | 0 | ✍️ | | | |
-| 82 | CallNext | OZ-Q-02 | AppointmentPriorityReturnAndQueueTests: 1 | 📝 | | | |
+| 82 | CallNext | OZ-Q-02 | Queue/CallNextTests: 1 | 📝 | | | |
 | 83 | CallQueueEntry | OZ-Q-03 | 0 | ✍️ | | | |
 | 84 | SkipQueueEntry | OZ-Q-04 | 0 | ✍️ | | | |
 
@@ -184,11 +184,11 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 102 | UpdateDiagnosis | OZ-EXAM-18 | 0 | ✍️ | | | |
 | 103 | DeleteDiagnosis | OZ-EXAM-19 | 0 | ✍️ | | | |
 | 104 | AddClinicalAddendum | OZ-EXAM-20 | 0 | ⛔ | | | Phụ lục sau khóa phiếu chưa có API |
-| 105 | CreateImagingRequest | OZ-IMG-01 | ImagingRequestServiceTests: 7 | 📝 | | | |
-| 106 | GetImagingByExam | OZ-IMG-02 | ImagingRequestServiceTests: 4 | 📝 | | | |
-| 107 | GetImagingById | OZ-IMG-03 | ImagingRequestServiceTests: 3 | 📝 | | | |
-| 108 | GetImagingQueue | OZ-IMG-04 | ImagingRequestServiceTests: 2 | 📝 | | | |
-| 109 | CancelImagingRequest | OZ-IMG-05 | ImagingRequestServiceTests: 5 | 📝 | | | |
+| 105 | CreateImagingRequest | OZ-IMG-01 | Imaging/CreateImagingRequestTests: 7 | 📝 | | | |
+| 106 | GetImagingByExam | OZ-IMG-02 | Imaging/GetImagingByExamTests: 4 | 📝 | | | |
+| 107 | GetImagingById | OZ-IMG-03 | Imaging/GetImagingByIdTests: 3 | 📝 | | | |
+| 108 | GetImagingQueue | OZ-IMG-04 | Imaging/GetImagingQueueTests: 2 | 📝 | | | |
+| 109 | CancelImagingRequest | OZ-IMG-05 | Imaging/CancelImagingRequestTests: 5 | 📝 | | | |
 | 110 | CompleteImagingRequest | OZ-IMG-06 | 0 | ✍️ | | | |
 | 111 | UploadImagingResult | OZ-IMG-07 | 0 | ⛔ | | | Chưa có API tải ảnh |
 | 112 | GetPatientRecord | OZ-MR-01 | 0 | ✍️ | | | `MedicalRecordService` chưa có test |
@@ -244,8 +244,8 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 
 | Chức năng | Test trong code | Đề xuất mã |
 |---|---|---|
-| Hẹn tái khám từ lượt khám (`ScheduleFollowUpAsync`) | AppointmentFollowUpTests: 4 | OZ-APPT-21 |
-| Đặt / nhắc / đặt lịch tái khám từ phiếu khám (`SetFollowUpAsync`, `RemindFollowUpAsync`, `ScheduleFollowUpAppointmentAsync`) | ExaminationFollowUpTests: 3, 2, 2 | OZ-EXAM-21..23 |
+| Hẹn tái khám từ lượt khám (`ScheduleFollowUpAsync`) | Appointments/ScheduleFollowUpTests: 4 | OZ-APPT-21 |
+| Đặt / nhắc / đặt lịch tái khám từ phiếu khám (`SetFollowUpAsync`, `RemindFollowUpAsync`, `ScheduleFollowUpAppointmentAsync`) | Examinations/SetFollowUpTests: 3, RemindFollowUpTests: 2, ScheduleFollowUpAppointmentTests: 2 | OZ-EXAM-21..23 |
 | Xem chi tiết, danh sách theo bệnh nhân, sửa, xóa, hủy kế hoạch điều trị | 0 | OZ-TP-08..12 |
 
 ## Nhật ký cập nhật
@@ -253,6 +253,44 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | Ngày | Người | Nội dung |
 |---|---|---|
 | 10/11/2026 | HiepNX | Tạo file. Đợt 1 (OZ-AUTH, 11 tab) đã điền xong theo file mẫu |
+| 10/11/2026 | HiepNX | Viết test đợt 2 (OZ-ME, 5 tab) và OZ-PAT-03 GetPatientByCode |
+| 11/11/2026 | HiepNX | Tách test thành 1 file / 1 tab theo thư mục module, gắn `[Trait("Tab", ...)]` cho mọi test |
+
+---
+
+## Cấu trúc thư mục test
+
+Mỗi tab trên sheet ứng với đúng một file test. Nhìn cây thư mục là biết hàm nào đã có test.
+
+```
+OZE.UnitTest/Services/
+├── Auth/            OZ-AUTH   AuthServiceTestBase.cs + LoginTests.cs, RegisterTests.cs, ...
+├── Me/              OZ-ME     UserServiceTestBase.cs + GetProfileTests.cs, UpdateProfileTests.cs, ...
+├── Patients/        OZ-PAT    PatientServiceTestBase.cs + GetPatientByCodeTests.cs, ...
+├── ClinicServices/  OZ-SVC    ClinicServiceTestBase.cs + CreateServiceTests.cs, ...
+├── Appointments/    OZ-APPT   StartExaminationTests.cs, CompleteExaminationTests.cs, ...
+├── Queue/           OZ-Q      CallNextTests.cs
+├── Examinations/    OZ-EXAM   SetFollowUpTests.cs, ...
+└── Imaging/         OZ-IMG    CreateImagingRequestTests.cs, ...
+```
+
+| Quy tắc | Nội dung |
+|---|---|
+| Thư mục | Một module (`Patients` ↔ OZ-PAT). Namespace `OZE.UnitTest.Services.<Thư mục>` |
+| File | `<TênTab>Tests.cs`, trùng tên tab trên sheet. Một tab = một file |
+| Class | `public class <TênTab>Tests : <...>TestBase`, đầu class có `// OZ-XXX-nn <TênTab>` và `[Trait("Tab", "OZ-XXX-nn")]` |
+| `...TestBase.cs` | `abstract`, chứa mock, constructor, dữ liệu mẫu, hàm phụ (`protected`). **Không chứa test** |
+| Test | Mỗi test có comment `// UTCIDxx (N/A/B): ...` ngay trên `[Fact]`/`[Theory]`. Một test = một cột UTCID |
+| Tab mới | Tạo file `<TênTab>Tests.cs` trong thư mục module, kế thừa TestBase sẵn có; module mới thì tạo thư mục + TestBase |
+
+Lệnh hay dùng:
+
+| Muốn | Lệnh |
+|---|---|
+| Chạy một tab | `dotnet test OZE.UnitTest --filter "Tab=OZ-PAT-03"` |
+| Xem tên test của một tab | `dotnet test OZE.UnitTest --filter "Tab=OZ-PAT-03" --list-tests` |
+| Chạy một module | `dotnet test OZE.UnitTest --filter "FullyQualifiedName~Services.Patients"` |
+| Chạy tất cả | `dotnet test OZE.UnitTest` |
 
 ---
 

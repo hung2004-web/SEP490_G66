@@ -87,7 +87,7 @@ Sau bước 7, `AppointmentRepository.GetWaitingAppointmentsAsync` không còn l
 
 ## 8. Kiểm thử
 
-- Test hiện có: `ImagingRequestServiceTests.CancelAsync_ShouldCancelPendingRequest_AndKeepClinicalNotes`, `CancelAsync_ShouldRejectMissingReason`, `CancelAsync_ShouldRejectRequestThatIsNotPending`, `CancelAsync_ShouldRejectDoctorWhoDidNotCreateTheRequest`, `CancelAsync_ShouldReturnNotFound_WhenRequestDoesNotExist`.
+- Test hiện có: `CancelImagingRequestTests.CancelAsync_ShouldCancelPendingRequest_AndKeepClinicalNotes`, `CancelAsync_ShouldRejectMissingReason`, `CancelAsync_ShouldRejectRequestThatIsNotPending`, `CancelAsync_ShouldRejectDoctorWhoDidNotCreateTheRequest`, `CancelAsync_ShouldReturnNotFound_WhenRequestDoesNotExist`.
 - Ca cần test thêm: hàng chờ `Imaging` về `CANCELLED` khi là chỉ định mở cuối cùng, và **không** đổi khi còn chỉ định khác; lý do 501 ký tự.
 
 ## 9. Còn thiếu / câu hỏi mở

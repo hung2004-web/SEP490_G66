@@ -93,7 +93,7 @@ DTO `ChangePasswordRequest`:
 
 ## 8. Kiểm thử
 
-- `AuthServiceTests`:
+- `Services/Auth/*Tests`:
   - `ChangePasswordAsync_WithValidRequest_ShouldChangePasswordAndSignOutAllDevices`
   - `ChangePasswordAsync_WithCurrentRefreshToken_ShouldKeepThisDeviceAndSignOutOthers`
   - `ChangePasswordAsync_WithForeignOrUnknownRefreshToken_ShouldSignOutAllDevices`

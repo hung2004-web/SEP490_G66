@@ -123,7 +123,7 @@ DTO `RefreshTokenRequest`:
 
 ## 8. Kiểm thử
 
-- `AuthServiceTests`:
+- `Services/Auth/*Tests`:
   - `RefreshTokenAsync_WithActiveToken_ShouldReturnNewTokenPair`
   - `RefreshTokenAsync_WithActiveToken_ShouldRevokeOldToken`
   - `RefreshTokenAsync_WhenAnotherCallRevokedTheTokenFirst_ShouldFailWithoutNewToken`

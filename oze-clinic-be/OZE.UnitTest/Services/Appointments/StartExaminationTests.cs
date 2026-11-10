@@ -1,62 +1,73 @@
-﻿using FluentAssertions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OZE.Application.Interfaces;
 using OZE.Application.Services;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
+using OZE.Common.Models;
 using OZE.Domain.Entities;
 using Xunit;
 
-namespace OZE.UnitTest.Services
+namespace OZE.UnitTest.Services.Appointments
 {
-    // Start examination: the assigned doctor, a checked-in appointment, one examination, status IN_SERVICE
-    public class AppointmentStartExaminationTests
+    // OZ-APPT-18 StartExamination
+    [Trait("Tab", "OZ-APPT-18")]
+    public class StartExaminationResumeTests : AppointmentQueueTestBase
     {
-        private const int DoctorId = 7;
-        private const string DoctorUserId = "doctor-user-1";
-
-        private readonly Mock<IAppointmentRepository> _appointmentRepositoryMock = new();
-        private readonly Mock<IAuditLogService> _auditLogServiceMock = new();
-        private readonly AppointmentService _service;
-
-        public AppointmentStartExaminationTests()
+        [Fact]
+        public async Task StartExaminationAsync_ShouldResumeExistingExamination_WhenReturningFromImaging()
         {
-            _service = new AppointmentService(
-                _appointmentRepositoryMock.Object,
-                new Mock<IRegistrationRepository>().Object,
-                new Mock<IServiceRepository>().Object,
-                new Mock<ISmsSender>().Object,
-                new Mock<IEmailSender>().Object,
-                _auditLogServiceMock.Object,
-                new Mock<ILogger<AppointmentService>>().Object);
+            // Arrange
+            var existingExam = new Examination
+            {
+                Id = 77,
+                AppointmentId = 200,
+                PatientId = 55,
+                DoctorId = DoctorId,
+                ExaminationStatus = ExaminationConstants.InProgress,
+                ChiefComplaint = "Toothache"
+            };
 
-            _appointmentRepositoryMock
-                .Setup(r => r.GetStaffProfileIdByUserIdAsync(DoctorUserId))
-                .ReturnsAsync(DoctorId);
-            _appointmentRepositoryMock
-                .Setup(r => r.SaveStartedExaminationAsync(It.IsAny<Appointment>(), It.IsAny<Examination>(), It.IsAny<CancellationToken>()))
-                .Callback<Appointment, Examination, CancellationToken>((_, examination, _) => examination.Id = 55)
-                .Returns(Task.CompletedTask);
-        }
-
-        private void ArrangeAppointment(string status, int? doctorId = DoctorId, DateOnly? date = null, string? notes = null)
-        {
             var appointment = new Appointment
             {
-                Id = 100,
-                PatientId = 20,
-                DoctorId = doctorId,
-                Status = status,
-                AppointmentDate = date ?? DateOnly.FromDateTime(DateTime.Today),
-                Notes = notes,
-                Patient = new Patient { FullName = "Tran Thi B" }
+                Id = 200,
+                PatientId = 55,
+                DoctorId = DoctorId,
+                Status = AppointmentConstants.CheckedInStatus,
+                AppointmentDate = Today,
+                Examination = existingExam
             };
-            _appointmentRepositoryMock
-                .Setup(r => r.GetByIdWithDetailsAsync(100, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(appointment);
-        }
 
+            _appointmentRepoMock
+                .Setup(r => r.GetByIdWithExaminationAsync(200, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(appointment);
+
+            _appointmentRepoMock
+                .Setup(r => r.HasAppointmentInServiceAsync(DoctorId, Today))
+                .ReturnsAsync(false);
+
+            // Act
+            var response = await _service.StartExaminationAsync(200, DoctorUserId);
+
+            // Assert
+            response.ExaminationId.Should().Be(77);
+            appointment.Status.Should().Be(AppointmentConstants.InServiceStatus);
+
+            _appointmentRepoMock.Verify(r => r.UpdateAsync(appointment), Times.Once);
+            _queueServiceMock.Verify(q => q.UpdateStatusAsync(200, "Examination", "IN_PROGRESS", It.IsAny<CancellationToken>()), Times.Once);
+        }
+    }
+
+    // OZ-APPT-18 StartExamination
+    [Trait("Tab", "OZ-APPT-18")]
+    public class StartExaminationTests : StartExaminationTestBase
+    {
         [Fact]
         public async Task StartExaminationAsync_ShouldCreateOneExamination_WhenCheckedInForThisDoctor()
         {
