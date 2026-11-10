@@ -48,23 +48,30 @@ const QueuePanel = ({
                 </h2>
                 {collapseButton}
                 <ul className="flex flex-col gap-1.5">
-                    {items.map((item) => (
-                        <li key={item.id}>
-                            <button
-                                type="button"
-                                title={item.patientName}
-                                aria-label={`Số ${item.queueNumber} · ${item.patientName}`}
-                                aria-pressed={item.id === selectedId}
-                                className={cx(
-                                    "num grid size-9 cursor-pointer place-items-center rounded-md font-semibold outline-none focus-visible:shadow-focus",
-                                    queueNumberTone(item.status, item.id === selectedId),
+                    {items.map((item) => {
+                        const numberClass = cx("num grid size-9 place-items-center rounded-md font-semibold", queueNumberTone(item.status, item.id === selectedId));
+                        const label = `Số ${item.queueNumber} · ${item.patientName}`;
+                        return (
+                            <li key={item.id}>
+                                {item.status === QUEUE_STATUS.WAITING ? (
+                                    <span title={item.patientName} aria-label={`${label} · đang chờ`} className={numberClass}>
+                                        {item.queueNumber}
+                                    </span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        title={item.patientName}
+                                        aria-label={label}
+                                        aria-pressed={item.id === selectedId}
+                                        className={cx(numberClass, "cursor-pointer outline-none focus-visible:shadow-focus")}
+                                        onClick={() => onSelect?.(item.id)}
+                                    >
+                                        {item.queueNumber}
+                                    </button>
                                 )}
-                                onClick={() => onSelect?.(item.id)}
-                            >
-                                {item.queueNumber}
-                            </button>
-                        </li>
-                    ))}
+                            </li>
+                        );
+                    })}
                 </ul>
             </aside>
         );

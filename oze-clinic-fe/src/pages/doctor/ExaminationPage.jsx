@@ -6,14 +6,9 @@ import ClinicalExamStep from "@/components/examination/ClinicalExamStep";
 import ConfirmExamDialog from "@/components/examination/ConfirmExamDialog";
 import ExamPreStart from "@/components/examination/ExamPreStart";
 import ExamStepper from "@/components/examination/ExamStepper";
-import ExamTabs from "@/components/examination/ExamTabs";
 import ExamTimer from "@/components/examination/ExamTimer";
-import MedicalHistoryCard from "@/components/examination/MedicalHistoryCard";
 import MedicalHistoryStep from "@/components/examination/MedicalHistoryStep";
-import useHistoryAutosave from "@/hooks/useHistoryAutosave";
 import PatientCard from "@/components/examination/PatientCard";
-import PatientInfoCard from "@/components/examination/PatientInfoCard";
-import PreviousVisitsCard from "@/components/examination/PreviousVisitsCard";
 import QueuePanel from "@/components/examination/QueuePanel";
 import StepHeading from "@/components/examination/StepHeading";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
@@ -28,28 +23,32 @@ import {
     startExamination,
 } from "@/services/examinationService";
 import { cx } from "@/utils/cx";
-import { EXAM_STEP_TITLES, EXAM_STEPS, EXAM_TAB, EXAM_TABS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
+import { EXAM_STEP_TITLES, EXAM_STEPS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
 
 const STEP = { HISTORY: 0, EXAM: 1 };
-const PRE_START_TABS = [EXAM_TAB.PROFILE, EXAM_TAB.EXAM];
-const LOCKED_TABS = EXAM_TABS.map((tab) => tab.key).filter((key) => !PRE_START_TABS.includes(key));
-const TAB_ID = "exam";
+const CALLED_STATUS = { label: "Đã gọi · chờ vào phòng", tone: "warning" };
 
-const NOT_STARTED_STATUS = {
-    [QUEUE_STATUS.CALLED]: { label: "Đã gọi · chờ vào phòng", tone: "warning" },
-    [QUEUE_STATUS.WAITING]: { label: "Đang chờ", tone: "neutral" },
-};
-
-// Patient shown on the right: the one in the room, else the one called, else the first in line.
+// Patient shown on the right: the one in the room, else the one called. Nobody until the doctor calls someone in;
+// waiting patients cannot be opened.
 const defaultSelection = (queue) =>
-    (queue.find((item) => item.status === QUEUE_STATUS.IN_EXAMINATION) ?? queue.find((item) => item.status === QUEUE_STATUS.CALLED) ?? queue[0])?.id ?? null;
+    (queue.find((item) => item.status === QUEUE_STATUS.IN_EXAMINATION) ?? queue.find((item) => item.status === QUEUE_STATUS.CALLED))?.id ?? null;
 
-const EmptyMain = ({ text }) => (
-    <div className="card-app flex flex-col items-center gap-2 py-16 text-center text-muted">
-        <Stethoscope className="size-8" aria-hidden="true" />
-        <p>{text}</p>
-    </div>
+// Right side before anyone is called in: locked process, empty patient card, "Chưa có lượt khám".
+const NoExamView = ({ waitingCount }) => (
+    <>
+        <ExamStepper locked />
+        <PatientCard patient={null} />
+        <div className="card-app flex flex-col items-center gap-3 px-6 py-16 text-center">
+            <span aria-hidden="true" className="grid size-16 place-items-center rounded-full bg-primary-soft text-primary">
+                <Stethoscope className="size-7" />
+            </span>
+            <h2 className="font-heading text-heading-2 text-ink">Chưa có lượt khám</h2>
+            <p className="text-muted">
+                {waitingCount > 0 ? `Có ${waitingCount} bệnh nhân đang chờ. Bấm “Gọi vào khám” ở một bệnh nhân để bắt đầu.` : "Hàng chờ đang trống."}
+            </p>
+        </div>
+    </>
 );
 
 // Steps 3–5 are built in their own tasks.
@@ -63,32 +62,14 @@ const PendingStep = ({ title, onBack }) => (
     </div>
 );
 
-// Patient called (or still waiting): profile with an editable medical history (draft saved automatically),
-// "Khám" tab tells the doctor to start the exam.
-const NotStartedView = ({ item, record, onHistoryChange }) => {
-    const [tab, setTab] = useState(EXAM_TAB.EXAM);
-    const { patient } = record;
-    const { history, setHistory, statusText } = useHistoryAutosave(item.id, record.history, onHistoryChange);
-
-    return (
-        <>
-            <PatientCard patient={{ ...patient, queueNumber: item.queueNumber }} status={NOT_STARTED_STATUS[item.status]} services={record.services}>
-                <ExamTabs value={tab} onChange={setTab} disabledKeys={LOCKED_TABS} idPrefix={TAB_ID} />
-            </PatientCard>
-            <div role="tabpanel" id={`${TAB_ID}-panel-${tab}`} aria-labelledby={`${TAB_ID}-tab-${tab}`} className="flex flex-col gap-5">
-                {tab === EXAM_TAB.PROFILE ? (
-                    <>
-                        <PatientInfoCard patient={patient} reason={record.intake.reason} />
-                        <MedicalHistoryCard history={history} gender={patient.gender} saveStatus={statusText} onChange={setHistory} />
-                        <PreviousVisitsCard queueId={item.id} visits={record.visits} />
-                    </>
-                ) : (
-                    <ExamPreStart intake={{ ...record.intake, allergies: history.allergies, conditions: history.conditions }} />
-                )}
-            </div>
-        </>
-    );
-};
+// Patient called in, exam not started: process still locked, patient card and what reception recorded.
+const CalledView = ({ item, record }) => (
+    <>
+        <ExamStepper locked />
+        <PatientCard patient={{ ...record.patient, queueNumber: item.queueNumber }} status={CALLED_STATUS} services={record.services} />
+        <ExamPreStart intake={{ ...record.intake, allergies: record.history.allergies, conditions: record.history.conditions }} />
+    </>
+);
 
 // Exam in progress: process stepper, patient card with timer, then the content of the step being viewed.
 const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onStep, onEnd }) => {
@@ -117,7 +98,7 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onStep,
                 <span className="h-5 w-px bg-border-strong" aria-hidden="true" />
                 <Breadcrumb
                     items={[
-                        { label: "Khám bệnh", href: ROUTES.DOCTOR_QUEUE },
+                        { label: "Khám bệnh", href: ROUTES.DOCTOR_EXAMINATION },
                         { label: `Lượt khám ${record.encounterCode}` },
                         { label: shown === STEP.HISTORY ? "Thông tin bệnh nhân" : EXAM_STEPS[shown] },
                     ]}
@@ -228,7 +209,7 @@ const ExaminationPage = () => {
     const renderMain = () => {
         if (loadFailed) return <p role="alert" className="alert alert-danger">{GENERIC_ERROR_MESSAGE}</p>;
         if (!workspace) return <div className="skeleton h-64 rounded-lg" aria-hidden="true" />;
-        if (!selected) return <EmptyMain text="Chọn bệnh nhân trong hàng chờ để xem hồ sơ và bắt đầu khám." />;
+        if (!selected) return <NoExamView waitingCount={queue.filter((item) => item.status === QUEUE_STATUS.WAITING).length} />;
         if (record?.id === selectedId && record.failed) return <p role="alert" className="alert alert-danger">Không tải được hồ sơ của bệnh nhân này.</p>;
         if (!recordReady) return <div className="skeleton h-64 rounded-lg" aria-hidden="true" />;
         if (selected.status === QUEUE_STATUS.IN_EXAMINATION) {
@@ -245,7 +226,7 @@ const ExaminationPage = () => {
                 />
             );
         }
-        return <NotStartedView key={selected.id} item={selected} record={record.data} onHistoryChange={updateHistory} />;
+        return <CalledView item={selected} record={record.data} />;
     };
 
     return (

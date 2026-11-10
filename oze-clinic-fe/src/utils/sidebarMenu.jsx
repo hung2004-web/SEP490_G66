@@ -4,6 +4,7 @@ import {
     CalendarDays,
     ChartColumn,
     ClipboardList,
+    Image,
     LayoutDashboard,
     Receipt,
     ScanLine,
@@ -17,7 +18,7 @@ import { USER_ROLES } from "./messages";
 import { ROUTES } from "./routes";
 
 // Sidebar tree per role. A node is either
-//   a link:  { key, label, icon, to }
+//   a link:  { key, label, icon, to, badge? }
 //   a group: { key, label, icon, children: [{ key, label, to, badge? }] }
 // badge names a count the sidebar looks up (see useSidebarBadges in Sidebar.jsx); 0 shows nothing.
 // A new page also needs its path in ROUTES / ROLE_ROUTES (utils/routes.jsx).
@@ -84,15 +85,8 @@ const SIDEBAR_MENU = {
     ],
     [USER_ROLES.DOCTOR]: [
         DASHBOARD_LINK,
-        {
-            key: "clinical",
-            label: "Khám bệnh",
-            icon: Stethoscope,
-            children: [
-                { key: "queue", label: "Hàng chờ khám", to: ROUTES.DOCTOR_QUEUE, badge: SIDEBAR_BADGES.WAITING_PATIENTS },
-                { key: "imaging-reviews", label: "Duyệt kết quả chụp", to: ROUTES.DOCTOR_IMAGING_REVIEWS, badge: SIDEBAR_BADGES.PENDING_IMAGING_REVIEWS },
-            ],
-        },
+        { key: "examination", label: "Khám bệnh", icon: Stethoscope, to: ROUTES.DOCTOR_EXAMINATION, badge: SIDEBAR_BADGES.WAITING_PATIENTS },
+        { key: "imaging-reviews", label: "Duyệt kết quả chụp", icon: Image, to: ROUTES.DOCTOR_IMAGING_REVIEWS, badge: SIDEBAR_BADGES.PENDING_IMAGING_REVIEWS },
         { ...ACCOUNT_GROUP, children: [...WORK_GROUP.children, ...ACCOUNT_GROUP.children] },
     ],
     [USER_ROLES.DENTAL_IMAGING_TECHNICIAN]: [

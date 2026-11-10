@@ -36,7 +36,7 @@ const QueueTable = ({ queue, roomName, loading }) => (
         id={QUEUE_TITLE_ID}
         title={`Hàng chờ khám · ${roomName ?? "Phòng khám"}`}
         busy={loading}
-        link={!loading && queue.length > 0 && { to: ROUTES.DOCTOR_QUEUE, label: "Xem tất cả" }}
+        link={!loading && queue.length > 0 && { to: ROUTES.DOCTOR_EXAMINATION, label: "Xem tất cả" }}
         empty={!loading && queue.length === 0 && { icon: Users, text: "Hàng chờ đang trống." }}
     >
         {loading && (
@@ -151,7 +151,7 @@ const DoctorDashboard = () => {
                     label="Bệnh nhân hôm nay"
                     value={stats?.totalToday}
                     caption={stats && joinParts([`${stats.waiting} chờ`, stats.inExamination > 0 && `${stats.inExamination} đang khám`, `${stats.completed} đã khám`])}
-                    to={ROUTES.DOCTOR_QUEUE}
+                    to={ROUTES.DOCTOR_EXAMINATION}
                     loading={loading}
                 />
                 <StatCard
@@ -159,7 +159,7 @@ const DoctorDashboard = () => {
                     label="Đang chờ"
                     value={stats?.waiting}
                     caption={stats && (stats.waiting > 0 ? `Chờ lâu nhất ${stats.longestWaitMinutes} phút` : "Không có ai đang chờ")}
-                    to={ROUTES.DOCTOR_QUEUE}
+                    to={ROUTES.DOCTOR_EXAMINATION}
                     loading={loading}
                 />
                 <StatCard

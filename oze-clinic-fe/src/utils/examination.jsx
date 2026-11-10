@@ -71,7 +71,7 @@ export const surfacesText = (surfaces) => (surfaces?.length ? surfaces.join(", "
 const has = (text, ...words) => words.some((word) => text.includes(word));
 
 // Chart colour of a free-text condition. Order matters: "Đã điều trị tủy" is not an inflamed pulp.
-export const conditionCategory = (condition) => {
+const conditionCategory = (condition) => {
     const text = (condition ?? "").normalize("NFC").toLocaleLowerCase("vi");
     if (has(text, "mất răng")) return "missing";
     if (has(text, "điều trị tủy", "trám bít")) return "rct";

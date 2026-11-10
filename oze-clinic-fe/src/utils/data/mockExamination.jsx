@@ -1,11 +1,11 @@
 import { QUEUE_STATUS } from "../messages";
 
-// Sample data for the doctor's exam screen (/doctor/queue): queue of the shift and one record per patient.
+// Sample data for the doctor's exam screen (/doctor/examination): queue of the shift and one record per patient.
 
 export const MOCK_EXAM_SHIFT = { name: "Ca sáng", start: "08:00", end: "12:00", roomName: "Phòng khám" };
 
 export const MOCK_EXAM_QUEUE = [
-    { id: 1, queueNumber: 8, patientName: "Nguyễn Văn A", status: QUEUE_STATUS.CALLED },
+    { id: 1, queueNumber: 8, patientName: "Nguyễn Văn A", status: QUEUE_STATUS.WAITING },
     { id: 2, queueNumber: 9, patientName: "Lý Thanh Tâm", status: QUEUE_STATUS.WAITING },
     { id: 3, queueNumber: 10, patientName: "Mai Thị Lan", status: QUEUE_STATUS.WAITING },
     { id: 4, queueNumber: 11, patientName: "Đinh Thu Hà", status: QUEUE_STATUS.WAITING },

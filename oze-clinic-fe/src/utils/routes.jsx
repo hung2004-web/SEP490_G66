@@ -31,7 +31,7 @@ export const ROUTES = {
     DOCTOR_PATIENTS: "/doctor/patients",
     DOCTOR_TREATMENT_PLANS: "/doctor/treatment-plans",
     DOCTOR_IMAGING_REQUESTS: "/doctor/imaging-requests",
-    DOCTOR_QUEUE: "/doctor/queue",
+    DOCTOR_EXAMINATION: "/doctor/examination",
     DOCTOR_IMAGING_REVIEWS: "/doctor/imaging-reviews",
     TECHNICIAN_IMAGING_REQUESTS: "/technician/imaging-requests",
     TECHNICIAN_IMAGING_RESULTS: "/technician/imaging-results",
@@ -62,7 +62,7 @@ export const ROLE_ROUTES = [
     {
         roles: [USER_ROLES.DOCTOR],
         paths: [
-            ROUTES.DOCTOR_QUEUE,
+            ROUTES.DOCTOR_EXAMINATION,
             ROUTES.DOCTOR_IMAGING_REVIEWS,
             ROUTES.DOCTOR_APPOINTMENTS,
             ROUTES.DOCTOR_PATIENTS,
