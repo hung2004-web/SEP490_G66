@@ -19,7 +19,7 @@ const PlanServiceList = ({ services = [], typeOptionsOf, expandedId, errors, onT
     return (
         <ClinicalExamSection
             title="Kế hoạch theo dịch vụ đăng ký"
-            badge={<span className="num rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary">{services.length} dịch vụ</span>}
+            badge={<span className="num rounded-full bg-primary-soft px-2 py-0.5 text-caption font-medium text-primary">{services.length} dịch vụ</span>}
             bodyClassName="flex flex-col gap-3"
         >
             {services.length === 0 ? (

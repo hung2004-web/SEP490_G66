@@ -14,7 +14,7 @@ const MedicalHistoryCard = ({ history, gender, onChange }) => {
         <ClinicalExamSection
             title="Tiền sử bệnh"
             divided={false}
-            badge={<span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary">Bác sĩ bổ sung</span>}
+            badge={<span className="rounded-full bg-primary-soft px-2 py-0.5 text-caption font-medium text-primary">Bác sĩ bổ sung</span>}
             action={<span className="text-caption text-muted">Bấm vào từng mục để mở / thu gọn</span>}
             bodyClassName="flex flex-col gap-3.5"
         >

@@ -24,6 +24,7 @@ import {
     setExamStep,
     startExamination,
 } from "@/services/examinationService";
+import useMediaQuery from "@/hooks/useMediaQuery";
 import { cx } from "@/utils/cx";
 import { EXAM_STEP_TITLES, EXAM_STEPS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
@@ -163,7 +164,8 @@ const ExaminationPage = () => {
     const [loadFailed, setLoadFailed] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
     const [record, setRecord] = useState(null); // { id, data, failed }
-    const [collapsed, setCollapsed] = useState(false);
+    const isDesktop = useMediaQuery("(min-width: 64rem)");
+    const [collapsedChoice, setCollapsedChoice] = useState(null); // null = automatic
     const [busy, setBusy] = useState(false);
     const [confirm, setConfirm] = useState(null); // { type: "absent" | "end", item }
 
@@ -191,6 +193,9 @@ const ExaminationPage = () => {
 
     const queue = workspace?.queue ?? [];
     const selected = queue.find((item) => item.id === selectedId) ?? null;
+    // Below lg the queue sits above the exam: fold it to a strip while a patient is called in or examined,
+    // so the exam shows first. The doctor's own choice (the « / » button) wins.
+    const collapsed = collapsedChoice ?? (!isDesktop && selected !== null);
     const recordReady = record?.id === selectedId && record.data;
 
     // Runs a queue action, then shows the new queue and moves the selection.
@@ -264,7 +269,7 @@ const ExaminationPage = () => {
                         doneCount={workspace.doneCount}
                         selectedId={selectedId}
                         collapsed={collapsed}
-                        onToggleCollapse={() => setCollapsed((current) => !current)}
+                        onToggleCollapse={() => setCollapsedChoice(!collapsed)}
                         onSelect={setSelectedId}
                         onCall={(id) => runAction(callPatient, id, () => id)}
                         onMarkAbsent={(id) => setConfirm({ type: "absent", item: queue.find((item) => item.id === id) })}

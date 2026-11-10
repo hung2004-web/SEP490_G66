@@ -17,7 +17,7 @@ const PatientInfoCard = ({ patient, reason }) => (
     <ClinicalExamSection
         title="Thông tin hành chính"
         divided={false}
-        badge={<span className="rounded-full bg-surface-tint px-2 py-0.5 text-[11px] font-medium text-body">Chỉ xem</span>}
+        badge={<span className="rounded-full bg-surface-tint px-2 py-0.5 text-caption font-medium text-body">Chỉ xem</span>}
     >
         <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-body-sm sm:grid-cols-2 lg:grid-cols-3">
             <Field label="Mã bệnh nhân" value={patient.code} />

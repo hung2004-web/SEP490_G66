@@ -12,7 +12,7 @@ const SegmentedControl = ({ options, value, onChange, label, className }) => (
                     aria-pressed={selected}
                     onClick={() => onChange(option.value)}
                     className={cx(
-                        "min-h-8 cursor-pointer rounded px-3 text-label transition-colors duration-150",
+                        "min-h-8 cursor-pointer rounded px-3 text-label transition-colors duration-150 pointer-coarse:min-h-11",
                         selected ? "bg-canvas font-semibold text-ink shadow-sm" : "text-muted hover:text-ink",
                     )}
                 >

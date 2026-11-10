@@ -83,11 +83,11 @@ const ExamDentalChart = ({ entries = [], chartType, onChartTypeChange, selectedT
             {/* Fixed-size tooth boxes; on narrow screens the chart scrolls sideways instead of squeezing. */}
             <div className="overflow-x-auto rounded-[10px] bg-surface-tint px-2 py-3">
                 <div className="mx-auto flex w-max min-w-full flex-col items-center gap-1.5">
-                <p className="text-[11px] font-medium text-muted">Hàm trên</p>
+                <p className="text-caption font-medium text-muted">Hàm trên</p>
                 <JawRow halves={chart.upper} entriesOf={entriesOf} selectedTooth={selectedTooth} onSelectTooth={onSelectTooth} />
                 <span aria-hidden="true" className="my-1 h-px w-full max-w-140 bg-border" />
                 <JawRow halves={chart.lower} entriesOf={entriesOf} selectedTooth={selectedTooth} onSelectTooth={onSelectTooth} />
-                <p className="text-[11px] font-medium text-muted">Hàm dưới</p>
+                <p className="text-caption font-medium text-muted">Hàm dưới</p>
                 </div>
             </div>
             <div className="flex flex-col gap-1.5">

@@ -48,7 +48,7 @@ const BarChart = ({ data, title, formatValue = String, previousLabel, onSelect, 
     const Column = onSelect ? "button" : "div";
 
     return (
-        <figure className="m-0 @container">
+        <figure className="relative m-0 @container">
             <div className="relative border-b border-border-strong" style={{ height }}>
                 <div className="absolute inset-0 flex items-end">
                     {data.map((item, index) => (
@@ -145,24 +145,27 @@ const BarChart = ({ data, title, formatValue = String, previousLabel, onSelect, 
             </div>
 
             {/* Same numbers for screen readers */}
-            <table className="sr-only">
-                <caption>{title}</caption>
-                <tbody>
-                    {data.map((item) => (
-                        <tr key={item.label}>
-                            <th scope="row">
-                                {item.label} {item.sublabel}
-                            </th>
-                            <td>{show(item.value)}</td>
-                            {previousLabel && (
-                                <td>
-                                    {previousLabel}: {item.previous == null ? "Chưa có số liệu" : formatValue(item.previous)}
-                                </td>
-                            )}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {/* A <table> ignores sr-only's 1px box, so the wrapper hides it. */}
+            <div className="sr-only">
+                <table>
+                    <caption>{title}</caption>
+                    <tbody>
+                        {data.map((item) => (
+                            <tr key={item.label}>
+                                <th scope="row">
+                                    {item.label} {item.sublabel}
+                                </th>
+                                <td>{show(item.value)}</td>
+                                {previousLabel && (
+                                    <td>
+                                        {previousLabel}: {item.previous == null ? "Chưa có số liệu" : formatValue(item.previous)}
+                                    </td>
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </figure>
     );
 };

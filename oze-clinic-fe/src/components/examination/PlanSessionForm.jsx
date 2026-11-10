@@ -33,7 +33,7 @@ const PlanSessionForm = ({ index, session, typeOptions = [], errors = {}, onChan
         <fieldset className="flex flex-col gap-3 rounded-[10px] border border-border p-4">
             <legend className="sr-only">Buổi {index + 1}</legend>
             <div className="flex items-center gap-2">
-                <span className="num rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary">Buổi {index + 1}</span>
+                <span className="num rounded-full bg-primary-soft px-2 py-0.5 text-caption font-semibold text-primary">Buổi {index + 1}</span>
                 <StatusBadge status={session.status} labels={PLAN_SESSION_STATUS} />
                 {onRemove && (
                     <button

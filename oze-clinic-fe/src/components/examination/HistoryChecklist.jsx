@@ -44,7 +44,7 @@ const HistoryChecklist = ({ title, options = [], value = [], onChange, tone = "n
                 onClick={() => setOpen((current) => !current)}
             >
                 <span className="font-semibold text-ink">{title}</span>
-                <span className={cx("num shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", value.length ? colors.count : TONES.neutral.count)}>
+                <span className={cx("num shrink-0 rounded-full px-2 py-0.5 text-caption font-medium", value.length ? colors.count : TONES.neutral.count)}>
                     {value.length ? `${value.length} mục` : "Không có"}
                 </span>
                 <span className="ml-auto min-w-0 truncate text-caption text-muted">{!open && value.join(", ")}</span>

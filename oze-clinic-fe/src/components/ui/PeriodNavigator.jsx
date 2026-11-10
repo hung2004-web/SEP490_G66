@@ -15,7 +15,7 @@ const PeriodNavigator = ({ label, onPrevious, onNext, previousDisabled = false, 
         >
             <ChevronLeft className="size-4" aria-hidden="true" />
         </button>
-        <span className="num min-w-36 flex-1 px-1 text-center text-label text-ink" aria-live="polite">
+        <span className="num min-w-0 flex-1 truncate px-1 text-center text-label text-ink sm:min-w-36" aria-live="polite">
             {label}
         </span>
         <button

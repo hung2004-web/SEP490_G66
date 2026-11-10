@@ -59,7 +59,7 @@ const ExamStepper = ({ steps = EXAM_STEPS, current = 0, viewing = current, locke
                                 <span className={cx("h-0.5 flex-1", index === steps.length - 1 ? "opacity-0" : lineDone(index < current))} />
                             </span>
                             <span className={cx("px-1 text-caption whitespace-nowrap", meta.label)}>{step}</span>
-                            <span className={cx("text-[11px] leading-tight", meta.noteTone)}>{meta.note}</span>
+                            <span className={cx("text-caption leading-tight", meta.noteTone)}>{meta.note}</span>
                         </>
                     );
                     const itemClass = cx("flex w-full flex-col items-center gap-1.5 rounded-[10px] py-2 text-center", shown && "bg-primary-soft");
