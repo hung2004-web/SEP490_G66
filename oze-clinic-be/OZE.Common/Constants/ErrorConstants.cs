@@ -459,19 +459,24 @@ namespace OZE.Common.Constants
         public static class RefundMessage
         {
             public const string InvoiceNotFound = "Invoice not found.";
+            public const string InvoiceNotRefundable = "Refunds cannot be requested on this invoice.";
             public const string RequestNotFound = "Refund request not found.";
             public const string ReasonRequired = "Please enter a reason.";
             public const string AmountInvalid = "Refund amount must be greater than 0.";
             public const string TypeInvalid = "Request type must be one of: Refund, Adjustment.";
+            public const string StatusInvalid = "Refund request status must be one of: Pending, Approved, Rejected, Processed.";
             public const string WorkDoneAmountRequired = "Work-done amount is required before approval.";
             public const string WorkDoneAmountInvalid = "Work-done amount is invalid.";
             public const string WorkDoneExceedsPaid = "Work-done amount cannot exceed confirmed paid amount.";
             public const string RequestNotPending = "Only pending refund requests can be processed.";
+            public const string PendingRequestExists = "A pending refund request already exists for this invoice.";
+            public const string PaymentInvalid = "Payment does not belong to this invoice or is not confirmed.";
             public const string RejectionReasonRequired = "Please enter a rejection reason.";
             public const string RequestCreated = "Refund request has been created.";
             public const string RequestApproved = "Refund request has been approved.";
             public const string RequestRejected = "Refund request has been rejected.";
             public const string RequestProcessed = "Refund request has been marked as processed.";
+            public const string WorkDoneUpdated = "Work-done amount has been updated.";
             public const string NoConfirmedPayments = "There are no confirmed payments to refund.";
             public const string ConcurrencyConflict = "Refund request was modified by another user. Please reload and try again.";
         }

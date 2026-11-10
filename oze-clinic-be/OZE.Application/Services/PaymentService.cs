@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
@@ -187,10 +188,9 @@ namespace OZE.Application.Services
         private static void EnsureInvoicePayable(Invoice invoice)
         {
             ConditionGuard.ThrowIf(
-                invoice.PaymentStatus == InvoiceConstants.Cancelled,
-                ErrorConstants.PaymentMessage.InvoiceNotPayable);
-            ConditionGuard.ThrowIf(
-                invoice.PaymentStatus == InvoiceConstants.Refunded,
+                invoice.PaymentStatus == InvoiceConstants.Cancelled
+                || invoice.PaymentStatus == InvoiceConstants.Refunded
+                || invoice.PaymentStatus == InvoiceConstants.PartiallyRefunded,
                 ErrorConstants.PaymentMessage.InvoiceNotPayable);
         }
 
@@ -219,13 +219,7 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(amount <= remaining, ErrorConstants.PaymentMessage.AmountExceedsRemaining);
         }
 
-        private static decimal GetRemaining(Invoice invoice)
-        {
-            var confirmed = invoice.Payments
-                .Where(p => p.PaymentStatus == PaymentConstants.Confirmed)
-                .Sum(p => p.Amount);
-            return decimal.Round(Math.Max(0m, invoice.FinalAmount - confirmed), 2, MidpointRounding.AwayFromZero);
-        }
+        private static decimal GetRemaining(Invoice invoice) => InvoiceMoneyHelper.GetRemaining(invoice);
 
         private static void EnsureInstallmentPeriodPayable(Invoice invoice, long periodId)
         {
@@ -288,33 +282,7 @@ namespace OZE.Application.Services
             }
         }
 
-        private static void RecalculateInvoiceMoney(Invoice invoice)
-        {
-            var confirmedSum = decimal.Round(
-                invoice.Payments.Where(p => p.PaymentStatus == PaymentConstants.Confirmed).Sum(p => p.Amount),
-                2,
-                MidpointRounding.AwayFromZero);
-
-            invoice.PaidAmount = confirmedSum;
-
-            var hasPending = invoice.Payments.Any(p => p.PaymentStatus == PaymentConstants.Pending);
-
-            if (confirmedSum <= 0)
-            {
-                invoice.PaymentStatus = hasPending
-                    ? InvoiceConstants.PendingConfirmation
-                    : InvoiceConstants.Unpaid;
-                return;
-            }
-
-            if (confirmedSum >= invoice.FinalAmount)
-            {
-                invoice.PaymentStatus = InvoiceConstants.Paid;
-                return;
-            }
-
-            invoice.PaymentStatus = InvoiceConstants.PartiallyPaid;
-        }
+        private static void RecalculateInvoiceMoney(Invoice invoice) => InvoiceMoneyHelper.Recalculate(invoice);
 
         private async Task SafeAuditAsync(string action, string entityId, object? oldValues, object? newValues)
         {

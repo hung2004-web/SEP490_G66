@@ -36,7 +36,9 @@ namespace OZE.Application.Services
             var invoice = await _invoiceRepository.GetByIdWithDetailsAsync(invoiceId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(invoice != null, ErrorConstants.InstallmentMessage.InvoiceNotFound);
             ConditionGuard.ThrowIf(
-                invoice!.PaymentStatus == InvoiceConstants.Cancelled,
+                invoice!.PaymentStatus == InvoiceConstants.Cancelled
+                || invoice.PaymentStatus == InvoiceConstants.Refunded
+                || invoice.PaymentStatus == InvoiceConstants.PartiallyRefunded,
                 ErrorConstants.PaymentMessage.InvoiceNotPayable);
             ConditionGuard.ThrowIf(
                 await _installmentRepository.HasPlanForInvoiceAsync(invoiceId, cancellationToken),
@@ -145,13 +147,7 @@ namespace OZE.Application.Services
             return changed;
         }
 
-        private static decimal GetRemainingBalance(Invoice invoice)
-        {
-            var confirmed = invoice.Payments
-                .Where(p => p.PaymentStatus == PaymentConstants.Confirmed)
-                .Sum(p => p.Amount);
-            return decimal.Round(Math.Max(0m, invoice.FinalAmount - confirmed), 2, MidpointRounding.AwayFromZero);
-        }
+        private static decimal GetRemainingBalance(Invoice invoice) => InvoiceMoneyHelper.GetRemaining(invoice);
 
         private async Task EnsureOwnedByAsync(Invoice invoice, string? ownerUserId, CancellationToken cancellationToken)
         {

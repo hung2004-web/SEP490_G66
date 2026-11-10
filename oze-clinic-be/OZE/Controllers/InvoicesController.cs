@@ -14,15 +14,18 @@ namespace OZE.Controllers
         private readonly IInvoiceService _invoiceService;
         private readonly IPaymentService _paymentService;
         private readonly IInstallmentService _installmentService;
+        private readonly IRefundService _refundService;
 
         public InvoicesController(
             IInvoiceService invoiceService,
             IPaymentService paymentService,
-            IInstallmentService installmentService)
+            IInstallmentService installmentService,
+            IRefundService refundService)
         {
             _invoiceService = invoiceService;
             _paymentService = paymentService;
             _installmentService = installmentService;
+            _refundService = refundService;
         }
 
         /// <summary>
@@ -130,6 +133,20 @@ namespace OZE.Controllers
         {
             var plan = await _installmentService.GetPlanByInvoiceAsync(id, OwnerRestriction, cancellationToken);
             return Ok(ApiResponse<InstallmentPlanResponse>.SuccessResult(plan));
+        }
+
+        /// <summary>
+        /// Creates a mid-plan refund request. Manager must set WorkDone before approve.
+        /// </summary>
+        [HttpPost("{id:long}/refund-requests")]
+        [Authorize(Roles = RoleConstants.ReceptionistRole)]
+        public async Task<ActionResult<ApiResponse<RefundRequestResponse>>> CreateRefundRequestAsync(
+            [FromRoute] long id,
+            [FromBody] CreateRefundRequest request,
+            CancellationToken cancellationToken)
+        {
+            var refund = await _refundService.RequestAsync(id, CurrentUserId ?? string.Empty, request, cancellationToken);
+            return Ok(ApiResponse<RefundRequestResponse>.SuccessResult(refund, ErrorConstants.RefundMessage.RequestCreated));
         }
     }
 }

@@ -25,6 +25,8 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Invoice)
                     .ThenInclude(i => i.Payments)
                 .Include(x => x.Invoice)
+                    .ThenInclude(i => i.RefundAdjustmentRequests)
+                .Include(x => x.Invoice)
                     .ThenInclude(i => i.InstallmentPlans)
                         .ThenInclude(p => p.Periods)
                 .Include(x => x.InstallmentPeriod)
