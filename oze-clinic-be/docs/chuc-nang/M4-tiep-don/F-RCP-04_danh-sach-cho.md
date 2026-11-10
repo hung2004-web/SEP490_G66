@@ -121,7 +121,7 @@ Giải thích: mức 2 đứng trước mức 0; trong mức 2, nhóm 0 (D) trư
 
 ## 8. Kiểm thử
 
-- Test hiện có: `AppointmentPriorityReturnAndQueueTests.GetWaitingListAsync_ShouldPlacePriorityReturnPatientAheadOfOnTimePatients` (bệnh nhân có Examination đứng trước bệnh nhân đúng giờ cùng mức ưu tiên).
+- Test hiện có: `GetWaitingListTests.GetWaitingListAsync_ShouldPlacePriorityReturnPatientAheadOfOnTimePatients` (bệnh nhân có Examination đứng trước bệnh nhân đúng giờ cùng mức ưu tiên).
 - Ca cần test thêm: ưu tiên cao hơn vượt nhóm; đúng giờ xếp theo giờ hẹn dù check-in muộn hơn; check-in đúng mốc `+LateMinutes` vẫn đúng giờ; trễ xếp theo giờ check-in; walk-in xếp cuối cùng mức; ẩn bệnh nhân đang chụp phim; bác sĩ ngoài ca; người gọi role Doctor truyền `doctorId` khác bị bỏ qua; thiếu cấu hình.
 
 ## 9. Còn thiếu / câu hỏi mở

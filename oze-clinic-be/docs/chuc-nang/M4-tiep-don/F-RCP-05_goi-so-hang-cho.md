@@ -139,7 +139,7 @@ Thành công có người: HTTP 200, `data` = `QueueEntryResponse`, message `"Nu
 
 ## 8. Kiểm thử
 
-- Test hiện có: `AppointmentPriorityReturnAndQueueTests.QueueService_ShouldEnqueueAndCallNext` (cấp số rồi `call-next` chuyển `CALLED`).
+- Test hiện có: `CallNextTests.QueueService_ShouldEnqueueAndCallNext` (cấp số rồi `call-next` chuyển `CALLED`).
 - Ca cần test thêm: thứ tự `SkipCount` → `Priority` → `QueueNumber`; bác sĩ ngoài ca chỉ nhận người đã khám; `call` số của bác sĩ khác (403); `call` số ngày cũ; `skip` số chưa gọi; hai người `call-next` cùng lúc không nhận cùng một số; che tên khi không đăng nhập.
 
 ## 9. Còn thiếu / câu hỏi mở

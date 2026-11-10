@@ -110,7 +110,7 @@ Dac_ta chưa có mã BR riêng cho chức năng này.
 
 ## 8. Kiểm thử
 
-- `AuthServiceTests`:
+- `Services/Auth/*Tests`:
   - `ConfirmEmailAsync_WithValidCode_ShouldConfirmEmail`
   - `ConfirmEmailAsync_WhenUserNotFound_ShouldFail`
   - `ConfirmEmailAsync_WhenIdentityRejectsCode_ShouldReturnIdentityErrors`

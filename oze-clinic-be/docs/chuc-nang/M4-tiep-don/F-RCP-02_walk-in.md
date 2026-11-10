@@ -135,7 +135,7 @@ Ví dụ:
 ## 7. Liên quan
 
 - Trước đó: không có (khách đến quầy).
-- Sau đó: F-RCP-04, F-RCP-05, F-RCP-03, F-RCP-06, F-RCP-07, F-EXM-01. Hồ sơ walk-in có thể được liên kết khi bệnh nhân đăng ký tài khoản bằng OTP SMS (xem `AuthServiceTests.VerifyOtpAsync_WithSmsCodeAndWalkInRecord_ShouldLinkExistingPatient`).
+- Sau đó: F-RCP-04, F-RCP-05, F-RCP-03, F-RCP-06, F-RCP-07, F-EXM-01. Hồ sơ walk-in có thể được liên kết khi bệnh nhân đăng ký tài khoản bằng OTP SMS (xem `VerifyOtpTests.VerifyOtpAsync_WithSmsCodeAndWalkInRecord_ShouldLinkExistingPatient`).
 
 ## 8. Kiểm thử
 

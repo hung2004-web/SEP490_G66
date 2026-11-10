@@ -159,7 +159,7 @@ Hàm phụ:
 
 ## 8. Kiểm thử
 
-- Test hiện có: Chưa có test cho `ExaminationService`. Phần liên quan ở hoàn tất khám: `AppointmentPriorityReturnAndQueueTests.CompleteExaminationAsync_ShouldReject_WhenRecordIsNotReady` (ca `PrescriptionNotFinalized`).
+- Test hiện có: Chưa có test cho `ExaminationService`. Phần liên quan ở hoàn tất khám: `CompleteExaminationTests.CompleteExaminationAsync_ShouldReject_WhenRecordIsNotReady` (ca `PrescriptionNotFinalized`).
 - Ca cần test thêm: dòng đầu tạo đơn `Draft`; `SortOrder` tăng dần; sửa khi `Finalized` → 400; chốt đơn trống → 400; chốt/mở lại lặp lại không lỗi; xóa đơn đã chốt → 400; `quantity` 0 và 1001.
 
 ## 9. Còn thiếu / câu hỏi mở

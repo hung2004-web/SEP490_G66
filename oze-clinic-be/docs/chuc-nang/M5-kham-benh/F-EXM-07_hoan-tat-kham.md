@@ -111,7 +111,7 @@ Ví dụ:
 
 ## 8. Kiểm thử
 
-- Test hiện có (`OZE.UnitTest/Services/AppointmentPriorityReturnAndQueueTests.cs`):
+- Test hiện có (`OZE.UnitTest/Services/Appointments/CompleteExaminationTests.cs`):
   - `CompleteExaminationAsync_ShouldLockExaminationAndCompleteAppointment`
   - `CompleteExaminationAsync_ShouldReject_WhenRecordIsNotReady` (theory: `NothingRecorded`, `PrescriptionNotFinalized`)
   - `CompleteExaminationAsync_ShouldReject_WhenAppointmentIsNotInService`

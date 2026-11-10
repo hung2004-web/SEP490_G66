@@ -213,7 +213,7 @@ Không ghi `AuditLog`.
 
 ## 8. Kiểm thử
 
-- Test hiện có: chưa có test cho `StaffService`/`StaffController`. Có test phía đăng nhập liên quan: `AuthServiceTests.LoginAsync_WhenAccountDisabled_ShouldReturnAccountDisabledCode`, `AuthServiceTests.RefreshTokenAsync_WithTokenRevokedByDeactivation_ShouldReturnAccountDisabledCode`, `AuthServiceTests.RefreshTokenAsync_WhenAccountDisabled_ShouldReturnAccountDisabledCode`.
+- Test hiện có: chưa có test cho `StaffService`/`StaffController`. Có test phía đăng nhập liên quan: `LoginTests.LoginAsync_WhenAccountDisabled_ShouldReturnAccountDisabledCode`, `RefreshTokenTests.RefreshTokenAsync_WithTokenRevokedByDeactivation_ShouldReturnAccountDisabledCode`, `RefreshTokenTests.RefreshTokenAsync_WhenAccountDisabled_ShouldReturnAccountDisabledCode`.
 - Ca cần test thêm:
   - Tạo Doctor thiếu `licenseNumber`; role khác Doctor gửi `licenseNumber` thì bị bỏ.
   - Trùng email / số (dạng `0...` và `+84...`) / số chứng chỉ.
