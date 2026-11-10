@@ -1,4 +1,5 @@
 using System;
+using OZE.Common.Constants;
 
 namespace OZE.Common.Models
 {
@@ -23,5 +24,46 @@ namespace OZE.Common.Models
         public string? FollowUpAppointmentStatus { get; set; }
         public DateTimeOffset? LastRemindedAt { get; set; }
         public int ReminderCount { get; set; }
+
+        public bool HasActiveAppointment => FollowUpAppointmentId.HasValue 
+            && FollowUpAppointmentStatus != "CANCELLED" 
+            && FollowUpAppointmentStatus != "NO_SHOW";
+
+        public bool IsOverdue
+        {
+            get
+            {
+                if (HasActiveAppointment || !FollowUpDate.HasValue) return false;
+                var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(ClinicTimeConstants.UtcOffsetHours));
+                return FollowUpDate.Value < today;
+            }
+        }
+
+        public string ComputedStatus
+        {
+            get
+            {
+                if (HasActiveAppointment)
+                {
+                    return FollowUpAppointmentStatus switch
+                    {
+                        "COMPLETED" => "Completed",
+                        _ => "Scheduled"
+                    };
+                }
+                if (FollowUpAppointmentStatus is "CANCELLED" or "NO_SHOW")
+                {
+                    return "Cancelled";
+                }
+                if (FollowUpDate.HasValue)
+                {
+                    var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(ClinicTimeConstants.UtcOffsetHours));
+                    if (FollowUpDate.Value < today) return "Overdue";
+                    if (FollowUpDate.Value == today) return "DueToday";
+                    return "PendingBooking";
+                }
+                return "NotSet";
+            }
+        }
     }
 }

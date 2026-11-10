@@ -573,6 +573,13 @@ namespace OZE.Application.Services
             appointment.CancelledByUserId = userId;
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
 
+            // If this appointment was a follow-up appointment, release the active link on the original examination
+            if (appointment.ParentAppointment?.Examination != null && appointment.ParentAppointment.Examination.FollowUpAppointmentId == appointment.Id)
+            {
+                appointment.ParentAppointment.Examination.FollowUpAppointmentId = null;
+                appointment.ParentAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+
             await _appointmentRepository.UpdateAsync(appointment);
             await _auditLogService.LogAsync(AuditConstants.AppointmentCancelled, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status }, appointment.CancellationReason);
@@ -626,6 +633,13 @@ namespace OZE.Application.Services
                 // A patient's change still needs the receptionist's call; staff changed it after talking to the patient
                 appointment.Status = isPatient ? AppointmentConstants.PendingStatus : AppointmentConstants.ConfirmedStatus;
                 appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
+                // Keep parent examination's follow-up date in sync with the rescheduled appointment date
+                if (appointment.ParentAppointment?.Examination != null && appointment.ParentAppointment.Examination.FollowUpAppointmentId == appointment.Id)
+                {
+                    appointment.ParentAppointment.Examination.FollowUpDate = date;
+                    appointment.ParentAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
+                }
 
                 await _appointmentRepository.UpdateAsync(appointment);
                 return slot;
@@ -1271,7 +1285,14 @@ namespace OZE.Application.Services
             var originalAppointment = await _appointmentRepository.GetByIdWithExaminationAsync(appointmentId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(originalAppointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
             ConditionGuard.Ensure(originalAppointment!.Examination != null, ErrorConstants.AppointmentMessage.ExaminationNotFoundForAppointment);
-            ConditionGuard.Ensure(originalAppointment.Examination!.FollowUpAppointmentId == null, ErrorConstants.AppointmentMessage.FollowUpAlreadyScheduled);
+
+            // Allow re-scheduling if the previously linked follow-up appointment was cancelled or marked no-show
+            var existingFollowUp = originalAppointment.Examination!.FollowUpAppointment;
+            var hasActiveFollowUp = existingFollowUp != null
+                ? (existingFollowUp.Status != AppointmentConstants.CancelledStatus
+                   && existingFollowUp.Status != AppointmentConstants.NoShowStatus)
+                : originalAppointment.Examination.FollowUpAppointmentId != null;
+            ConditionGuard.ThrowIf(hasActiveFollowUp, ErrorConstants.AppointmentMessage.FollowUpAlreadyScheduled);
 
             ConditionGuard.Ensure(request.Date!.Value > originalAppointment.AppointmentDate, ErrorConstants.ExaminationMessage.FollowUpDateMustBeFuture);
 
@@ -1284,6 +1305,10 @@ namespace OZE.Application.Services
                 excludeAppointmentId: originalAppointment.Id,
                 parentAppointmentId: originalAppointment.Id);
 
+            // Q9: Appointments scheduled by staff/receptionist/doctor are confirmed directly
+            appointment.Status = AppointmentConstants.ConfirmedStatus;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
             originalAppointment.Examination.FollowUpAppointmentId = appointment.Id;
             originalAppointment.Examination.FollowUpDate = appointment.AppointmentDate;
             if (!string.IsNullOrWhiteSpace(request.Notes))
@@ -1291,6 +1316,9 @@ namespace OZE.Application.Services
                 originalAppointment.Examination.FollowUpNotes = request.Notes.Trim();
             }
             originalAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
+
+            // Send instant confirmation notification via SMS/Email to patient
+            await SendConfirmationNotificationAsync(appointment);
 
             if (!string.IsNullOrEmpty(originalAppointment.Patient.UserId))
             {
