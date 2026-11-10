@@ -41,7 +41,6 @@ namespace OZE.Application.Services
         {
             ConditionGuard.Ensure(request.PatientId > 0, ErrorConstants.InvoiceMessage.PatientRequired);
             var itemRequests = request.Items ?? new List<CreateInvoiceItemRequest>();
-            ConditionGuard.Ensure(itemRequests.Count > 0, ErrorConstants.InvoiceMessage.ItemsRequired);
             ConditionGuard.Ensure(request.DiscountAmount >= 0, ErrorConstants.InvoiceMessage.DiscountInvalid);
 
             var patient = await _patientRepository.GetByIdAsync(request.PatientId, asNoTracking: true, cancellationToken: cancellationToken);
@@ -68,7 +67,23 @@ namespace OZE.Application.Services
                     ErrorConstants.InvoiceMessage.OpenInvoiceExistsForTreatmentPlan);
             }
 
-            var (items, totalAmount) = await BuildItemsAsync(itemRequests, treatmentPlan, cancellationToken);
+            // Open-P4: plan invoice may omit items → single synthetic package line from TotalAmount or EstimatedTotalCost.
+            List<InvoiceItem> items;
+            decimal totalAmount;
+            if (itemRequests.Count == 0)
+            {
+                ConditionGuard.Ensure(
+                    treatmentPlan != null,
+                    request.TotalAmount.HasValue
+                        ? ErrorConstants.InvoiceMessage.PlanPackageRequiresTreatmentPlan
+                        : ErrorConstants.InvoiceMessage.ItemsRequired);
+                (items, totalAmount) = BuildPlanPackageItem(treatmentPlan!, request.TotalAmount);
+            }
+            else
+            {
+                (items, totalAmount) = await BuildItemsAsync(itemRequests, treatmentPlan, cancellationToken);
+            }
+
             var discountAmount = decimal.Round(request.DiscountAmount, 2, MidpointRounding.AwayFromZero);
             ConditionGuard.Ensure(discountAmount <= totalAmount, ErrorConstants.InvoiceMessage.DiscountExceedsTotal);
             var finalAmount = decimal.Round(totalAmount - discountAmount, 2, MidpointRounding.AwayFromZero);
@@ -249,6 +264,44 @@ namespace OZE.Application.Services
                 new { invoice.InvoiceNumber, cancelledByUserId, invoice.CancelledAt });
 
             return ToResponse(invoice);
+        }
+
+        /// <summary>
+        /// Open-P4 package line for HĐ tổng buổi đầu when receptionist skips itemization.
+        /// </summary>
+        private static (List<InvoiceItem> Items, decimal TotalAmount) BuildPlanPackageItem(
+            TreatmentPlan treatmentPlan,
+            decimal? requestedTotalAmount)
+        {
+            decimal packageTotal;
+            if (requestedTotalAmount.HasValue)
+            {
+                packageTotal = decimal.Round(requestedTotalAmount.Value, 2, MidpointRounding.AwayFromZero);
+                ConditionGuard.Ensure(packageTotal > 0, ErrorConstants.InvoiceMessage.PlanPackageTotalInvalid);
+            }
+            else
+            {
+                packageTotal = decimal.Round(treatmentPlan.EstimatedTotalCost, 2, MidpointRounding.AwayFromZero);
+                ConditionGuard.Ensure(packageTotal > 0, ErrorConstants.InvoiceMessage.PlanPackageTotalRequired);
+            }
+
+            var serviceName = string.IsNullOrWhiteSpace(treatmentPlan.PlanName)
+                ? "Gói điều trị"
+                : treatmentPlan.PlanName.Trim();
+
+            var item = new InvoiceItem
+            {
+                ServiceId = null,
+                ServiceName = serviceName,
+                Description = "Tổng gói điều trị",
+                UnitPrice = packageTotal,
+                Quantity = 1,
+                Amount = packageTotal,
+                TreatmentPlanStageId = null,
+                SortOrder = 0
+            };
+
+            return (new List<InvoiceItem> { item }, packageTotal);
         }
 
         private async Task<(List<InvoiceItem> Items, decimal TotalAmount)> BuildItemsAsync(

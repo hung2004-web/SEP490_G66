@@ -416,6 +416,11 @@ namespace OZE.Common.Constants
             public const string PatientRequired = "Please select a patient.";
             public const string PatientNotFound = "Patient not found.";
             public const string ItemsRequired = "Please add at least one invoice item.";
+            public const string PlanPackageTotalRequired =
+                "Plan invoice needs Items, or TotalAmount greater than 0, or a treatment plan EstimatedTotalCost greater than 0.";
+            public const string PlanPackageTotalInvalid = "Plan package total must be greater than 0.";
+            public const string PlanPackageRequiresTreatmentPlan =
+                "Package total without Items requires a TreatmentPlanId.";
             public const string ServiceNameRequired = "Please enter service name.";
             public const string QuantityInvalid = "Quantity must be greater than 0.";
             public const string UnitPriceInvalid = "Unit price must be greater than or equal to 0.";
