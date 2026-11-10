@@ -484,7 +484,9 @@ namespace OZE.Common.Constants
             public const string PeriodsRequired = "Please add at least one installment period.";
             public const string PeriodAmountInvalid = "Period amount must be greater than 0.";
             public const string PeriodDueDateInvalid = "Period due date is invalid.";
+            public const string PeriodSequenceInvalid = "Period sequence must be unique and greater than 0.";
             public const string PeriodsExceedRemaining = "Sum of installment periods cannot exceed the remaining balance.";
+
             public const string PeriodNotFound = "Installment period not found.";
             public const string PeriodNotPayable = "Installment period cannot be paid.";
             public const string PlanCreated = "Installment plan has been created.";

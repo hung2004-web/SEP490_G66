@@ -54,6 +54,7 @@ namespace OZE.Persistence
             services.AddScoped<IQueueRepository, QueueRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IInstallmentRepository, InstallmentRepository>();
 
             return services;
         }

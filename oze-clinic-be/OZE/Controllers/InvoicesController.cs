@@ -13,11 +13,16 @@ namespace OZE.Controllers
     {
         private readonly IInvoiceService _invoiceService;
         private readonly IPaymentService _paymentService;
+        private readonly IInstallmentService _installmentService;
 
-        public InvoicesController(IInvoiceService invoiceService, IPaymentService paymentService)
+        public InvoicesController(
+            IInvoiceService invoiceService,
+            IPaymentService paymentService,
+            IInstallmentService installmentService)
         {
             _invoiceService = invoiceService;
             _paymentService = paymentService;
+            _installmentService = installmentService;
         }
 
         /// <summary>
@@ -105,6 +110,28 @@ namespace OZE.Controllers
             var payment = await _paymentService.RecordAsync(id, CurrentUserId ?? string.Empty, request, cancellationToken);
             return Ok(ApiResponse<PaymentResponse>.SuccessResult(payment, ErrorConstants.PaymentMessage.PaymentRecorded));
         }
+
+        [HttpPost("{id:long}/installment-plan")]
+        [Authorize(Roles = RoleConstants.ReceptionistRole)]
+        public async Task<ActionResult<ApiResponse<InstallmentPlanResponse>>> CreateInstallmentPlanAsync(
+            [FromRoute] long id,
+            [FromBody] CreateInstallmentPlanRequest request,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _installmentService.CreatePlanAsync(id, CurrentUserId ?? string.Empty, request, cancellationToken);
+            return Ok(ApiResponse<InstallmentPlanResponse>.SuccessResult(plan, ErrorConstants.InstallmentMessage.PlanCreated));
+        }
+
+        [HttpGet("{id:long}/installment-plan")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.PatientRole}")]
+        public async Task<ActionResult<ApiResponse<InstallmentPlanResponse>>> GetInstallmentPlanAsync(
+            [FromRoute] long id,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _installmentService.GetPlanByInvoiceAsync(id, OwnerRestriction, cancellationToken);
+            return Ok(ApiResponse<InstallmentPlanResponse>.SuccessResult(plan));
+        }
     }
 }
+
 
