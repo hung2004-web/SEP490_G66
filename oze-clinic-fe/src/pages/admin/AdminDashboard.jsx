@@ -166,9 +166,17 @@ const AdminDashboard = () => {
                         {report ? `Cập nhật lúc ${formatDateTime(report.updatedAt)}` : "Đang tải…"}
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <SegmentedControl options={PERIOD_OPTIONS} value={period} onChange={changePeriod} label="Kỳ báo cáo" />
+                {/* Phone: period buttons share the full width, the navigator stretches next to "Xuất báo cáo". */}
+                <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+                    <SegmentedControl
+                        options={PERIOD_OPTIONS}
+                        value={period}
+                        onChange={changePeriod}
+                        label="Kỳ báo cáo"
+                        className="w-full *:flex-1 sm:w-auto sm:*:flex-none"
+                    />
                     <PeriodNavigator
+                        className="min-w-0 flex-1 sm:flex-none"
                         label={report?.label ?? "…"}
                         onPrevious={() => setOffset((current) => current - 1)}
                         onNext={() => setOffset((current) => current + 1)}
@@ -271,14 +279,47 @@ const AdminDashboard = () => {
                 <DebtCard debts={report?.debts} loading={loading} onViewAll={openDebts} />
             </div>
 
-            <section className="card-app overflow-hidden p-0" aria-labelledby="pending-requests-title">
+            <section className="card-app @container overflow-hidden p-0" aria-labelledby="pending-requests-title">
                 <div className="flex items-center gap-2 border-b border-border px-5 py-4">
                     <h2 id="pending-requests-title" className="card-title flex-1">
                         Đơn chờ duyệt
                     </h2>
                     {requests.length > 0 && <span className="num rounded-full bg-warning-soft px-2 text-caption text-warning">{requests.length}</span>}
                 </div>
-                <div className="overflow-x-auto">
+                {/* Narrow card: one block per request; wide enough for every column: the table. */}
+                <ul className="divide-y divide-border @4xl:hidden" aria-busy={requestsLoading}>
+                    {requestsLoading &&
+                        Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
+                            <li key={index} aria-hidden="true" className="flex flex-col gap-2 px-5 py-4">
+                                <div className="skeleton h-4 w-24" />
+                                <div className="skeleton h-4 w-full max-w-64" />
+                            </li>
+                        ))}
+                    {!requestsLoading && requests.length === 0 && (
+                        <li className="empty-state">
+                            <Inbox className="empty-state-icon" aria-hidden="true" />
+                            <p className="empty-state-title">Không có đơn nào chờ duyệt</p>
+                        </li>
+                    )}
+                    {!requestsLoading &&
+                        requests.map((request) => (
+                            <li key={`${request.type}-${request.id}`} className="flex flex-col gap-2 px-5 py-4">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <StatusBadge status={request.type} labels={REQUEST_TYPE_BADGES} />
+                                    <span className="num text-caption text-muted">{formatDateTime(request.submittedAt)}</span>
+                                </div>
+                                <div>
+                                    <p className="text-label text-ink">{request.senderName}</p>
+                                    <p className="text-caption text-muted">{request.senderDetail}</p>
+                                </div>
+                                <p className="text-body-sm">{request.content}</p>
+                                <button type="button" className="btn btn-primary self-start" onClick={() => openRequest(request)}>
+                                    Xem &amp; duyệt
+                                </button>
+                            </li>
+                        ))}
+                </ul>
+                <div className="relative hidden overflow-x-auto @4xl:block">
                     <table className="table" aria-busy={requestsLoading}>
                         <thead>
                             <tr>
