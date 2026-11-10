@@ -80,5 +80,41 @@ namespace OZE.UnitTest.Services.Examinations
 
             await act.Should().ThrowAsync<ForbiddenException>();
         }
+
+        [Fact]
+        public async Task SetFollowUpAsync_ShouldThrowBadRequest_WhenExaminationIsLocked()
+        {
+            var exam = CreateTestExamination(status: ExaminationConstants.Locked);
+            _examinationRepoMock
+                .Setup(r => r.GetForWorkAsync(ExaminationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(exam);
+
+            var request = new SaveFollowUpRequest { FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(5)) };
+
+            var act = () => _service.SetFollowUpAsync(DoctorUserId, ExaminationId, request);
+
+            (await act.Should().ThrowAsync<BadRequestException>())
+                .WithMessage(ErrorConstants.ExaminationMessage.AlreadyLocked);
+        }
+
+        [Fact]
+        public async Task SetFollowUpAsync_ShouldSucceed_WhenExaminationIsCompleted()
+        {
+            var exam = CreateTestExamination(status: ExaminationConstants.Completed);
+            _examinationRepoMock
+                .Setup(r => r.GetForWorkAsync(ExaminationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(exam);
+            _examinationRepoMock
+                .Setup(r => r.GetEarlierChartEntriesAsync(It.IsAny<int>(), It.IsAny<DateTimeOffset>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<DentalChartEntry>());
+
+            var futureDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(5));
+            var request = new SaveFollowUpRequest { FollowUpDate = futureDate, FollowUpNotes = "Tái khám sau điều trị" };
+
+            var result = await _service.SetFollowUpAsync(DoctorUserId, ExaminationId, request);
+
+            result.Should().NotBeNull();
+            exam.FollowUpDate.Should().Be(futureDate);
+        }
     }
 }

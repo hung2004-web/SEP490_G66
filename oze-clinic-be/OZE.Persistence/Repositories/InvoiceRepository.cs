@@ -135,6 +135,28 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<Invoice>> GetOutstandingForPatientAsync(
+            int patientId,
+            CancellationToken cancellationToken = default)
+        {
+            // Same collectible statuses as invoice reports (exclude refunded/cancelled/paid).
+            var statuses = new[]
+            {
+                InvoiceConstants.Unpaid,
+                InvoiceConstants.PendingConfirmation,
+                InvoiceConstants.PartiallyPaid
+            };
+
+            return await _context.Invoices
+                .AsNoTracking()
+                .Where(x =>
+                    x.PatientId == patientId
+                    && statuses.Contains(x.PaymentStatus)
+                    && x.FinalAmount > x.PaidAmount)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+
         public Task<bool> ExistsByNumberAsync(string invoiceNumber, CancellationToken cancellationToken = default)
         {
             return _context.Invoices.AnyAsync(x => x.InvoiceNumber == invoiceNumber, cancellationToken);

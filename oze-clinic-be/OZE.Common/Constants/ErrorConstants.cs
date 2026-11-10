@@ -416,6 +416,11 @@ namespace OZE.Common.Constants
             public const string PatientRequired = "Please select a patient.";
             public const string PatientNotFound = "Patient not found.";
             public const string ItemsRequired = "Please add at least one invoice item.";
+            public const string PlanPackageTotalRequired =
+                "Plan invoice needs Items, or TotalAmount greater than 0, or a treatment plan EstimatedTotalCost greater than 0.";
+            public const string PlanPackageTotalInvalid = "Plan package total must be greater than 0.";
+            public const string PlanPackageRequiresTreatmentPlan =
+                "Package total without Items requires a TreatmentPlanId.";
             public const string ServiceNameRequired = "Please enter service name.";
             public const string QuantityInvalid = "Quantity must be greater than 0.";
             public const string UnitPriceInvalid = "Unit price must be greater than or equal to 0.";
@@ -512,6 +517,15 @@ namespace OZE.Common.Constants
             public const string DateRangeTooLarge = "Report date range cannot exceed 366 days.";
             public const string DailyRetrieved = "Daily invoice report has been retrieved.";
             public const string OverviewRetrieved = "Invoice overview report has been retrieved.";
+        }
+
+        public static class PaymentWarningMessage
+        {
+            public const string OutstandingBalance = "Patient has outstanding invoice balance.";
+            public const string OverdueInstallment = "Patient has overdue installment period(s).";
+            public const string ExaminationCompleted = "Examination completed successfully.";
+            public const string ExaminationCompletedWithWarnings =
+                "Examination completed successfully with payment warnings.";
         }
     }
 }

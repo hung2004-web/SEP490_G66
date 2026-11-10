@@ -30,12 +30,12 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 3 | OZ-PAT | 20–26 | 7 | 0 | 7 | 0 | 0 | 0 |
 | 4 | OZ-SVC | 27–35 | 9 | 0 | 8 | 0 | 1 | 0 |
 | 5 | OZ-ROOM, OZ-ROLE, OZ-STAFF, OZ-WS, OZ-DS | 36–60 | 25 | 0 | 0 | 25 | 0 | 0 |
-| 6 | OZ-APPT, OZ-Q | 61–84 | 24 | 0 | 4 | 19 | 1 | 0 |
+| 6 | OZ-APPT, OZ-Q | 61–84 | 24 | 0 | 6 | 17 | 1 | 0 |
 | 7 | OZ-EXAM, OZ-IMG, OZ-MR | 85–113 | 29 | 0 | 5 | 22 | 2 | 0 |
 | 8 | OZ-TP, OZ-INV | 114–125 | 12 | 0 | 0 | 7 | 5 | 0 |
 | 9 | OZ-HOME, OZ-CFG, OZ-LEAVE, OZ-NOTIF, OZ-WH | 126–133 | 8 | 0 | 0 | 2 | 6 | 0 |
 | 10 | OZ-SIM | 134–142 | 9 | 0 | 0 | 0 | 0 | 9 |
-| | **Tổng tab hàm** | 4–142 | **139** | **11** | **29** | **75** | **15** | **9** |
+| | **Tổng tab hàm** | 4–142 | **139** | **11** | **31** | **73** | **15** | **9** |
 
 **Thứ tự đề xuất:** đợt 3 → 4 → 7 (phần chụp phim) → 6 (phần có test) → 0, rồi viết test cho các tab ✍️ theo đợt 2 → 5 → 6 → 7 → 8 → 9.
 
@@ -146,8 +146,8 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 69 | GetWaitingList | OZ-APPT-09 | Appointments/GetWaitingListTests: 1 | 📝 | | | |
 | 70 | GetNeedsAttention | OZ-APPT-10 | 0 | ✍️ | | | |
 | 71 | ConfirmAppointment | OZ-APPT-11 | 0 | ✍️ | | | |
-| 72 | CancelAppointment | OZ-APPT-12 | 0 (2) | ✍️ | | | Chỉ có test controller |
-| 73 | RescheduleAppointment | OZ-APPT-13 | 0 | ✍️ | | | |
+| 72 | CancelAppointment | OZ-APPT-12 | Appointments/CancelAppointmentTests: 1 (2) | 📝 | | | Mới có 1 test (hủy lịch tái khám), cần bổ sung |
+| 73 | RescheduleAppointment | OZ-APPT-13 | Appointments/RescheduleAppointmentTests: 1 | 📝 | | | Mới có 1 test (đổi lịch tái khám), cần bổ sung |
 | 74 | CheckInAppointment | OZ-APPT-14 | 0 (1) | ✍️ | | | Test service check-in đã bị bỏ khỏi commit, file sao lưu còn trong scratchpad |
 | 75 | SetPriority | OZ-APPT-15 | 0 | ✍️ | | | |
 | 76 | MarkNoShow | OZ-APPT-16 | 0 | ✍️ | | | |
@@ -244,8 +244,8 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 
 | Chức năng | Test trong code | Đề xuất mã |
 |---|---|---|
-| Hẹn tái khám từ lượt khám (`ScheduleFollowUpAsync`) | Appointments/ScheduleFollowUpTests: 4 | OZ-APPT-21 |
-| Đặt / nhắc / đặt lịch tái khám từ phiếu khám (`SetFollowUpAsync`, `RemindFollowUpAsync`, `ScheduleFollowUpAppointmentAsync`) | Examinations/SetFollowUpTests: 3, RemindFollowUpTests: 2, ScheduleFollowUpAppointmentTests: 2 | OZ-EXAM-21..23 |
+| Hẹn tái khám từ lượt khám (`ScheduleFollowUpAsync`) | Appointments/ScheduleFollowUpTests: 5 | OZ-APPT-21 |
+| Đặt / nhắc / đặt lịch / nhắc hàng loạt / xem tái khám của tôi (`SetFollowUpAsync`, `RemindFollowUpAsync`, `ScheduleFollowUpAppointmentAsync`, `RemindDueFollowUpsAsync`, `GetMyFollowUpsAsync`) | Examinations/SetFollowUpTests: 5, RemindFollowUpTests: 4, ScheduleFollowUpAppointmentTests: 2, RemindDueFollowUpsTests: 2, GetMyFollowUpsTests: 1 | OZ-EXAM-21..25 |
 | Xem chi tiết, danh sách theo bệnh nhân, sửa, xóa, hủy kế hoạch điều trị | 0 | OZ-TP-08..12 |
 
 ## Nhật ký cập nhật
@@ -255,6 +255,7 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | 10/11/2026 | HiepNX | Tạo file. Đợt 1 (OZ-AUTH, 11 tab) đã điền xong theo file mẫu |
 | 10/11/2026 | HiepNX | Viết test đợt 2 (OZ-ME, 5 tab) và OZ-PAT-03 GetPatientByCode |
 | 11/11/2026 | HiepNX | Tách test thành 1 file / 1 tab theo thư mục module, gắn `[Trait("Tab", ...)]` cho mọi test |
+| 11/11/2026 | HiepNX | Merge `main` (test tái khám mới): tách tiếp vào Appointments/CancelAppointment, RescheduleAppointment và Examinations/RemindDueFollowUps, GetMyFollowUps. Tổng 318 test |
 
 ---
 

@@ -194,7 +194,8 @@ namespace OZE.Controllers
         public async Task<ActionResult<ApiResponse<PagedResult<FollowUpListItemResponse>>>> GetFollowUpsAsync(
             [FromQuery] FollowUpQueryParameters query, CancellationToken cancellationToken)
         {
-            var doctorUserId = IsInRole(RoleConstants.DoctorRole) ? CurrentUserId : null;
+            var isStrictlyDoctor = IsInRole(RoleConstants.DoctorRole) && !IsInRole(RoleConstants.ClinicManagerRole) && !IsInRole(RoleConstants.ReceptionistRole);
+            var doctorUserId = isStrictlyDoctor ? CurrentUserId : null;
             var result = await _examinationService.GetFollowUpsAsync(query, doctorUserId, cancellationToken);
             return Ok(ApiResponse<PagedResult<FollowUpListItemResponse>>.SuccessResult(result));
         }
@@ -202,10 +203,19 @@ namespace OZE.Controllers
         [HttpPost("examinations/{id:long}/remind-follow-up")]
         [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.DoctorRole}")]
         public async Task<ActionResult<ApiResponse<FollowUpListItemResponse>>> RemindFollowUpAsync(
-            long id, CancellationToken cancellationToken)
+            long id, [FromQuery] bool force = false, CancellationToken cancellationToken = default)
         {
-            var result = await _examinationService.RemindFollowUpAsync(CurrentUserId ?? string.Empty, id, cancellationToken);
+            var result = await _examinationService.RemindFollowUpAsync(CurrentUserId ?? string.Empty, id, force, cancellationToken);
             return Ok(ApiResponse<FollowUpListItemResponse>.SuccessResult(result, "Follow-up reminder sent successfully"));
+        }
+
+        [HttpPost("examinations/follow-ups/remind-due")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.DoctorRole}")]
+        public async Task<ActionResult<ApiResponse<BatchRemindFollowUpResponse>>> RemindDueFollowUpsAsync(
+            [FromQuery] DateOnly? targetDate, CancellationToken cancellationToken)
+        {
+            var result = await _examinationService.RemindDueFollowUpsAsync(targetDate, CurrentUserId, cancellationToken);
+            return Ok(ApiResponse<BatchRemindFollowUpResponse>.SuccessResult(result, $"Follow-up reminders sent successfully to {result.RemindedCount} patients."));
         }
     }
 }

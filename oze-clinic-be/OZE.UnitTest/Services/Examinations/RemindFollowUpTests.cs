@@ -61,5 +61,39 @@ namespace OZE.UnitTest.Services.Examinations
             (await act.Should().ThrowAsync<BadRequestException>())
                 .WithMessage(ErrorConstants.ExaminationMessage.FollowUpNotSet);
         }
+
+        [Fact]
+        public async Task RemindFollowUpAsync_ShouldThrowBadRequest_WhenSentWithinCooldown()
+        {
+            var exam = CreateTestExamination();
+            exam.FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(3));
+            exam.FollowUpRemindedAt = DateTimeOffset.UtcNow.AddMinutes(-30); // 30 mins ago (< 4 hours)
+
+            _examinationRepoMock
+                .Setup(r => r.GetByIdWithFollowUpAsync(ExaminationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(exam);
+
+            var act = () => _service.RemindFollowUpAsync("staff-1", ExaminationId, force: false);
+
+            await act.Should().ThrowAsync<BadRequestException>()
+                .WithMessage("*recently*");
+        }
+
+        [Fact]
+        public async Task RemindFollowUpAsync_ShouldSucceed_WhenForceIsTrueEvenWithinCooldown()
+        {
+            var exam = CreateTestExamination();
+            exam.FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(3));
+            exam.FollowUpRemindedAt = DateTimeOffset.UtcNow.AddMinutes(-30);
+
+            _examinationRepoMock
+                .Setup(r => r.GetByIdWithFollowUpAsync(ExaminationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(exam);
+
+            var result = await _service.RemindFollowUpAsync("staff-1", ExaminationId, force: true);
+
+            result.Should().NotBeNull();
+            exam.FollowUpReminderCount.Should().Be(1);
+        }
     }
 }

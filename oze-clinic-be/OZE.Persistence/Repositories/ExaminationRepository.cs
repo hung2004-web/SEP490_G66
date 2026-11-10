@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
+using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
@@ -132,8 +134,8 @@ namespace OZE.Persistence.Repositories
             if (parameters.HasAppointment.HasValue)
             {
                 query = parameters.HasAppointment.Value
-                    ? query.Where(x => x.FollowUpAppointmentId != null)
-                    : query.Where(x => x.FollowUpAppointmentId == null);
+                    ? query.Where(x => x.FollowUpAppointmentId != null && x.FollowUpAppointment!.Status != AppointmentConstants.CancelledStatus && x.FollowUpAppointment!.Status != AppointmentConstants.NoShowStatus)
+                    : query.Where(x => x.FollowUpAppointmentId == null || x.FollowUpAppointment!.Status == AppointmentConstants.CancelledStatus || x.FollowUpAppointment!.Status == AppointmentConstants.NoShowStatus);
             }
 
             if (!string.IsNullOrWhiteSpace(parameters.SearchKeyword))
@@ -154,6 +156,46 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync(cancellationToken);
 
             return new PagedResult<Examination>(items, totalCount, parameters.PageNumber, parameters.PageSize);
+        }
+
+        public async Task<List<Examination>> GetDueFollowUpsAsync(DateOnly targetDate, CancellationToken cancellationToken = default)
+        {
+            var today = DateOnly.FromDateTime(ClinicClock.Today);
+            var todayStartUtc = new DateTimeOffset(today.ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(ClinicTimeConstants.UtcOffsetHours)).ToUniversalTime();
+
+            return await _context.Examinations
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Appointment)
+                .Include(x => x.FollowUpAppointment)
+                    .ThenInclude(x => x!.Doctor)
+                .Where(x => (x.FollowUpDate == targetDate || (x.FollowUpAppointment != null && x.FollowUpAppointment.AppointmentDate == targetDate))
+                         && (x.FollowUpAppointment == null || (x.FollowUpAppointment.Status != AppointmentConstants.CancelledStatus && x.FollowUpAppointment.Status != AppointmentConstants.CompletedStatus && x.FollowUpAppointment.Status != AppointmentConstants.NoShowStatus))
+                         && (x.FollowUpRemindedAt == null || x.FollowUpRemindedAt < todayStartUtc))
+                .OrderBy(x => x.FollowUpDate)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<Patient?> GetPatientByUserIdAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Patients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.DeletedAt == null, cancellationToken);
+        }
+
+        public async Task<List<Examination>> GetPatientFollowUpsAsync(int patientId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Examinations
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Appointment)
+                .Include(x => x.FollowUpAppointment)
+                    .ThenInclude(x => x!.Doctor)
+                .Where(x => x.PatientId == patientId && (x.FollowUpDate != null || x.FollowUpAppointmentId != null))
+                .OrderByDescending(x => x.FollowUpDate ?? (x.FollowUpAppointment != null ? x.FollowUpAppointment.AppointmentDate : DateOnly.MinValue))
+                .ThenByDescending(x => x.CreatedAt)
+                .ToListAsync(cancellationToken);
         }
 
         public async Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default)

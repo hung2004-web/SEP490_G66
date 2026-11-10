@@ -59,7 +59,7 @@ namespace OZE.UnitTest.Services.Appointments
             createdAppointment!.ParentAppointmentId.Should().Be(OriginalAppointmentId);
             createdAppointment.AppointmentDate.Should().Be(followUpDate);
             createdAppointment.TimeSlotStart.Should().Be(slotStart);
-            createdAppointment.Status.Should().Be(AppointmentConstants.PendingStatus);
+            createdAppointment.Status.Should().Be(AppointmentConstants.ConfirmedStatus);
 
             original.Examination!.FollowUpAppointmentId.Should().Be(500);
             original.Examination.FollowUpDate.Should().Be(followUpDate);
@@ -160,6 +160,57 @@ namespace OZE.UnitTest.Services.Appointments
             result.Should().NotBeNull();
             createdAppointment.Should().NotBeNull();
             createdAppointment!.ParentAppointmentId.Should().Be(OriginalAppointmentId);
+        }
+
+        [Fact]
+        public async Task ScheduleFollowUpAsync_ShouldAllowScheduling_WhenPreviousFollowUpWasCancelled()
+        {
+            var original = CreateOriginalAppointment();
+            var cancelledFollowUp = new Appointment
+            {
+                Id = 999,
+                Status = AppointmentConstants.CancelledStatus,
+                AppointmentDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(2))
+            };
+            original.Examination!.FollowUpAppointmentId = 999;
+            original.Examination.FollowUpAppointment = cancelledFollowUp;
+
+            var newFollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(8));
+            var slotStart = new TimeOnly(10, 0);
+
+            _appointmentRepoMock
+                .Setup(r => r.GetByIdWithExaminationAsync(OriginalAppointmentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(original);
+
+            SetupDoctorShift(newFollowUpDate, new TimeOnly(8, 0), new TimeOnly(12, 0));
+
+            _appointmentRepoMock
+                .Setup(r => r.HasUnfinishedAppointmentAsync(_patient.Id, OriginalAppointmentId))
+                .ReturnsAsync(false);
+
+            Appointment? createdAppointment = null;
+            _appointmentRepoMock
+                .Setup(r => r.AddAsync(It.IsAny<Appointment>()))
+                .Callback<Appointment>(a =>
+                {
+                    a.Id = 502;
+                    createdAppointment = a;
+                })
+                .Returns(Task.CompletedTask);
+
+            var request = new ScheduleFollowUpRequest
+            {
+                Date = newFollowUpDate,
+                SlotStart = slotStart,
+                Notes = "Đặt lại lịch tái khám sau khi đã hủy lần trước"
+            };
+
+            var result = await _service.ScheduleFollowUpAsync(OriginalAppointmentId, request, "receptionist-1");
+
+            result.Should().NotBeNull();
+            createdAppointment.Should().NotBeNull();
+            original.Examination.FollowUpAppointmentId.Should().Be(502);
+            original.Examination.FollowUpDate.Should().Be(newFollowUpDate);
         }
     }
 }

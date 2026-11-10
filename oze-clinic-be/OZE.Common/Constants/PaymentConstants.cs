@@ -65,5 +65,12 @@ namespace OZE.Common.Constants
                 Processed
             };
         }
+
+        // Soft warnings on clinical completion (AD-9) — not payment row statuses
+        public static class WarningCode
+        {
+            public const string OutstandingBalance = "OUTSTANDING_BALANCE";
+            public const string OverdueInstallment = "OVERDUE_INSTALLMENT";
+        }
     }
 }

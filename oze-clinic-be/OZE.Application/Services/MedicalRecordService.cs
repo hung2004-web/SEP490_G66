@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
@@ -81,21 +82,7 @@ namespace OZE.Application.Services
                 ExaminationStatus = exam.ExaminationStatus,
                 FollowUpDate = exam.FollowUpDate,
                 FollowUpNotes = exam.FollowUpNotes,
-                FollowUp = exam.FollowUpDate != null || exam.FollowUpAppointmentId != null ? new FollowUpSummaryResponse
-                {
-                    FollowUpDate = exam.FollowUpDate,
-                    FollowUpNotes = exam.FollowUpNotes,
-                    AppointmentId = exam.FollowUpAppointmentId,
-                    AppointmentCode = exam.FollowUpAppointment != null ? $"LH{exam.FollowUpAppointment.Id:D6}" : null,
-                    AppointmentDate = exam.FollowUpAppointment?.AppointmentDate,
-                    TimeSlotStart = exam.FollowUpAppointment?.TimeSlotStart,
-                    TimeSlotEnd = exam.FollowUpAppointment?.TimeSlotEnd,
-                    DoctorId = exam.FollowUpAppointment?.DoctorId,
-                    DoctorName = exam.FollowUpAppointment?.Doctor?.FullName,
-                    Status = exam.FollowUpAppointment?.Status,
-                    RemindedAt = exam.FollowUpRemindedAt,
-                    ReminderCount = exam.FollowUpReminderCount
-                } : null,
+                FollowUp = exam.ToFollowUpSummary(),
                 Diagnoses = exam.Diagnoses
                     .OrderByDescending(d => d.IsPrimary)
                     .Select(d => new DiagnosisResponse
