@@ -1,11 +1,11 @@
 import { QUEUE_STATUS } from "../messages";
 
-// Sample data for the doctor's exam screen (/doctor/queue): queue of the shift and one record per patient.
+// Sample data for the doctor's exam screen (/doctor/examination): queue of the shift and one record per patient.
 
 export const MOCK_EXAM_SHIFT = { name: "Ca sáng", start: "08:00", end: "12:00", roomName: "Phòng khám" };
 
 export const MOCK_EXAM_QUEUE = [
-    { id: 1, queueNumber: 8, patientName: "Nguyễn Văn A", status: QUEUE_STATUS.CALLED },
+    { id: 1, queueNumber: 8, patientName: "Nguyễn Văn A", status: QUEUE_STATUS.WAITING },
     { id: 2, queueNumber: 9, patientName: "Lý Thanh Tâm", status: QUEUE_STATUS.WAITING },
     { id: 3, queueNumber: 10, patientName: "Mai Thị Lan", status: QUEUE_STATUS.WAITING },
     { id: 4, queueNumber: 11, patientName: "Đinh Thu Hà", status: QUEUE_STATUS.WAITING },
@@ -221,3 +221,55 @@ export const MOCK_EXAM_DRAFTS = {
 };
 
 export const EMPTY_EXAM_DRAFT = { symptoms: [], note: "", entries: [], films: [], diagnoses: [] };
+
+// Service types the doctor can pick for a session ("Loại dịch vụ"), per registered service id.
+export const MOCK_PLAN_SERVICE_TYPES = {
+    2: [
+        { id: "scaling-one", name: "Lấy cao răng một hàm", price: 150000 },
+        { id: "scaling-full", name: "Lấy cao răng toàn hàm", price: 300000 },
+    ],
+    3: [
+        { id: "filling-composite", name: "Trám răng composite", price: 400000 },
+        { id: "filling-gic", name: "Trám răng GIC", price: 250000 },
+        { id: "filling-inlay", name: "Trám inlay / onlay sứ", price: 2500000 },
+    ],
+    4: [
+        { id: "rct-single", name: "Điều trị tủy răng một chân", price: 800000 },
+        { id: "rct-multi", name: "Điều trị tủy răng nhiều chân", price: 1500000 },
+    ],
+    5: [
+        { id: "whitening-office", name: "Tẩy trắng tại phòng khám", price: 2500000 },
+        { id: "whitening-home", name: "Tẩy trắng tại nhà (máng)", price: 1500000 },
+    ],
+};
+
+// Registered service that is the visit itself, so it never becomes a planned treatment.
+export const GENERAL_CHECKUP_SERVICE_ID = 1;
+
+// Step 3 draft per queue id: the registered services that need treatment (the general check-up is the visit itself).
+// Patients not listed start from their registered services with one empty session each (see the service).
+export const MOCK_EXAM_PLANS = {
+    1: {
+        services: [
+            {
+                id: "plan-scaling",
+                serviceId: 2,
+                name: "Lấy cao răng",
+                status: "notStarted",
+                sessions: [
+                    { id: "s-1", title: "Lấy cao răng toàn hàm", typeId: "scaling-full", date: "2026-10-26", cost: 300000, note: "Lấy cao răng siêu âm, đánh bóng", status: "pending" },
+                ],
+            },
+            {
+                id: "plan-filling",
+                serviceId: 3,
+                name: "Trám răng",
+                status: "notStarted",
+                sessions: [
+                    { id: "s-2", title: "Trám composite răng 36", typeId: "filling-composite", date: "2026-11-02", cost: 400000, note: "Trám mặt nhai – xa răng 36", status: "pending" },
+                    { id: "s-3", title: "Trám composite răng 46", typeId: "filling-composite", date: "2026-11-09", cost: 400000, note: "Trám mặt nhai răng 46, kiểm tra khớp cắn", status: "pending" },
+                ],
+            },
+        ],
+    },
+};

@@ -41,23 +41,23 @@ const ServiceRow = ({ service, index, selected, onOpen, onEdit, onToggleActive }
             aria-selected={selected}
             onClick={() => onOpen(service)}
         >
-            <td className={cx("num", dimmed && "opacity-60")}>{index}</td>
-            <td className={cx("num whitespace-nowrap", dimmed && "opacity-60")}>{service.code}</td>
-            <td className={cx("min-w-56", dimmed && "opacity-60")}>
+            <td data-hide-stack className={cx("num", dimmed && "opacity-60")}>{index}</td>
+            <td data-label="Mã" className={cx("num whitespace-nowrap", dimmed && "opacity-60")}>{service.code}</td>
+            <td data-primary className={cx("min-w-56", dimmed && "opacity-60")}>
                 <p className="font-semibold text-ink">{service.name}</p>
                 <p className="text-caption font-normal text-muted">
                     {service.description}
                     {service.typeCount > 0 && ` · ${service.typeCount} loại`}
                 </p>
             </td>
-            <td className={cx("whitespace-nowrap", dimmed && "opacity-60")}>{roomTypeLabel(service.roomType) || "—"}</td>
-            <td className={cx("num whitespace-nowrap text-right", dimmed && "opacity-60")}>
+            <td data-label="Loại phòng" className={cx("whitespace-nowrap", dimmed && "opacity-60")}>{roomTypeLabel(service.roomType) || "—"}</td>
+            <td data-label="Giá tham khảo" className={cx("num whitespace-nowrap text-right", dimmed && "opacity-60")}>
                 <PriceCell service={service} />
             </td>
-            <td className={cx("num whitespace-nowrap", dimmed && "opacity-60")}>
+            <td data-label="Thời lượng" className={cx("num whitespace-nowrap", dimmed && "opacity-60")}>
                 {service.durationMinutes ? `${service.durationMinutes} phút` : "—"}
             </td>
-            <td>
+            <td data-label="Trạng thái">
                 {service.isActive && service.deactivateFrom ? (
                     <span className="badge badge-warning num" title={service.deactivateReason ?? undefined}>
                         Ngừng từ {formatDate(service.deactivateFrom)}
@@ -68,7 +68,7 @@ const ServiceRow = ({ service, index, selected, onOpen, onEdit, onToggleActive }
                     </span>
                 )}
             </td>
-            <td>
+            <td data-actions>
                 <div className="flex items-center justify-end gap-3">
                     <button
                         type="button"
@@ -186,6 +186,7 @@ const ServiceManagement = () => {
                     className="w-full sm:w-72"
                 />
                 <FilterSelect
+                    className="w-full sm:w-auto sm:min-w-40"
                     id="service-room-type"
                     label="Loại phòng"
                     options={ROOM_TYPE_OPTIONS}
@@ -199,7 +200,7 @@ const ServiceManagement = () => {
 
             <div>
                 <div className="table-wrap">
-                    <table className="table" aria-busy={loading}>
+                    <table className="table table-stack" aria-busy={loading}>
                         <thead>
                             <tr>
                                 <th scope="col">STT</th>

@@ -16,29 +16,38 @@ const detailText = (patient) =>
         .filter(Boolean)
         .join(" · ");
 
-// Patient being examined, on top of the exam area.
+// Placeholder while no patient is called in.
+const EmptyPatientCard = () => (
+    <section aria-label="Chưa có bệnh nhân" className="card-app flex items-center gap-3.5 border-dashed px-5 py-4">
+        <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-tint font-semibold text-muted">
+            ?
+        </span>
+        <div className="min-w-0">
+            <h2 className="font-heading text-heading-3 text-muted">Chưa có bệnh nhân</h2>
+            <p className="text-caption text-muted">Chọn “Gọi vào khám” ở hàng chờ bên trái</p>
+        </div>
+    </section>
+);
+
+// Patient of the exam, on top of the exam area. Without a patient it shows the "Chưa có bệnh nhân" placeholder.
 // patient: { name, code, gender, age, queueNumber, startedAt? (ms) }; status: { label, tone } with tone = success | info | warning | danger | neutral.
-// children: rendered under the card body, e.g. <ExamTabs />.
-const PatientCard = ({ patient, status, services = [], action, children }) => {
-    if (!patient) return null;
+const PatientCard = ({ patient, status, services = [], action }) => {
+    if (!patient) return <EmptyPatientCard />;
 
     return (
-        <section aria-label={`Bệnh nhân ${patient.name}`} className="card-app overflow-hidden p-0">
-            <div className="flex flex-col gap-3.5 px-5 pt-4 pb-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    <Avatar fullName={patient.name} size="lg" className="avatar-soft" />
-                    <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="truncate font-heading text-heading-3 text-ink">{patient.name}</h2>
-                            {status?.label && <span className={cx("badge", `badge-${status.tone ?? "neutral"}`)}>{status.label}</span>}
-                        </div>
-                        <p className="num text-caption text-muted">{detailText(patient)}</p>
+        <section aria-label={`Bệnh nhân ${patient.name}`} className="card-app flex flex-col gap-3.5 px-5 py-4">
+            <div className="flex flex-wrap items-center gap-3">
+                <Avatar fullName={patient.name} size="lg" className="avatar-soft" />
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="truncate font-heading text-heading-3 text-ink">{patient.name}</h2>
+                        {status?.label && <span className={cx("badge", `badge-${status.tone ?? "neutral"}`)}>{status.label}</span>}
                     </div>
-                    {action}
+                    <p className="num text-caption text-muted">{detailText(patient)}</p>
                 </div>
-                <ServiceChips services={services} />
+                {action}
             </div>
-            {children && <div className="border-t border-border px-5">{children}</div>}
+            <ServiceChips services={services} />
         </section>
     );
 };

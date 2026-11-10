@@ -6,16 +6,12 @@ import ClinicalExamStep from "@/components/examination/ClinicalExamStep";
 import ConfirmExamDialog from "@/components/examination/ConfirmExamDialog";
 import ExamPreStart from "@/components/examination/ExamPreStart";
 import ExamStepper from "@/components/examination/ExamStepper";
-import ExamTabs from "@/components/examination/ExamTabs";
 import ExamTimer from "@/components/examination/ExamTimer";
-import MedicalHistoryCard from "@/components/examination/MedicalHistoryCard";
 import MedicalHistoryStep from "@/components/examination/MedicalHistoryStep";
-import useHistoryAutosave from "@/hooks/useHistoryAutosave";
 import PatientCard from "@/components/examination/PatientCard";
-import PatientInfoCard from "@/components/examination/PatientInfoCard";
-import PreviousVisitsCard from "@/components/examination/PreviousVisitsCard";
 import QueuePanel from "@/components/examination/QueuePanel";
 import StepHeading from "@/components/examination/StepHeading";
+import TreatmentPlanStep from "@/components/examination/TreatmentPlanStep";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import {
     callPatient,
@@ -24,74 +20,66 @@ import {
     getExamWorkspace,
     markAbsent,
     saveMedicalHistory,
+    sendPlanToReception,
     setExamStep,
     startExamination,
 } from "@/services/examinationService";
+import useMediaQuery from "@/hooks/useMediaQuery";
 import { cx } from "@/utils/cx";
-import { EXAM_STEP_TITLES, EXAM_STEPS, EXAM_TAB, EXAM_TABS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
+import { EXAM_STEP_TITLES, EXAM_STEPS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
 
-const STEP = { HISTORY: 0, EXAM: 1 };
-const PRE_START_TABS = [EXAM_TAB.PROFILE, EXAM_TAB.EXAM];
-const LOCKED_TABS = EXAM_TABS.map((tab) => tab.key).filter((key) => !PRE_START_TABS.includes(key));
-const TAB_ID = "exam";
+const STEP = { HISTORY: 0, EXAM: 1, PLAN: 2 };
 
-const NOT_STARTED_STATUS = {
-    [QUEUE_STATUS.CALLED]: { label: "Đã gọi · chờ vào phòng", tone: "warning" },
-    [QUEUE_STATUS.WAITING]: { label: "Đang chờ", tone: "neutral" },
-};
+// Breadcrumb / "Tiếp theo" wording that differs from the step names (EXAM_STEPS).
+const BREADCRUMB_LABEL = { [STEP.HISTORY]: "Thông tin bệnh nhân", [STEP.PLAN]: "Kế hoạch điều trị" };
+const NEXT_LABEL = { [STEP.PLAN]: "Chuyển sang phòng điều trị" };
+const CALLED_STATUS = { label: "Đã gọi · chờ vào phòng", tone: "warning" };
 
-// Patient shown on the right: the one in the room, else the one called, else the first in line.
+// Patient shown on the right: the one in the room, else the one called. Nobody until the doctor calls someone in;
+// waiting patients cannot be opened.
 const defaultSelection = (queue) =>
-    (queue.find((item) => item.status === QUEUE_STATUS.IN_EXAMINATION) ?? queue.find((item) => item.status === QUEUE_STATUS.CALLED) ?? queue[0])?.id ?? null;
+    (queue.find((item) => item.status === QUEUE_STATUS.IN_EXAMINATION) ?? queue.find((item) => item.status === QUEUE_STATUS.CALLED))?.id ?? null;
 
-const EmptyMain = ({ text }) => (
-    <div className="card-app flex flex-col items-center gap-2 py-16 text-center text-muted">
-        <Stethoscope className="size-8" aria-hidden="true" />
-        <p>{text}</p>
-    </div>
+// Right side before anyone is called in: locked process, empty patient card, "Chưa có lượt khám".
+const NoExamView = ({ waitingCount }) => (
+    <>
+        <ExamStepper locked />
+        <PatientCard patient={null} />
+        <div className="card-app flex flex-col items-center gap-3 px-6 py-16 text-center">
+            <span aria-hidden="true" className="grid size-16 place-items-center rounded-full bg-primary-soft text-primary">
+                <Stethoscope className="size-7" />
+            </span>
+            <h2 className="font-heading text-heading-2 text-ink">Chưa có lượt khám</h2>
+            <p className="text-muted">
+                {waitingCount > 0 ? `Có ${waitingCount} bệnh nhân đang chờ. Bấm “Gọi vào khám” ở một bệnh nhân để bắt đầu.` : "Hàng chờ đang trống."}
+            </p>
+        </div>
+    </>
 );
 
-// Steps 3–5 are built in their own tasks.
+// Steps 4–5 (treatment room) are built in their own tasks.
 const PendingStep = ({ title, onBack }) => (
     <div className="card-app flex flex-col items-center gap-3 py-14 text-center">
         <p className="font-semibold text-ink">{title}</p>
         <p className="text-muted">Bước này đang được xây dựng.</p>
         <button type="button" className="btn btn-secondary" onClick={onBack}>
-            Quay lại bước Khám & Chẩn đoán
+            Quay lại bước Lập kế hoạch điều trị
         </button>
     </div>
 );
 
-// Patient called (or still waiting): profile with an editable medical history (draft saved automatically),
-// "Khám" tab tells the doctor to start the exam.
-const NotStartedView = ({ item, record, onHistoryChange }) => {
-    const [tab, setTab] = useState(EXAM_TAB.EXAM);
-    const { patient } = record;
-    const { history, setHistory, statusText } = useHistoryAutosave(item.id, record.history, onHistoryChange);
-
-    return (
-        <>
-            <PatientCard patient={{ ...patient, queueNumber: item.queueNumber }} status={NOT_STARTED_STATUS[item.status]} services={record.services}>
-                <ExamTabs value={tab} onChange={setTab} disabledKeys={LOCKED_TABS} idPrefix={TAB_ID} />
-            </PatientCard>
-            <div role="tabpanel" id={`${TAB_ID}-panel-${tab}`} aria-labelledby={`${TAB_ID}-tab-${tab}`} className="flex flex-col gap-5">
-                {tab === EXAM_TAB.PROFILE ? (
-                    <>
-                        <PatientInfoCard patient={patient} reason={record.intake.reason} />
-                        <MedicalHistoryCard history={history} gender={patient.gender} saveStatus={statusText} onChange={setHistory} />
-                        <PreviousVisitsCard queueId={item.id} visits={record.visits} />
-                    </>
-                ) : (
-                    <ExamPreStart intake={{ ...record.intake, allergies: history.allergies, conditions: history.conditions }} />
-                )}
-            </div>
-        </>
-    );
-};
+// Patient called in, exam not started: process still locked, patient card and what reception recorded.
+const CalledView = ({ item, record }) => (
+    <>
+        <ExamStepper locked />
+        <PatientCard patient={{ ...record.patient, queueNumber: item.queueNumber }} status={CALLED_STATUS} services={record.services} />
+        <ExamPreStart intake={{ ...record.intake, allergies: record.history.allergies, conditions: record.history.conditions }} />
+    </>
+);
 
 // Exam in progress: process stepper, patient card with timer, then the content of the step being viewed.
-const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onStep, onEnd }) => {
+const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanChange, onStep, onSendToReception, onEnd }) => {
     const current = item.step ?? STEP.HISTORY;
     const [viewing, setViewing] = useState(current);
     const shown = Math.min(viewing, current);
@@ -117,9 +105,9 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onStep,
                 <span className="h-5 w-px bg-border-strong" aria-hidden="true" />
                 <Breadcrumb
                     items={[
-                        { label: "Khám bệnh", href: ROUTES.DOCTOR_QUEUE },
+                        { label: "Khám bệnh", href: ROUTES.DOCTOR_EXAMINATION },
                         { label: `Lượt khám ${record.encounterCode}` },
-                        { label: shown === STEP.HISTORY ? "Thông tin bệnh nhân" : EXAM_STEPS[shown] },
+                        { label: BREADCRUMB_LABEL[shown] ?? EXAM_STEPS[shown] },
                     ]}
                 />
             </div>
@@ -130,7 +118,7 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onStep,
                 services={record.services}
                 action={<ExamTimer startedAt={item.startedAt} />}
             />
-            <StepHeading index={shown} total={EXAM_STEPS.length} title={EXAM_STEP_TITLES[shown]} nextLabel={EXAM_STEPS[shown + 1]} />
+            <StepHeading index={shown} total={EXAM_STEPS.length} title={EXAM_STEP_TITLES[shown]} nextLabel={NEXT_LABEL[shown] ?? EXAM_STEPS[shown + 1]} />
 
             {shown === STEP.HISTORY && (
                 <MedicalHistoryStep
@@ -152,10 +140,21 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onStep,
                     busy={busy}
                     onExamChange={onExamChange}
                     onEnd={onEnd}
-                    onComplete={() => goTo(STEP.EXAM + 1)}
+                    onComplete={() => goTo(STEP.PLAN)}
                 />
             )}
-            {shown > STEP.EXAM && <PendingStep title={EXAM_STEP_TITLES[shown]} onBack={() => goTo(STEP.EXAM)} />}
+            {shown === STEP.PLAN && (
+                <TreatmentPlanStep
+                    queueId={item.id}
+                    record={record}
+                    busy={busy}
+                    onPlanChange={onPlanChange}
+                    onEnd={onEnd}
+                    onSendToReception={onSendToReception}
+                    onComplete={() => goTo(STEP.PLAN + 1)}
+                />
+            )}
+            {shown > STEP.PLAN && <PendingStep title={EXAM_STEP_TITLES[shown]} onBack={() => goTo(STEP.PLAN)} />}
         </>
     );
 };
@@ -165,7 +164,8 @@ const ExaminationPage = () => {
     const [loadFailed, setLoadFailed] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
     const [record, setRecord] = useState(null); // { id, data, failed }
-    const [collapsed, setCollapsed] = useState(false);
+    const isDesktop = useMediaQuery("(min-width: 64rem)");
+    const [collapsedChoice, setCollapsedChoice] = useState(null); // null = automatic
     const [busy, setBusy] = useState(false);
     const [confirm, setConfirm] = useState(null); // { type: "absent" | "end", item }
 
@@ -193,6 +193,9 @@ const ExaminationPage = () => {
 
     const queue = workspace?.queue ?? [];
     const selected = queue.find((item) => item.id === selectedId) ?? null;
+    // Below lg the queue sits above the exam: fold it to a strip while a patient is called in or examined,
+    // so the exam shows first. The doctor's own choice (the « / » button) wins.
+    const collapsed = collapsedChoice ?? (!isDesktop && selected !== null);
     const recordReady = record?.id === selectedId && record.data;
 
     // Runs a queue action, then shows the new queue and moves the selection.
@@ -214,9 +217,14 @@ const ExaminationPage = () => {
 
     const keep = () => selectedId;
 
+    const confirmActions = {
+        absent: markAbsent,
+        end: endExamination,
+        send: (id) => sendPlanToReception(id, confirm.plan),
+    };
+
     const handleConfirm = async () => {
-        const { type, item } = confirm;
-        const done = await runAction(type === "absent" ? markAbsent : endExamination, item.id, defaultSelection);
+        const done = await runAction(confirmActions[confirm.type], confirm.item.id, defaultSelection);
         if (done) setConfirm(null);
     };
 
@@ -224,11 +232,12 @@ const ExaminationPage = () => {
     const updateRecord = (key) => (value) => setRecord((current) => (current?.data ? { ...current, data: { ...current.data, [key]: value } } : current));
     const updateHistory = updateRecord("history");
     const updateExam = updateRecord("exam");
+    const updatePlan = updateRecord("plan");
 
     const renderMain = () => {
         if (loadFailed) return <p role="alert" className="alert alert-danger">{GENERIC_ERROR_MESSAGE}</p>;
         if (!workspace) return <div className="skeleton h-64 rounded-lg" aria-hidden="true" />;
-        if (!selected) return <EmptyMain text="Chọn bệnh nhân trong hàng chờ để xem hồ sơ và bắt đầu khám." />;
+        if (!selected) return <NoExamView waitingCount={queue.filter((item) => item.status === QUEUE_STATUS.WAITING).length} />;
         if (record?.id === selectedId && record.failed) return <p role="alert" className="alert alert-danger">Không tải được hồ sơ của bệnh nhân này.</p>;
         if (!recordReady) return <div className="skeleton h-64 rounded-lg" aria-hidden="true" />;
         if (selected.status === QUEUE_STATUS.IN_EXAMINATION) {
@@ -240,12 +249,14 @@ const ExaminationPage = () => {
                     busy={busy}
                     onHistoryChange={updateHistory}
                     onExamChange={updateExam}
+                    onPlanChange={updatePlan}
                     onStep={(step) => runAction((id) => setExamStep(id, step), selected.id, keep)}
+                    onSendToReception={(plan) => setConfirm({ type: "send", item: selected, plan })}
                     onEnd={() => setConfirm({ type: "end", item: selected })}
                 />
             );
         }
-        return <NotStartedView key={selected.id} item={selected} record={record.data} onHistoryChange={updateHistory} />;
+        return <CalledView item={selected} record={record.data} />;
     };
 
     return (
@@ -258,7 +269,7 @@ const ExaminationPage = () => {
                         doneCount={workspace.doneCount}
                         selectedId={selectedId}
                         collapsed={collapsed}
-                        onToggleCollapse={() => setCollapsed((current) => !current)}
+                        onToggleCollapse={() => setCollapsedChoice(!collapsed)}
                         onSelect={setSelectedId}
                         onCall={(id) => runAction(callPatient, id, () => id)}
                         onMarkAbsent={(id) => setConfirm({ type: "absent", item: queue.find((item) => item.id === id) })}
@@ -280,6 +291,16 @@ const ExaminationPage = () => {
                     description={`Số ${confirm.item.queueNumber} · ${confirm.item.patientName} sẽ bị đưa ra khỏi hàng chờ của ca này.`}
                     confirmLabel="Báo vắng mặt"
                     danger
+                    busy={busy}
+                    onConfirm={handleConfirm}
+                    onClose={() => setConfirm(null)}
+                />
+            )}
+            {confirm?.type === "send" && (
+                <ConfirmExamDialog
+                    title="Gửi lễ tân đặt lịch hẹn"
+                    description={`Kết thúc lượt khám của ${confirm.item.patientName} và gửi kế hoạch điều trị cho lễ tân đặt lịch các buổi tiếp theo?`}
+                    confirmLabel="Gửi lễ tân"
                     busy={busy}
                     onConfirm={handleConfirm}
                     onClose={() => setConfirm(null)}

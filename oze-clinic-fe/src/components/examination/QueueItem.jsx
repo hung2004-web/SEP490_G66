@@ -7,6 +7,7 @@ const SMALL_BUTTON = "h-8 px-3 text-caption";
 
 // One patient in the exam queue. item: { id, queueNumber, patientName, status (QUEUE_STATUS) }.
 // canCall is false while another patient is called or being examined, so only one patient is in at a time.
+// Only a called or examined patient can be opened (onSelect); a waiting one is shown as plain text.
 const QueueItem = ({ item, selected = false, canCall = true, onSelect, onCall, onMarkAbsent, onStart }) => {
     const called = item.status === QUEUE_STATUS.CALLED;
     const waiting = item.status === QUEUE_STATUS.WAITING;
@@ -22,15 +23,22 @@ const QueueItem = ({ item, selected = false, canCall = true, onSelect, onCall, o
                 {item.queueNumber}
             </span>
             <div className="min-w-0 flex-1 self-center">
-                <button
-                    type="button"
-                    aria-pressed={selected}
-                    className="flex w-full min-w-0 cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 rounded text-left outline-none focus-visible:shadow-focus"
-                    onClick={() => onSelect?.(item.id)}
-                >
-                    <span className="truncate font-semibold text-ink">{item.patientName}</span>
-                    <StatusBadge status={item.status} labels={EXAM_QUEUE_STATUS} />
-                </button>
+                {waiting ? (
+                    <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="truncate font-semibold text-ink">{item.patientName}</span>
+                        <StatusBadge status={item.status} labels={EXAM_QUEUE_STATUS} />
+                    </p>
+                ) : (
+                    <button
+                        type="button"
+                        aria-pressed={selected}
+                        className="flex w-full min-w-0 cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 rounded text-left outline-none focus-visible:shadow-focus"
+                        onClick={() => onSelect?.(item.id)}
+                    >
+                        <span className="truncate font-semibold text-ink">{item.patientName}</span>
+                        <StatusBadge status={item.status} labels={EXAM_QUEUE_STATUS} />
+                    </button>
+                )}
                 {called && (
                     <div className="mt-2 flex flex-wrap gap-2">
                         <button

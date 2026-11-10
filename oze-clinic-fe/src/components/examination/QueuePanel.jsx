@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { ChevronsLeft, ChevronsRight, Users } from "lucide-react";
+import { ChevronsDown, ChevronsLeft, ChevronsRight, ChevronsUp, Users } from "lucide-react";
 import { cx } from "@/utils/cx";
 import { isQueueBusy, queueNumberTone } from "@/utils/examination";
 import { QUEUE_STATUS } from "@/utils/messages";
@@ -26,7 +26,9 @@ const QueuePanel = ({
 }) => {
     const titleId = useId();
     const canCall = !isQueueBusy(items);
-    const CollapseIcon = collapsed ? ChevronsRight : ChevronsLeft;
+    // Desktop collapses sideways (a 64px column), smaller screens collapse to a strip above the exam.
+    const SideIcon = collapsed ? ChevronsRight : ChevronsLeft;
+    const StackIcon = collapsed ? ChevronsDown : ChevronsUp;
 
     const collapseButton = onToggleCollapse && (
         <button
@@ -36,36 +38,63 @@ const QueuePanel = ({
             aria-expanded={!collapsed}
             onClick={onToggleCollapse}
         >
-            <CollapseIcon className="size-4" aria-hidden="true" />
+            <SideIcon className="hidden size-4 lg:block" aria-hidden="true" />
+            <StackIcon className="size-4 lg:hidden" aria-hidden="true" />
         </button>
     );
 
     if (collapsed) {
+        const called = items.find((item) => item.status === QUEUE_STATUS.CALLED);
         return (
-            <aside aria-labelledby={titleId} className="card-app flex w-16 flex-col items-center gap-2 p-2">
+            <aside aria-labelledby={titleId} className="card-app flex w-full flex-wrap items-center gap-2 p-2 lg:w-16 lg:flex-col lg:flex-nowrap">
                 <h2 id={titleId} className="sr-only">
                     Hàng chờ
                 </h2>
-                {collapseButton}
-                <ul className="flex flex-col gap-1.5">
-                    {items.map((item) => (
-                        <li key={item.id}>
-                            <button
-                                type="button"
-                                title={item.patientName}
-                                aria-label={`Số ${item.queueNumber} · ${item.patientName}`}
-                                aria-pressed={item.id === selectedId}
-                                className={cx(
-                                    "num grid size-9 cursor-pointer place-items-center rounded-md font-semibold outline-none focus-visible:shadow-focus",
-                                    queueNumberTone(item.status, item.id === selectedId),
+                <span>{collapseButton}</span>
+                <ul className="order-first flex min-w-0 flex-1 gap-1.5 overflow-x-auto lg:order-none lg:flex-none lg:flex-col lg:overflow-visible">
+                    {items.map((item) => {
+                        const numberClass = cx("num grid size-9 place-items-center rounded-md font-semibold", queueNumberTone(item.status, item.id === selectedId));
+                        const label = `Số ${item.queueNumber} · ${item.patientName}`;
+                        return (
+                            <li key={item.id}>
+                                {item.status === QUEUE_STATUS.WAITING ? (
+                                    <span title={item.patientName} aria-label={`${label} · đang chờ`} className={numberClass}>
+                                        {item.queueNumber}
+                                    </span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        title={item.patientName}
+                                        aria-label={label}
+                                        aria-pressed={item.id === selectedId}
+                                        className={cx(numberClass, "cursor-pointer outline-none focus-visible:shadow-focus")}
+                                        onClick={() => onSelect?.(item.id)}
+                                    >
+                                        {item.queueNumber}
+                                    </button>
                                 )}
-                                onClick={() => onSelect?.(item.id)}
-                            >
-                                {item.queueNumber}
-                            </button>
-                        </li>
-                    ))}
+                            </li>
+                        );
+                    })}
                 </ul>
+                {/* Strip (below lg): the called patient's actions stay reachable without opening the queue. */}
+                {called && (
+                    <div className="flex w-full items-center gap-2 border-t border-border px-1 pt-2 lg:hidden">
+                        <span className="min-w-0 flex-1 truncate text-caption text-muted">
+                            Số {called.queueNumber} · {called.patientName}
+                        </span>
+                        <button
+                            type="button"
+                            className="btn h-9 border-danger bg-canvas px-3 text-caption text-danger hover:bg-danger-soft"
+                            onClick={() => onMarkAbsent?.(called.id)}
+                        >
+                            Báo vắng mặt
+                        </button>
+                        <button type="button" className="btn btn-primary h-9 px-3 text-caption" onClick={() => onStart?.(called.id)}>
+                            Bắt đầu khám
+                        </button>
+                    </div>
+                )}
             </aside>
         );
     }

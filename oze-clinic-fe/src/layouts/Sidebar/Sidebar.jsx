@@ -59,7 +59,7 @@ const BADGE_LOADERS = {
     },
 };
 
-// Counts shown next to children with a `badge` (see SIDEBAR_BADGES).
+// Counts shown next to links and children with a `badge` (see SIDEBAR_BADGES).
 const useSidebarBadges = (role) => {
     const [version, setVersion] = useState(0);
     useEffect(() => {
@@ -122,7 +122,8 @@ const Brand = ({ collapsed }) => (
 );
 
 // Icon link: a top-level link, or a whole group when the sidebar is collapsed (active = the page is inside it).
-const SidebarLink = ({ item, collapsed, drawer, active = false }) => {
+// count: the link's badge (0 shows nothing); collapsed, it sits on the icon's corner.
+const SidebarLink = ({ item, collapsed, drawer, active = false, count = 0 }) => {
     const Icon = item.icon;
 
     return (
@@ -136,7 +137,13 @@ const SidebarLink = ({ item, collapsed, drawer, active = false }) => {
             )}
         >
             <Icon aria-hidden="true" />
-            <span className={cx("truncate", collapsed && "sr-only")}>{item.label}</span>
+            <span className={cx("truncate", collapsed ? "sr-only" : "flex-1")}>{item.label}</span>
+            {count > 0 && (
+                <span className={cx("sidebar-count", collapsed && "absolute top-0.5 right-1 px-1.5 text-[10px] leading-4")}>
+                    {count}
+                    <span className="sr-only"> đang chờ</span>
+                </span>
+            )}
             {collapsed && (
                 <span
                     aria-hidden="true"
@@ -207,7 +214,7 @@ const SidebarNav = ({ menu, collapsed = false, drawer = false }) => {
             <ul className="flex flex-col gap-1">
                 {menu.map((node) => (
                     <li key={node.key} className={cx(node.children && !collapsed && "pt-2")}>
-                        {!node.children && <SidebarLink item={node} collapsed={collapsed} drawer={drawer} />}
+                        {!node.children && <SidebarLink item={node} collapsed={collapsed} drawer={drawer} count={node.badge ? badges[node.badge] : 0} />}
                         {node.children && collapsed && (
                             <SidebarLink
                                 item={{ label: node.label, icon: node.icon, to: node.children[0].to }}

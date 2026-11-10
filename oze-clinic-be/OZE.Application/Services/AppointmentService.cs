@@ -578,13 +578,13 @@ namespace OZE.Application.Services
             // A patient can only cancel a pending appointment, and only before the cutoff
             if (ownerUserId != null)
             {
-                ConditionGuard.ThrowIf(appointment.Status == AppointmentConstants.ConfirmedStatus,
+                ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.ConfirmedStatus,
                     ErrorConstants.AppointmentMessage.ConfirmedNeedsReceptionistToCancel);
 
                 await EnsureBeforeCutoffAsync(appointment, ErrorConstants.AppointmentMessage.CancelDeadlinePassed);
             }
 
-            var oldStatus = appointment.Status;
+            var oldStatus = appointment!.Status;
             appointment.Status = AppointmentConstants.CancelledStatus;
             appointment.CancellationReason = request!.Reason.Trim();
             appointment.CancelledAt = DateTimeOffset.UtcNow;

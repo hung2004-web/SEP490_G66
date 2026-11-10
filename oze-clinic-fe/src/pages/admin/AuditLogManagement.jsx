@@ -42,21 +42,21 @@ const AuditLogRow = ({ log, onView }) => {
 
     return (
         <tr>
-            <td className="cell-primary num whitespace-nowrap">#{log.id}</td>
-            <td className="min-w-44">
+            <td data-label="Mã" className="cell-primary num whitespace-nowrap">#{log.id}</td>
+            <td data-primary className="min-w-44">
                 <PersonCell name={log.userName} detail={log.userRole} />
             </td>
-            <td>
+            <td data-label="Hành động">
                 <Badge variant={variant}>{label}</Badge>
             </td>
-            <td className="whitespace-nowrap">{entityLabel(log.entityType)}</td>
-            <td className="num whitespace-nowrap">{log.ipAddress}</td>
-            <td className="whitespace-nowrap text-muted">{log.userAgent}</td>
-            <td className="num whitespace-nowrap">
+            <td data-label="Đối tượng" className="whitespace-nowrap">{entityLabel(log.entityType)}</td>
+            <td data-label="Địa chỉ IP" className="num whitespace-nowrap">{log.ipAddress}</td>
+            <td data-label="Trình duyệt / thiết bị" data-block className="whitespace-nowrap text-muted">{log.userAgent}</td>
+            <td data-label="Thời gian" className="num whitespace-nowrap">
                 <span className="block text-caption text-muted">{date}</span>
                 <span className="font-medium text-ink">{time}</span>
             </td>
-            <td>
+            <td data-actions>
                 <div className="flex items-center justify-end">
                     <button
                         type="button"
@@ -140,10 +140,10 @@ const AuditLogManagement = () => {
                     onChange={setSearchInput}
                     className="w-full sm:w-72 lg:flex-1"
                 />
-                <div className="flex items-center gap-2">
+                <div className="flex w-full items-center gap-2 sm:w-auto">
                     <input
                         type="date"
-                        className="input w-auto"
+                        className="input min-w-0 flex-1 sm:w-auto sm:flex-none"
                         aria-label="Từ ngày"
                         max={to || undefined}
                         value={from}
@@ -154,15 +154,16 @@ const AuditLogManagement = () => {
                     </span>
                     <input
                         type="date"
-                        className="input w-auto"
+                        className="input min-w-0 flex-1 sm:w-auto sm:flex-none"
                         aria-label="Đến ngày"
                         min={from || undefined}
                         value={to}
                         onChange={(event) => changeFilter(setTo)(event.target.value)}
                     />
                 </div>
-                <FilterSelect id="audit-log-action" label="Hành động" options={AUDIT_ACTION_OPTIONS} value={action} onChange={changeFilter(setAction)} />
+                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="audit-log-action" label="Hành động" options={AUDIT_ACTION_OPTIONS} value={action} onChange={changeFilter(setAction)} />
                 <FilterSelect
+                    className="w-full sm:w-auto sm:min-w-40"
                     id="audit-log-entity"
                     label="Đối tượng"
                     options={AUDIT_ENTITY_OPTIONS}
@@ -173,7 +174,7 @@ const AuditLogManagement = () => {
 
             <div>
                 <div className="table-wrap">
-                    <table className="table" aria-busy={loading}>
+                    <table className="table table-stack" aria-busy={loading}>
                         <thead>
                             <tr>
                                 <th scope="col">Mã</th>

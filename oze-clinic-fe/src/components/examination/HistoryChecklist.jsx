@@ -13,8 +13,8 @@ const TONES = {
 const allOptions = (options, value) => [...options, ...value.filter((item) => !options.some((option) => normalizeText(option) === normalizeText(item)))];
 
 // One collapsible group of the medical history (Dị ứng, Bệnh nền…): tick items, or type one that is not listed.
-// Collapsed, the head shows the ticked items. readOnly hides the "add" row and locks the checkboxes.
-const HistoryChecklist = ({ title, options = [], value = [], onChange, tone = "neutral", readOnly = false, placeholder, note, defaultOpen = true }) => {
+// Collapsed, the head shows the ticked items.
+const HistoryChecklist = ({ title, options = [], value = [], onChange, tone = "neutral", placeholder, note, defaultOpen = true }) => {
     const panelId = useId();
     const inputId = useId();
     const [open, setOpen] = useState(defaultOpen);
@@ -44,7 +44,7 @@ const HistoryChecklist = ({ title, options = [], value = [], onChange, tone = "n
                 onClick={() => setOpen((current) => !current)}
             >
                 <span className="font-semibold text-ink">{title}</span>
-                <span className={cx("num shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", value.length ? colors.count : TONES.neutral.count)}>
+                <span className={cx("num shrink-0 rounded-full px-2 py-0.5 text-caption font-medium", value.length ? colors.count : TONES.neutral.count)}>
                     {value.length ? `${value.length} mục` : "Không có"}
                 </span>
                 <span className="ml-auto min-w-0 truncate text-caption text-muted">{!open && value.join(", ")}</span>
@@ -64,14 +64,13 @@ const HistoryChecklist = ({ title, options = [], value = [], onChange, tone = "n
                                         className={cx(
                                             "flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2 text-caption transition-colors",
                                             checked ? cx(colors.checked, "font-medium text-ink") : "border-border bg-canvas text-body",
-                                            readOnly ? "cursor-default" : "cursor-pointer hover:border-primary",
+                                            "cursor-pointer hover:border-primary",
                                         )}
                                     >
                                         <input
                                             type="checkbox"
                                             className={cx("size-4 shrink-0", colors.accent)}
                                             checked={checked}
-                                            disabled={readOnly}
                                             onChange={() => toggle(item)}
                                         />
                                         <span className="min-w-0 break-words">{item}</span>
@@ -81,28 +80,26 @@ const HistoryChecklist = ({ title, options = [], value = [], onChange, tone = "n
                         </div>
                     </fieldset>
                     {note && <p className="text-caption text-muted">{note}</p>}
-                    {!readOnly && (
-                        <div className="flex gap-2">
-                            <label htmlFor={inputId} className="sr-only">
-                                Thêm mục khác vào {title}
-                            </label>
-                            <input
-                                id={inputId}
-                                className="input min-w-0 flex-1"
-                                placeholder={placeholder}
-                                value={draft}
-                                onChange={(event) => setDraft(event.target.value)}
-                                onKeyDown={(event) => {
-                                    if (event.key !== "Enter") return;
-                                    event.preventDefault();
-                                    addDraft();
-                                }}
-                            />
-                            <button type="button" className="btn btn-secondary shrink-0" disabled={!draft.trim()} onClick={addDraft}>
-                                + Thêm
-                            </button>
-                        </div>
-                    )}
+                    <div className="flex gap-2">
+                        <label htmlFor={inputId} className="sr-only">
+                            Thêm mục khác vào {title}
+                        </label>
+                        <input
+                            id={inputId}
+                            className="input min-w-0 flex-1"
+                            placeholder={placeholder}
+                            value={draft}
+                            onChange={(event) => setDraft(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key !== "Enter") return;
+                                event.preventDefault();
+                                addDraft();
+                            }}
+                        />
+                        <button type="button" className="btn btn-secondary shrink-0" disabled={!draft.trim()} onClick={addDraft}>
+                            + Thêm
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
