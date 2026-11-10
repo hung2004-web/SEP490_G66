@@ -237,9 +237,17 @@ export const MOCK_PLAN_SERVICE_TYPES = {
         { id: "rct-single", name: "Điều trị tủy răng một chân", price: 800000 },
         { id: "rct-multi", name: "Điều trị tủy răng nhiều chân", price: 1500000 },
     ],
+    5: [
+        { id: "whitening-office", name: "Tẩy trắng tại phòng khám", price: 2500000 },
+        { id: "whitening-home", name: "Tẩy trắng tại nhà (máng)", price: 1500000 },
+    ],
 };
 
+// Registered service that is the visit itself, so it never becomes a planned treatment.
+export const GENERAL_CHECKUP_SERVICE_ID = 1;
+
 // Step 3 draft per queue id: the registered services that need treatment (the general check-up is the visit itself).
+// Patients not listed start from their registered services with one empty session each (see the service).
 export const MOCK_EXAM_PLANS = {
     1: {
         services: [

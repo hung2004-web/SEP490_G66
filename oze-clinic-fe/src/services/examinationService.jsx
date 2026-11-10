@@ -1,5 +1,14 @@
-import { EMPTY_EXAM_DRAFT, MOCK_EXAM_DONE_COUNT, MOCK_EXAM_DRAFTS, MOCK_EXAM_QUEUE, MOCK_EXAM_RECORDS, MOCK_EXAM_SHIFT } from "../utils/data/mockExamination";
-import { isQueueBusy } from "../utils/examination";
+import {
+    EMPTY_EXAM_DRAFT,
+    GENERAL_CHECKUP_SERVICE_ID,
+    MOCK_EXAM_DONE_COUNT,
+    MOCK_EXAM_DRAFTS,
+    MOCK_EXAM_PLANS,
+    MOCK_EXAM_QUEUE,
+    MOCK_EXAM_RECORDS,
+    MOCK_EXAM_SHIFT,
+} from "../utils/data/mockExamination";
+import { isQueueBusy, newPlanSession, validatePlan } from "../utils/examination";
 import { QUEUE_STATUS } from "../utils/messages";
 
 // TODO(api): mock only, swap for the exam endpoints (queue, encounter, medical history) once the backend has them.
@@ -11,11 +20,33 @@ const success = (data, message = null) => ({ success: true, message, data, error
 
 const failure = (message) => ({ success: false, message, data: null, errors: null });
 
+// Plan to fill in from the registered treatments: one empty session per service.
+function planFromServices(services) {
+    return {
+        services: services
+            .filter((service) => service.id !== GENERAL_CHECKUP_SERVICE_ID)
+            .map((service) => ({
+                id: `plan-${service.id}`,
+                serviceId: service.id,
+                name: service.name,
+                status: "notStarted",
+                sessions: [newPlanSession(`session-${service.id}-1`)],
+            })),
+    };
+}
+
 const state = {
     queue: MOCK_EXAM_QUEUE.map((item) => ({ ...item })),
     doneCount: MOCK_EXAM_DONE_COUNT,
     records: Object.fromEntries(
-        Object.entries(MOCK_EXAM_RECORDS).map(([id, record]) => [id, { ...structuredClone(record), exam: structuredClone(MOCK_EXAM_DRAFTS[id] ?? EMPTY_EXAM_DRAFT) }]),
+        Object.entries(MOCK_EXAM_RECORDS).map(([id, record]) => [
+            id,
+            {
+                ...structuredClone(record),
+                exam: structuredClone(MOCK_EXAM_DRAFTS[id] ?? EMPTY_EXAM_DRAFT),
+                plan: structuredClone(MOCK_EXAM_PLANS[id] ?? planFromServices(record.services)),
+            },
+        ]),
     ),
     nextFilmNumber: 331,
 };
@@ -41,7 +72,8 @@ export const getExamWorkspace = async () => {
     return success(snapshot());
 };
 
-// Everything the exam screen shows about one patient in the queue, including the step 2 draft (record.exam).
+// Everything the exam screen shows about one patient in the queue, including the step 2 draft (record.exam)
+// and the step 3 treatment plan draft (record.plan).
 export const getExamRecord = async (queueId) => {
     await wait(MOCK_DELAY_MS);
     const record = state.records[queueId];
@@ -143,4 +175,27 @@ export const requestXray = async (queueId, request) => {
     });
     record.exam.films = [...films, ...record.exam.films];
     return success(structuredClone(films), `Đã gửi ${films.length} yêu cầu chụp tới kỹ thuật viên.`);
+};
+
+// Draft save of step 3. plan: { services: [...] } (see utils/examination).
+export const saveTreatmentPlan = async (queueId, plan) => {
+    await wait(MOCK_DELAY_MS);
+    const record = state.records[queueId];
+    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
+    record.plan = structuredClone(plan);
+    return success({ savedAt: Date.now() });
+};
+
+// Ends the visit after step 3: the plan goes to reception, who books the treatment sessions.
+export const sendPlanToReception = async (queueId, plan) => {
+    await wait(MOCK_DELAY_MS);
+    const item = findItem(queueId);
+    const record = state.records[queueId];
+    if (!item || item.status !== QUEUE_STATUS.IN_EXAMINATION || !record) return failure("Lượt khám này không còn mở.");
+    if (!plan.services.length) return failure("Kế hoạch chưa có dịch vụ điều trị nào.");
+    if (validatePlan(plan.services).count) return failure("Kế hoạch còn thông tin chưa nhập.");
+    record.plan = structuredClone(plan);
+    state.queue = state.queue.filter((entry) => entry.id !== queueId);
+    state.doneCount += 1;
+    return success(snapshot(), "Đã gửi lễ tân đặt lịch buổi điều trị tiếp theo.");
 };
