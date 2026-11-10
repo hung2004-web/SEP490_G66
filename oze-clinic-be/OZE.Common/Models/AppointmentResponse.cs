@@ -34,5 +34,11 @@ namespace OZE.Common.Models
         public long? ExaminationId { get; set; }
         public string? ExaminationStatus { get; set; }
         public FollowUpSummaryResponse? FollowUp { get; set; }
+
+        /// <summary>
+        /// Soft payment warnings (AD-9). Populated on complete-examination when patient has debt/overdue installments.
+        /// Empty on other appointment endpoints.
+        /// </summary>
+        public List<PaymentWarning> PaymentWarnings { get; set; } = new();
     }
 }

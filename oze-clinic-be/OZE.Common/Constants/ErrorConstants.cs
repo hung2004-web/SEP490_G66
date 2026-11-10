@@ -513,6 +513,15 @@ namespace OZE.Common.Constants
             public const string DailyRetrieved = "Daily invoice report has been retrieved.";
             public const string OverviewRetrieved = "Invoice overview report has been retrieved.";
         }
+
+        public static class PaymentWarningMessage
+        {
+            public const string OutstandingBalance = "Patient has outstanding invoice balance.";
+            public const string OverdueInstallment = "Patient has overdue installment period(s).";
+            public const string ExaminationCompleted = "Examination completed successfully.";
+            public const string ExaminationCompletedWithWarnings =
+                "Examination completed successfully with payment warnings.";
+        }
     }
 }
 

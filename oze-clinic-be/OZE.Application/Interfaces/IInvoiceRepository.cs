@@ -16,6 +16,13 @@ namespace OZE.Application.Interfaces
 
         Task<IReadOnlyList<Invoice>> GetByPatientAsync(int patientId, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Open collectible invoices for a patient with remaining balance &gt; 0 (AD-9 soft warn).
+        /// </summary>
+        Task<IReadOnlyList<Invoice>> GetOutstandingForPatientAsync(
+            int patientId,
+            CancellationToken cancellationToken = default);
+
         Task<bool> ExistsByNumberAsync(string invoiceNumber, CancellationToken cancellationToken = default);
 
         Task<bool> HasOpenInvoiceForAppointmentAsync(long appointmentId, CancellationToken cancellationToken = default);

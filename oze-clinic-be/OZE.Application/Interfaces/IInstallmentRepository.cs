@@ -21,6 +21,14 @@ namespace OZE.Application.Interfaces
             DateOnly asOfDate,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Read-only overdue count for a patient's installment periods as of clinic date (AD-9).
+        /// </summary>
+        Task<int> CountOverdueForPatientAsync(
+            int patientId,
+            DateOnly asOfDate,
+            CancellationToken cancellationToken = default);
+
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

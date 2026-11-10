@@ -265,7 +265,10 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.CompleteExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Examination completed successfully"));
+            var message = result.PaymentWarnings.Count > 0
+                ? ErrorConstants.PaymentWarningMessage.ExaminationCompletedWithWarnings
+                : ErrorConstants.PaymentWarningMessage.ExaminationCompleted;
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, message));
         }
 
         /// <summary>
