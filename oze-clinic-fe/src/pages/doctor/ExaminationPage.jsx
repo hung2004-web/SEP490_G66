@@ -12,6 +12,7 @@ import PatientCard from "@/components/examination/PatientCard";
 import QueuePanel from "@/components/examination/QueuePanel";
 import StepHeading from "@/components/examination/StepHeading";
 import TreatmentPlanStep from "@/components/examination/TreatmentPlanStep";
+import TreatmentStep from "@/components/examination/TreatmentStep";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import {
     callPatient,
@@ -29,7 +30,7 @@ import { cx } from "@/utils/cx";
 import { EXAM_STEP_TITLES, EXAM_STEPS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
 
-const STEP = { HISTORY: 0, EXAM: 1, PLAN: 2 };
+const STEP = { HISTORY: 0, EXAM: 1, PLAN: 2, TREATMENT: 3 };
 
 // Breadcrumb / "Tiếp theo" wording that differs from the step names (EXAM_STEPS).
 const BREADCRUMB_LABEL = { [STEP.HISTORY]: "Thông tin bệnh nhân", [STEP.PLAN]: "Kế hoạch điều trị" };
@@ -58,13 +59,13 @@ const NoExamView = ({ waitingCount }) => (
     </>
 );
 
-// Steps 4–5 (treatment room) are built in their own tasks.
+// Step 5 (prescription) is built in its own task.
 const PendingStep = ({ title, onBack }) => (
     <div className="card-app flex flex-col items-center gap-3 py-14 text-center">
         <p className="font-semibold text-ink">{title}</p>
         <p className="text-muted">Bước này đang được xây dựng.</p>
         <button type="button" className="btn btn-secondary" onClick={onBack}>
-            Quay lại bước Lập kế hoạch điều trị
+            Quay lại bước Điều trị
         </button>
     </div>
 );
@@ -79,7 +80,7 @@ const CalledView = ({ item, record }) => (
 );
 
 // Exam in progress: process stepper, patient card with timer, then the content of the step being viewed.
-const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanChange, onStep, onSendToReception, onEnd }) => {
+const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanChange, onTreatmentChange, onStep, onSendToReception, onEnd }) => {
     const current = item.step ?? STEP.HISTORY;
     const [viewing, setViewing] = useState(current);
     const shown = Math.min(viewing, current);
@@ -154,7 +155,19 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanC
                     onComplete={() => goTo(STEP.PLAN + 1)}
                 />
             )}
-            {shown > STEP.PLAN && <PendingStep title={EXAM_STEP_TITLES[shown]} onBack={() => goTo(STEP.PLAN)} />}
+            {shown === STEP.TREATMENT && (
+                <TreatmentStep
+                    queueId={item.id}
+                    record={record}
+                    busy={busy}
+                    onTreatmentChange={onTreatmentChange}
+                    onPlanChange={onPlanChange}
+                    onEditPlan={() => goTo(STEP.PLAN)}
+                    onEnd={onEnd}
+                    onComplete={() => goTo(STEP.TREATMENT + 1)}
+                />
+            )}
+            {shown > STEP.TREATMENT && <PendingStep title={EXAM_STEP_TITLES[shown]} onBack={() => goTo(STEP.TREATMENT)} />}
         </>
     );
 };
@@ -233,6 +246,7 @@ const ExaminationPage = () => {
     const updateHistory = updateRecord("history");
     const updateExam = updateRecord("exam");
     const updatePlan = updateRecord("plan");
+    const updateTreatment = updateRecord("treatment");
 
     const renderMain = () => {
         if (loadFailed) return <p role="alert" className="alert alert-danger">{GENERIC_ERROR_MESSAGE}</p>;
@@ -250,6 +264,7 @@ const ExaminationPage = () => {
                     onHistoryChange={updateHistory}
                     onExamChange={updateExam}
                     onPlanChange={updatePlan}
+                    onTreatmentChange={updateTreatment}
                     onStep={(step) => runAction((id) => setExamStep(id, step), selected.id, keep)}
                     onSendToReception={(plan) => setConfirm({ type: "send", item: selected, plan })}
                     onEnd={() => setConfirm({ type: "end", item: selected })}

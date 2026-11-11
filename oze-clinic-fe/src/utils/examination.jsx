@@ -177,6 +177,17 @@ export const planProgress = (services) => {
 export const upcomingPlanSessions = (services, currentSessionId) =>
     planSessionList(services).filter((session) => session.status !== "done" && session.id !== currentSessionId);
 
+// Session treated in this visit: the one already picked if it is still in the plan, else the first one not done.
+export const currentTreatmentSessionId = (plan, draft) => {
+    const sessions = planSessionList(plan.services);
+    if (sessions.some((session) => session.id === draft.sessionId)) return draft.sessionId;
+    return sessions.find((session) => session.status !== "done")?.id ?? "";
+};
+
+// Starting list of a new draft: today's session as one item, with its planned cost.
+export const initialTreatmentItems = (session) =>
+    session ? [{ id: `item-${session.id}`, content: session.title, price: session.cost ?? 0, createdAt: new Date().toISOString() }] : [];
+
 export const treatmentItemsTotal = (items) => items.reduce((total, item) => total + (Number.isFinite(item.price) ? item.price : 0), 0);
 
 // Errors of the follow-up form before it is sent to reception: { sessionId?, date?, slot?, count }.

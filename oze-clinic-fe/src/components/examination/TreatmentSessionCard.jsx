@@ -11,8 +11,10 @@ const PlanFact = ({ label, value }) => (
     </div>
 );
 
-// Right end of a session row: today's chip, "Đã thực hiện", or the planned date.
+// Right end of a session row: today's chip (in progress or done), "Đã thực hiện", or the planned date.
 const SessionWhen = ({ session, current }) => {
+    if (current && session.status === "done")
+        return <span className="shrink-0 rounded-full bg-success-soft px-2 py-0.5 text-caption font-medium text-success">Hôm nay · đã thực hiện</span>;
     if (current) return <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-caption font-medium text-on-primary">Hôm nay · đang thực hiện</span>;
     if (session.status === "done") return <span className="shrink-0 text-caption font-medium text-success">Đã thực hiện</span>;
     return <span className="num shrink-0 text-caption text-muted">{session.date ? formatDate(session.date) : "Chưa có ngày"}</span>;
