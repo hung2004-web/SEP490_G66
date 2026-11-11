@@ -84,7 +84,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 22 | GetPatientByCode | OZ-PAT-03 | Patients/GetPatientByCodeTests: 4 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
 | 23 | CreatePatient | OZ-PAT-04 | Patients/CreatePatientTests: 4 (2) | 📝 | | | |
 | 24 | DeletePatient | OZ-PAT-05 | Patients/DeletePatientTests: 4 (1) | 📝 | HiepNX | 11/11/2026 | Đã bổ sung test, chờ điền sheet |
-| 25 | AddMedicalProfile | OZ-PAT-06 | Patients/AddMedicalProfileTests: 1 (1) | 📝 | | | |
+| 25 | AddMedicalProfile | OZ-PAT-06 | Patients/AddMedicalProfileTests: 7 (1) | 📝 | HiepNX | 11/11/2026 | Đã bổ sung test, chờ điền sheet |
 | 26 | UpdatePatient | OZ-PAT-07 | Patients/UpdatePatientTests: 14 (3) | 📝 | HiepNX | 11/11/2026 | Thêm lại API `PUT api/patients/{id}` (lễ tân, quản lý); chờ điền sheet |
 
 ## Đợt 4 – OZ-SVC (Dịch vụ)
@@ -256,6 +256,9 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | 10/11/2026 | HiepNX | Viết test đợt 2 (OZ-ME, 5 tab) và OZ-PAT-03 GetPatientByCode |
 | 11/11/2026 | HiepNX | Tách test thành 1 file / 1 tab theo thư mục module, gắn `[Trait("Tab", ...)]` cho mọi test |
 | 11/11/2026 | HiepNX | Merge `main` (test tái khám mới): tách tiếp vào Appointments/CancelAppointment, RescheduleAppointment và Examinations/RemindDueFollowUps, GetMyFollowUps. Tổng 318 test |
+| 11/11/2026 | HiepNX | OZ-PAT-07 UpdatePatient: thêm lại API `PUT api/patients/{id}`, sửa ngày sinh theo giờ VN, giữ SĐT/email khi để trống, chặn lễ tân đổi SĐT/email của bệnh nhân có tài khoản; 14 test service + 3 test controller
+| 11/11/2026 | HiepNX | OZ-PAT-05 DeletePatient: thêm 3 test (khóa tài khoản, không tìm thấy, còn lịch hẹn), tổng 4 test
+| 11/11/2026 | HiepNX | OZ-PAT-06 AddMedicalProfile: thêm 6 test (không tìm thấy, loại/mức độ/trạng thái sai, để trống dùng mặc định, dữ liệu lưu xuống), tổng 7 test
 
 ---
 
