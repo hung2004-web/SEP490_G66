@@ -35,8 +35,11 @@ const MOBILE_ACTION_CLASS = "col-span-2 min-h-11 md:min-h-0";
 
 const TEXT = {
     CHANGE_TITLE: "Đổi hoặc hủy lịch",
-    DEADLINE_LABEL: "Hạn hủy trực tuyến",
+    DEADLINE_LABEL: "Hạn đổi / hủy lịch",
     DEADLINE_PASSED: "Đã quá hạn",
+    CHANGE_HINT: "Để đổi hoặc hủy lịch, vui lòng gọi lễ tân trước thời hạn trên. Lễ tân sẽ hỗ trợ bạn.",
+    CHANGE_HINT_PASSED: "Đã quá hạn đổi / hủy lịch. Vui lòng gọi lễ tân để được hỗ trợ.",
+    CALL_RECEPTION: `Gọi lễ tân ${CLINIC_HOTLINE.DISPLAY}`,
     AFTER_TITLE: "Sau buổi khám",
     RESULT_TITLE: "Kết quả khám",
     RESULT_TEXT: "Chẩn đoán, đơn thuốc, hẹn tái khám",
@@ -97,11 +100,6 @@ const getResultRoute = (appointment) =>
         ? getMedicalRecordDetailRoute(appointment.examinationId)
         : ROUTES.MEDICAL_RECORD;
 
-const getDeadlineText = (appointment, now) => {
-    const deadline = getChangeDeadline(appointment);
-    if (!deadline) return EMPTY_VALUE;
-    return now < deadline ? formatDateTime(deadline) : TEXT.DEADLINE_PASSED;
-};
 
 const BigNumber = ({ value, success = false }) => (
     <span className={cx("num font-heading text-heading-2 font-bold", success ? "text-success" : "text-primary")}>{value}</span>
@@ -210,12 +208,31 @@ const getHeaderActions = (appointment) => {
     return null;
 };
 
-const HotlineButton = () => (
+const HotlineButton = ({ label = TEXT.CALL }) => (
     <a href={`tel:${CLINIC_HOTLINE.TEL}`} className="btn btn-secondary w-full">
         <Phone aria-hidden="true" className="size-4" />
-        <span className="num">{TEXT.CALL}</span>
+        <span className="num">{label}</span>
     </a>
 );
+
+const ChangePanel = ({ appointment, now }) => {
+    const deadline = getChangeDeadline(appointment);
+    const passed = deadline && now >= deadline;
+    return (
+        <DashboardSection id="appointment-change" title={TEXT.CHANGE_TITLE}>
+            {deadline && (
+                <>
+                    <div className="rounded-md bg-warning-soft px-4 py-3">
+                        <p className="text-caption text-warning">{TEXT.DEADLINE_LABEL}</p>
+                        <p className="num text-title text-ink">{passed ? TEXT.DEADLINE_PASSED : formatDateTime(deadline)}</p>
+                    </div>
+                    <p className="text-body-sm">{passed ? TEXT.CHANGE_HINT_PASSED : TEXT.CHANGE_HINT}</p>
+                </>
+            )}
+            <HotlineButton label={TEXT.CALL_RECEPTION} />
+        </DashboardSection>
+    );
+};
 
 const LinkRow = ({ to, title, text }) => (
     <Link to={to} className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-3 hover:border-primary hover:bg-surface-tint">
@@ -230,21 +247,8 @@ const LinkRow = ({ to, title, text }) => (
 const SidePanel = ({ appointment, now }) => {
     switch (appointment.status) {
         case APPOINTMENT_STATUS.PENDING:
-            return (
-                <DashboardSection id="appointment-change" title={TEXT.CHANGE_TITLE}>
-                    <div className="rounded-md bg-warning-soft px-4 py-3">
-                        <p className="text-caption text-warning">{TEXT.DEADLINE_LABEL}</p>
-                        <p className="num text-title text-ink">{getDeadlineText(appointment, now)}</p>
-                    </div>
-                    <HotlineButton />
-                </DashboardSection>
-            );
         case APPOINTMENT_STATUS.CONFIRMED:
-            return (
-                <DashboardSection id="appointment-change" title={TEXT.CHANGE_TITLE}>
-                    <HotlineButton />
-                </DashboardSection>
-            );
+            return <ChangePanel appointment={appointment} now={now} />;
         case APPOINTMENT_STATUS.COMPLETED:
             return (
                 <DashboardSection id="appointment-after" title={TEXT.AFTER_TITLE}>
