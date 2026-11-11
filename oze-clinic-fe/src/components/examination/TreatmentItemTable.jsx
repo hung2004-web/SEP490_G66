@@ -31,7 +31,7 @@ const TreatmentItemTable = ({ items = [], onAdd, onEdit, onRemove }) => {
                 <p className="px-5 py-6 text-center text-muted">Chưa có nội dung nào. Thêm những gì đã làm trong buổi để tính vào hoá đơn.</p>
             ) : (
                 <div className="table-wrap rounded-none border-0">
-                    <table className="table table-stack [&_td]:px-5 [&_th]:px-5">
+                    <table className="table table-stack-sm [&_td]:px-5 [&_th]:px-5">
                         <thead>
                             <tr>
                                 <th scope="col">Nội dung</th>

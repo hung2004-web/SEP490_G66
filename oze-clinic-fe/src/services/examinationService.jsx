@@ -1,5 +1,6 @@
 import {
     EMPTY_EXAM_DRAFT,
+    EMPTY_PRESCRIPTION_DRAFT,
     EMPTY_TREATMENT_DRAFT,
     GENERAL_CHECKUP_SERVICE_ID,
     MOCK_EXAM_DONE_COUNT,
@@ -8,10 +9,8 @@ import {
     MOCK_EXAM_QUEUE,
     MOCK_EXAM_RECORDS,
     MOCK_EXAM_SHIFT,
-    MOCK_FOLLOW_UP_SLOTS,
 } from "../utils/data/mockExamination";
-import { isQueueBusy, newPlanSession, validateFollowUp, validatePlan } from "../utils/examination";
-import { getClinicToday, parseDateOnly } from "../utils/format";
+import { isQueueBusy, newPlanSession } from "../utils/examination";
 import { QUEUE_STATUS } from "../utils/messages";
 
 // TODO(api): mock only, swap for the exam endpoints (queue, encounter, medical history) once the backend has them.
@@ -54,6 +53,7 @@ const state = {
                 exam: structuredClone(MOCK_EXAM_DRAFTS[id] ?? EMPTY_EXAM_DRAFT),
                 plan: structuredClone(MOCK_EXAM_PLANS[id] ?? planFromServices(id, record.services)),
                 treatment: structuredClone(EMPTY_TREATMENT_DRAFT),
+                prescription: structuredClone(EMPTY_PRESCRIPTION_DRAFT),
             },
         ]),
     ),
@@ -75,8 +75,9 @@ const snapshot = () => ({
 
 const findItem = (id) => state.queue.find((item) => item.id === id);
 
-// Step index of "Điều trị" (see EXAM_STEPS).
+// Step indexes of "Điều trị" and "Kê đơn thuốc" (see EXAM_STEPS).
 const TREATMENT_STEP = 3;
+const PRESCRIPTION_STEP = 4;
 
 // Marks today's plan session done once something was treated; its service becomes in progress, or done with its last session.
 const completeSession = (record) => {
@@ -160,7 +161,10 @@ export const endExamination = async (queueId) => {
     await wait(MOCK_DELAY_MS);
     const item = findItem(queueId);
     if (!item || item.status !== QUEUE_STATUS.IN_EXAMINATION) return failure("Lượt khám này không còn mở.");
-    if ((item.step ?? 0) >= TREATMENT_STEP) completeSession(state.records[queueId]);
+    const record = state.records[queueId];
+    if ((item.step ?? 0) >= TREATMENT_STEP) completeSession(record);
+    // Completing the visit finalizes the prescription (F-EXM-06 "chốt đơn"); an empty one is dropped.
+    if ((item.step ?? 0) >= PRESCRIPTION_STEP && record?.prescription.items.length) record.prescription.status = "Finalized";
     state.queue = state.queue.filter((entry) => entry.id !== queueId);
     state.doneCount += 1;
     return success(snapshot(), `Đã kết thúc lượt khám của ${item.patientName}.`);
@@ -209,20 +213,6 @@ export const saveTreatmentPlan = async (queueId, plan) => {
     return success({ savedAt: Date.now() });
 };
 
-// Ends the visit after step 3: the plan goes to reception, who books the treatment sessions.
-export const sendPlanToReception = async (queueId, plan) => {
-    await wait(MOCK_DELAY_MS);
-    const item = findItem(queueId);
-    const record = state.records[queueId];
-    if (!item || item.status !== QUEUE_STATUS.IN_EXAMINATION || !record) return failure("Lượt khám này không còn mở.");
-    if (!plan.services.length) return failure("Kế hoạch chưa có dịch vụ điều trị nào.");
-    if (validatePlan(plan.services).count) return failure("Kế hoạch còn thông tin chưa nhập.");
-    record.plan = structuredClone(plan);
-    state.queue = state.queue.filter((entry) => entry.id !== queueId);
-    state.doneCount += 1;
-    return success(snapshot(), "Đã gửi lễ tân đặt lịch buổi điều trị tiếp theo.");
-};
-
 // Draft save of step 4. treatment: see EMPTY_TREATMENT_DRAFT.
 export const saveTreatmentDraft = async (queueId, treatment) => {
     await wait(MOCK_DELAY_MS);
@@ -230,27 +220,6 @@ export const saveTreatmentDraft = async (queueId, treatment) => {
     if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
     record.treatment = structuredClone(treatment);
     return success({ savedAt: Date.now() });
-};
-
-// Free slots of a follow-up date ("yyyy-mm-dd"). The mock fills a different slot each day; no slots on Sunday.
-export const getFollowUpSlots = async (date) => {
-    await wait(MOCK_DELAY_MS);
-    if (!date || date <= getClinicToday()) return failure("Ngày hẹn phải sau hôm nay.");
-    const day = parseDateOnly(date);
-    if (day.getDay() === 0) return success([]);
-    const fullIndex = day.getDate() % MOCK_FOLLOW_UP_SLOTS.length;
-    return success(MOCK_FOLLOW_UP_SLOTS.map((slot, index) => ({ ...slot, full: index === fullIndex })));
-};
-
-// Asks reception to book the next session. followUp: { sessionId, date, slot, note }.
-export const requestFollowUp = async (queueId, followUp) => {
-    await wait(MOCK_DELAY_MS);
-    const record = state.records[queueId];
-    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
-    if (validateFollowUp(followUp, getClinicToday()).count) return failure("Chọn buổi, ngày và khung giờ hẹn.");
-    const sentAt = new Date().toISOString();
-    record.treatment = { ...record.treatment, followUp: structuredClone(followUp), followUpSentAt: sentAt };
-    return success({ sentAt }, "Đã gửi lễ tân đặt lịch tái khám.");
 };
 
 // Leaving step 4 for the prescription: saves the draft and marks today's session done. Returns the updated plan.
@@ -262,4 +231,14 @@ export const completeTreatmentSession = async (queueId, treatment) => {
     record.treatment = structuredClone(treatment);
     completeSession(record);
     return success(structuredClone(record.plan));
+};
+
+// Draft save of step 5. prescription: see EMPTY_PRESCRIPTION_DRAFT.
+export const savePrescriptionDraft = async (queueId, prescription) => {
+    await wait(MOCK_DELAY_MS);
+    const record = state.records[queueId];
+    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
+    if (record.prescription.status === "Finalized") return failure("Đơn thuốc đã được chốt, không sửa được nữa.");
+    record.prescription = structuredClone(prescription);
+    return success({ savedAt: Date.now() });
 };

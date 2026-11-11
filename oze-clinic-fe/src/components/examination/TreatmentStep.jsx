@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import useAutosave from "@/hooks/useAutosave";
-import { completeTreatmentSession, getFollowUpSlots, requestFollowUp, saveTreatmentDraft } from "@/services/examinationService";
+import { completeTreatmentSession, saveTreatmentDraft } from "@/services/examinationService";
 import { currentTreatmentSessionId, initialTreatmentItems, planSessionList, upcomingPlanSessions } from "@/utils/examination";
 import { getClinicToday } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE } from "@/utils/messages";
@@ -14,43 +14,23 @@ import TreatmentItemTable from "./TreatmentItemTable";
 import TreatmentNoteCard from "./TreatmentNoteCard";
 import TreatmentSessionCard from "./TreatmentSessionCard";
 
-// Draft to start from: today's session picked, a new draft pre-filled with that session, the next session proposed for the follow-up.
+// Draft to start from: today's session picked, a new draft pre-filled with that session.
 const initialDraftOf = ({ plan, treatment }) => {
     const sessionId = currentTreatmentSessionId(plan, treatment);
     const session = planSessionList(plan.services).find((item) => item.id === sessionId);
     const isNew = !treatment.sessionId && !treatment.items.length;
-    return {
-        ...treatment,
-        sessionId,
-        items: isNew ? initialTreatmentItems(session) : treatment.items,
-        followUp: { ...treatment.followUp, sessionId: treatment.followUp.sessionId || (upcomingPlanSessions(plan.services, sessionId)[0]?.id ?? "") },
-    };
+    return { ...treatment, sessionId, items: isNew ? initialTreatmentItems(session) : treatment.items };
 };
 
-// Step 4 "Thực hiện điều trị": today's session of the plan, what was done and its price, a note, the session invoice
-// and the follow-up appointment asked of reception. record.treatment is the saved draft; changes are saved automatically
-// and passed to onTreatmentChange. "Chuyển sang Đơn thuốc" marks the session done (onPlanChange gets the new plan) then onComplete.
+// Step 4 "Thực hiện điều trị": today's session of the plan, what was done and its price, a note and the session invoice.
+// When today's session is the last one of the plan, the doctor can also propose a check-up date ("Hẹn tái khám").
+// record.treatment is the saved draft; changes are saved automatically and passed to onTreatmentChange.
+// "Chuyển sang Đơn thuốc" marks the session done (onPlanChange gets the new plan) then onComplete.
 const TreatmentStep = ({ queueId, record, busy = false, onTreatmentChange, onPlanChange, onEditPlan, onComplete, onEnd }) => {
     const [initialDraft] = useState(() => initialDraftOf(record));
     const { value: draft, setValue: setDraft, statusText, saveNow } = useAutosave((value) => saveTreatmentDraft(queueId, value), initialDraft, onTreatmentChange);
     const [dialog, setDialog] = useState(null); // { type: "add" | "edit" | "delete", item? }
-    const [working, setWorking] = useState(null); // "followUp" | "next" while a request runs
-    const [slots, setSlots] = useState({ date: "", list: [] });
-    const today = getClinicToday();
-    const followUpDate = draft.followUp.date;
-
-    useEffect(() => {
-        if (!followUpDate) return undefined;
-        let cancelled = false;
-        getFollowUpSlots(followUpDate).then((response) => {
-            if (cancelled) return;
-            if (!response.success) toast.error(response.message ?? GENERIC_ERROR_MESSAGE);
-            setSlots({ date: followUpDate, list: response.success ? response.data : [] });
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, [followUpDate]);
+    const [working, setWorking] = useState(false); // while "Chuyển sang Đơn thuốc" runs
 
     const setItems = (items) => setDraft({ ...draft, items });
 
@@ -71,26 +51,14 @@ const TreatmentStep = ({ queueId, record, busy = false, onTreatmentChange, onPla
         setDialog(null);
     };
 
-    const sendFollowUp = async (followUp) => {
-        setWorking("followUp");
-        const response = await requestFollowUp(queueId, followUp);
-        setWorking(null);
-        if (!response.success) {
-            toast.error(response.message ?? GENERIC_ERROR_MESSAGE);
-            return;
-        }
-        setDraft({ ...draft, followUpSentAt: response.data.sentAt });
-        toast.success(response.message);
-    };
-
     const goToPrescription = async () => {
         if (!draft.items.length) {
             toast.error("Thêm ít nhất một nội dung điều trị.");
             return;
         }
-        setWorking("next");
+        setWorking(true);
         const response = await completeTreatmentSession(queueId, draft);
-        setWorking(null);
+        setWorking(false);
         if (!response.success) {
             toast.error(response.message ?? GENERIC_ERROR_MESSAGE);
             return;
@@ -116,7 +84,8 @@ const TreatmentStep = ({ queueId, record, busy = false, onTreatmentChange, onPla
         );
     }
 
-    const disabled = busy || working !== null;
+    const disabled = busy || working;
+    const isLastSession = upcomingPlanSessions(record.plan.services, draft.sessionId).length === 0;
 
     return (
         <>
@@ -129,27 +98,17 @@ const TreatmentStep = ({ queueId, record, busy = false, onTreatmentChange, onPla
             />
             <TreatmentNoteCard value={draft.note} onChange={(note) => setDraft({ ...draft, note })} />
             <SessionInvoiceCard items={draft.items} />
-            <FollowUpCard
-                sessions={upcomingPlanSessions(record.plan.services, draft.sessionId)}
-                value={draft.followUp}
-                slots={slots.date === followUpDate ? slots.list : []}
-                slotsBusy={Boolean(followUpDate) && slots.date !== followUpDate}
-                today={today}
-                busy={working === "followUp"}
-                sentAt={draft.followUpSentAt}
-                onChange={(changes) => setDraft({ ...draft, followUp: { ...draft.followUp, ...changes } })}
-                onSubmit={sendFollowUp}
-            />
+            {isLastSession && <FollowUpCard value={draft.followUpDate} today={getClinicToday()} onChange={(followUpDate) => setDraft({ ...draft, followUpDate })} />}
             <StepActionBar status={statusText}>
                 <button type="button" className="btn btn-secondary" disabled={disabled} onClick={saveNow}>
                     Lưu nháp
                 </button>
-                <button type="button" className="btn btn-secondary" disabled={disabled} onClick={goToPrescription}>
-                    {working === "next" && <span className="btn-spinner" aria-hidden="true" />}
-                    Chuyển sang Đơn thuốc
-                </button>
-                <button type="button" className="btn btn-primary" disabled={disabled} onClick={endVisit}>
+                <button type="button" className="btn btn-secondary" disabled={disabled} onClick={endVisit}>
                     Kết thúc lượt khám
+                </button>
+                <button type="button" className="btn btn-primary" disabled={disabled} onClick={goToPrescription}>
+                    {working && <span className="btn-spinner" aria-hidden="true" />}
+                    Chuyển sang Đơn thuốc
                 </button>
             </StepActionBar>
 

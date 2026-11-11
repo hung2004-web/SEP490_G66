@@ -30,11 +30,11 @@ const MedicalHistoryStep = ({ queueId, record, busy = false, onHistoryChange, on
             <MedicalHistoryCard history={history} gender={record.patient.gender} onChange={setHistory} />
             <PreviousVisitsCard queueId={queueId} visits={record.visits} onSupplement={handleSupplement} />
             <StepActionBar status={statusText}>
-                <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => onNext?.(history)}>
-                    Chuyển sang Khám
-                </button>
-                <button type="button" className="btn btn-primary" disabled={busy} onClick={() => onEnd?.(history)}>
+                <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => onEnd?.(history)}>
                     Kết thúc lượt khám
+                </button>
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={() => onNext?.(history)}>
+                    Chuyển sang Khám
                 </button>
             </StepActionBar>
         </>

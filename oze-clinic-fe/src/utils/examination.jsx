@@ -156,16 +156,12 @@ export const parseMoney = (text) => {
 
 // ---------- Step 4: treatment ----------
 // A treatment item done today: { id, content, price (VND), createdAt (ISO) }.
-// Follow-up request to reception: { sessionId, date ("yyyy-mm-dd"), slot ("09:00", start of the slot), note }.
 
 // Every session of the plan in treatment order, with its service: { ...session, serviceName, serviceIndex (1-based), number (1-based in its service) }.
 export const planSessionList = (services) =>
     services.flatMap((service, serviceIndex) =>
         service.sessions.map((session, sessionIndex) => ({ ...session, serviceName: service.name, serviceIndex: serviceIndex + 1, number: sessionIndex + 1 }))
     );
-
-// "2. Trám răng · Buổi 1 · Trám composite răng 36": one session in a picker.
-export const planSessionLabel = (session) => `${session.serviceIndex}. ${session.serviceName} · Buổi ${session.number} · ${session.title}`;
 
 // Sessions done out of all planned sessions (today's counts once it is finished, not while in progress).
 export const planProgress = (services) => {
@@ -189,16 +185,6 @@ export const initialTreatmentItems = (session) =>
     session ? [{ id: `item-${session.id}`, content: session.title, price: session.cost ?? 0, createdAt: new Date().toISOString() }] : [];
 
 export const treatmentItemsTotal = (items) => items.reduce((total, item) => total + (Number.isFinite(item.price) ? item.price : 0), 0);
-
-// Errors of the follow-up form before it is sent to reception: { sessionId?, date?, slot?, count }.
-export const validateFollowUp = (followUp, today) => {
-    const errors = {};
-    if (!followUp.sessionId) errors.sessionId = "Chọn buổi tiếp theo.";
-    if (!followUp.date) errors.date = "Chọn ngày hẹn.";
-    else if (today && followUp.date <= today) errors.date = "Ngày hẹn phải sau hôm nay.";
-    if (!followUp.slot) errors.slot = "Chọn khung giờ.";
-    return { ...errors, count: Object.keys(errors).length };
-};
 
 // ---------- Step 5: prescription ----------
 // A prescribed medicine, as PrescriptionItems (F-EXM-06): { id, medicationName, dosage ("625mg"), frequency ("Ngày 2 lần"),

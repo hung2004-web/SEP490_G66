@@ -318,6 +318,20 @@
     .table-stack td[data-hide-stack] { display: none; }
   }
 
+  /* .table-stack-sm: same cards, for tables with few columns that fit a narrower box: only below 36rem. */
+  @container (width < 36rem) {
+    .table-stack-sm thead { @apply sr-only; }
+    .table-stack-sm, .table-stack-sm tbody, .table-stack-sm tr, .table-stack-sm td { display: block; }
+    .table-stack-sm tbody tr { @apply flex flex-col border-t border-border px-4 py-3 first:border-t-0; }
+    .table-stack-sm td { @apply flex h-auto items-start justify-between gap-4 border-0 py-1 text-right; min-width: 0 !important; padding-inline: 0 !important; }
+    .table-stack-sm td[data-label]::before { content: attr(data-label); @apply shrink-0 text-left text-muted; }
+    .table-stack-sm td[data-primary] { @apply order-first block pt-0 pb-1.5 text-left; }
+    .table-stack-sm td[data-block] { @apply flex-col gap-0.5 text-left; }
+    .table-stack-sm td[data-actions] { @apply justify-end pt-2; }
+    .table-stack-sm td[colspan] { @apply block px-0 text-center; }
+    .table-stack-sm td[data-hide-stack] { display: none; }
+  }
+
   /* ---------- App shell ---------- */
   .app-shell { @apply grid min-h-dvh grid-cols-1 lg:grid-cols-[var(--spacing-sidebar)_1fr]; }
   .sidebar { @apply hidden flex-col gap-1 border-r border-border bg-canvas p-3 text-label text-body lg:flex; }

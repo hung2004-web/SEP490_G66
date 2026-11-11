@@ -34,7 +34,7 @@ const PrescriptionTable = ({ items = [], warnings = {}, onAdd, onEdit, onRemove 
                 <p className="px-5 py-6 text-center text-muted">Chưa có thuốc nào. Bấm "Thêm thuốc" để kê đơn, hoặc kết thúc lượt khám nếu không cần thuốc.</p>
             ) : (
                 <div className="table-wrap rounded-none border-0">
-                    <table className="table table-stack">
+                    <table className="table table-stack-sm">
                         <thead>
                             <tr>
                                 <th scope="col">Tên thuốc · hàm lượng</th>

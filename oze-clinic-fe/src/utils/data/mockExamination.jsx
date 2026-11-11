@@ -222,19 +222,14 @@ export const MOCK_EXAM_DRAFTS = {
 
 export const EMPTY_EXAM_DRAFT = { symptoms: [], note: "", entries: [], films: [], diagnoses: [] };
 
-// Step 4 draft: the plan session done today, what was done (items), a note, and the follow-up asked of reception.
-export const EMPTY_TREATMENT_DRAFT = { sessionId: "", items: [], note: "", followUp: { sessionId: "", date: "", slot: "", note: "" }, followUpSentAt: null };
+// Step 4 draft: the plan session done today, what was done (items), a note, and the proposed check-up date
+// (followUpDate, "yyyy-mm-dd" or "", only once the whole plan is done).
+export const EMPTY_TREATMENT_DRAFT = { sessionId: "", items: [], note: "", followUpDate: "" };
 
-// Follow-up slots offered for a day ("Hẹn tái khám"); which ones are full is decided per date in the service.
-export const MOCK_FOLLOW_UP_SLOTS = [
-    { start: "08:00", end: "08:30" },
-    { start: "09:00", end: "09:30" },
-    { start: "10:00", end: "10:30" },
-    { start: "14:00", end: "14:30" },
-    { start: "15:00", end: "15:30" },
-];
+// Step 5 draft: the prescribed medicines (PrescriptionItems) and the prescription's note (Prescriptions.Notes).
+// status: "Draft" until the visit is completed, then "Finalized".
+export const EMPTY_PRESCRIPTION_DRAFT = { items: [], notes: "", status: "Draft" };
 
-// Service types the doctor can pick for a session ("Loại dịch vụ"), per registered service id.
 export const MOCK_PLAN_SERVICE_TYPES = {
     2: [
         { id: "scaling-one", name: "Lấy cao răng một hàm", price: 150000 },
