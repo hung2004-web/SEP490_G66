@@ -147,3 +147,44 @@ export const validatePlan = (services) => {
     });
     return errors;
 };
+
+// "400.000" -> 400000; empty -> null. For the money inputs (plan session cost, treatment item price).
+export const parseMoney = (text) => {
+    const digits = String(text ?? "").replace(/\D/g, "");
+    return digits ? Number(digits) : null;
+};
+
+// ---------- Step 4: treatment ----------
+// A treatment item done today: { id, content, price (VND), createdAt (ISO) }.
+// Follow-up request to reception: { sessionId, date ("yyyy-mm-dd"), slot ("09:00", start of the slot), note }.
+
+// Every session of the plan in treatment order, with its service: { ...session, serviceName, serviceIndex (1-based), number (1-based in its service) }.
+export const planSessionList = (services) =>
+    services.flatMap((service, serviceIndex) =>
+        service.sessions.map((session, sessionIndex) => ({ ...session, serviceName: service.name, serviceIndex: serviceIndex + 1, number: sessionIndex + 1 }))
+    );
+
+// "2. Trám răng · Buổi 1 · Trám composite răng 36": one session in a picker.
+export const planSessionLabel = (session) => `${session.serviceIndex}. ${session.serviceName} · Buổi ${session.number} · ${session.title}`;
+
+// Sessions done out of all planned sessions (today's counts once it is finished, not while in progress).
+export const planProgress = (services) => {
+    const sessions = services.flatMap((service) => service.sessions);
+    return { done: sessions.filter((session) => session.status === "done").length, total: sessions.length };
+};
+
+// Sessions still to do after today's: the choices for "Buổi tiếp theo".
+export const upcomingPlanSessions = (services, currentSessionId) =>
+    planSessionList(services).filter((session) => session.status !== "done" && session.id !== currentSessionId);
+
+export const treatmentItemsTotal = (items) => items.reduce((total, item) => total + (Number.isFinite(item.price) ? item.price : 0), 0);
+
+// Errors of the follow-up form before it is sent to reception: { sessionId?, date?, slot?, count }.
+export const validateFollowUp = (followUp, today) => {
+    const errors = {};
+    if (!followUp.sessionId) errors.sessionId = "Chọn buổi tiếp theo.";
+    if (!followUp.date) errors.date = "Chọn ngày hẹn.";
+    else if (today && followUp.date <= today) errors.date = "Ngày hẹn phải sau hôm nay.";
+    if (!followUp.slot) errors.slot = "Chọn khung giờ.";
+    return { ...errors, count: Object.keys(errors).length };
+};
