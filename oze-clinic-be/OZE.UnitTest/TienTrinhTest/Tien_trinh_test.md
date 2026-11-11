@@ -156,7 +156,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 79 | CompleteExamination | OZ-APPT-19 | Appointments/CompleteExaminationTests: 4 | 📝 | | | |
 | 80 | StaffProxyBooking | OZ-APPT-20 | 0 | ⛔ | | | Lễ tân đặt hộ chưa có API |
 | 81 | GetQueue | OZ-Q-01 | 0 | ✍️ | | | |
-| 82 | CallNext | OZ-Q-02 | Queue/CallNextTests: 1 | 📝 | | | |
+| 82 | CallNext | OZ-Q-02 | Queue/CallNextTests: 6 | 📝 | HiepNX | 11/11/2026 | Gọi tiếp dùng chung thứ tự với danh sách chờ (WaitingOrder); chờ điền sheet |
 | 83 | CallQueueEntry | OZ-Q-03 | 0 | ✍️ | | | |
 | 84 | SkipQueueEntry | OZ-Q-04 | 0 | ✍️ | | | |
 
@@ -259,6 +259,7 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | 11/11/2026 | HiepNX | OZ-PAT-07 UpdatePatient: thêm lại API `PUT api/patients/{id}`, sửa ngày sinh theo giờ VN, giữ SĐT/email khi để trống, chặn lễ tân đổi SĐT/email của bệnh nhân có tài khoản; 14 test service + 3 test controller
 | 11/11/2026 | HiepNX | OZ-PAT-05 DeletePatient: thêm 3 test (khóa tài khoản, không tìm thấy, còn lịch hẹn), tổng 4 test
 | 11/11/2026 | HiepNX | OZ-PAT-06 AddMedicalProfile: thêm 6 test (không tìm thấy, loại/mức độ/trạng thái sai, để trống dùng mặc định, dữ liệu lưu xuống), tổng 7 test
+| 11/11/2026 | HiepNX | OZ-Q-02 CallNext: "Gọi tiếp" dùng chung thứ tự với danh sách chờ (`WaitingOrder`), Urgent bị gọi hụt không còn tụt xuống sau Normal; thêm 5 test, tổng 6
 
 ---
 

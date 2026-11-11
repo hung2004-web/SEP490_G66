@@ -153,6 +153,15 @@ namespace OZE.Persistence.Repositories
         }
 
         // A day of the clinic runs on the server's local time, like check-in does
+        public async Task<string?> GetConfigValueAsync(string configKey, CancellationToken cancellationToken = default)
+        {
+            return await _context.SystemConfigurations
+                .AsNoTracking()
+                .Where(x => x.ConfigKey == configKey)
+                .Select(x => x.ConfigValue)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         private static (DateTimeOffset Start, DateTimeOffset End) DayWindow(DateOnly date)
         {
             var start = new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue));

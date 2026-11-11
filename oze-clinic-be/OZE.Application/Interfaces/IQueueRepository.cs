@@ -14,6 +14,7 @@ namespace OZE.Application.Interfaces
         Task<QueueEntry?> GetActiveByAppointmentAndTypeAsync(long appointmentId, string queueType, CancellationToken cancellationToken = default);
         // Entries of today still on the board. Patients who were called and not there come after everyone who was not
         // (the more times, the later); inside each group the highest priority goes first, then the queue number.
+        // The examination queue is ordered again by QueueService with the waiting-list order (WaitingOrder).
         // A room also shows the entries not yet assigned to any room.
         Task<List<QueueEntry>> GetActiveEntriesAsync(string? queueType, int? roomId, int? assignedStaffId, CancellationToken cancellationToken = default);
         // Marks a waiting entry as called; false when someone else called it first
@@ -24,5 +25,7 @@ namespace OZE.Application.Interfaces
         Task<bool> IsOffDutyAsync(int staffId, DateOnly date, CancellationToken cancellationToken = default);
         Task<int?> GetStaffProfileIdByUserIdAsync(string userId, CancellationToken cancellationToken = default);
         Task UpdateAsync(QueueEntry entry, CancellationToken cancellationToken = default);
+        // Value of a SystemConfigurations key, null when the key is missing
+        Task<string?> GetConfigValueAsync(string configKey, CancellationToken cancellationToken = default);
     }
 }

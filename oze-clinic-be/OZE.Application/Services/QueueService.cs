@@ -117,6 +117,7 @@ namespace OZE.Application.Services
             CancellationToken cancellationToken = default)
         {
             var entries = await _queueRepository.GetActiveEntriesAsync(queueType, roomId, null, cancellationToken);
+            entries = await OrderForCallingAsync(entries, queueType, cancellationToken);
             return entries.Select(x => MapToResponse(x, includePatientDetails)).ToList();
         }
 
@@ -137,6 +138,7 @@ namespace OZE.Application.Services
             }
 
             var entries = await _queueRepository.GetActiveEntriesAsync(queueType, roomId, assignedStaffId, cancellationToken);
+            entries = await OrderForCallingAsync(entries, queueType, cancellationToken);
             // A doctor off duty (shift not started, or ended) is only handed patients already examined (back from the X-ray)
             foreach (var next in entries.Where(x => x.Status == QueueConstants.Waiting && (!offDuty || x.Appointment?.Examination != null)))
             {
@@ -195,6 +197,22 @@ namespace OZE.Application.Services
             }
 
             return MapToResponse(entry, includePatientDetails: true);
+        }
+
+        // The examination queue uses the waiting-list order, so "call next" calls the patient shown on top of the
+        // waiting list. Other queues keep the order of the repository (missed calls, priority, queue number).
+        private async Task<List<QueueEntry>> OrderForCallingAsync(List<QueueEntry> entries, string? queueType, CancellationToken cancellationToken)
+        {
+            if (queueType != QueueConstants.ExaminationType)
+            {
+                return entries;
+            }
+
+            var value = await _queueRepository.GetConfigValueAsync(ConfigKeyConstants.CheckInLateMinutes, cancellationToken);
+            ConditionGuard.Ensure(int.TryParse(value, out var lateMinutes),
+                string.Format(ErrorConstants.AppointmentMessage.ConfigMissing, ConfigKeyConstants.CheckInLateMinutes));
+
+            return WaitingOrder.Sort(entries, e => e.Appointment, e => e.SkipCount, lateMinutes);
         }
 
         public async Task<bool> IsDoctorOffDutyAsync(int staffId, CancellationToken cancellationToken = default)
