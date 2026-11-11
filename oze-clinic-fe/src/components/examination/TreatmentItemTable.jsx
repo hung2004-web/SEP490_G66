@@ -1,12 +1,12 @@
 import { Plus } from "lucide-react";
 import { treatmentItemsTotal } from "@/utils/examination";
-import { formatDateTime, formatNumber } from "@/utils/format";
+import { formatNumber } from "@/utils/format";
 import ClinicalExamSection from "./ClinicalExamSection";
+import RowActions from "./RowActions";
 
-const linkButton = "cursor-pointer rounded text-body-sm font-medium outline-none hover:underline focus-visible:shadow-focus";
 const money = (amount) => `${formatNumber(amount)} ₫`;
 
-// "Nội dung điều trị": what was done in this session, with its price and when it was added, plus the total.
+// "Nội dung điều trị": what was done in this session, with its price, plus the total.
 // items: [{ id, content, price, createdAt }]. onAdd / onEdit(item) / onRemove(item) open the dialogs (owned by the parent).
 // Without onAdd / onEdit / onRemove (e.g. a finished visit) the list is read-only.
 const TreatmentItemTable = ({ items = [], onAdd, onEdit, onRemove }) => {
@@ -15,7 +15,6 @@ const TreatmentItemTable = ({ items = [], onAdd, onEdit, onRemove }) => {
     return (
         <ClinicalExamSection
             title="Nội dung điều trị"
-            badge={<span className="num rounded-full bg-surface-tint px-2 py-0.5 text-caption font-medium text-muted">{items.length}</span>}
             action={
                 onAdd && (
                     <button type="button" className="btn btn-primary" onClick={onAdd}>
@@ -31,15 +30,12 @@ const TreatmentItemTable = ({ items = [], onAdd, onEdit, onRemove }) => {
                 <p className="px-5 py-6 text-center text-muted">Chưa có nội dung nào. Thêm những gì đã làm trong buổi để tính vào hoá đơn.</p>
             ) : (
                 <div className="table-wrap rounded-none border-0">
-                    <table className="table table-stack [&_td]:px-5 [&_th]:px-5">
+                    <table className="table table-stack-sm [&_td]:px-5 [&_th]:px-5">
                         <thead>
                             <tr>
                                 <th scope="col">Nội dung</th>
                                 <th scope="col" className="w-36 text-right">
                                     Giá tiền
-                                </th>
-                                <th scope="col" className="w-40">
-                                    Thời gian
                                 </th>
                                 {editable && (
                                     <th scope="col" className="w-24">
@@ -57,23 +53,9 @@ const TreatmentItemTable = ({ items = [], onAdd, onEdit, onRemove }) => {
                                     <td data-label="Giá tiền" className="num text-right font-semibold whitespace-nowrap text-ink">
                                         {money(item.price)}
                                     </td>
-                                    <td data-label="Thời gian" className="num text-caption whitespace-nowrap text-muted">
-                                        {formatDateTime(item.createdAt)}
-                                    </td>
                                     {editable && (
                                         <td data-actions className="text-right whitespace-nowrap">
-                                            <span className="inline-flex gap-3">
-                                                {onEdit && (
-                                                    <button type="button" className={`${linkButton} text-primary`} aria-label={`Sửa: ${item.content}`} onClick={() => onEdit(item)}>
-                                                        Sửa
-                                                    </button>
-                                                )}
-                                                {onRemove && (
-                                                    <button type="button" className={`${linkButton} text-danger`} aria-label={`Xoá: ${item.content}`} onClick={() => onRemove(item)}>
-                                                        Xoá
-                                                    </button>
-                                                )}
-                                            </span>
+                                            <RowActions label={item.content} onEdit={onEdit && (() => onEdit(item))} onRemove={onRemove && (() => onRemove(item))} />
                                         </td>
                                     )}
                                 </tr>

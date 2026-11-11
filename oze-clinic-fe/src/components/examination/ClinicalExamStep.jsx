@@ -4,7 +4,6 @@ import useAutosave from "@/hooks/useAutosave";
 import useSession from "@/hooks/useSession";
 import { requestXray, saveExamDraft } from "@/services/examinationService";
 import { CHART_TYPE, CHILD_CHART_MAX_AGE, isPrimaryTooth } from "@/utils/examination";
-import AllergyAlert from "./AllergyAlert";
 import DiagnosisDialog from "./DiagnosisDialog";
 import DiagnosisSection from "./DiagnosisSection";
 import ExamDentalChart from "./ExamDentalChart";
@@ -99,7 +98,6 @@ const ClinicalExamStep = ({ queueId, record, busy = false, onExamChange, onCompl
 
     return (
         <>
-            <AllergyAlert allergies={record.history.allergies} />
             <SymptomSection value={exam.symptoms} note={exam.note} onChange={(symptoms) => set("symptoms", symptoms)} onNoteChange={(note) => set("note", note)} />
             <ExamDentalChart
                 entries={exam.entries}

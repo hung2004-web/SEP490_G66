@@ -3,6 +3,7 @@ import { Plus, Sparkles } from "lucide-react";
 import { cx } from "@/utils/cx";
 import { quantityText, usageText } from "@/utils/examination";
 import ClinicalExamSection from "./ClinicalExamSection";
+import RowActions from "./RowActions";
 
 const linkButton = "cursor-pointer rounded text-body-sm font-medium outline-none hover:underline focus-visible:shadow-focus";
 
@@ -34,7 +35,7 @@ const PrescriptionTable = ({ items = [], warnings = {}, onAdd, onEdit, onRemove 
                 <p className="px-5 py-6 text-center text-muted">Chưa có thuốc nào. Bấm "Thêm thuốc" để kê đơn, hoặc kết thúc lượt khám nếu không cần thuốc.</p>
             ) : (
                 <div className="table-wrap rounded-none border-0">
-                    <table className="table table-stack">
+                    <table className="table table-stack-sm">
                         <thead>
                             <tr>
                                 <th scope="col">Tên thuốc · hàm lượng</th>
@@ -67,18 +68,7 @@ const PrescriptionTable = ({ items = [], warnings = {}, onAdd, onEdit, onRemove 
                                             </td>
                                             {editable && (
                                                 <td data-actions className="text-right whitespace-nowrap">
-                                                    <span className="inline-flex gap-3">
-                                                        {onEdit && (
-                                                            <button type="button" className={`${linkButton} text-primary`} aria-label={`Sửa: ${item.medicationName}`} onClick={() => onEdit(item)}>
-                                                                Sửa
-                                                            </button>
-                                                        )}
-                                                        {onRemove && (
-                                                            <button type="button" className={`${linkButton} text-danger`} aria-label={`Xoá: ${item.medicationName}`} onClick={() => onRemove(item)}>
-                                                                Xoá
-                                                            </button>
-                                                        )}
-                                                    </span>
+                                                    <RowActions label={item.medicationName} onEdit={onEdit && (() => onEdit(item))} onRemove={onRemove && (() => onRemove(item))} />
                                                 </td>
                                             )}
                                         </tr>

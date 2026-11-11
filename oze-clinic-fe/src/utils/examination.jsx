@@ -1,4 +1,3 @@
-import { formatDate, formatDayMonth } from "./format";
 import { ICD10_DENTAL, QUEUE_STATUS } from "./messages";
 
 // Queue number box colours: amber while the patient is called, blue when selected otherwise (e.g. being examined).
@@ -69,27 +68,6 @@ export const toothLabel = (code) => {
 // ["O", "D"] -> "O, D"
 export const surfacesText = (surfaces) => (surfaces?.length ? surfaces.join(", ") : "Cả răng");
 
-const has = (text, ...words) => words.some((word) => text.includes(word));
-
-// Chart colour of a free-text condition. Order matters: "Đã điều trị tủy" is not an inflamed pulp.
-const conditionCategory = (condition) => {
-    const text = (condition ?? "").normalize("NFC").toLocaleLowerCase("vi");
-    if (has(text, "mất răng")) return "missing";
-    if (has(text, "điều trị tủy", "trám bít")) return "rct";
-    if (has(text, "mão", "cầu răng", "cầu sứ", "bọc sứ")) return "crown";
-    if (has(text, "đã trám", "miếng trám")) return "filling";
-    return "issue";
-};
-
-// Most important category of a tooth's entries: a problem to treat wins over past work.
-const CATEGORY_ORDER = ["missing", "issue", "rct", "crown", "filling"];
-
-export const toothCategory = (entries) => {
-    if (entries.some((entry) => entry.replaced)) return "replaced";
-    const categories = entries.map((entry) => conditionCategory(entry.condition));
-    return CATEGORY_ORDER.find((category) => categories.includes(category)) ?? null;
-};
-
 export const CHART_TYPE = { ADULT: "adult", CHILD: "child" };
 
 // "K02.1" -> "Sâu ngà răng" ("" when the code is not in the dental ICD-10 list).
@@ -104,26 +82,10 @@ export const newPlanSession = (id) => ({ id, title: "", typeId: "", date: "", co
 // Total planned cost of some sessions (sessions without a cost count as 0).
 export const sessionsCost = (sessions) => sessions.reduce((total, session) => total + (Number.isFinite(session.cost) ? session.cost : 0), 0);
 
-// "26/10 – 09/11/2026"; one date -> "02/11/2026"; none -> "".
-export const dateRangeText = (from, to) => {
-    if (!from) return "";
-    if (from === to) return formatDate(from);
-    return from.slice(0, 4) === to.slice(0, 4) ? `${formatDayMonth(from)} – ${formatDate(to)}` : `${formatDate(from)} – ${formatDate(to)}`;
-};
-
-// Numbers of "Tóm tắt kế hoạch": counts, date range of the sessions, cost per service and in total.
+// Cost per service and in total, for "Tóm tắt kế hoạch".
 export const planSummary = (services) => {
-    const sessions = services.flatMap((service) => service.sessions);
-    const dates = sessions.map((session) => session.date).filter(Boolean).sort();
-    const perService = services.map((service) => ({ id: service.id, name: service.name, sessionCount: service.sessions.length, cost: sessionsCost(service.sessions) }));
-    return {
-        serviceCount: services.length,
-        sessionCount: sessions.length,
-        from: dates[0] ?? "",
-        to: dates.at(-1) ?? "",
-        perService,
-        total: perService.reduce((total, service) => total + service.cost, 0),
-    };
+    const perService = services.map((service) => ({ id: service.id, name: service.name, cost: sessionsCost(service.sessions) }));
+    return { perService, total: perService.reduce((total, service) => total + service.cost, 0) };
 };
 
 // Errors before the plan can be sent: every service needs a session; every session a content and a service type.
@@ -156,16 +118,12 @@ export const parseMoney = (text) => {
 
 // ---------- Step 4: treatment ----------
 // A treatment item done today: { id, content, price (VND), createdAt (ISO) }.
-// Follow-up request to reception: { sessionId, date ("yyyy-mm-dd"), slot ("09:00", start of the slot), note }.
 
 // Every session of the plan in treatment order, with its service: { ...session, serviceName, serviceIndex (1-based), number (1-based in its service) }.
 export const planSessionList = (services) =>
     services.flatMap((service, serviceIndex) =>
         service.sessions.map((session, sessionIndex) => ({ ...session, serviceName: service.name, serviceIndex: serviceIndex + 1, number: sessionIndex + 1 }))
     );
-
-// "2. Trám răng · Buổi 1 · Trám composite răng 36": one session in a picker.
-export const planSessionLabel = (session) => `${session.serviceIndex}. ${session.serviceName} · Buổi ${session.number} · ${session.title}`;
 
 // Sessions done out of all planned sessions (today's counts once it is finished, not while in progress).
 export const planProgress = (services) => {
@@ -189,16 +147,6 @@ export const initialTreatmentItems = (session) =>
     session ? [{ id: `item-${session.id}`, content: session.title, price: session.cost ?? 0, createdAt: new Date().toISOString() }] : [];
 
 export const treatmentItemsTotal = (items) => items.reduce((total, item) => total + (Number.isFinite(item.price) ? item.price : 0), 0);
-
-// Errors of the follow-up form before it is sent to reception: { sessionId?, date?, slot?, count }.
-export const validateFollowUp = (followUp, today) => {
-    const errors = {};
-    if (!followUp.sessionId) errors.sessionId = "Chọn buổi tiếp theo.";
-    if (!followUp.date) errors.date = "Chọn ngày hẹn.";
-    else if (today && followUp.date <= today) errors.date = "Ngày hẹn phải sau hôm nay.";
-    if (!followUp.slot) errors.slot = "Chọn khung giờ.";
-    return { ...errors, count: Object.keys(errors).length };
-};
 
 // ---------- Step 5: prescription ----------
 // A prescribed medicine, as PrescriptionItems (F-EXM-06): { id, medicationName, dosage ("625mg"), frequency ("Ngày 2 lần"),
