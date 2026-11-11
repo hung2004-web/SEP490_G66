@@ -171,51 +171,13 @@ namespace OZE.Controllers
             return Ok(ApiResponse<List<DiagnosisResponse>>.SuccessResult(result, "Diagnosis deleted"));
         }
 
+        // The doctor sets the follow-up date; the list, reminders and booking are in FollowUpsController
         [HttpPut("examinations/{id:long}/follow-up")]
-        [Authorize(Roles = RoleConstants.DoctorRole)]
         public async Task<ActionResult<ApiResponse<ExaminationWorkResponse>>> SetFollowUpAsync(
             long id, [FromBody] SaveFollowUpRequest request, CancellationToken cancellationToken)
         {
             var result = await _examinationService.SetFollowUpAsync(DoctorUserId, id, request, cancellationToken);
             return Ok(ApiResponse<ExaminationWorkResponse>.SuccessResult(result, "Follow-up notes saved"));
-        }
-
-        [HttpPost("examinations/{id:long}/follow-up/schedule")]
-        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
-        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> ScheduleFollowUpAsync(
-            long id, [FromBody] ScheduleFollowUpRequest request, CancellationToken cancellationToken)
-        {
-            var result = await _examinationService.ScheduleFollowUpAppointmentAsync(CurrentUserId ?? string.Empty, id, request, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Follow-up appointment scheduled successfully"));
-        }
-
-        [HttpGet("examinations/follow-ups")]
-        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
-        public async Task<ActionResult<ApiResponse<PagedResult<FollowUpListItemResponse>>>> GetFollowUpsAsync(
-            [FromQuery] FollowUpQueryParameters query, CancellationToken cancellationToken)
-        {
-            var isStrictlyDoctor = IsInRole(RoleConstants.DoctorRole) && !IsInRole(RoleConstants.ClinicManagerRole) && !IsInRole(RoleConstants.ReceptionistRole);
-            var doctorUserId = isStrictlyDoctor ? CurrentUserId : null;
-            var result = await _examinationService.GetFollowUpsAsync(query, doctorUserId, cancellationToken);
-            return Ok(ApiResponse<PagedResult<FollowUpListItemResponse>>.SuccessResult(result));
-        }
-
-        [HttpPost("examinations/{id:long}/remind-follow-up")]
-        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.DoctorRole}")]
-        public async Task<ActionResult<ApiResponse<FollowUpListItemResponse>>> RemindFollowUpAsync(
-            long id, [FromQuery] bool force = false, CancellationToken cancellationToken = default)
-        {
-            var result = await _examinationService.RemindFollowUpAsync(CurrentUserId ?? string.Empty, id, force, cancellationToken);
-            return Ok(ApiResponse<FollowUpListItemResponse>.SuccessResult(result, "Follow-up reminder sent successfully"));
-        }
-
-        [HttpPost("examinations/follow-ups/remind-due")]
-        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole},{RoleConstants.DoctorRole}")]
-        public async Task<ActionResult<ApiResponse<BatchRemindFollowUpResponse>>> RemindDueFollowUpsAsync(
-            [FromQuery] DateOnly? targetDate, CancellationToken cancellationToken)
-        {
-            var result = await _examinationService.RemindDueFollowUpsAsync(targetDate, CurrentUserId, cancellationToken);
-            return Ok(ApiResponse<BatchRemindFollowUpResponse>.SuccessResult(result, $"Follow-up reminders sent successfully to {result.RemindedCount} patients."));
         }
     }
 }

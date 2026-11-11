@@ -127,7 +127,7 @@ Giải thích: mức 2 đứng trước mức 0; trong mức 2, nhóm 0 (D) trư
 ## 9. Còn thiếu / câu hỏi mở
 
 - **Lệch BR-RCP-03**: Dac_ta nói "kết hợp gọi/bỏ qua của hàng chờ", nhưng `waiting-list` **không xét** trạng thái `CALLED` hay `SkipCount` của `QueueEntries`; người đã được gọi hoặc bị bỏ qua vẫn giữ vị trí cũ.
-- **Hai thứ tự khác nhau**: `waiting-list` xếp theo nhóm và giờ hẹn, còn `call-next` (F-RCP-05) xếp theo `SkipCount`, `Priority`, `QueueNumber` (thứ tự check-in). Ví dụ walk-in check-in trước một lịch đặt đúng giờ: `waiting-list` để lịch đặt trước, `call-next` gọi walk-in trước.
+- ~~Hai thứ tự khác nhau~~: đã sửa 11/11/2026. `waiting-list` và `call-next` dùng chung `WaitingOrder` (`OZE.Application/Helpers/WaitingOrder.cs`); `waiting-list` xét thêm `SkipCount` sau nhóm. Giờ check-in được đổi sang giờ phòng khám (`ClinicClock.ToClinicTime`) khi xét trễ.
 - Nhóm 0 (quay về từ X-quang) không có trong BR-RCP-02.
 - `CheckIn.EarlyMinutes` ghi ở mục 7 Dac_ta "dùng ở BR-RCP-02" nhưng code không dùng. Mô tả seed của `CheckIn.LateMinutes` ("Số phút đến muộn trước khi đánh dấu NO_SHOW", `SystemConfigurationConfiguration.cs:34`) cũng không đúng cách code dùng (chỉ để phân nhóm trễ).
 - `IsLateCheckIn` dùng `CheckInAt.LocalDateTime` (giờ **máy chủ**) so với giờ hẹn (giờ Việt Nam). Máy chủ chạy UTC thì giờ check-in lệch 7 tiếng, gần như không ai bị tính trễ. Lệch BR-C01.

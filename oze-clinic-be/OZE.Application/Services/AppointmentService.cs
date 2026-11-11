@@ -465,12 +465,9 @@ namespace OZE.Application.Services
                 waiting = waiting.Where(a => a.Examination != null).ToList();
             }
 
-            return waiting
-                .Select(a => (Appointment: a, Group: GetWaitingGroup(a, lateMinutes)))
-                .OrderByDescending(x => x.Appointment.Priority)
-                .ThenBy(x => x.Group)
-                .ThenBy(x => x.Group == OnTimeGroup ? x.Appointment.TimeSlotStart : null)
-                .ThenBy(x => x.Appointment.CheckInAt)
+            // Same order as "call next" (QueueService), so the patient on top is the one who is called
+            return WaitingOrder.Sort(waiting, a => a, WaitingOrder.SkipCountOf, lateMinutes)
+                .Select(a => (Appointment: a, Group: WaitingOrder.GetGroup(a, lateMinutes)))
                 .Select((x, index) => new WaitingListItemResponse
                 {
                     Position = index + 1,
@@ -486,45 +483,13 @@ namespace OZE.Application.Services
                     RoomId = GetCurrentRoom(x.Appointment)?.Id,
                     RoomName = GetCurrentRoom(x.Appointment)?.RoomName,
                     Priority = x.Appointment.Priority,
-                    IsLate = x.Group == LateGroup,
-                    IsPriorityReturn = x.Group == PriorityReturnGroup,
+                    IsLate = x.Group == WaitingOrder.LateGroup,
+                    IsPriorityReturn = x.Group == WaitingOrder.PriorityReturnGroup,
                     Services = x.Appointment.ServiceItems
                         .Select(i => i.Variant == null ? i.Service.ServiceName : $"{i.Service.ServiceName} - {i.Variant.VariantName}")
                         .ToList()
                 })
                 .ToList();
-        }
-
-        private const int PriorityReturnGroup = 0;
-        private const int OnTimeGroup = 1;
-        private const int LateGroup = 2;
-        private const int WalkInGroup = 3;
-
-        private static int GetWaitingGroup(Appointment appointment, int lateMinutes)
-        {
-            if (appointment.Examination != null)
-            {
-                return PriorityReturnGroup;
-            }
-
-            if (appointment.AppointmentType == AppointmentConstants.WalkInType)
-            {
-                return WalkInGroup;
-            }
-
-            return IsLateCheckIn(appointment, lateMinutes) ? LateGroup : OnTimeGroup;
-        }
-
-        // Arriving early is never late; only a check-in after the booked time plus the allowed delay is
-        private static bool IsLateCheckIn(Appointment appointment, int lateMinutes)
-        {
-            if (appointment.CheckInAt == null || appointment.TimeSlotStart == null)
-            {
-                return false;
-            }
-
-            var bookedAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart.Value);
-            return appointment.CheckInAt.Value.LocalDateTime > bookedAt.AddMinutes(lateMinutes);
         }
 
         public async Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(AppointmentQueryParameters query, string userId, CancellationToken cancellationToken = default)
