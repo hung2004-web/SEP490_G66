@@ -64,5 +64,30 @@ namespace OZE.Application.Helpers
                 ReminderCount = x.FollowUpReminderCount
             };
         }
+        public static FollowUpListItemResponse CheckToFollowUpListItem(this Examination x)
+        {
+            return new FollowUpListItemResponse
+            {
+                ExaminationId = x.Id,
+                OriginalAppointmentId = x.AppointmentId,
+                OriginalAppointmentCode = $"LH{x.AppointmentId:D6}",
+                OriginalAppointmentDate = x.Appointment?.AppointmentDate ?? DateOnly.MinValue,
+                PatientId = x.PatientId,
+                PatientCode = x.Patient?.PatientCode ?? string.Empty,
+                PatientName = x.Patient?.FullName ?? string.Empty,
+                PatientPhoneNumber = x.Patient?.PhoneNumber ?? string.Empty,
+                DoctorId = x.DoctorId,
+                DoctorName = x.Doctor?.FullName ?? string.Empty,
+                FollowUpDate = x.FollowUpDate,
+                FollowUpNotes = x.FollowUpNotes,
+                FollowUpAppointmentId = x.FollowUpAppointmentId,
+                FollowUpAppointmentCode = x.FollowUpAppointment != null ? $"LH{x.FollowUpAppointment.Id:D6}" : null,
+                FollowUpAppointmentDate = x.FollowUpAppointment?.AppointmentDate,
+                FollowUpTimeSlotStart = x.FollowUpAppointment?.TimeSlotStart,
+                FollowUpAppointmentStatus = x.FollowUpAppointment?.Status,
+                LastRemindedAt = x.FollowUpRemindedAt,
+                ReminderCount = x.FollowUpReminderCount
+            };
+        }
     }
 }
