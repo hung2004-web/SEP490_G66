@@ -69,27 +69,6 @@ export const toothLabel = (code) => {
 // ["O", "D"] -> "O, D"
 export const surfacesText = (surfaces) => (surfaces?.length ? surfaces.join(", ") : "Cả răng");
 
-const has = (text, ...words) => words.some((word) => text.includes(word));
-
-// Chart colour of a free-text condition. Order matters: "Đã điều trị tủy" is not an inflamed pulp.
-const conditionCategory = (condition) => {
-    const text = (condition ?? "").normalize("NFC").toLocaleLowerCase("vi");
-    if (has(text, "mất răng")) return "missing";
-    if (has(text, "điều trị tủy", "trám bít")) return "rct";
-    if (has(text, "mão", "cầu răng", "cầu sứ", "bọc sứ")) return "crown";
-    if (has(text, "đã trám", "miếng trám")) return "filling";
-    return "issue";
-};
-
-// Most important category of a tooth's entries: a problem to treat wins over past work.
-const CATEGORY_ORDER = ["missing", "issue", "rct", "crown", "filling"];
-
-export const toothCategory = (entries) => {
-    if (entries.some((entry) => entry.replaced)) return "replaced";
-    const categories = entries.map((entry) => conditionCategory(entry.condition));
-    return CATEGORY_ORDER.find((category) => categories.includes(category)) ?? null;
-};
-
 export const CHART_TYPE = { ADULT: "adult", CHILD: "child" };
 
 // "K02.1" -> "Sâu ngà răng" ("" when the code is not in the dental ICD-10 list).
