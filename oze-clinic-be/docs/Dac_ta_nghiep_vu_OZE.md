@@ -177,6 +177,7 @@ flowchart LR
 | F-APT-08 | Đổi lịch | Bệnh nhân, lễ tân | `POST {id}/reschedule` | ✅ |
 | F-APT-09 | Lễ tân đặt hộ (tự xác nhận) | Lễ tân | | ⬜ (đang dùng `guest-booking` rồi xác nhận tay) |
 | F-APT-10 | Cảnh báo lịch `PENDING` quá hạn xác nhận | Lễ tân | | ⬜ |
+| F-APT-11 | Ghi kết quả liên lạc với khách (gọi đi, khách gọi đến) và đặt lại lịch đã hủy | Lễ tân | Đề xuất `POST/GET {id}/contact-attempts`, `POST {id}/rebook` | ⬜ **Đề xuất, chờ nhóm chốt** |
 
 | Mã | Quy tắc |
 |---|---|
@@ -189,6 +190,17 @@ flowchart LR
 | BR-APT-07 | Lễ tân và quản lý hủy mọi lúc, **bắt buộc lý do**. Hủy xong các dịch vụ chưa làm chuyển `CANCELLED` |
 | BR-APT-08 | Đổi lịch: bệnh nhân tự đổi lịch `PENDING` trong hạn; lịch `CONFIRMED` phải qua lễ tân. Đổi lịch **sửa trên lịch cũ** và ghi audit, không tạo lịch mới |
 | BR-APT-09 | Số điện thoại đã có tài khoản thì khách vãng lai phải đăng nhập để đặt |
+
+**Đề xuất 11/11/2026, chờ nhóm chốt (F-APT-11).** Web không ghi lại được cuộc gọi bằng điện thoại ngoài, nên hệ thống không chứng minh lễ tân đã gọi; hệ thống lưu **lời khai có ghi danh**: ai, lúc nào, kết quả gì. Chi tiết: [F-APT-11](chuc-nang/M3-dat-lich/F-APT-11_ghi-nhan-lien-lac.md).
+
+| Mã | Quy tắc |
+|---|---|
+| BR-APT-10 | Mỗi lần liên lạc với khách về một lịch hẹn ghi **một dòng nhật ký**: chiều (lễ tân gọi đi / khách gọi đến), người ghi, thời điểm, kết quả, ghi chú. Nhật ký **không sửa, không xóa** |
+| BR-APT-11 | Lễ tân xác nhận lịch `PENDING` bằng cách **ghi kết quả liên lạc**, không bấm xác nhận trống. Kết quả quyết định trạng thái: *Đã xác nhận, đúng thông tin* → `CONFIRMED`; *Đã xác nhận, có sửa thông tin* → sửa hồ sơ rồi `CONFIRMED`; *Khách muốn đổi giờ* → đổi lịch (BR-APT-08) và `CONFIRMED`; *Không liên lạc được* → giữ `PENDING`, tăng số lần gọi; *Sai số / không phải người đặt* → `CANCELLED`; *Khách báo hủy* → `CANCELLED` |
+| BR-APT-12 | *Đã xác nhận, có sửa thông tin*: sửa hồ sơ và chuyển `CONFIRMED` **trong cùng một giao dịch**; sửa không hợp lệ thì lịch giữ `PENDING`. Nhật ký lưu giá trị cũ và mới. Bệnh nhân có tài khoản: lễ tân **không sửa SĐT, email** (bệnh nhân tự đổi qua `PUT api/me`). SMS/email xác nhận gửi tới thông tin **sau khi sửa** |
+| BR-APT-13 | *Không liên lạc được*: cách lần gọi trước ít nhất `Booking.ContactRetryMinutes` (15). Sau `Booking.ContactMaxAttempts` (3) lần, lịch được đánh dấu đỏ và gợi ý hủy với lý do "Không liên lạc được"; **lễ tân quyết định**, hệ thống không tự hủy (Q10) |
+| BR-APT-14 | Khách gọi lại sau khi lịch đổi trạng thái: `PENDING` → xác nhận như BR-APT-11; `CONFIRMED` → hủy, đổi giờ, sửa thông tin như bình thường, có ghi nhật ký "khách gọi đến"; `CANCELLED` → **không mở lại lịch cũ**, dùng **"Đặt lại"**: tạo lịch mới cùng bệnh nhân, dịch vụ, bác sĩ, giữ giờ cũ nếu còn trống (không thì gợi ý giờ gần nhất), lịch mới `CONFIRMED` ngay và liên kết với lịch cũ |
+| BR-APT-15 | Lịch còn `PENDING` khi giờ hẹn còn dưới `Booking.PendingWarnHours` (2) giờ được đưa lên đầu danh sách lễ tân và đánh dấu cảnh báo (F-APT-10) |
 
 ### M4. Tiếp đón và hàng chờ
 
@@ -297,11 +309,11 @@ flowchart LR
 | Mã | Chức năng | API | Trạng thái |
 |---|---|---|---|
 | F-PAY-01 | Lập hóa đơn | `POST api/invoices` | 🟡 (thiếu kiểm tra, xem BR-PAY-01..03) |
-| F-PAY-02 | Xem hóa đơn, hóa đơn theo bệnh nhân, danh sách công nợ | | ⬜ |
-| F-PAY-03 | Thu tiền | `POST api/invoices/{id}/payments` | ⬜ |
-| F-PAY-04 | Ứng trước và trả góp | | ⬜ (chờ quy tắc) |
-| F-PAY-05 | Hủy hóa đơn, hoàn tiền | | ⬜ |
-| F-PAY-06 | Chốt ca, báo cáo cuối ngày | | ⬜ |
+| F-PAY-02 | Xem hóa đơn, hóa đơn theo bệnh nhân, danh sách công nợ | | ✅ |
+| F-PAY-03 | Thu tiền | `POST api/invoices/{id}/payments` | ✅ |
+| F-PAY-04 | Ứng trước và trả góp | | 🟡 (chưa kiểm BR-PAY-06) |
+| F-PAY-05 | Hủy hóa đơn, hoàn tiền | | ✅ |
+| F-PAY-06 | Chốt ca, báo cáo cuối ngày | | 🟡 (có báo cáo, chưa chốt ca) |
 
 | Mã | Quy tắc |
 |---|---|
@@ -353,6 +365,9 @@ Bệnh nhân A đặt khám tổng quát 9:00 thứ Hai.
 | `Booking.MinHoursAhead` | 2 | BR-APT-04 |
 | `Booking.CancelCutoffHours` | 24 | BR-APT-06, BR-APT-08 |
 | `Booking.GeneralExamServiceCode` | (phải seed tay) | BR-APT-01 |
+| `Booking.ContactRetryMinutes` | 15 (đề xuất, chưa có) | BR-APT-13 |
+| `Booking.ContactMaxAttempts` | 3 (đề xuất, chưa có) | BR-APT-13 |
+| `Booking.PendingWarnHours` | 2 (đề xuất, chưa có) | BR-APT-15 |
 | `Clinic.SlotDurationMinutes` | 30 | F-APT-02 (bước nhảy giờ bắt đầu slot; slot cắt theo giờ ca bác sĩ) |
 | `CheckIn.LateMinutes` | 15 | BR-RCP-02 (check-in sau giờ hẹn + số phút này thì tính là đến trễ) |
 | `Clinic.WorkStartTime` / `WorkEndTime` | 08:00 / 17:00 | **Có trong DB nhưng code chưa đọc** |
@@ -382,6 +397,7 @@ Chưa chốt thì làm theo cột "Mặc định tạm" và ghi rõ trong code l
 | Q13 | Một buổi làm nhiều giai đoạn được không? | Được |
 | Q14 | Bệnh nhân xem và đồng ý kế hoạch trên app hay chỉ tại quầy? | Xem trên app, đồng ý tại quầy |
 | Q15 | Báo cáo cuối ngày gồm những số liệu nào? | Số lượt khám, NO_SHOW, doanh thu theo phương thức, công nợ |
+| Q16 | Xác nhận lịch: có cần bước bệnh nhân tự xác nhận (OTP khi đặt, link trong SMS/email) để giảm cuộc gọi không? Lịch từ tài khoản đã xác minh OTP có tự `CONFIRMED` không? | Chưa làm; trước mắt chỉ làm nhật ký liên lạc (BR-APT-10..15). Tự xác nhận và click-to-call ghi vào hướng phát triển |
 
 ---
 
@@ -392,3 +408,5 @@ Chưa chốt thì làm theo cột "Mặc định tạm" và ghi rõ trong code l
 | 10/11/2026 | HiepNX | Tạo tài liệu từ code hiện tại, biên bản họp và hai tài liệu tổng quan |
 | 10/11/2026 | HiepNX | Tách 68 chức năng ra `chuc-nang/`. Sửa theo code: BR-APT-01 (giá khám tổng quát), BR-APT-02 (dịch vụ và biến thể), vòng đời phiếu khám và chỉ định chụp, các khóa cấu hình code chưa đọc |
 | 11/11/2026 | HiepNX | Chốt BR-CRM-02: chỉ lễ tân nhắc tái khám, quản lý không tham gia. Thêm 2 dòng vào ma trận quyền. Code: tách API tái khám sang `FollowUpsController` (trước đây quyền Doctor của `ExaminationsController` chặn lễ tân 403) |
+| 11/11/2026 | HiepNX | Viết lại 6 file M8 (`F-PAY-01..06`) theo code hiện tại; cập nhật trạng thái bảng M8. Không đổi BR-PAY; chỗ code lệch BR và câu hỏi Q1, Q2, Q4, Q5, Q6 code đã quyết khác mặc định ghi ở mục 9 từng file |
+| 11/11/2026 | HiepNX | Đề xuất (chờ nhóm chốt) F-APT-11 và BR-APT-10..15: nhật ký liên lạc khi xác nhận lịch, kết quả cuộc gọi quyết định trạng thái, khách gọi lại sau khi lịch đổi trạng thái, đặt lại lịch đã hủy; thêm 3 khóa cấu hình đề xuất và Q16 |
