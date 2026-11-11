@@ -3,12 +3,11 @@ import { ChevronLeft, ChevronRight, Phone, RefreshCw } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import AppointmentNextStep from "@/components/appointment/AppointmentNextStep";
-import CancelAppointmentModal from "@/components/appointment/CancelAppointmentModal";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import StatusBadge from "@/components/ui/StatusBadge";
 import useAsync from "@/hooks/useAsync";
-import { getChangeDeadline, getMyAppointmentDetail, isChangeAllowed } from "@/services/patientDashboardService";
+import { getChangeDeadline, getMyAppointmentDetail } from "@/services/patientDashboardService";
 import { cx } from "@/utils/cx";
 import { formatClock, formatDate, formatDateTime, formatTime, formatWeekday } from "@/utils/format";
 import { APPOINTMENT_STATUS, CLINIC_ADDRESS, CLINIC_HOTLINE, EXAMINATION_STATUS, GENERIC_ERROR_MESSAGE, MESSAGES, PATIENT_APPOINTMENT_STATUS, QUEUE_STATUS } from "@/utils/messages";
@@ -200,19 +199,7 @@ const ErrorState = ({ onRetry }) => (
     </div>
 );
 
-const getChangeBlock = (appointment, now = new Date()) => {
-    if (appointment.status !== APPOINTMENT_STATUS.PENDING) return "status";
-    return isChangeAllowed(appointment, now) ? null : "deadline";
-};
-
-const getHeaderActions = (appointment, changeAllowed, onCancel) => {
-    if (changeAllowed) {
-        return (
-            <button type="button" className={`btn btn-secondary text-danger hover:border-danger-solid hover:text-danger ${MOBILE_ACTION_CLASS}`} onClick={onCancel}>
-                Hủy lịch
-            </button>
-        );
-    }
+const getHeaderActions = (appointment) => {
     if (CLOSED_STATUSES.includes(appointment.status)) {
         return (
             <Link to={ROUTES.BOOK_APPOINTMENT} className={`btn btn-primary ${MOBILE_ACTION_CLASS}`}>
@@ -275,10 +262,10 @@ const SidePanel = ({ appointment, now }) => {
     }
 };
 
-const LoadedState = ({ detail, titleRef, now, updatedAt, refreshError, onRefresh, onCancel }) => {
+const LoadedState = ({ detail, titleRef, now, updatedAt, refreshError, onRefresh }) => {
     const { appointment } = detail;
     const showRefresh = isInClinic(appointment) && Boolean(formatQueueNumber(appointment.queue?.queueNumber)) && Boolean(updatedAt);
-    const actions = getHeaderActions(appointment, isChangeAllowed(appointment, now), onCancel);
+    const actions = getHeaderActions(appointment);
 
     return (
         <>
@@ -321,9 +308,6 @@ const AppointmentDetail = () => {
     const navigate = useNavigate();
     const validId = APPOINTMENT_ID_PATTERN.test(appointmentId);
     const [retryCount, setRetryCount] = useState(0);
-    const [localDetail, setLocalDetail] = useState(null);
-    const [popup, setPopup] = useState(null);
-    const [actionNotFound, setActionNotFound] = useState(false);
     const titleRef = useRef(null);
     const focusRequestRef = useRef(null);
     const redirectedRef = useRef(false);
@@ -334,12 +318,12 @@ const AppointmentDetail = () => {
     const [live, setLive] = useState(null);
     const refreshingRef = useRef(false);
     const resource = toDetailResource(asyncState);
-    const notFound = !validId || resource.notFound || actionNotFound;
+    const notFound = !validId || resource.notFound;
     const currentLive = live && live.base === asyncState.value ? live : null;
-    const detail = localDetail ?? currentLive?.detail ?? resource.detail;
+    const detail = currentLive?.detail ?? resource.detail;
     const updatedAt = formatClock(currentLive?.receivedAt ?? asyncState.value?.receivedAt);
     const refreshError = Boolean(currentLive?.error);
-    const pollInterval = !notFound && !localDetail ? POLL_INTERVAL_MS[detail?.appointment.status] : undefined;
+    const pollInterval = !notFound ? POLL_INTERVAL_MS[detail?.appointment.status] : undefined;
     const announcementKey = detail && !notFound ? `${appointmentId}#${getQueueAnnouncementKey(detail.appointment)}` : "";
     const [announcement, setAnnouncement] = useState({ key: announcementKey, text: "" });
 
@@ -412,36 +396,16 @@ const AppointmentDetail = () => {
 
     useEffect(() => {
         const request = focusRequestRef.current;
-        if (!request || popup || asyncState.loading) return;
-        if (request.refetch && asyncState.value === request.value && asyncState.error === request.error) return;
+        if (!request || asyncState.loading) return;
+        if (asyncState.value === request.value && asyncState.error === request.error) return;
         focusRequestRef.current = null;
         const active = document.activeElement;
         if (titleRef.current && (!active || active === document.body || !active.isConnected)) titleRef.current.focus();
     });
 
-    const requestTitleFocus = (refetch) => {
-        focusRequestRef.current = refetch ? { refetch, value: asyncState.value, error: asyncState.error } : { refetch };
-        if (!refetch) return;
-        setLocalDetail(null);
+    const retry = () => {
+        focusRequestRef.current = { value: asyncState.value, error: asyncState.error };
         setRetryCount((count) => count + 1);
-    };
-
-    const openCancel = () => setPopup({ blocked: getChangeBlock(detail.appointment) });
-
-    const closePopup = ({ refetch }) => {
-        setPopup(null);
-        requestTitleFocus(refetch);
-    };
-
-    const handleChanged = (nextDetail) => {
-        setPopup(null);
-        setLocalDetail(nextDetail);
-        requestTitleFocus(false);
-    };
-
-    const handleActionNotFound = () => {
-        setPopup(null);
-        setActionNotFound(true);
     };
 
     const crumb = detail?.appointment.appointmentCode || DEFAULT_TITLE;
@@ -454,7 +418,7 @@ const AppointmentDetail = () => {
                 </Link>
                 <Breadcrumb items={[{ label: "Lịch hẹn của tôi", href: ROUTES.APPOINTMENTS }, { label: crumb }]} />
             </div>
-            {resource.failed && !localDetail && !notFound && <ErrorState onRetry={() => requestTitleFocus(true)} />}
+            {resource.failed && !notFound && <ErrorState onRetry={retry} />}
             {detail && !notFound && (
                 <LoadedState
                     detail={detail}
@@ -463,23 +427,12 @@ const AppointmentDetail = () => {
                     updatedAt={updatedAt}
                     refreshError={refreshError}
                     onRefresh={() => refresh(true)}
-                    onCancel={openCancel}
                 />
             )}
             {(resource.loading || notFound) && <LoadingState />}
             <p className="sr-only" aria-live="polite">
                 {announcement.text}
             </p>
-            {popup && detail && !notFound && (
-                <CancelAppointmentModal
-                    appointment={detail.appointment}
-                    blocked={popup.blocked}
-                    recheck={() => getChangeBlock(detail.appointment)}
-                    onClose={closePopup}
-                    onCancelled={handleChanged}
-                    onNotFound={handleActionNotFound}
-                />
-            )}
         </>
     );
 };
