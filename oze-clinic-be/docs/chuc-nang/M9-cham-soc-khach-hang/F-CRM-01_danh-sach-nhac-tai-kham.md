@@ -2,15 +2,18 @@
 
 > Khung: [_KHUNG_CHUC_NANG.md](../_KHUNG_CHUC_NANG.md). Nghiệp vụ tổng: [Dac_ta_nghiep_vu_OZE.md](../../Dac_ta_nghiep_vu_OZE.md), mục M9 (BR-CRM-01), mục 4 "Khám mới hay tái khám", câu hỏi Q8.
 >
-> **Chức năng chưa làm.** Mục 3-6 là **ĐỀ XUẤT**, dựa trên `TreatmentPlans`, `TreatmentPlanStages`, `Patients`, `Appointments` đang có. Chốt với nhóm trước khi code.
+> **Cập nhật 11/11/2026: đã làm, theo cách khác đề xuất ban đầu.** Ngày tái khám lấy từ **phiếu khám** (`Examination.FollowUpDate`, bác sĩ đặt qua `PUT api/examinations/{id}/follow-up`), không lấy từ giai đoạn kế hoạch. Bảng trên cùng là hiện trạng code; mục 1-9 bên dưới là đề xuất cũ theo giai đoạn kế hoạch, **giữ lại để tham khảo**, chưa viết lại.
+>
+> **BR-CRM-02:** chỉ lễ tân nhắc tái khám; quản lý không tham gia. Hệ thống tự nhắc (SMS, email, thông báo trong app) lúc 8h sáng cho người tái khám ngày hôm sau (`FollowUpReminder:RunHour = 8`, `DaysAhead = 1`, `FollowUpReminderBackgroundService`).
 
 | Mục | Giá trị |
 |---|---|
 | Module | M9 Chăm sóc khách hàng và thông báo |
-| Trạng thái | ⬜ Chưa làm |
-| Vai trò được dùng | Đề xuất: `Receptionist` (gọi điện), `ClinicManager` (xem) |
-| API | Đề xuất: `GET api/recall-reminders` |
-| Code chính | Chưa có. Đề xuất: `RecallRemindersController.GetAsync` → `RecallReminderService.GetDueAsync` → `TreatmentPlanRepository` (thêm truy vấn) |
+| Trạng thái | ✅ Đã có API |
+| Vai trò được dùng | Nhắc từng người, nhắc hàng loạt: **chỉ `Receptionist`**. Xem danh sách, đặt lịch tái khám: `Receptionist`, `Doctor` (chỉ bệnh nhân của mình) |
+| API | `GET api/examinations/follow-ups`, `POST api/examinations/{id}/remind-follow-up?force=`, `POST api/examinations/follow-ups/remind-due?targetDate=`, `POST api/examinations/{id}/follow-up/schedule`; bệnh nhân: `GET api/appointments/my-follow-ups` |
+| Code chính | `FollowUpsController` → `ExaminationService.GetFollowUpsAsync` / `RemindFollowUpAsync` / `RemindDueFollowUpsAsync` / `ScheduleFollowUpAppointmentAsync` → `ExaminationRepository` |
+| Kiểm thử | `OZE.UnitTest/Controllers/FollowUpsControllerTests.cs` (quyền), `Services/Examinations/*FollowUp*Tests.cs` |
 
 ## 1. Chức năng này làm gì
 

@@ -288,7 +288,7 @@ namespace OZE.Controllers
         /// Schedules a follow-up appointment for a finished or in-service visit.
         /// </summary>
         [HttpPost("{id:long}/follow-up")]
-        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole}")]
         public async Task<ActionResult<ApiResponse<AppointmentResponse>>> ScheduleFollowUpAsync(
             [FromRoute] long id,
             [FromBody] ScheduleFollowUpRequest request,
@@ -302,14 +302,13 @@ namespace OZE.Controllers
         /// Retrieves the follow-up reminder list for receptionist and doctors.
         /// </summary>
         [HttpGet("follow-ups")]
-        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole}")]
         public async Task<ActionResult<ApiResponse<PagedResult<FollowUpListItemResponse>>>> GetFollowUpsAsync(
             [FromQuery] FollowUpQueryParameters query,
             [FromServices] IExaminationService examinationService,
             CancellationToken cancellationToken)
         {
-            var isStrictlyDoctor = IsInRole(RoleConstants.DoctorRole) && !IsInRole(RoleConstants.ClinicManagerRole) && !IsInRole(RoleConstants.ReceptionistRole);
-            var doctorUserId = isStrictlyDoctor ? CurrentUserId : null;
+            var doctorUserId = IsInRole(RoleConstants.ReceptionistRole) ? null : CurrentUserId;
             var result = await examinationService.GetFollowUpsAsync(query, doctorUserId, cancellationToken);
             return Ok(ApiResponse<PagedResult<FollowUpListItemResponse>>.SuccessResult(result));
         }
