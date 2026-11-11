@@ -160,6 +160,19 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Retrieves the signed-in patient's own follow-up recommendations and history.
+        /// </summary>
+        [HttpGet("my-follow-ups")]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<List<FollowUpListItemResponse>>>> GetMyFollowUpsAsync(
+            [FromServices] IExaminationService examinationService,
+            CancellationToken cancellationToken)
+        {
+            var result = await examinationService.GetMyFollowUpsAsync(CurrentUserId ?? string.Empty, cancellationToken);
+            return Ok(ApiResponse<List<FollowUpListItemResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
         /// Retrieves appointment details by appointment ID.
         /// </summary>
         [HttpGet("{id:long}")]
@@ -295,7 +308,8 @@ namespace OZE.Controllers
             [FromServices] IExaminationService examinationService,
             CancellationToken cancellationToken)
         {
-            var doctorUserId = IsInRole(RoleConstants.DoctorRole) ? CurrentUserId : null;
+            var isStrictlyDoctor = IsInRole(RoleConstants.DoctorRole) && !IsInRole(RoleConstants.ClinicManagerRole) && !IsInRole(RoleConstants.ReceptionistRole);
+            var doctorUserId = isStrictlyDoctor ? CurrentUserId : null;
             var result = await examinationService.GetFollowUpsAsync(query, doctorUserId, cancellationToken);
             return Ok(ApiResponse<PagedResult<FollowUpListItemResponse>>.SuccessResult(result));
         }

@@ -134,8 +134,8 @@ namespace OZE.Persistence.Repositories
             if (parameters.HasAppointment.HasValue)
             {
                 query = parameters.HasAppointment.Value
-                    ? query.Where(x => x.FollowUpAppointmentId != null)
-                    : query.Where(x => x.FollowUpAppointmentId == null);
+                    ? query.Where(x => x.FollowUpAppointmentId != null && x.FollowUpAppointment!.Status != AppointmentConstants.CancelledStatus && x.FollowUpAppointment!.Status != AppointmentConstants.NoShowStatus)
+                    : query.Where(x => x.FollowUpAppointmentId == null || x.FollowUpAppointment!.Status == AppointmentConstants.CancelledStatus || x.FollowUpAppointment!.Status == AppointmentConstants.NoShowStatus);
             }
 
             if (!string.IsNullOrWhiteSpace(parameters.SearchKeyword))
@@ -149,7 +149,7 @@ namespace OZE.Persistence.Repositories
             var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query
-                .OrderBy(x => x.FollowUpDate ?? (x.FollowUpAppointment != null ? x.FollowUpAppointment.AppointmentDate : null))
+                .OrderBy(x => x.FollowUpDate ?? (x.FollowUpAppointment != null ? x.FollowUpAppointment.AppointmentDate : DateOnly.MaxValue))
                 .ThenByDescending(x => x.CreatedAt)
                 .Skip((parameters.PageNumber - 1) * parameters.PageSize)
                 .Take(parameters.PageSize)
@@ -170,8 +170,31 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.FollowUpAppointment)
                     .ThenInclude(x => x!.Doctor)
                 .Where(x => (x.FollowUpDate == targetDate || (x.FollowUpAppointment != null && x.FollowUpAppointment.AppointmentDate == targetDate))
+                         && (x.FollowUpAppointment == null || (x.FollowUpAppointment.Status != AppointmentConstants.CancelledStatus && x.FollowUpAppointment.Status != AppointmentConstants.CompletedStatus && x.FollowUpAppointment.Status != AppointmentConstants.NoShowStatus))
                          && (x.FollowUpRemindedAt == null || x.FollowUpRemindedAt < todayStartUtc))
                 .OrderBy(x => x.FollowUpDate)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<Patient?> GetPatientByUserIdAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Patients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.DeletedAt == null, cancellationToken);
+        }
+
+        public async Task<List<Examination>> GetPatientFollowUpsAsync(int patientId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Examinations
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Include(x => x.Appointment)
+                .Include(x => x.FollowUpAppointment)
+                    .ThenInclude(x => x!.Doctor)
+                .Where(x => x.PatientId == patientId && (x.FollowUpDate != null || x.FollowUpAppointmentId != null))
+                .OrderByDescending(x => x.FollowUpDate ?? (x.FollowUpAppointment != null ? x.FollowUpAppointment.AppointmentDate : DateOnly.MinValue))
+                .ThenByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
         }
 

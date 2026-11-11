@@ -142,7 +142,7 @@ Kết quả trên danh sách chờ của bác sĩ: lịch `CHECKED_IN` có `Exam
 
 ## 8. Kiểm thử
 
-- Test hiện có: chưa có test cho `CompleteAsync`, `ProcessSimulatorWebhookAsync`, `WebhooksController`. Liên quan: `AppointmentPriorityReturnAndQueueTests.GetWaitingListAsync_ShouldPlacePriorityReturnPatientAheadOfOnTimePatients`, `StartExaminationAsync_ShouldResumeExistingExamination_WhenReturningFromImaging`.
+- Test hiện có: chưa có test cho `CompleteAsync`, `ProcessSimulatorWebhookAsync`, `WebhooksController`. Liên quan: `GetWaitingListTests.GetWaitingListAsync_ShouldPlacePriorityReturnPatientAheadOfOnTimePatients`, `StartExaminationAsync_ShouldResumeExistingExamination_WhenReturningFromImaging`.
 - Ca cần test thêm: hoàn thành `Pending` và `InProgress`; từ chối `Completed`/`Cancelled`; lịch `CHECKED_IN` → `Priority = 2` và hàng chờ khám `WAITING`; lịch `IN_SERVICE`/`COMPLETED` → không đổi lịch; còn chỉ định mở khác → hàng chờ `Imaging` không đóng; webhook: thiếu/sai chữ ký, body hỏng, `IR-99` và `99`, sự kiện `CAPTURE_PROGRESS` bị bỏ qua, gửi lặp lại, chỉ định đã hủy.
 
 ## 9. Còn thiếu / câu hỏi mở

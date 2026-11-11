@@ -98,7 +98,7 @@ DTO `LoginRequest`:
 
 ## 8. Kiểm thử
 
-- `AuthServiceTests`:
+- `Services/Auth/*Tests`:
   - `LoginAsync_WithCorrectEmailAndPassword_ShouldReturnTokens`
   - `LoginAsync_WhenSuccessful_ShouldSaveRefreshTokenValidForSevenDays`
   - `LoginAsync_WhenSuccessful_AccessTokenShouldExpireAfterConfiguredMinutes`

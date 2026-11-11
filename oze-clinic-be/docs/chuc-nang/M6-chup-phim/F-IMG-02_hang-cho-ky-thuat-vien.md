@@ -97,7 +97,7 @@ Ví dụ:
 
 ## 8. Kiểm thử
 
-- Test hiện có: `ImagingRequestServiceTests.GetQueueAsync_ShouldReturnPendingAndInProgressRequestsInRequestTimeOrder`, `GetQueueAsync_ShouldReturnEmptyList_WhenNoRequestIsWaiting`.
+- Test hiện có: `GetImagingQueueTests.GetQueueAsync_ShouldReturnPendingAndInProgressRequestsInRequestTimeOrder`, `GetQueueAsync_ShouldReturnEmptyList_WhenNoRequestIsWaiting`.
 - Ca cần test thêm: controller trả message `"No Data."` khi rỗng; chỉ định `Completed`/`Cancelled` không xuất hiện; quyền role khác bị 403.
 
 ## 9. Còn thiếu / câu hỏi mở

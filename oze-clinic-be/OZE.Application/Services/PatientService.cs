@@ -86,7 +86,8 @@ namespace OZE.Application.Services
                 return ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.InvalidBloodType);
             }
 
-            if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.UtcNow))
+            // The clinic works in Vietnam time: today's date of birth is valid from 00:00 local time
+            if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > DateOnly.FromDateTime(ClinicClock.Today))
             {
                 return ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.InvalidDateOfBirth);
             }
@@ -154,7 +155,7 @@ namespace OZE.Application.Services
 
             if (string.IsNullOrWhiteSpace(request.FullName))
             {
-                return ApiResponse<PatientDto>.FailureResult("FullName is required.");
+                return ApiResponse<PatientDto>.FailureResult(ErrorConstants.AuthMessage.FullNameRequired);
             }
 
             if (!PatientConstants.Gender.TryNormalize(request.Gender, out var normalizedGender))
@@ -167,33 +168,45 @@ namespace OZE.Application.Services
                 return ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.InvalidBloodType);
             }
 
-            if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > DateOnly.FromDateTime(DateTime.UtcNow))
+            // The clinic works in Vietnam time: today's date of birth is valid from 00:00 local time
+            if (request.DateOfBirth.HasValue && request.DateOfBirth.Value > DateOnly.FromDateTime(ClinicClock.Today))
             {
                 return ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.InvalidDateOfBirth);
             }
 
-            string? normalizedPhone = null;
+            // An empty phone number or email keeps the current one, so a form that leaves them out does not erase them
+            var phoneNumber = patient.PhoneNumber;
             if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
             {
-                if (PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var validPhone))
-                {
-                    normalizedPhone = validPhone;
-                }
-                else
+                if (!PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var validPhone))
                 {
                     return ApiResponse<PatientDto>.FailureResult(ErrorConstants.AuthMessage.InvalidPhone);
                 }
 
-                var isPhoneInUse = await _patientRepository.ExistsByPhoneAsync(normalizedPhone, id, cancellationToken);
-                if (isPhoneInUse)
-                {
-                    return ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.PhoneExist);
-                }
+                phoneNumber = validPhone;
+            }
+
+            var email = string.IsNullOrWhiteSpace(request.Email) ? patient.Email : request.Email.Trim().ToLowerInvariant();
+
+            var phoneChanged = phoneNumber != null
+                && (patient.PhoneNumber == null || !PhoneNumberHelper.GetLookupVariants(phoneNumber).Contains(patient.PhoneNumber));
+            var emailChanged = !string.Equals(email, patient.Email, StringComparison.OrdinalIgnoreCase);
+
+            // A patient with an account signs in with this phone number or email and confirms a new one by OTP,
+            // so only the patient can change them (PUT /api/me); staff would put the account out of step
+            if (!string.IsNullOrEmpty(patient.UserId) && (phoneChanged || emailChanged))
+            {
+                return ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.ContactManagedByAccount);
+            }
+
+            if (phoneChanged && await _patientRepository.ExistsByPhoneAsync(phoneNumber!, id, cancellationToken))
+            {
+                return ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.PhoneExist);
             }
 
             patient.FullName = request.FullName.Trim();
-            patient.PhoneNumber = normalizedPhone;
-            patient.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
+            patient.PhoneNumber = phoneNumber;
+            patient.Email = email;
             patient.DateOfBirth = request.DateOfBirth;
             patient.Gender = normalizedGender;
             patient.BloodType = normalizedBloodType;

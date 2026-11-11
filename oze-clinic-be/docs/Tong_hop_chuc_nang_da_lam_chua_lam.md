@@ -60,7 +60,7 @@ Luồng chính của phòng khám: đặt lịch → xác nhận → check-in �
 - **CI/CD** (nếu chưa đổi): cần xác nhận lại có chạy test và migration trên nhánh feature hay chưa.
 - Unit test đã phủ Auth, check-in, waiting list, start examination, imaging, ownership, patients, services (~257). Vẫn mỏng hoặc thiếu cho đặt lịch bệnh nhân, `/my`, đổi lịch, walk-in, end-shift, examination content / prescription / diagnoses.
 - Tài liệu cũ có thể còn lệch (ví dụ `Tong_quan_he_thong_OZE.md`) — nên đồng bộ sau.
-- Hồ sơ bệnh nhân khách vãng lai không có tài khoản; các trường bảo hiểm, nhóm máu, liên hệ khẩn cấp hiện không còn `PUT api/patients/{id}` để sửa.
+- Đã thêm lại `PUT api/patients/{id}` (11/11/2026) cho lễ tân và quản lý để sửa hồ sơ bệnh nhân (tên, ngày sinh, giới tính, nhóm máu, bảo hiểm, liên hệ khẩn cấp...). Bệnh nhân có tài khoản thì SĐT và email chỉ do bệnh nhân tự đổi qua `PUT api/me` (có OTP); để trống SĐT/email thì giữ giá trị cũ. Giao diện FE chưa gọi API này.
 - **Lệch FE–BE lớn**: nhiều API khám / hàng chờ / walk-in / imaging đã có trên máy chủ nhưng giao diện chưa gọi.
 
 ## 4. Các quyết định đã chốt

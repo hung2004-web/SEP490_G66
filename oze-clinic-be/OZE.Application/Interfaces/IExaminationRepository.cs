@@ -22,6 +22,8 @@ namespace OZE.Application.Interfaces
         Task<Examination?> GetByIdWithFollowUpAsync(long examinationId, CancellationToken cancellationToken = default);
         Task<PagedResult<Examination>> GetFollowUpsAsync(FollowUpQueryParameters parameters, CancellationToken cancellationToken = default);
         Task<List<Examination>> GetDueFollowUpsAsync(DateOnly targetDate, CancellationToken cancellationToken = default);
+        Task<Patient?> GetPatientByUserIdAsync(string userId, CancellationToken cancellationToken = default);
+        Task<List<Examination>> GetPatientFollowUpsAsync(int patientId, CancellationToken cancellationToken = default);
         Task AddNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }

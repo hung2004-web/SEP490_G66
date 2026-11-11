@@ -10,148 +10,12 @@ using OZE.Common.Models;
 using OZE.Domain.Entities;
 using Xunit;
 
-namespace OZE.UnitTest.Services
+namespace OZE.UnitTest.Services.Appointments
 {
-    public class AppointmentFollowUpTests
+    // OZ-APPT-21 ScheduleFollowUp
+    [Trait("Tab", "OZ-APPT-21")]
+    public class ScheduleFollowUpTests : AppointmentFollowUpTestBase
     {
-        private const int DoctorId = 5;
-        private const int RoomId = 1;
-        private const long OriginalAppointmentId = 100;
-        private const long OriginalExaminationId = 200;
-
-        private readonly Mock<IAppointmentRepository> _appointmentRepoMock = new();
-        private readonly Mock<IRegistrationRepository> _registrationRepoMock = new();
-        private readonly Mock<IServiceRepository> _serviceRepoMock = new();
-        private readonly Mock<ISmsSender> _smsSenderMock = new();
-        private readonly Mock<IEmailSender> _emailSenderMock = new();
-        private readonly Mock<IAuditLogService> _auditLogMock = new();
-        private readonly Mock<ILogger<AppointmentService>> _loggerMock = new();
-        private readonly AppointmentService _service;
-
-        private readonly Service _generalExamService;
-        private readonly Patient _patient;
-
-        public AppointmentFollowUpTests()
-        {
-            _generalExamService = new Service
-            {
-                Id = 1,
-                ServiceCode = "KHAM-TQ",
-                ServiceName = "Kham tong quat",
-                ReferencePrice = 0,
-                EstimatedMinutes = 30,
-                IsActive = true
-            };
-
-            _patient = new Patient
-            {
-                Id = 15,
-                FullName = "Tran Van C",
-                PatientCode = "BN000015",
-                PhoneNumber = "0987654321",
-                UserId = "user-patient-15"
-            };
-
-            _service = new AppointmentService(
-                _appointmentRepoMock.Object,
-                _registrationRepoMock.Object,
-                _serviceRepoMock.Object,
-                _smsSenderMock.Object,
-                _emailSenderMock.Object,
-                _auditLogMock.Object,
-                _loggerMock.Object);
-
-            // Repository default setups
-            _appointmentRepoMock
-                .Setup(r => r.GetConfigValueAsync(ConfigKeyConstants.GeneralExamServiceCode))
-                .ReturnsAsync("KHAM-TQ");
-            _appointmentRepoMock
-                .Setup(r => r.GetConfigValueAsync(ConfigKeyConstants.SlotDurationMinutes))
-                .ReturnsAsync("30");
-            _appointmentRepoMock
-                .Setup(r => r.GetConfigValueAsync(ConfigKeyConstants.BookingMaxDaysAhead))
-                .ReturnsAsync("30");
-            _appointmentRepoMock
-                .Setup(r => r.GetConfigValueAsync(ConfigKeyConstants.BookingMinHoursAhead))
-                .ReturnsAsync("0");
-
-            _serviceRepoMock
-                .Setup(r => r.GetByCodeAsync("KHAM-TQ", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(_generalExamService);
-
-            _appointmentRepoMock
-                .Setup(r => r.GetServicesByIdsAsync(It.IsAny<IReadOnlyCollection<int>>()))
-                .ReturnsAsync(new List<Service>());
-            _appointmentRepoMock
-                .Setup(r => r.GetVariantsByIdsAsync(It.IsAny<IReadOnlyCollection<int>>()))
-                .ReturnsAsync(new List<ServiceVariant>());
-
-            _appointmentRepoMock
-                .Setup(r => r.ExecuteSerializableAsync(It.IsAny<Func<Task<(Appointment, Patient, AvailableSlotResponse)>>>()))
-                .Returns<Func<Task<(Appointment, Patient, AvailableSlotResponse)>>>(action => action());
-        }
-
-        private Appointment CreateOriginalAppointment(string status = AppointmentConstants.CompletedStatus)
-        {
-            var today = DateOnly.FromDateTime(ClinicClock.Today);
-            var doctor = new StaffProfile { Id = DoctorId, FullName = "BS. Le Thu Ha" };
-
-            var exam = new Examination
-            {
-                Id = OriginalExaminationId,
-                AppointmentId = OriginalAppointmentId,
-                PatientId = _patient.Id,
-                DoctorId = DoctorId,
-                ExaminationStatus = ExaminationConstants.Locked,
-                Patient = _patient,
-                Doctor = doctor
-            };
-
-            var appointment = new Appointment
-            {
-                Id = OriginalAppointmentId,
-                PatientId = _patient.Id,
-                DoctorId = DoctorId,
-                AppointmentDate = today,
-                TimeSlotStart = new TimeOnly(8, 0),
-                TimeSlotEnd = new TimeOnly(8, 30),
-                Status = status,
-                Patient = _patient,
-                Doctor = doctor,
-                Examination = exam,
-                ServiceItems = new List<AppointmentServiceItem>()
-            };
-
-            exam.Appointment = appointment;
-            return appointment;
-        }
-
-        private void SetupDoctorShift(DateOnly date, TimeOnly shiftStart, TimeOnly shiftEnd)
-        {
-            var room = new Room { Id = RoomId, RoomName = "Phong kham 1", RoomType = RoomTypeConstants.GeneralTreatment };
-            var shift = new StaffSchedule
-            {
-                Id = 1,
-                StaffProfileId = DoctorId,
-                ScheduleDate = date,
-                ShiftStart = shiftStart,
-                ShiftEnd = shiftEnd,
-                Room = room,
-                RoomId = RoomId,
-                StaffProfile = new StaffProfile { Id = DoctorId, FullName = "BS. Le Thu Ha" }
-            };
-
-            _appointmentRepoMock
-                .Setup(r => r.GetDoctorShiftsAsync(date, DoctorId))
-                .ReturnsAsync(new List<StaffSchedule> { shift });
-            _appointmentRepoMock
-                .Setup(r => r.GetActiveAppointmentsAsync(date, It.IsAny<IReadOnlyCollection<int>>()))
-                .ReturnsAsync(new List<Appointment>());
-            _appointmentRepoMock
-                .Setup(r => r.HasEndedShiftAsync(DoctorId, date))
-                .ReturnsAsync(false);
-        }
-
         [Fact]
         public async Task ScheduleFollowUpAsync_ShouldCreateAppointmentAndLinkToExamination()
         {
@@ -195,7 +59,7 @@ namespace OZE.UnitTest.Services
             createdAppointment!.ParentAppointmentId.Should().Be(OriginalAppointmentId);
             createdAppointment.AppointmentDate.Should().Be(followUpDate);
             createdAppointment.TimeSlotStart.Should().Be(slotStart);
-            createdAppointment.Status.Should().Be(AppointmentConstants.PendingStatus);
+            createdAppointment.Status.Should().Be(AppointmentConstants.ConfirmedStatus);
 
             original.Examination!.FollowUpAppointmentId.Should().Be(500);
             original.Examination.FollowUpDate.Should().Be(followUpDate);
@@ -296,6 +160,57 @@ namespace OZE.UnitTest.Services
             result.Should().NotBeNull();
             createdAppointment.Should().NotBeNull();
             createdAppointment!.ParentAppointmentId.Should().Be(OriginalAppointmentId);
+        }
+
+        [Fact]
+        public async Task ScheduleFollowUpAsync_ShouldAllowScheduling_WhenPreviousFollowUpWasCancelled()
+        {
+            var original = CreateOriginalAppointment();
+            var cancelledFollowUp = new Appointment
+            {
+                Id = 999,
+                Status = AppointmentConstants.CancelledStatus,
+                AppointmentDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(2))
+            };
+            original.Examination!.FollowUpAppointmentId = 999;
+            original.Examination.FollowUpAppointment = cancelledFollowUp;
+
+            var newFollowUpDate = DateOnly.FromDateTime(ClinicClock.Today.AddDays(8));
+            var slotStart = new TimeOnly(10, 0);
+
+            _appointmentRepoMock
+                .Setup(r => r.GetByIdWithExaminationAsync(OriginalAppointmentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(original);
+
+            SetupDoctorShift(newFollowUpDate, new TimeOnly(8, 0), new TimeOnly(12, 0));
+
+            _appointmentRepoMock
+                .Setup(r => r.HasUnfinishedAppointmentAsync(_patient.Id, OriginalAppointmentId))
+                .ReturnsAsync(false);
+
+            Appointment? createdAppointment = null;
+            _appointmentRepoMock
+                .Setup(r => r.AddAsync(It.IsAny<Appointment>()))
+                .Callback<Appointment>(a =>
+                {
+                    a.Id = 502;
+                    createdAppointment = a;
+                })
+                .Returns(Task.CompletedTask);
+
+            var request = new ScheduleFollowUpRequest
+            {
+                Date = newFollowUpDate,
+                SlotStart = slotStart,
+                Notes = "Đặt lại lịch tái khám sau khi đã hủy lần trước"
+            };
+
+            var result = await _service.ScheduleFollowUpAsync(OriginalAppointmentId, request, "receptionist-1");
+
+            result.Should().NotBeNull();
+            createdAppointment.Should().NotBeNull();
+            original.Examination.FollowUpAppointmentId.Should().Be(502);
+            original.Examination.FollowUpDate.Should().Be(newFollowUpDate);
         }
     }
 }
