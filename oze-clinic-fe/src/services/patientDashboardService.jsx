@@ -104,7 +104,13 @@ export const getMyTreatmentPlans = () => loadMock((data) => data.treatmentPlans)
 
 export const getMyInvoices = () => loadMock((data) => data.invoices);
 
-export const getMyAppointmentDetail = (appointmentId) => loadMock((data) => buildDetail(data, appointmentId), null);
+export const getMyAppointmentDetail = async (appointmentId, { refresh = false } = {}) => {
+    if (refresh && readMockMode() === "refresh-error") {
+        await wait(MOCK_DELAY_MS);
+        return failure(GENERIC_ERROR_MESSAGE);
+    }
+    return loadMock((data) => buildDetail(data, appointmentId), null);
+};
 
 const actionFailure = (code, data = null) => ({ success: false, message: null, data, errors: null, code });
 

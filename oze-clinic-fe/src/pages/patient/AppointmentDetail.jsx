@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Phone, RefreshCw } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -8,8 +8,8 @@ import DashboardSection from "@/components/dashboard/DashboardSection";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import StatusBadge from "@/components/ui/StatusBadge";
 import useAsync from "@/hooks/useAsync";
-import { cx } from "@/utils/cx";
 import { getChangeDeadline, getMyAppointmentDetail, isChangeAllowed } from "@/services/patientDashboardService";
+import { cx } from "@/utils/cx";
 import { formatClock, formatDate, formatDateTime, formatTime, formatWeekday } from "@/utils/format";
 import { APPOINTMENT_STATUS, CLINIC_ADDRESS, CLINIC_HOTLINE, EXAMINATION_STATUS, GENERIC_ERROR_MESSAGE, MESSAGES, PATIENT_APPOINTMENT_STATUS, QUEUE_STATUS } from "@/utils/messages";
 import {
@@ -18,6 +18,8 @@ import {
     PATIENT_QUEUE_STATE,
     formatQueueNumber,
     getPatientQueueState,
+    getQueueAnnouncement,
+    getQueueAnnouncementKey,
     getPeopleAheadText,
     isInClinic,
 } from "@/utils/patientQueue";
@@ -60,7 +62,11 @@ const TEXT = {
     UPDATED_AT: (time) => `Cập nhật lúc ${time}`,
     UPDATE_FAILED: "Chưa cập nhật được",
     REFRESH_LABEL: "Cập nhật số thứ tự",
+    REFRESH_SUCCESS: "Đã cập nhật số thứ tự.",
+    REFRESH_FAILED: (time) => `Chưa cập nhật được. Số đang hiện là số lúc ${time}.`,
 };
+
+const POLL_INTERVAL_MS = { [APPOINTMENT_STATUS.CHECKED_IN]: 15_000, [APPOINTMENT_STATUS.IN_SERVICE]: 30_000 };
 
 const PEOPLE_AHEAD_STATES = [PATIENT_QUEUE_STATE.WAITING, PATIENT_QUEUE_STATE.SKIPPED];
 
@@ -325,9 +331,76 @@ const AppointmentDetail = () => {
         () => (validId ? getMyAppointmentDetail(appointmentId).then((value) => ({ ...value, receivedAt: new Date() })) : Promise.resolve(null)),
         [appointmentId, validId, retryCount],
     );
+    const [live, setLive] = useState(null);
+    const refreshingRef = useRef(false);
     const resource = toDetailResource(asyncState);
     const notFound = !validId || resource.notFound || actionNotFound;
-    const detail = localDetail ?? resource.detail;
+    const currentLive = live && live.base === asyncState.value ? live : null;
+    const detail = localDetail ?? currentLive?.detail ?? resource.detail;
+    const updatedAt = formatClock(currentLive?.receivedAt ?? asyncState.value?.receivedAt);
+    const refreshError = Boolean(currentLive?.error);
+    const pollInterval = !notFound && !localDetail ? POLL_INTERVAL_MS[detail?.appointment.status] : undefined;
+    const announcementKey = detail && !notFound ? `${appointmentId}#${getQueueAnnouncementKey(detail.appointment)}` : "";
+    const [announcement, setAnnouncement] = useState({ key: announcementKey, text: "" });
+
+    if (announcement.key !== announcementKey) {
+        const [previousId, previousKey = ""] = announcement.key.split("#");
+        const queueKey = announcementKey.split("#")[1] ?? "";
+        const changed = previousId === appointmentId && previousKey && queueKey;
+        setAnnouncement({ key: announcementKey, text: changed ? getQueueAnnouncement(detail.appointment, previousKey) : "" });
+    }
+
+    const refresh = async (manual) => {
+        if (!validId || (!manual && refreshingRef.current)) return;
+        const base = asyncState.value;
+        const failedAt = updatedAt;
+        refreshingRef.current = true;
+        const result = await getMyAppointmentDetail(appointmentId, { refresh: true })
+            .catch(() => null)
+            .finally(() => {
+                refreshingRef.current = false;
+            });
+        if (result?.success === true && isPlainObject(result.data) && isPlainObject(result.data.appointment)) {
+            setLive({ base, detail: result.data, receivedAt: new Date(), error: false });
+            if (manual) toast.success(TEXT.REFRESH_SUCCESS);
+            return;
+        }
+        setLive((previous) => ({ ...(previous?.base === base ? previous : { detail: null, receivedAt: null }), base, error: true }));
+        if (manual) toast.error(TEXT.REFRESH_FAILED(failedAt));
+    };
+
+    const pollNow = useEffectEvent(() => refresh(false));
+
+    useEffect(() => {
+        if (!pollInterval) return undefined;
+        let timer = null;
+        const stop = () => {
+            clearInterval(timer);
+            timer = null;
+        };
+        const start = () => {
+            stop();
+            if (document.visibilityState === "visible") timer = setInterval(() => pollNow(), pollInterval);
+        };
+        const resume = () => {
+            if (document.visibilityState !== "visible") {
+                stop();
+                return;
+            }
+            pollNow();
+            start();
+        };
+        start();
+        document.addEventListener("visibilitychange", resume);
+        window.addEventListener("focus", resume);
+        window.addEventListener("online", resume);
+        return () => {
+            stop();
+            document.removeEventListener("visibilitychange", resume);
+            window.removeEventListener("focus", resume);
+            window.removeEventListener("online", resume);
+        };
+    }, [pollInterval]);
 
     useEffect(() => {
         if (!notFound) return;
@@ -383,9 +456,20 @@ const AppointmentDetail = () => {
             </div>
             {resource.failed && !localDetail && !notFound && <ErrorState onRetry={() => requestTitleFocus(true)} />}
             {detail && !notFound && (
-                <LoadedState detail={detail} titleRef={titleRef} now={new Date()} updatedAt={formatClock(asyncState.value?.receivedAt)} refreshError={false} onCancel={openCancel} />
+                <LoadedState
+                    detail={detail}
+                    titleRef={titleRef}
+                    now={new Date()}
+                    updatedAt={updatedAt}
+                    refreshError={refreshError}
+                    onRefresh={() => refresh(true)}
+                    onCancel={openCancel}
+                />
             )}
             {(resource.loading || notFound) && <LoadingState />}
+            <p className="sr-only" aria-live="polite">
+                {announcement.text}
+            </p>
             {popup && detail && !notFound && (
                 <CancelAppointmentModal
                     appointment={detail.appointment}
