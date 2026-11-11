@@ -38,6 +38,8 @@ Mỗi chức năng được mô tả theo cùng một khung: **Mã · Vai trò �
 | Tạo, sửa, xóa nháp, đề xuất kế hoạch điều trị | | | ✔ | | |
 | Xem, duyệt, hủy kế hoạch điều trị | (xem của mình, ⬜) | ✔ | ✔ | | |
 | Hóa đơn, thu tiền, công nợ, chốt ca | | ✔ | | | ✔ |
+| Nhắc tái khám (từng người, hàng loạt) | | ✔ | | | |
+| Xem danh sách tái khám, đặt lịch tái khám | | ✔ | ✔ (bệnh nhân của mình) | | |
 | Duyệt hoàn tiền | | | | | ✔ |
 | Nhân viên, phòng, dịch vụ, ca, cấu hình | | | | | ✔ |
 
@@ -316,13 +318,14 @@ flowchart LR
 
 | Mã | Chức năng | Trạng thái |
 |---|---|---|
-| F-CRM-01 | Danh sách bệnh nhân cần nhắc tái khám (giai đoạn sắp đến hạn) | ⬜ |
+| F-CRM-01 | Danh sách tái khám và nhắc tái khám (theo ngày tái khám bác sĩ đặt trên phiếu khám) | ✅ |
 | F-CRM-02 | Nhật ký gọi nhắc (đã gọi, hẹn lại, không nghe máy) | ⬜ |
 | F-CRM-03 | API đọc thông báo trong hệ thống | ⬜ (đã ghi `Notification` khi tạo chỉ định phim) |
 
 | Mã | Quy tắc |
 |---|---|
 | BR-CRM-01 | Kế hoạch có ngày tái khám, **lễ tân gọi chốt giờ** rồi đặt lịch cho giai đoạn đó |
+| BR-CRM-02 | **Chỉ lễ tân** nhắc tái khám (từng người hoặc hàng loạt). Quản lý không tham gia nhắc tái khám. Bác sĩ đặt ngày tái khám và xem danh sách bệnh nhân của mình. Hệ thống tự gửi nhắc (SMS, email, thông báo) lúc 8h sáng cho người tái khám ngày hôm sau |
 
 ---
 
@@ -388,3 +391,4 @@ Chưa chốt thì làm theo cột "Mặc định tạm" và ghi rõ trong code l
 |---|---|---|
 | 10/11/2026 | HiepNX | Tạo tài liệu từ code hiện tại, biên bản họp và hai tài liệu tổng quan |
 | 10/11/2026 | HiepNX | Tách 68 chức năng ra `chuc-nang/`. Sửa theo code: BR-APT-01 (giá khám tổng quát), BR-APT-02 (dịch vụ và biến thể), vòng đời phiếu khám và chỉ định chụp, các khóa cấu hình code chưa đọc |
+| 11/11/2026 | HiepNX | Chốt BR-CRM-02: chỉ lễ tân nhắc tái khám, quản lý không tham gia. Thêm 2 dòng vào ma trận quyền. Code: tách API tái khám sang `FollowUpsController` (trước đây quyền Doctor của `ExaminationsController` chặn lễ tân 403) |
