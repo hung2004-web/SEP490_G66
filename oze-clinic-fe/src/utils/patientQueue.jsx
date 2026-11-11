@@ -1,5 +1,5 @@
 import { formatTime, getClinicToday } from "./format";
-import { APPOINTMENT_STATUS, CLINIC_HOTLINE, MESSAGES, QUEUE_STATUS } from "./messages";
+import { APPOINTMENT_STATUS, MESSAGES, QUEUE_STATUS } from "./messages";
 
 export const QUEUE_IN_PROGRESS = "IN_PROGRESS";
 
@@ -138,11 +138,7 @@ const getConfirmedGuide = (appointment) => {
     if (String(appointment.appointmentDate ?? "").slice(0, 10) === getClinicToday() && start) {
         return { tone: "info", title: `Hôm nay bạn có lịch lúc ${start}`, detail: "Đến quầy lễ tân báo có mặt để nhận số thứ tự và phòng chờ." };
     }
-    return {
-        tone: "info",
-        title: "Vào ngày khám, vui lòng đến quầy lễ tân báo có mặt",
-        detail: `Nếu cần đổi hoặc hủy lịch, vui lòng gọi hotline ${CLINIC_HOTLINE.DISPLAY}.`,
-    };
+    return { tone: "info", title: "Vào ngày khám, vui lòng đến quầy lễ tân báo có mặt", detail: null };
 };
 
 export const getAppointmentGuide = (appointment) => {

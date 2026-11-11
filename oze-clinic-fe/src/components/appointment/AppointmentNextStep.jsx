@@ -21,7 +21,7 @@ const AppointmentNextStep = ({ appointment, refreshError = false, updatedAt, cla
             <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
             <div>
                 <p className="alert-title">{guide.title}</p>
-                <p>{guide.detail}</p>
+                {guide.detail && <p>{guide.detail}</p>}
                 {reassignText && <p className="num mt-2">{reassignText}</p>}
                 {showRefreshError && <p className="num mt-2">{`Thông tin lúc ${updatedAt}, có thể đã thay đổi. Bấm Cập nhật hoặc hỏi lễ tân.`}</p>}
             </div>

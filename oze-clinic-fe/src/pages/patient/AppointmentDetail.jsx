@@ -100,7 +100,6 @@ const getResultRoute = (appointment) =>
         ? getMedicalRecordDetailRoute(appointment.examinationId)
         : ROUTES.MEDICAL_RECORD;
 
-
 const BigNumber = ({ value, success = false }) => (
     <span className={cx("num font-heading text-heading-2 font-bold", success ? "text-success" : "text-primary")}>{value}</span>
 );

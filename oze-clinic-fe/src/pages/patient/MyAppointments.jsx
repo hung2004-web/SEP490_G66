@@ -229,7 +229,12 @@ const MyAppointments = () => {
                                 >
                                     <Funnel aria-hidden="true" className="size-4" />
                                     {TEXT.STATUS}
-                                    {statuses.length > 0 && <span className="num rounded-full bg-primary px-2 text-caption text-on-primary">{statuses.length}</span>}
+                                    {statuses.length > 0 && (
+                                        <span className="num rounded-full bg-primary px-2 text-caption text-on-primary">
+                                            <span className="sr-only">, đã chọn </span>
+                                            {statuses.length}
+                                        </span>
+                                    )}
                                 </button>
                                 {filterOpen && (
                                     <FilterPopover

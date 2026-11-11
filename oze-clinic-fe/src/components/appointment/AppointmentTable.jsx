@@ -26,9 +26,12 @@ const QueueCell = ({ queueNumber }) =>
     queueNumber ? (
         <span className="num text-title text-ink">{queueNumber}</span>
     ) : (
-        <span className="text-muted" aria-label={NO_QUEUE_LABEL}>
-            —
-        </span>
+        <>
+            <span aria-hidden="true" className="text-muted">
+                —
+            </span>
+            <span className="sr-only">{NO_QUEUE_LABEL}</span>
+        </>
     );
 
 const AppointmentTable = ({ appointments = [], labelledBy, loading = false }) => (
