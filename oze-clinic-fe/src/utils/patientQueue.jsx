@@ -13,7 +13,21 @@ export const PATIENT_QUEUE_STATE = {
     WAITING: "waiting",
 };
 
-const IN_CLINIC_STATUSES = [APPOINTMENT_STATUS.CHECKED_IN, APPOINTMENT_STATUS.IN_SERVICE];
+export const PATIENT_QUEUE_BADGE = {
+    [PATIENT_QUEUE_STATE.WAITING]: { label: "Đang chờ gọi số", badge: "badge-neutral" },
+    [PATIENT_QUEUE_STATE.CALLED]: { label: "Đang gọi số của bạn", badge: "badge-success" },
+    [PATIENT_QUEUE_STATE.SKIPPED]: { label: "Chờ gọi lại", badge: "badge-warning" },
+    [PATIENT_QUEUE_STATE.RETURNED]: { label: "Chờ gọi lại sau chụp phim", badge: "badge-info" },
+    [PATIENT_QUEUE_STATE.DESK]: { label: "Mời đến quầy lễ tân", badge: "badge-warning" },
+    [PATIENT_QUEUE_STATE.IN_SERVICE]: { label: "Đang khám", badge: "badge-info" },
+};
+
+export const IMAGING_QUEUE_BADGE = {
+    [QUEUE_STATUS.WAITING]: { label: "Đang chờ chụp phim", badge: "badge-info" },
+    [QUEUE_STATUS.CALLED]: { label: "Đến lượt chụp phim", badge: "badge-success" },
+};
+
+const IN_CLINIC_STATUSES =[APPOINTMENT_STATUS.CHECKED_IN, APPOINTMENT_STATUS.IN_SERVICE];
 
 const IN_SERVICE_QUEUE_STATUSES = [QUEUE_IN_PROGRESS, QUEUE_STATUS.IN_EXAMINATION];
 

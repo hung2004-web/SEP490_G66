@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Phone, RefreshCw } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import AppointmentNextStep from "@/components/appointment/AppointmentNextStep";
@@ -8,10 +8,19 @@ import DashboardSection from "@/components/dashboard/DashboardSection";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import StatusBadge from "@/components/ui/StatusBadge";
 import useAsync from "@/hooks/useAsync";
+import { cx } from "@/utils/cx";
 import { getChangeDeadline, getMyAppointmentDetail, isChangeAllowed } from "@/services/patientDashboardService";
 import { formatClock, formatDate, formatDateTime, formatTime, formatWeekday } from "@/utils/format";
-import { APPOINTMENT_STATUS, CLINIC_ADDRESS, CLINIC_HOTLINE, EXAMINATION_STATUS, GENERIC_ERROR_MESSAGE, MESSAGES, PATIENT_APPOINTMENT_STATUS } from "@/utils/messages";
-import { formatQueueNumber, isInClinic } from "@/utils/patientQueue";
+import { APPOINTMENT_STATUS, CLINIC_ADDRESS, CLINIC_HOTLINE, EXAMINATION_STATUS, GENERIC_ERROR_MESSAGE, MESSAGES, PATIENT_APPOINTMENT_STATUS, QUEUE_STATUS } from "@/utils/messages";
+import {
+    IMAGING_QUEUE_BADGE,
+    PATIENT_QUEUE_BADGE,
+    PATIENT_QUEUE_STATE,
+    formatQueueNumber,
+    getPatientQueueState,
+    getPeopleAheadText,
+    isInClinic,
+} from "@/utils/patientQueue";
 import { ROUTES, getMedicalRecordDetailRoute } from "@/utils/routes";
 
 const APPOINTMENT_ID_PATTERN = /^[1-9]\d{0,17}$/;
@@ -36,7 +45,24 @@ const TEXT = {
     SUPPORT_IN_CLINIC: "Đang ở phòng khám: hỏi trực tiếp lễ tân tại quầy.",
     SUPPORT_CLOSED: "Gọi hotline nếu bạn cần hỏi về lịch hẹn này.",
     CALL: `Gọi ${CLINIC_HOTLINE.DISPLAY}`,
+    QUEUE_NUMBER: "Số thứ tự",
+    ROOM: "Phòng",
+    QUEUE_STATE: "Trạng thái",
+    PEOPLE_AHEAD: "Người trước bạn",
+    NO_QUEUE_VALUE: "Chưa có – hỏi lễ tân",
+    NO_ROOM_VALUE: "Chưa xếp phòng – bạn sẽ được báo khi gọi số",
+    IMAGING_NUMBER: "Số chụp phim",
+    IMAGING_NUMBER_PENDING: "Lễ tân sẽ báo khi gọi",
+    IMAGING_ROOM: "Phòng chụp phim",
+    IMAGING_ROOM_PENDING: "Lễ tân sẽ chỉ phòng khi gọi số",
+    EXAM_NUMBER: "Số khám",
+    EXAM_NUMBER_NOTE: "Dùng lại sau khi chụp",
+    UPDATED_AT: (time) => `Cập nhật lúc ${time}`,
+    UPDATE_FAILED: "Chưa cập nhật được",
+    REFRESH_LABEL: "Cập nhật số thứ tự",
 };
+
+const PEOPLE_AHEAD_STATES = [PATIENT_QUEUE_STATE.WAITING, PATIENT_QUEUE_STATE.SKIPPED];
 
 const isPlainObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
@@ -71,6 +97,76 @@ const getDeadlineText = (appointment, now) => {
     if (!deadline) return EMPTY_VALUE;
     return now < deadline ? formatDateTime(deadline) : TEXT.DEADLINE_PASSED;
 };
+
+const BigNumber = ({ value, success = false }) => (
+    <span className={cx("num font-heading text-heading-2 font-bold", success ? "text-success" : "text-primary")}>{value}</span>
+);
+
+const Pending = ({ children }) => <span className="text-muted">{children}</span>;
+
+const getQueueCells = (appointment, state) => {
+    const queue = appointment.queue;
+    const queueNumber = formatQueueNumber(queue?.queueNumber);
+    if (state === PATIENT_QUEUE_STATE.NO_QUEUE) return [{ label: TEXT.QUEUE_NUMBER, value: <span className="text-warning">{TEXT.NO_QUEUE_VALUE}</span> }];
+    const stateCell = { label: TEXT.QUEUE_STATE, value: <StatusBadge status={state} labels={PATIENT_QUEUE_BADGE} /> };
+    if (!queueNumber) return [stateCell];
+    if (state === PATIENT_QUEUE_STATE.IMAGING) {
+        const imaging = queue.imaging;
+        const imagingNumber = formatQueueNumber(imaging.queueNumber);
+        return [
+            { label: TEXT.IMAGING_NUMBER, value: imagingNumber ? <BigNumber value={imagingNumber} /> : <Pending>{TEXT.IMAGING_NUMBER_PENDING}</Pending> },
+            { label: TEXT.IMAGING_ROOM, value: imaging.roomName || <Pending>{TEXT.IMAGING_ROOM_PENDING}</Pending> },
+            {
+                label: TEXT.QUEUE_STATE,
+                value: <StatusBadge status={imaging.status === QUEUE_STATUS.CALLED ? QUEUE_STATUS.CALLED : QUEUE_STATUS.WAITING} labels={IMAGING_QUEUE_BADGE} />,
+            },
+            {
+                label: TEXT.EXAM_NUMBER,
+                value: (
+                    <>
+                        <span className="num">{queueNumber}</span>
+                        <span className="block text-caption text-muted">{TEXT.EXAM_NUMBER_NOTE}</span>
+                    </>
+                ),
+            },
+        ];
+    }
+    const cells = [
+        { label: TEXT.QUEUE_NUMBER, value: <BigNumber value={queueNumber} success={state === PATIENT_QUEUE_STATE.CALLED} /> },
+        { label: TEXT.ROOM, value: queue.roomName || <Pending>{TEXT.NO_ROOM_VALUE}</Pending> },
+        stateCell,
+    ];
+    const peopleAhead = PEOPLE_AHEAD_STATES.includes(state) ? getPeopleAheadText(queue.peopleAhead) : null;
+    if (peopleAhead) cells.push({ label: TEXT.PEOPLE_AHEAD, value: <span className="num">{peopleAhead}</span> });
+    return cells;
+};
+
+const QueueStrip = ({ appointment }) => {
+    const state = getPatientQueueState(appointment);
+    if (!state) return null;
+    const cells = getQueueCells(appointment, state);
+    return (
+        <div className="rounded-md bg-surface-tint px-4 py-4">
+            <dl className={cx("grid gap-x-6 gap-y-4", cells.length > 2 ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-2")}>
+                {cells.map((cell) => (
+                    <div key={cell.label} className="min-w-0">
+                        <dt className="text-caption text-muted">{cell.label}</dt>
+                        <dd className="mt-1 text-body-md text-ink">{cell.value}</dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
+    );
+};
+
+const RefreshStatus = ({ updatedAt, refreshError, onRefresh }) => (
+    <span className={cx("num inline-flex items-center gap-1 text-caption", refreshError ? "text-warning" : "text-muted")}>
+        {refreshError ? TEXT.UPDATE_FAILED : TEXT.UPDATED_AT(updatedAt)}
+        <button type="button" className="btn btn-secondary btn-icon size-8" aria-label={TEXT.REFRESH_LABEL} onClick={onRefresh}>
+            <RefreshCw aria-hidden="true" className="size-4" />
+        </button>
+    </span>
+);
 
 const LoadingState = () => (
     <div aria-busy="true">
@@ -173,9 +269,9 @@ const SidePanel = ({ appointment, now }) => {
     }
 };
 
-const LoadedState = ({ detail, titleRef, now, onCancel }) => {
+const LoadedState = ({ detail, titleRef, now, updatedAt, refreshError, onRefresh, onCancel }) => {
     const { appointment } = detail;
-    const queueNumber = formatQueueNumber(appointment.queue?.queueNumber);
+    const showRefresh = isInClinic(appointment) && Boolean(formatQueueNumber(appointment.queue?.queueNumber)) && Boolean(updatedAt);
     const actions = getHeaderActions(appointment, isChangeAllowed(appointment, now), onCancel);
 
     return (
@@ -189,15 +285,20 @@ const LoadedState = ({ detail, titleRef, now, onCancel }) => {
                 </div>
                 {actions && <div className="grid grid-cols-2 gap-3 md:flex md:shrink-0">{actions}</div>}
             </header>
-            <AppointmentNextStep appointment={appointment} queueNumber={queueNumber} className="mb-6" />
+            <AppointmentNextStep appointment={appointment} refreshError={refreshError} updatedAt={updatedAt} className="mb-6" />
             <div className="grid items-start gap-6 lg:grid-cols-3">
                 <div className="min-w-0 lg:col-span-2">
-                    <DashboardSection id="appointment-info" title="Thông tin lịch hẹn">
+                    <DashboardSection
+                        id="appointment-info"
+                        title="Thông tin lịch hẹn"
+                        badge={showRefresh && <RefreshStatus updatedAt={updatedAt} refreshError={refreshError} onRefresh={onRefresh} />}
+                    >
+                        <QueueStrip appointment={appointment} />
                         <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                             {getInfoItems(appointment).map((item) => (
                                 <div key={item.label} className="min-w-0">
                                     <dt className="text-caption text-muted">{item.label}</dt>
-                                    <dd className={`mt-1 text-body-md text-ink${item.numeric ? " num" : ""}`}>{item.value || EMPTY_VALUE}</dd>
+                                    <dd className={cx("mt-1 text-body-md text-ink", item.numeric && "num")}>{item.value || EMPTY_VALUE}</dd>
                                 </div>
                             ))}
                         </dl>
@@ -221,7 +322,7 @@ const AppointmentDetail = () => {
     const focusRequestRef = useRef(null);
     const redirectedRef = useRef(false);
     const asyncState = useAsync(
-        () => (validId ? getMyAppointmentDetail(appointmentId) : Promise.resolve(null)),
+        () => (validId ? getMyAppointmentDetail(appointmentId).then((value) => ({ ...value, receivedAt: new Date() })) : Promise.resolve(null)),
         [appointmentId, validId, retryCount],
     );
     const resource = toDetailResource(asyncState);
@@ -281,7 +382,9 @@ const AppointmentDetail = () => {
                 <Breadcrumb items={[{ label: "Lịch hẹn của tôi", href: ROUTES.APPOINTMENTS }, { label: crumb }]} />
             </div>
             {resource.failed && !localDetail && !notFound && <ErrorState onRetry={() => requestTitleFocus(true)} />}
-            {detail && !notFound && <LoadedState detail={detail} titleRef={titleRef} now={new Date()} onCancel={openCancel} />}
+            {detail && !notFound && (
+                <LoadedState detail={detail} titleRef={titleRef} now={new Date()} updatedAt={formatClock(asyncState.value?.receivedAt)} refreshError={false} onCancel={openCancel} />
+            )}
             {(resource.loading || notFound) && <LoadingState />}
             {popup && detail && !notFound && (
                 <CancelAppointmentModal
