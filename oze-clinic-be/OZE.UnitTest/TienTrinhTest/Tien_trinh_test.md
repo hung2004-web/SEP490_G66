@@ -260,6 +260,7 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | 11/11/2026 | HiepNX | OZ-PAT-05 DeletePatient: thêm 3 test (khóa tài khoản, không tìm thấy, còn lịch hẹn), tổng 4 test
 | 11/11/2026 | HiepNX | OZ-PAT-06 AddMedicalProfile: thêm 6 test (không tìm thấy, loại/mức độ/trạng thái sai, để trống dùng mặc định, dữ liệu lưu xuống), tổng 7 test
 | 11/11/2026 | HiepNX | OZ-Q-02 CallNext: "Gọi tiếp" dùng chung thứ tự với danh sách chờ (`WaitingOrder`), Urgent bị gọi hụt không còn tụt xuống sau Normal; thêm 5 test, tổng 6
+| 12/11/2026 | HungPVA | Rà soát và chuẩn hóa tài liệu test cho module Tái khám (OZ-EXAM-21..25, OZ-APPT-21); bổ sung XML summary docs cho các DTO/Request và chuẩn hóa mapping extension |
 
 ---
 
