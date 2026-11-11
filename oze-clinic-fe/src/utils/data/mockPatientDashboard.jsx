@@ -1,5 +1,6 @@
 import { APPOINTMENT_STATUS, EXAMINATION_STATUS, PAYMENT_STATUS, PLAN_STATUS, QUEUE_STATUS, STAGE_STATUS } from "../messages";
 import { parseDateOnly, toDateOnly } from "../format";
+import { QUEUE_IN_PROGRESS } from "../patientQueue";
 
 export const MOCK_DASHBOARD_PATIENT_ID = "mock-patient";
 
@@ -94,28 +95,74 @@ export const MOCK_VISIT_SUMMARIES = {
     },
 };
 
+const queueRecord = (overrides = {}) => ({
+    queueNumber: 5,
+    previousQueueNumber: null,
+    previousDoctorName: null,
+    status: QUEUE_STATUS.WAITING,
+    skipCount: 0,
+    roomName: "Phòng khám 2",
+    peopleAhead: 2,
+    doctorOnShift: true,
+    shiftStart: "08:00",
+    doctorShiftEnded: false,
+    hasExamination: false,
+    imaging: null,
+    ...overrides,
+});
+
+const XRAY_ROOM = "Phòng X-quang";
+
+const TODAY_QUEUE_OVERRIDES = {
+    next: { peopleAhead: 0 },
+    one: { peopleAhead: 1 },
+    offshift: { peopleAhead: 0, doctorOnShift: false, shiftStart: "13:00" },
+    unassigned: { roomName: null },
+    called: { status: QUEUE_STATUS.CALLED, peopleAhead: 0 },
+    called_noroom: { status: QUEUE_STATUS.CALLED, peopleAhead: 0, roomName: null },
+    skipped: { skipCount: 1, peopleAhead: 3 },
+    imaging: { hasExamination: true, peopleAhead: null, imaging: { queueNumber: 3, roomName: XRAY_ROOM, status: QUEUE_STATUS.WAITING } },
+    imaging_called: { hasExamination: true, peopleAhead: null, imaging: { queueNumber: 3, roomName: XRAY_ROOM, status: QUEUE_STATUS.CALLED } },
+    imaging_noroom: { hasExamination: true, peopleAhead: null, imaging: { queueNumber: null, roomName: null, status: QUEUE_STATUS.WAITING } },
+    returned: { hasExamination: true, peopleAhead: 0 },
+    returned_desk: { hasExamination: true, peopleAhead: 0, doctorShiftEnded: true },
+    inservice: { status: QUEUE_IN_PROGRESS, peopleAhead: null },
+    desk: { doctorShiftEnded: true, peopleAhead: null },
+    reassigned: { previousQueueNumber: 5, previousDoctorName: KHOA.doctorName, queueNumber: 12, roomName: "Phòng khám 1", peopleAhead: 4 },
+    nonumber: { queueNumber: null },
+};
+
+const NO_QUEUE_MODES = ["noqueue", "inservice_noqueue"];
+
+const IN_SERVICE_MODES = ["in-service", "inservice", "inservice_noqueue"];
+
+const STARTED_AT = { "in-service": "09:12", inservice: "09:31", inservice_noqueue: "09:31" };
+
+const buildTodayVisit = (date, mode) => {
+    if (mode === "confirmed-today") return { status: APPOINTMENT_STATUS.CONFIRMED };
+    const inService = IN_SERVICE_MODES.includes(mode);
+    return {
+        ...(mode === "reassigned" ? { doctor: HA } : {}),
+        status: inService ? APPOINTMENT_STATUS.IN_SERVICE : APPOINTMENT_STATUS.CHECKED_IN,
+        checkInAt: at(date, "09:05"),
+        startedAt: inService ? at(date, STARTED_AT[mode]) : null,
+        queue: NO_QUEUE_MODES.includes(mode) ? null : queueRecord(TODAY_QUEUE_OVERRIDES[mode]),
+    };
+};
+
+const finishedQueue = (queueNumber, roomName) => queueRecord({ queueNumber, roomName, status: QUEUE_IN_PROGRESS, peopleAhead: null });
+
 export const buildPatientDashboardData = (today, mode) => {
     const day = (offset) => addDays(today, offset);
     const planDone = mode === "plan-done";
     const planInvoice = mode === "plan-invoice";
-    const inService = mode === "in-service";
     const pastDeadline = mode === "deadline";
     const crownDate = planDone ? day(-2) : day(0);
     const crownCheckDate = planDone ? day(-1) : day(7);
 
     const crownVisit = planDone
         ? { status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9004, examinationStatus: EXAMINATION_STATUS.COMPLETED }
-        : {
-              status: inService ? APPOINTMENT_STATUS.IN_SERVICE : APPOINTMENT_STATUS.CHECKED_IN,
-              checkInAt: at(crownDate, "09:05"),
-              startedAt: inService ? at(crownDate, "09:12") : null,
-              queue: {
-                  queueNumber: 5,
-                  status: mode === "called" ? QUEUE_STATUS.CALLED : QUEUE_STATUS.WAITING,
-                  roomName: "Phòng khám 2",
-                  peopleAhead: mode === "next" ? 0 : 2,
-              },
-          };
+        : buildTodayVisit(crownDate, mode);
 
     const crownCheckVisit = planDone
         ? { status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9005, examinationStatus: EXAMINATION_STATUS.COMPLETED }
@@ -133,8 +180,8 @@ export const buildPatientDashboardData = (today, mode) => {
         appointment({ id: 209, date: day(-39), start: "15:00:00", end: "15:30:00", service: GENERAL_CHECKUP, doctor: HA, status: APPOINTMENT_STATUS.CANCELLED, bookedOn: day(-45), cancelledAt: at(day(-40), "08:12"), cancellationReason: "Bận việc cá nhân" }),
         appointment({ id: 218, date: day(-25), start: "10:00:00", end: "10:30:00", service: SCALING, doctor: HA, status: APPOINTMENT_STATUS.NO_SHOW }),
         appointment({ id: 231, date: day(-21), start: "08:30:00", end: "09:00:00", service: SCALING, doctor: HA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9001, examinationStatus: EXAMINATION_STATUS.COMPLETED }),
-        appointment({ id: 238, date: day(-18), start: "09:00:00", end: "09:30:00", service: ROOT_CANAL, doctor: KHOA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9002, examinationStatus: EXAMINATION_STATUS.COMPLETED, checkInAt: at(day(-18), "09:04"), startedAt: at(day(-18), "09:10"), completedAt: at(day(-18), "09:28") }),
-        appointment({ id: 240, date: day(-11), start: "09:00:00", end: "09:30:00", service: CANAL_FILLING, doctor: KHOA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9003, examinationStatus: EXAMINATION_STATUS.COMPLETED, checkInAt: at(day(-11), "09:03"), startedAt: at(day(-11), "09:08"), completedAt: at(day(-11), "09:29") }),
+        appointment({ id: 238, date: day(-18), start: "09:00:00", end: "09:30:00", service: ROOT_CANAL, doctor: KHOA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9002, examinationStatus: EXAMINATION_STATUS.COMPLETED, queue: finishedQueue(8, "Phòng khám 1"), checkInAt: at(day(-18), "09:04"), startedAt: at(day(-18), "09:10"), completedAt: at(day(-18), "09:28") }),
+        appointment({ id: 240, date: day(-11), start: "09:00:00", end: "09:30:00", service: CANAL_FILLING, doctor: KHOA, status: APPOINTMENT_STATUS.COMPLETED, examinationId: 9003, examinationStatus: EXAMINATION_STATUS.COMPLETED, queue: finishedQueue(12, "Phòng khám 1"), checkInAt: at(day(-11), "09:03"), startedAt: at(day(-11), "09:08"), completedAt: at(day(-11), "09:29") }),
         mode === "two-today" && appointment({ id: 244, date: day(0), start: "08:00:00", end: "08:30:00", service: BRACES_CONSULTATION, doctor: HA, status: APPOINTMENT_STATUS.PENDING }),
         appointment({ id: 245, date: crownDate, start: "09:00:00", end: "09:30:00", service: CROWN, doctor: KHOA, bookedOn: day(-3), ...crownVisit }),
         mode !== "today-only" && appointment({ id: 252, date: crownCheckDate, start: "09:00:00", end: "09:30:00", service: CROWN_CHECK, doctor: KHOA, bookedOn: day(-2), ...crownCheckVisit }),
