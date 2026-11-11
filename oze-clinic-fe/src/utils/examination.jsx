@@ -1,4 +1,3 @@
-import { formatDate, formatDayMonth } from "./format";
 import { ICD10_DENTAL, QUEUE_STATUS } from "./messages";
 
 // Queue number box colours: amber while the patient is called, blue when selected otherwise (e.g. being examined).
@@ -83,26 +82,10 @@ export const newPlanSession = (id) => ({ id, title: "", typeId: "", date: "", co
 // Total planned cost of some sessions (sessions without a cost count as 0).
 export const sessionsCost = (sessions) => sessions.reduce((total, session) => total + (Number.isFinite(session.cost) ? session.cost : 0), 0);
 
-// "26/10 – 09/11/2026"; one date -> "02/11/2026"; none -> "".
-export const dateRangeText = (from, to) => {
-    if (!from) return "";
-    if (from === to) return formatDate(from);
-    return from.slice(0, 4) === to.slice(0, 4) ? `${formatDayMonth(from)} – ${formatDate(to)}` : `${formatDate(from)} – ${formatDate(to)}`;
-};
-
-// Numbers of "Tóm tắt kế hoạch": counts, date range of the sessions, cost per service and in total.
+// Cost per service and in total, for "Tóm tắt kế hoạch".
 export const planSummary = (services) => {
-    const sessions = services.flatMap((service) => service.sessions);
-    const dates = sessions.map((session) => session.date).filter(Boolean).sort();
-    const perService = services.map((service) => ({ id: service.id, name: service.name, sessionCount: service.sessions.length, cost: sessionsCost(service.sessions) }));
-    return {
-        serviceCount: services.length,
-        sessionCount: sessions.length,
-        from: dates[0] ?? "",
-        to: dates.at(-1) ?? "",
-        perService,
-        total: perService.reduce((total, service) => total + service.cost, 0),
-    };
+    const perService = services.map((service) => ({ id: service.id, name: service.name, cost: sessionsCost(service.sessions) }));
+    return { perService, total: perService.reduce((total, service) => total + service.cost, 0) };
 };
 
 // Errors before the plan can be sent: every service needs a session; every session a content and a service type.
