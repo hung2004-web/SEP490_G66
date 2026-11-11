@@ -5,7 +5,7 @@ import { SORT_OPTIONS } from "@/utils/medicalRecord";
 
 const isPopoverNode = (node) => node instanceof Element && (node.hasAttribute("data-record-popover") || node.hasAttribute("data-record-popover-opener"));
 
-const PopoverPanel = ({ label, openerId, onDismiss, className, children }) => {
+const PopoverPanel = ({ id, label, openerId, onDismiss, className, children }) => {
     const dismiss = useEffectEvent(onDismiss);
     const panelRef = useRef(null);
 
@@ -37,6 +37,7 @@ const PopoverPanel = ({ label, openerId, onDismiss, className, children }) => {
     return (
         <div
             ref={panelRef}
+            id={id}
             data-record-popover=""
             role="dialog"
             aria-label={label}
@@ -49,8 +50,8 @@ const PopoverPanel = ({ label, openerId, onDismiss, className, children }) => {
 
 const GROUP_TITLE_CLASS = "mx-1 mb-1.5 mt-0.5 text-caption font-semibold uppercase tracking-wide";
 
-export const FilterPopover = ({ groups, filters, onToggle, onClear, onDone, onDismiss, openerId, label = "Lọc phiếu khám", dimEmpty = true, className = "w-75", titleClassName = "text-placeholder" }) => (
-    <PopoverPanel label={label} openerId={openerId} onDismiss={onDismiss} className={className}>
+export const FilterPopover = ({ id, groups, filters, onToggle, onClear, onDone, onDismiss, openerId, label = "Lọc phiếu khám", clearLabel = "Xóa bộ lọc", dimEmpty = true, className = "w-75", titleClassName = "text-placeholder" }) => (
+    <PopoverPanel id={id} label={label} openerId={openerId} onDismiss={onDismiss} className={className}>
         {groups.map((group) => (
             <div key={group.key} className="border-b border-border px-1 pb-2 pt-1.5">
                 <p className={cx(GROUP_TITLE_CLASS, titleClassName)}>{group.title}</p>
@@ -76,7 +77,7 @@ export const FilterPopover = ({ groups, filters, onToggle, onClear, onDone, onDi
         ))}
         <div className="sticky -bottom-2 flex justify-between border-t border-border bg-canvas px-1 pb-0.5 pt-2">
             <button type="button" className="btn h-8 px-3 hover:bg-surface-tint" onClick={onClear}>
-                Xóa bộ lọc
+                {clearLabel}
             </button>
             <button type="button" className="btn btn-primary h-8 px-3" onClick={onDone}>
                 Xong
