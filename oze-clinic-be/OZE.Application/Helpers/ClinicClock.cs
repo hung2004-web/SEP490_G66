@@ -12,6 +12,9 @@ namespace OZE.Application.Helpers
 
         public static DateTime Today => Now.Date;
 
+        // A stored moment (for example a check-in time) as the clinic's wall-clock time
+        public static DateTime ToClinicTime(DateTimeOffset moment) => TimeZoneInfo.ConvertTimeFromUtc(moment.UtcDateTime, Zone);
+
         private static TimeZoneInfo ResolveZone()
         {
             foreach (var id in new[] { ClinicTimeConstants.IanaTimeZoneId, ClinicTimeConstants.WindowsTimeZoneId })

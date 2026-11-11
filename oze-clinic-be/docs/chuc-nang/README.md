@@ -148,7 +148,7 @@ Chi tiết ở mục 9 của từng file. Đây là các việc nên tạo Jira 
 |---|---|---|
 | 1 | Lập hóa đơn chưa kiểm BR-PAY-01..03. Hiện vẫn lập được cho kế hoạch `Draft`/`Cancelled`, tính một giai đoạn hai lần, tính giai đoạn đã hủy. Kiểm `StagePlanMismatch` luôn đúng. Không có unique index nên hai request cùng lúc tạo được hai hóa đơn cho một lịch | F-PAY-01 |
 | 2 | `IsInvoicedAsync` tính cả hóa đơn `CANCELLED`, nên kế hoạch có hóa đơn đã hủy bị khóa sửa/xóa | F-TP-04, F-TP-05 |
-| 3 | `call-next` và `waiting-list` xếp hàng theo hai thứ tự khác nhau (walk-in có thể được gọi trước người đặt đúng giờ). `SkipCount` được xét trước `Priority` nên bệnh nhân `Urgent` bị gọi hụt xếp sau người `Normal` | F-RCP-04, F-RCP-05 |
+| 3 | ~~`call-next` và `waiting-list` xếp hai thứ tự khác nhau; Urgent bị gọi hụt xếp sau Normal~~ **Đã sửa 11/11/2026** (`WaitingOrder`). Còn lại: chưa giới hạn số lần gọi hụt, `Queue.AutoExpireMinutes` chưa dùng | F-RCP-04, F-RCP-05 |
 | 4 | Webhook chụp phim không lưu `ImagingResult` nên ảnh trong hồ sơ bệnh án luôn rỗng. Secret webhook hai bên khác nhau. Tên sự kiện lệch (`capture.completed` / `CAPTURE_COMPLETED`) | F-IMG-04 |
 | 5 | Đơn thuốc chỉ có ghi chú bị tự xóa khi hoàn tất khám. Việc xóa đơn rỗng không chung transaction với bước khóa phiếu | F-EXM-06, F-EXM-07 |
 | 6 | Check-in, walk-in, kết thúc ca, chỉ định chụp không bọc transaction (lịch đã `CHECKED_IN` mà không có số hàng chờ) | F-RCP-01, F-RCP-02, F-RCP-08, F-IMG-01 |

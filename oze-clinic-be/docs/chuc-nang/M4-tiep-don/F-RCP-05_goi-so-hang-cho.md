@@ -84,7 +84,7 @@ Thành công có người: HTTP 200, `data` = `QueueEntryResponse`, message `"Nu
 **Thứ tự hàng chờ** (dùng chung cho bảng và `call-next`): `QueueRepository.GetActiveEntriesAsync` (`QueueRepository.cs:69-105`)
 - Chỉ bản ghi tạo trong ngày hôm nay (`CreatedAt` trong cửa sổ `DayWindow`, `:155-160`) và ở `WAITING`/`CALLED`/`IN_PROGRESS` (`QueueConstants.ActiveStatuses`).
 - Lọc `queueType`; lọc `roomId` = `RoomId == roomId || RoomId == null`; lọc `AssignedStaffId` (chỉ khi bác sĩ gọi `call-next`).
-- Sắp xếp: `SkipCount` tăng dần → `Priority` giảm dần → `QueueNumber` tăng dần.
+- Repository sắp xếp sơ bộ: `SkipCount` tăng dần → `Priority` giảm dần → `QueueNumber` tăng dần. Riêng hàng `Examination`, `QueueService.OrderForCallingAsync` sắp lại theo `WaitingOrder` (giống hệt `waiting-list`): `Priority` giảm dần → nhóm (quay lại sau chụp phim → đúng giờ → trễ → vãng lai) → `SkipCount` tăng dần → giờ hẹn (nhóm đúng giờ) → giờ check-in. Đã sửa 11/11/2026.
 
 **3.1 GET** `QueuesController.cs:35-45` → `QueueService.cs:113-121`: lấy danh sách trên, map với `includePatientDetails = isStaff`; che tên bằng `MaskName` (`QueueService.cs:260-264`: chữ cái đầu mỗi từ + `***`).
 
@@ -144,8 +144,8 @@ Thành công có người: HTTP 200, `data` = `QueueEntryResponse`, message `"Nu
 
 ## 9. Còn thiếu / câu hỏi mở
 
-- **Thứ tự gọi khác thứ tự `waiting-list`** (F-RCP-04): `call-next` không dùng nhóm đúng giờ/trễ/vãng lai và giờ hẹn, chỉ dùng `QueueNumber` (thứ tự check-in) sau `SkipCount`, `Priority`. Lệch BR-RCP-02.
-- Bỏ qua đặt `SkipCount` lên trước `Priority`: một bệnh nhân Urgent bị gọi hụt một lần sẽ xếp sau mọi bệnh nhân Normal chưa bị bỏ qua. Chưa xác định từ tài liệu đây có phải ý muốn.
+- ~~Thứ tự gọi khác thứ tự `waiting-list`~~: đã sửa 11/11/2026, `call-next` và bảng hàng chờ khám dùng chung `WaitingOrder` với `waiting-list`.
+- ~~Bệnh nhân Urgent bị gọi hụt xếp sau người Normal~~: đã sửa 11/11/2026, `Priority` xét trước; người bị gọi hụt chỉ lùi xuống sau người cùng mức ưu tiên và cùng nhóm. Vẫn chưa có giới hạn số lần gọi hụt và `Queue.AutoExpireMinutes` chưa được đọc.
 - Trạng thái `SKIPPED` có trong `QueueConstants` và CK nhưng **không nơi nào đặt**; "bỏ qua" chỉ đưa về `WAITING`.
 - Comment `QueuesController.cs:83-84` nói người vắng đến hết buổi sẽ bị `NO_SHOW`, nhưng kết thúc ca (F-RCP-08) **không** NO_SHOW người đã check-in; họ vào `needs-attention`.
 - BR-RCP-06 `Queue.AutoExpireMinutes` (seed 60) không được code đọc; số `CALLED` hay `WAITING` không bao giờ tự hết hạn.
