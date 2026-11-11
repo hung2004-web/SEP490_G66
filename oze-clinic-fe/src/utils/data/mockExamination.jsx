@@ -12,7 +12,11 @@ export const MOCK_EXAM_QUEUE = [
     { id: 5, queueNumber: 12, patientName: "Ngô Minh Anh", status: QUEUE_STATUS.WAITING },
 ];
 
-export const MOCK_EXAM_DONE_COUNT = 2;
+// Patients already examined in this shift, in finishing order.
+export const MOCK_EXAM_DONE = [
+    { id: 101, queueNumber: 6, patientName: "Trần Văn Bình", finishedAt: "08:40" },
+    { id: 102, queueNumber: 7, patientName: "Lê Thị Cúc", finishedAt: "09:15" },
+];
 
 const GENERAL_CHECKUP = { id: 1, name: "Khám tổng quát" };
 const SCALING = { id: 2, name: "Lấy cao răng" };

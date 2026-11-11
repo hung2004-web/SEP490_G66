@@ -3,7 +3,7 @@ import {
     EMPTY_PRESCRIPTION_DRAFT,
     EMPTY_TREATMENT_DRAFT,
     GENERAL_CHECKUP_SERVICE_ID,
-    MOCK_EXAM_DONE_COUNT,
+    MOCK_EXAM_DONE,
     MOCK_EXAM_DRAFTS,
     MOCK_EXAM_PLANS,
     MOCK_EXAM_QUEUE,
@@ -44,7 +44,7 @@ function planFromServices(id, services) {
 
 const state = {
     queue: MOCK_EXAM_QUEUE.map((item) => ({ ...item })),
-    doneCount: MOCK_EXAM_DONE_COUNT,
+    done: MOCK_EXAM_DONE.map((item) => ({ ...item })),
     records: Object.fromEntries(
         Object.entries(MOCK_EXAM_RECORDS).map(([id, record]) => [
             id,
@@ -70,7 +70,7 @@ const clockNow = () => {
 const snapshot = () => ({
     shift: { ...MOCK_EXAM_SHIFT },
     queue: state.queue.map((item) => ({ ...item })),
-    doneCount: state.doneCount,
+    done: state.done.map((item) => ({ ...item })),
 });
 
 const findItem = (id) => state.queue.find((item) => item.id === id);
@@ -166,7 +166,7 @@ export const endExamination = async (queueId) => {
     // Completing the visit finalizes the prescription (F-EXM-06 "chốt đơn"); an empty one is dropped.
     if ((item.step ?? 0) >= PRESCRIPTION_STEP && record?.prescription.items.length) record.prescription.status = "Finalized";
     state.queue = state.queue.filter((entry) => entry.id !== queueId);
-    state.doneCount += 1;
+    state.done.push({ id: item.id, queueNumber: item.queueNumber, patientName: item.patientName, finishedAt: clockNow() });
     return success(snapshot(), `Đã kết thúc lượt khám của ${item.patientName}.`);
 };
 

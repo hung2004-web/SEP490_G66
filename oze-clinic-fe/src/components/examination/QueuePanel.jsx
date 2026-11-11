@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { ChevronsDown, ChevronsLeft, ChevronsRight, ChevronsUp, Users } from "lucide-react";
 import { cx } from "@/utils/cx";
 import { isQueueBusy, queueNumberTone } from "@/utils/examination";
@@ -9,12 +9,12 @@ import QueueItem from "./QueueItem";
 // "Ca sáng 08:00 – 12:00 · 5 chờ"
 const shiftText = (shift, count) => [shift && `${shift.name} ${shift.start} – ${shift.end}`, `${count} chờ`].filter(Boolean).join(" · ");
 
-// Left column of the exam screen. shift: { name, start, end, roomName }; items: see QueueItem.
+// Left column of the exam screen. shift: { name, start, end, roomName }; items: see QueueItem; done: see QueueDoneFooter.
 // Collapsed, it shows only the queue numbers so the exam area gets more room.
 const QueuePanel = ({
     shift,
     items = [],
-    doneCount = 0,
+    done = [],
     selectedId,
     collapsed = false,
     onToggleCollapse,
@@ -22,9 +22,9 @@ const QueuePanel = ({
     onCall,
     onMarkAbsent,
     onStart,
-    onOpenDone,
 }) => {
     const titleId = useId();
+    const [doneOpen, setDoneOpen] = useState(false);
     const canCall = !isQueueBusy(items);
     // Desktop collapses sideways (a 64px column), smaller screens collapse to a strip above the exam.
     const SideIcon = collapsed ? ChevronsRight : ChevronsLeft;
@@ -133,7 +133,7 @@ const QueuePanel = ({
                 </div>
             )}
 
-            <QueueDoneFooter count={doneCount} onClick={onOpenDone} />
+            <QueueDoneFooter items={done} expanded={doneOpen} onToggle={() => setDoneOpen(!doneOpen)} />
         </aside>
     );
 };

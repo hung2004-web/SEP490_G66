@@ -271,16 +271,14 @@ const ExaminationPage = () => {
                     <QueuePanel
                         shift={workspace.shift}
                         items={queue}
-                        doneCount={workspace.doneCount}
+                        done={workspace.done}
                         selectedId={selectedId}
                         collapsed={collapsed}
                         onToggleCollapse={() => setCollapsedChoice(!collapsed)}
                         onSelect={setSelectedId}
                         onCall={(id) => runAction(callPatient, id, () => id)}
                         onMarkAbsent={(id) => setConfirm({ type: "absent", item: queue.find((item) => item.id === id) })}
-                        onStart={(id) => runAction(startExamination, id, () => id)}
-                        onOpenDone={() => toast.info("Danh sách đã khám trong ca đang được xây dựng.")}
-                    />
+                        onStart={(id) => runAction(startExamination, id, () => id)}                    />
                 ) : (
                     !loadFailed && <div className="skeleton h-96 rounded-lg" aria-hidden="true" />
                 )}
