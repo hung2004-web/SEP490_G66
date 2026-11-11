@@ -147,3 +147,82 @@ export const validatePlan = (services) => {
     });
     return errors;
 };
+
+// "400.000" -> 400000; empty -> null. For the money inputs (plan session cost, treatment item price).
+export const parseMoney = (text) => {
+    const digits = String(text ?? "").replace(/\D/g, "");
+    return digits ? Number(digits) : null;
+};
+
+// ---------- Step 4: treatment ----------
+// A treatment item done today: { id, content, price (VND), createdAt (ISO) }.
+// Follow-up request to reception: { sessionId, date ("yyyy-mm-dd"), slot ("09:00", start of the slot), note }.
+
+// Every session of the plan in treatment order, with its service: { ...session, serviceName, serviceIndex (1-based), number (1-based in its service) }.
+export const planSessionList = (services) =>
+    services.flatMap((service, serviceIndex) =>
+        service.sessions.map((session, sessionIndex) => ({ ...session, serviceName: service.name, serviceIndex: serviceIndex + 1, number: sessionIndex + 1 }))
+    );
+
+// "2. Trám răng · Buổi 1 · Trám composite răng 36": one session in a picker.
+export const planSessionLabel = (session) => `${session.serviceIndex}. ${session.serviceName} · Buổi ${session.number} · ${session.title}`;
+
+// Sessions done out of all planned sessions (today's counts once it is finished, not while in progress).
+export const planProgress = (services) => {
+    const sessions = services.flatMap((service) => service.sessions);
+    return { done: sessions.filter((session) => session.status === "done").length, total: sessions.length };
+};
+
+// Sessions still to do after today's: the choices for "Buổi tiếp theo".
+export const upcomingPlanSessions = (services, currentSessionId) =>
+    planSessionList(services).filter((session) => session.status !== "done" && session.id !== currentSessionId);
+
+// Session treated in this visit: the one already picked if it is still in the plan, else the first one not done.
+export const currentTreatmentSessionId = (plan, draft) => {
+    const sessions = planSessionList(plan.services);
+    if (sessions.some((session) => session.id === draft.sessionId)) return draft.sessionId;
+    return sessions.find((session) => session.status !== "done")?.id ?? "";
+};
+
+// Starting list of a new draft: today's session as one item, with its planned cost.
+export const initialTreatmentItems = (session) =>
+    session ? [{ id: `item-${session.id}`, content: session.title, price: session.cost ?? 0, createdAt: new Date().toISOString() }] : [];
+
+export const treatmentItemsTotal = (items) => items.reduce((total, item) => total + (Number.isFinite(item.price) ? item.price : 0), 0);
+
+// Errors of the follow-up form before it is sent to reception: { sessionId?, date?, slot?, count }.
+export const validateFollowUp = (followUp, today) => {
+    const errors = {};
+    if (!followUp.sessionId) errors.sessionId = "Chọn buổi tiếp theo.";
+    if (!followUp.date) errors.date = "Chọn ngày hẹn.";
+    else if (today && followUp.date <= today) errors.date = "Ngày hẹn phải sau hôm nay.";
+    if (!followUp.slot) errors.slot = "Chọn khung giờ.";
+    return { ...errors, count: Object.keys(errors).length };
+};
+
+// ---------- Step 5: prescription ----------
+// A prescribed medicine, as PrescriptionItems (F-EXM-06): { id, medicationName, dosage ("625mg"), frequency ("Ngày 2 lần"),
+// duration ("5 ngày"), quantity (1..1000 or null), instructions ("Uống sau ăn") }. Contraindications are not computed here:
+// the system does not know what a medicine contains, the AI check returns them as { [itemId]: message }.
+
+export const PRESCRIPTION_LIMITS = { medicationName: 300, dosage: 100, frequency: 200, duration: 100, instructions: 500, notes: 500, quantityMax: 1000 };
+
+// "10"; no quantity -> "—".
+export const quantityText = (item) => (item.quantity ? String(item.quantity) : "—");
+
+// "Ngày 2 lần · 5 ngày · Uống sau ăn" (empty parts left out); nothing -> "—".
+export const usageText = (item) => [item.frequency, item.duration, item.instructions].map((part) => part?.trim()).filter(Boolean).join(" · ") || "—";
+
+const TEXT_FIELDS = ["medicationName", "dosage", "frequency", "duration", "instructions"];
+
+// Errors of one medicine in the add / edit dialog: { medicationName?, dosage?, frequency?, duration?, quantity?, instructions?, count }.
+export const validatePrescriptionItem = (item) => {
+    const errors = {};
+    TEXT_FIELDS.forEach((field) => {
+        if ((item[field] ?? "").trim().length > PRESCRIPTION_LIMITS[field]) errors[field] = `Tối đa ${PRESCRIPTION_LIMITS[field]} ký tự.`;
+    });
+    if (!item.medicationName.trim()) errors.medicationName = "Nhập tên thuốc.";
+    if (item.quantity != null && (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > PRESCRIPTION_LIMITS.quantityMax))
+        errors.quantity = "Số lượng từ 1 đến 1.000.";
+    return { ...errors, count: Object.keys(errors).length };
+};

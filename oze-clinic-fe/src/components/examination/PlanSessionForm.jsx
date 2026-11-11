@@ -1,13 +1,8 @@
 import { useId } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { parseMoney } from "@/utils/examination";
 import { formatNumber } from "@/utils/format";
 import { PLAN_SESSION_STATUS } from "@/utils/messages";
-
-// "400.000" -> 400000; empty -> null.
-const parseMoney = (text) => {
-    const digits = text.replace(/\D/g, "");
-    return digits ? Number(digits) : null;
-};
 
 const Required = () => <span className="text-danger-solid"> *</span>;
 
