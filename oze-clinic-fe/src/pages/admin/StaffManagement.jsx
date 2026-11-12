@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StatusTabs from "@/components/ui/StatusTabs";
 import { Eye, Lock, LockOpen, Pencil, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import LockAccountPopup from "@/components/popup/staff/LockAccountPopup";
@@ -27,14 +28,18 @@ const StaffRow = ({ member, onView, onEdit, onLock, onUnlock }) => {
 
     return (
         <tr>
-            <td data-label="Mã NV" className="cell-primary whitespace-nowrap">{member.code}</td>
+            <td data-label="Mã NV" className="cell-primary whitespace-nowrap">
+                {member.code}
+            </td>
             <td data-primary className="min-w-56">
                 <PersonCell name={member.fullName} detail={member.email} />
             </td>
             <td data-label="Vai trò">
                 <span className="chip-queue whitespace-nowrap">{roleLabel(member.role)}</span>
             </td>
-            <td data-label="Số điện thoại" className="num whitespace-nowrap">{formatPhone(member.phone)}</td>
+            <td data-label="Số điện thoại" className="num whitespace-nowrap">
+                {formatPhone(member.phone)}
+            </td>
             <td data-label="Trạng thái">
                 <span title={locked ? member.lock?.note : undefined}>
                     <StatusBadge status={member.status} labels={ACCOUNT_STATUS_LABELS} />
@@ -42,22 +47,10 @@ const StaffRow = ({ member, onView, onEdit, onLock, onUnlock }) => {
             </td>
             <td data-actions>
                 <div className="flex items-center justify-end gap-2">
-                    <button
-                        type="button"
-                        className={ACTION_CLASS}
-                        aria-label={`Xem ${member.code}`}
-                        title="Xem chi tiết"
-                        onClick={() => onView(member)}
-                    >
+                    <button type="button" className={ACTION_CLASS} aria-label={`Xem ${member.code}`} title="Xem chi tiết" onClick={() => onView(member)}>
                         <Eye className="size-4" aria-hidden="true" />
                     </button>
-                    <button
-                        type="button"
-                        className={ACTION_CLASS}
-                        aria-label={`Chỉnh sửa ${member.code}`}
-                        title="Chỉnh sửa"
-                        onClick={() => onEdit(member)}
-                    >
+                    <button type="button" className={ACTION_CLASS} aria-label={`Chỉnh sửa ${member.code}`} title="Chỉnh sửa" onClick={() => onEdit(member)}>
                         <Pencil className="size-4" aria-hidden="true" />
                     </button>
                     <button
@@ -67,11 +60,7 @@ const StaffRow = ({ member, onView, onEdit, onLock, onUnlock }) => {
                         title={locked ? "Mở khoá tài khoản" : "Khoá tài khoản"}
                         onClick={() => (locked ? onUnlock(member) : onLock(member))}
                     >
-                        {locked ? (
-                            <LockOpen className="size-4" aria-hidden="true" />
-                        ) : (
-                            <Lock className="size-4" aria-hidden="true" />
-                        )}
+                        {locked ? <LockOpen className="size-4" aria-hidden="true" /> : <Lock className="size-4" aria-hidden="true" />}
                     </button>
                 </div>
             </td>
@@ -89,10 +78,7 @@ const StaffManagement = () => {
     // null = closed; { kind: "form" | "detail" | "lock", member }. A form with member = null creates an account.
     const [dialog, setDialog] = useState(null);
 
-    const { loading, value: result } = useAsync(
-        () => getStaffAccounts({ keyword, role, status, page }),
-        [keyword, role, status, page, reloadKey],
-    );
+    const { loading, value: result } = useAsync(() => getStaffAccounts({ keyword, role, status, page }), [keyword, role, status, page, reloadKey]);
 
     useEffect(() => {
         const nextKeyword = searchInput.trim();
@@ -173,14 +159,7 @@ const StaffManagement = () => {
                     onChange={changeFilter(setRole)}
                     className="w-full sm:w-auto sm:min-w-40"
                 />
-                <FilterSelect
-                    className="w-full sm:w-auto sm:min-w-40"
-                    id="staff-status"
-                    label="Trạng thái"
-                    options={ACCOUNT_STATUS_OPTIONS}
-                    value={status}
-                    onChange={changeFilter(setStatus)}
-                />
+                <StatusTabs className="w-full" label="Trạng thái" options={ACCOUNT_STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
             </div>
 
             <div>
@@ -226,14 +205,7 @@ const StaffManagement = () => {
                             )}
                             {!loading &&
                                 staff.map((member) => (
-                                    <StaffRow
-                                        key={member.id}
-                                        member={member}
-                                        onView={openView}
-                                        onEdit={openEdit}
-                                        onLock={openLock}
-                                        onUnlock={handleUnlock}
-                                    />
+                                    <StaffRow key={member.id} member={member} onView={openView} onEdit={openEdit} onLock={openLock} onUnlock={handleUnlock} />
                                 ))}
                         </tbody>
                     </table>
@@ -245,9 +217,7 @@ const StaffManagement = () => {
                 )}
             </div>
 
-            {dialog?.kind === "form" && (
-                <StaffFormPopup key={dialog.member?.id ?? "new"} member={dialog.member} onClose={closeDialog} onSaved={handleSaved} />
-            )}
+            {dialog?.kind === "form" && <StaffFormPopup key={dialog.member?.id ?? "new"} member={dialog.member} onClose={closeDialog} onSaved={handleSaved} />}
             {dialog?.kind === "detail" && <StaffDetailPopup member={dialog.member} onClose={closeDialog} onEdit={openEdit} />}
             {dialog?.kind === "lock" && <LockAccountPopup member={dialog.member} onClose={closeDialog} onSaved={handleSaved} />}
         </div>

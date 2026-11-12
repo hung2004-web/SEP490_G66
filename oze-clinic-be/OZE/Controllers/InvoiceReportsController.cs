@@ -32,6 +32,19 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Confirmed collections per clinic day, cash vs transfer, for the revenue chart (at most 31 days; last 7 days by default).
+        /// </summary>
+        [HttpGet("revenue-by-day")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<RevenueSeriesResponse>>> GetRevenueByDayAsync(
+            [FromQuery] RevenueSeriesQuery query,
+            CancellationToken cancellationToken)
+        {
+            var report = await _invoiceReportService.GetRevenueSeriesAsync(query, cancellationToken);
+            return Ok(ApiResponse<RevenueSeriesResponse>.SuccessResult(report, ErrorConstants.ReportMessage.SeriesRetrieved));
+        }
+
+        /// <summary>
         /// Manager overview over a clinic-day range: same metrics as daily for [from,to], outstanding/due as of clinic today.
         /// </summary>
         [HttpGet("overview")]

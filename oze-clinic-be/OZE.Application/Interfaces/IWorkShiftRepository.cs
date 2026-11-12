@@ -20,6 +20,8 @@ namespace OZE.Application.Interfaces
         Task<bool> HasBookedAppointmentsAsync(int staffProfileId, DateOnly scheduleDate, TimeOnly shiftStart, TimeOnly shiftEnd);
         // True when another shift of that day in the same room has been started and not ended
         Task<bool> HasRunningShiftInRoomAsync(int roomId, DateOnly scheduleDate, long excludeShiftId);
+        // Shifts of active doctors on that day, with staff profile and room
+        Task<List<StaffSchedule>> GetDoctorShiftsOnDateAsync(DateOnly date);
         void Update(StaffSchedule schedule);
         void Remove(StaffSchedule schedule);
     }

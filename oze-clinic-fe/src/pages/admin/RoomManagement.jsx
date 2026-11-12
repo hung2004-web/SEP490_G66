@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StatusTabs from "@/components/ui/StatusTabs";
 import { CheckCircle2, DoorOpen, Pencil } from "lucide-react";
 import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
 import FilterSelect from "@/components/ui/FilterSelect";
@@ -20,10 +21,18 @@ const StatusBadge = ({ status }) => {
 
 const RoomRow = ({ room, index, onEdit }) => (
     <tr>
-        <td data-hide-stack className="num">{index}</td>
-        <td data-primary className="cell-primary whitespace-nowrap">{room.name}</td>
-        <td data-label="Loại phòng" className="whitespace-nowrap">{roomTypeLabel(room.type)}</td>
-        <td data-label="Tầng" className="whitespace-nowrap">{room.floor || <span className="text-muted">—</span>}</td>
+        <td data-hide-stack className="num">
+            {index}
+        </td>
+        <td data-primary className="cell-primary whitespace-nowrap">
+            {room.name}
+        </td>
+        <td data-label="Loại phòng" className="whitespace-nowrap">
+            {roomTypeLabel(room.type)}
+        </td>
+        <td data-label="Tầng" className="whitespace-nowrap">
+            {room.floor || <span className="text-muted">—</span>}
+        </td>
         <td data-label="Mô tả">{room.description || <span className="text-muted">—</span>}</td>
         <td data-label="Trạng thái">
             <StatusBadge status={room.status} />
@@ -54,10 +63,7 @@ const RoomManagement = () => {
     const [dialog, setDialog] = useState(null);
     const [notice, setNotice] = useState(null);
 
-    const { loading, value: result } = useAsync(
-        () => getRooms({ keyword, type, status, page }),
-        [keyword, type, status, page, reloadKey],
-    );
+    const { loading, value: result } = useAsync(() => getRooms({ keyword, type, status, page }), [keyword, type, status, page, reloadKey]);
 
     useEffect(() => {
         const nextKeyword = searchInput.trim();
@@ -134,14 +140,7 @@ const RoomManagement = () => {
                     onChange={changeFilter(setType)}
                     className="w-full sm:w-auto sm:min-w-40"
                 />
-                <FilterSelect
-                    className="w-full sm:w-auto sm:min-w-40"
-                    id="room-status-filter"
-                    label="Trạng thái"
-                    options={ROOM_STATUS_OPTIONS}
-                    value={status}
-                    onChange={changeFilter(setStatus)}
-                />
+                <StatusTabs className="w-full" label="Trạng thái" options={ROOM_STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
                 {(filtered || searchInput) && (
                     <button type="button" className="btn btn-link" onClick={clearFilters}>
                         Xoá bộ lọc
@@ -181,9 +180,7 @@ const RoomManagement = () => {
                                     <td colSpan={COLUMN_COUNT}>
                                         <div className="empty-state">
                                             <DoorOpen className="empty-state-icon" aria-hidden="true" />
-                                            <p className="empty-state-title">
-                                                {filtered ? "Không tìm thấy phòng phù hợp" : "Chưa có phòng nào"}
-                                            </p>
+                                            <p className="empty-state-title">{filtered ? "Không tìm thấy phòng phù hợp" : "Chưa có phòng nào"}</p>
                                             <p className="empty-state-text">
                                                 {filtered ? "Thử đổi từ khóa hoặc bộ lọc." : "Bấm “Thêm phòng” để tạo phòng đầu tiên."}
                                             </p>
@@ -193,12 +190,7 @@ const RoomManagement = () => {
                             )}
                             {!loading &&
                                 rooms.map((room, index) => (
-                                    <RoomRow
-                                        key={room.id}
-                                        room={room}
-                                        index={firstItem + index}
-                                        onEdit={(selected) => setDialog({ room: selected })}
-                                    />
+                                    <RoomRow key={room.id} room={room} index={firstItem + index} onEdit={(selected) => setDialog({ room: selected })} />
                                 ))}
                         </tbody>
                     </table>

@@ -177,6 +177,7 @@ namespace OZE.Application.Services
             service.Description = request.Description?.Trim();
             service.ReferencePrice = request.ReferencePrice;
             service.EstimatedMinutes = request.EstimatedMinutes;
+            service.RecallIntervalMonths = request.RecallIntervalMonths;
             service.RequiredRoomType = normalizedRoomType;
             var newIsActive = request.IsActive ?? service.IsActive;
             if (service.IsActive && !newIsActive

@@ -45,6 +45,11 @@ FROM (VALUES
 JOIN Services s ON s.ServiceCode = 'KHAM-TQ'
 WHERE NOT EXISTS (SELECT 1 FROM ServiceVariants x WHERE x.VariantCode = v.VariantCode);
 
+-- 4b. Nhắc tái khám định kỳ (F-CRM-04): khám tổng quát 6 tháng một lần. Chỉ đặt khi chưa có giá trị
+IF COL_LENGTH('Services', 'RecallIntervalMonths') IS NOT NULL
+    EXEC('UPDATE Services SET RecallIntervalMonths = 6 WHERE ServiceCode = ''KHAM-TQ'' AND RecallIntervalMonths IS NULL');
+GO
+
 -- 5. Kiểm tra nhanh
 SELECT 'SystemConfigurations (GeneralExam)' AS Bang, COUNT(*) AS SoDong FROM SystemConfigurations WHERE ConfigKey = 'Booking.GeneralExamServiceCode'
 UNION ALL SELECT 'Rooms', COUNT(*) FROM Rooms

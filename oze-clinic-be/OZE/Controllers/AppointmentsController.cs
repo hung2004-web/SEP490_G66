@@ -52,6 +52,15 @@ namespace OZE.Controllers
                 "Appointment request received. The receptionist will call to confirm."));
         }
 
+        // POST api/appointments/reception-booking (F-APT-09): booked by the receptionist, confirmed at once
+        [HttpPost("reception-booking")]
+        [Authorize(Roles = RoleConstants.ReceptionistRole)]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> BookByReceptionistAsync([FromBody] ReceptionBookingRequest request)
+        {
+            var appointment = await _appointmentService.BookByReceptionistAsync(request, CurrentUserId ?? string.Empty);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment, "Appointment has been booked and confirmed."));
+        }
+
         // POST api/appointments
         [HttpPost]
         [Authorize(Roles = RoleConstants.PatientRole)]

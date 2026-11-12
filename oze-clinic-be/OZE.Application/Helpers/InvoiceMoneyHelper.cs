@@ -5,9 +5,11 @@ namespace OZE.Application.Helpers
 {
     public static class InvoiceMoneyHelper
     {
+        // Distinct: a payment added by hand and also attached by EF Core's fix-up is still one payment
         public static decimal GetConfirmedSum(Invoice invoice) =>
             decimal.Round(
                 invoice.Payments
+                    .Distinct()
                     .Where(p => p.PaymentStatus == PaymentConstants.Confirmed)
                     .Sum(p => p.Amount),
                 2,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StatusTabs from "@/components/ui/StatusTabs";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import RefundRequestDetailPopup from "@/components/popup/refund/RefundRequestDetailPopup";
@@ -101,7 +102,7 @@ const RefundRequestManagement = () => {
                     onChange={setSearchInput}
                     className="w-full sm:w-96"
                 />
-                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="refund-request-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
+                <StatusTabs className="w-full" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
                 <FilterSelect
                     className="w-full sm:w-auto sm:min-w-40"
                     id="refund-request-doctor"

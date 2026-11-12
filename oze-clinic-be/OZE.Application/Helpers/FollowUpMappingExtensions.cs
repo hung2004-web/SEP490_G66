@@ -39,38 +39,38 @@ namespace OZE.Application.Helpers
         /// <summary>
         /// Projects an Examination entity to a FollowUpListItemResponse for receptionist and doctor listings.
         /// </summary>
-        public static FollowUpListItemResponse ToFollowUpListItem(this Examination examination)
+        public static FollowUpListItemResponse ToFollowUpListItem(this Examination x)
         {
+            var lastContact = x.FollowUpContacts?.OrderByDescending(c => c.CreatedAt).FirstOrDefault();
             return new FollowUpListItemResponse
             {
-                ExaminationId = examination.Id,
-                OriginalAppointmentId = examination.AppointmentId,
-                OriginalAppointmentCode = $"LH{examination.AppointmentId:D6}",
-                OriginalAppointmentDate = examination.Appointment?.AppointmentDate ?? DateOnly.MinValue,
-                PatientId = examination.PatientId,
-                PatientCode = examination.Patient?.PatientCode ?? string.Empty,
-                PatientName = examination.Patient?.FullName ?? string.Empty,
-                PatientPhoneNumber = examination.Patient?.PhoneNumber ?? string.Empty,
-                DoctorId = examination.DoctorId,
-                DoctorName = examination.Doctor?.FullName ?? string.Empty,
-                FollowUpDate = examination.FollowUpDate,
-                FollowUpNotes = examination.FollowUpNotes,
-                FollowUpAppointmentId = examination.FollowUpAppointmentId,
-                FollowUpAppointmentCode = examination.FollowUpAppointment != null ? $"LH{examination.FollowUpAppointment.Id:D6}" : null,
-                FollowUpAppointmentDate = examination.FollowUpAppointment?.AppointmentDate,
-                FollowUpTimeSlotStart = examination.FollowUpAppointment?.TimeSlotStart,
-                FollowUpAppointmentStatus = examination.FollowUpAppointment?.Status,
-                LastRemindedAt = examination.FollowUpRemindedAt,
-                ReminderCount = examination.FollowUpReminderCount
+                ExaminationId = x.Id,
+                OriginalAppointmentId = x.AppointmentId,
+                OriginalAppointmentCode = $"LH{x.AppointmentId:D6}",
+                OriginalAppointmentDate = x.Appointment?.AppointmentDate ?? DateOnly.MinValue,
+                PatientId = x.PatientId,
+                PatientCode = x.Patient?.PatientCode ?? string.Empty,
+                PatientName = x.Patient?.FullName ?? string.Empty,
+                PatientPhoneNumber = x.Patient?.PhoneNumber ?? string.Empty,
+                DoctorId = x.DoctorId,
+                DoctorName = x.Doctor?.FullName ?? string.Empty,
+                FollowUpDate = x.FollowUpDate,
+                FollowUpNotes = x.FollowUpNotes,
+                FollowUpAppointmentId = x.FollowUpAppointmentId,
+                FollowUpAppointmentCode = x.FollowUpAppointment != null ? $"LH{x.FollowUpAppointment.Id:D6}" : null,
+                FollowUpAppointmentDate = x.FollowUpAppointment?.AppointmentDate,
+                FollowUpTimeSlotStart = x.FollowUpAppointment?.TimeSlotStart,
+                FollowUpAppointmentStatus = x.FollowUpAppointment?.Status,
+                LastRemindedAt = x.FollowUpRemindedAt,
+                ReminderCount = x.FollowUpReminderCount,
+                IsRecall = x.FollowUpIsRecall,
+                IsClosed = x.FollowUpClosed,
+                LastContactOutcome = lastContact?.Outcome,
+                LastContactAt = lastContact?.CreatedAt,
+                LastContactNote = lastContact?.Note,
+                CallBackDate = lastContact?.CallBackDate,
+                ContactCount = x.FollowUpContacts?.Count ?? 0
             };
-        }
-
-        /// <summary>
-        /// Validates and projects an Examination entity to a FollowUpListItemResponse with safety fallback checks.
-        /// </summary>
-        public static FollowUpListItemResponse CheckToFollowUpListItem(this Examination examination)
-        {
-            return examination.ToFollowUpListItem();
         }
     }
 }

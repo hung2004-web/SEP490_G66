@@ -56,6 +56,13 @@ namespace OZE.Persistence.DbContexts
         public DbSet<RefundAdjustmentRequest> RefundAdjustmentRequests => Set<RefundAdjustmentRequest>();
         public DbSet<InstallmentPlan> InstallmentPlans => Set<InstallmentPlan>();
         public DbSet<InstallmentPeriod> InstallmentPeriods => Set<InstallmentPeriod>();
+        public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+        public DbSet<CashSession> CashSessions => Set<CashSession>();
+        public DbSet<CashExpense> CashExpenses => Set<CashExpense>();
+        public DbSet<FollowUpContact> FollowUpContacts => Set<FollowUpContact>();
+        public DbSet<PaymentReminder> PaymentReminders => Set<PaymentReminder>();
+        public DbSet<DailyReconciliation> DailyReconciliations => Set<DailyReconciliation>();
+        public DbSet<ConsultationRequest> ConsultationRequests => Set<ConsultationRequest>();
 
         // Communication & Audit
         public DbSet<Notification> Notifications => Set<Notification>();

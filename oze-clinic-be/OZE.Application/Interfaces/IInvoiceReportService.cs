@@ -11,5 +11,9 @@ namespace OZE.Application.Interfaces
         Task<InvoiceReportResponse> GetOverviewAsync(
             OverviewInvoiceReportQuery query,
             CancellationToken cancellationToken = default);
+
+        Task<RevenueSeriesResponse> GetRevenueSeriesAsync(
+            RevenueSeriesQuery query,
+            CancellationToken cancellationToken = default);
     }
 }

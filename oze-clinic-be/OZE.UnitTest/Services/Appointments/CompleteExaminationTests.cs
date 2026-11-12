@@ -132,5 +132,50 @@ namespace OZE.UnitTest.Services.Appointments
             await act.Should().ThrowAsync<NotFoundException>()
                 .WithMessage(ErrorConstants.AppointmentMessage.AppointmentNotFound);
         }
+
+        // Periodic recall: no follow-up from the doctor, a service with a recall interval sets one (shortest interval wins)
+        [Fact]
+        public async Task CompleteExaminationAsync_ShouldSetPeriodicRecall_WhenDoctorSetNoFollowUp()
+        {
+            var examination = new Examination { Id = 88, AppointmentId = 300, PatientId = 66, DoctorId = DoctorId, ExaminationStatus = ExaminationConstants.InProgress };
+            var appointment = new Appointment
+            {
+                Id = 300, PatientId = 66, DoctorId = DoctorId, Status = AppointmentConstants.InServiceStatus, AppointmentDate = Today, Examination = examination,
+                ServiceItems = new List<AppointmentServiceItem>
+                {
+                    new() { Service = new Service { ServiceName = "Lay cao rang", RecallIntervalMonths = 6 } },
+                    new() { Service = new Service { ServiceName = "Kham tong quat", RecallIntervalMonths = 12 } },
+                    new() { Service = new Service { ServiceName = "Tram rang" } }
+                }
+            };
+            _appointmentRepoMock.Setup(r => r.GetByIdWithExaminationAsync(300, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+            _appointmentRepoMock.Setup(r => r.GetExaminationCompletionCountsAsync(88, It.IsAny<CancellationToken>())).ReturnsAsync((1, 0));
+
+            await _service.CompleteExaminationAsync(300, DoctorUserId);
+
+            examination.FollowUpIsRecall.Should().BeTrue();
+            examination.FollowUpDate.Should().Be(DateOnly.FromDateTime(OZE.Application.Helpers.ClinicClock.Today).AddMonths(6));
+            examination.FollowUpNotes.Should().Contain("6 tháng").And.Contain("Lay cao rang");
+        }
+
+        // The doctor's own follow-up date is kept
+        [Fact]
+        public async Task CompleteExaminationAsync_ShouldKeepDoctorFollowUp_OverRecall()
+        {
+            var doctorDate = Today.AddDays(14);
+            var examination = new Examination { Id = 88, AppointmentId = 300, PatientId = 66, DoctorId = DoctorId, ExaminationStatus = ExaminationConstants.InProgress, FollowUpDate = doctorDate };
+            var appointment = new Appointment
+            {
+                Id = 300, PatientId = 66, DoctorId = DoctorId, Status = AppointmentConstants.InServiceStatus, AppointmentDate = Today, Examination = examination,
+                ServiceItems = new List<AppointmentServiceItem> { new() { Service = new Service { ServiceName = "Lay cao rang", RecallIntervalMonths = 6 } } }
+            };
+            _appointmentRepoMock.Setup(r => r.GetByIdWithExaminationAsync(300, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+            _appointmentRepoMock.Setup(r => r.GetExaminationCompletionCountsAsync(88, It.IsAny<CancellationToken>())).ReturnsAsync((1, 0));
+
+            await _service.CompleteExaminationAsync(300, DoctorUserId);
+
+            examination.FollowUpDate.Should().Be(doctorDate);
+            examination.FollowUpIsRecall.Should().BeFalse();
+        }
     }
 }

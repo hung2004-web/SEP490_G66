@@ -20,6 +20,10 @@ namespace OZE.Common.Models
         [Range(1, int.MaxValue, ErrorMessage = "EstimatedMinutes must be greater than 0")]
         public int? EstimatedMinutes { get; set; }
 
+        // Months until the patient should come back (periodic recall); empty = no recall
+        [System.ComponentModel.DataAnnotations.Range(1, 60)]
+        public int? RecallIntervalMonths { get; set; }
+
         [MaxLength(20, ErrorMessage = "RequiredRoomType cannot exceed 20 characters")]
         public string? RequiredRoomType { get; set; }
 

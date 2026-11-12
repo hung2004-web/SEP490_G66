@@ -49,5 +49,9 @@ namespace OZE.Common.Models
         public DateTimeOffset CreatedAt { get; set; }
         public decimal? InvoicePaidAmount { get; set; }
         public string? InvoicePaymentStatus { get; set; }
+        // Filled on the list for the manager's page
+        public string? PatientName { get; set; }
+        public string? PatientCode { get; set; }
+        public string? ServiceNames { get; set; }
     }
 }

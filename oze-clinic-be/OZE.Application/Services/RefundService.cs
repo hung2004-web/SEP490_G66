@@ -315,7 +315,10 @@ namespace OZE.Application.Services
                 ProcessedAt = request.ProcessedAt,
                 CreatedAt = request.CreatedAt,
                 InvoicePaidAmount = invoice?.PaidAmount,
-                InvoicePaymentStatus = invoice?.PaymentStatus
+                InvoicePaymentStatus = invoice?.PaymentStatus,
+                PatientName = invoice?.Patient?.FullName,
+                PatientCode = invoice?.Patient?.PatientCode,
+                ServiceNames = invoice?.Items is { Count: > 0 } items ? string.Join(" · ", items.Select(i => i.ServiceName)) : null
             };
         }
     }

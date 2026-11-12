@@ -1,11 +1,14 @@
-const MOCK_DELAY_MS = 800;
+import api from "./api";
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Returns the ApiResponse shape: { success, message, data, errors }.
-// TODO: replace with the shared axios instance from "./api" once the backend has a consultation endpoint.
+// Public "Đăng ký tư vấn" form (POST api/consultation-requests, no sign-in). The receptionist sees it in
+// "Yêu cầu tư vấn" and calls back. Returns the ApiResponse shape: { success, message, data, errors }.
 export const submitConsultationRequest = async ({ fullName, phone, email, note }) => {
-    await wait(MOCK_DELAY_MS);
-
-    return { success: true, message: null, data: { fullName, phone, email, note }, errors: null };
+    try {
+        const response = await api.post("/api/consultation-requests", { fullName, phoneNumber: phone, email: email || null, note: note || null });
+        return response.data;
+    } catch (error) {
+        const body = error.response?.data;
+        if (body && typeof body.success === "boolean") return body;
+        return { success: false, message: "Không gửi được yêu cầu. Vui lòng thử lại hoặc gọi phòng khám.", data: null, errors: null };
+    }
 };

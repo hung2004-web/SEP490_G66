@@ -12,6 +12,7 @@ namespace OZE.Application.Interfaces
         Task<List<AvailableSlotResponse>> GetAvailableSlotsAsync(AvailableSlotRequest request);
         Task<AppointmentResponse> BookAsGuestAsync(GuestBookingRequest request);
         Task<AppointmentResponse> BookAsPatientAsync(BookingRequest request, string userId);
+        Task<AppointmentResponse> BookByReceptionistAsync(ReceptionBookingRequest request, string receptionistUserId);
         Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentQueryParameters query, CancellationToken cancellationToken = default);
         // doctorUserId: null for staff (any doctor, or all); for a doctor, their own account id, which limits the list to their own patients
         Task<List<WaitingListItemResponse>> GetWaitingListAsync(int? doctorId, string? doctorUserId, CancellationToken cancellationToken = default);

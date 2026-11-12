@@ -15,6 +15,7 @@ import StepHeading from "@/components/examination/StepHeading";
 import TreatmentPlanStep from "@/components/examination/TreatmentPlanStep";
 import TreatmentStep from "@/components/examination/TreatmentStep";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
+import MyShiftBar from "@/components/staff/MyShiftBar";
 import {
     callPatient,
     endExamination,
@@ -171,6 +172,8 @@ const ExaminationPage = () => {
     const [collapsedChoice, setCollapsedChoice] = useState(null); // null = automatic
     const [busy, setBusy] = useState(false);
     const [confirm, setConfirm] = useState(null); // { type: "absent" | "end", item }
+    // Starting or ending the shift changes who the doctor may call: reload the queue then
+    const [shiftVersion, setShiftVersion] = useState(0);
 
     useEffect(() => {
         getExamWorkspace().then((response) => {
@@ -181,7 +184,7 @@ const ExaminationPage = () => {
             setWorkspace(response.data);
             setSelectedId(defaultSelection(response.data.queue));
         });
-    }, []);
+    }, [shiftVersion]);
 
     useEffect(() => {
         if (selectedId == null) return undefined;
@@ -265,6 +268,8 @@ const ExaminationPage = () => {
     };
 
     return (
+        <>
+        <MyShiftBar onChange={() => setShiftVersion((v) => v + 1)} />
         <div className={cx("grid grid-cols-1 items-start gap-5", collapsed ? "lg:grid-cols-[4rem_minmax(0,1fr)]" : "lg:grid-cols-[18.75rem_minmax(0,1fr)]")}>
             <div className="lg:sticky lg:top-4">
                 {workspace ? (
@@ -315,6 +320,7 @@ const ExaminationPage = () => {
                 />
             )}
         </div>
+        </>
     );
 };
 

@@ -431,6 +431,9 @@ namespace OZE.Application.Services
 
             examination.FollowUpDate = request.FollowUpDate;
             examination.FollowUpNotes = notes;
+            // The doctor's own date replaces a periodic recall, and a new date reopens a follow-up the patient declined
+            examination.FollowUpIsRecall = false;
+            examination.FollowUpClosed = false;
 
             await _examinationRepository.SaveChangesAsync(cancellationToken);
 

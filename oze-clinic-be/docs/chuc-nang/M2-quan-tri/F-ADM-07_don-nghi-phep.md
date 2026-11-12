@@ -1,119 +1,104 @@
-# F-ADM-07 Đơn nghỉ phép
+# F-ADM-07 Đơn nghỉ phép và lịch làm việc của tôi
 
-> Khung chung: [_KHUNG_CHUC_NANG.md](../_KHUNG_CHUC_NANG.md). Nghiệp vụ tổng: [Dac_ta_nghiep_vu_OZE.md](../../Dac_ta_nghiep_vu_OZE.md), mục M2.
->
-> **Chức năng CHƯA LÀM.** Mục 2–6 bên dưới là **ĐỀ XUẤT**, chưa có trong code. Dac_ta chỉ có một dòng "Đơn nghỉ phép ⬜", chưa có quy tắc `BR-` nào.
+> Khung chung: [_KHUNG_CHUC_NANG.md](../_KHUNG_CHUC_NANG.md). Nghiệp vụ tổng: [Dac_ta_nghiep_vu_OZE.md](../../Dac_ta_nghiep_vu_OZE.md), mục M2, quy tắc BR-ADM-05..08.
 
 | Mục | Giá trị |
 |---|---|
 | Module | M2 Quản trị |
-| Trạng thái | ⬜ Chưa làm |
-| Vai trò được dùng | ĐỀ XUẤT: nhân viên (`Doctor`, `Receptionist`, `DentalImagingTechnician`, `ClinicManager`) gửi đơn; `ClinicManager` duyệt |
-| API | ĐỀ XUẤT: `POST api/leave-requests`, `GET api/leave-requests/my`, `POST api/leave-requests/{id}/cancel`, `GET api/leave-requests`, `POST api/leave-requests/{id}/approve`, `POST api/leave-requests/{id}/reject` |
-| Code chính | ĐỀ XUẤT: `LeaveRequestsController` → `LeaveRequestService` → `LeaveRequestRepository` (+ `WorkShiftRepository`, `StaffRepository`) |
+| Trạng thái | ✅ Đã làm (11/11/2026) |
+| Vai trò được dùng | `Doctor`, `Receptionist`, `DentalImagingTechnician` gửi và rút đơn, xem ca của mình; `ClinicManager` duyệt hoặc từ chối; `Receptionist`, `Doctor`, `ClinicManager` xem bác sĩ trong ca hôm nay |
+| API | `POST api/leave-requests`, `GET api/leave-requests/my`, `POST api/leave-requests/{id}/cancel`, `GET api/leave-requests`, `GET api/leave-requests/{id}`, `POST api/leave-requests/{id}/approve`, `POST api/leave-requests/{id}/reject`, `GET api/schedules/my`, `GET api/schedules/doctors-on-duty` |
+| Code chính | `LeaveRequestsController` → `LeaveRequestService` → `LeaveRequestRepository` (+ `WorkShiftRepository`, `StaffRepository`); `SchedulesController` → `ScheduleViewService` |
+| Màn hình | Nhân viên: "Công việc → Lịch làm việc" (`/work-schedule`, `MyWorkSchedule.jsx`). Quản lý: "Đơn nghỉ phép" (`/admin/leave-requests`, `LeaveRequestManagement.jsx`) |
 
 ## 1. Chức năng này làm gì
 
-Nhân viên gửi đơn xin nghỉ một hoặc nhiều ngày (hoặc một phần ngày) kèm lý do. Quản lý xem đơn, thấy các ca và lịch hẹn bị ảnh hưởng, rồi duyệt hoặc từ chối. Đơn được duyệt thì các ca trong khoảng nghỉ được đánh dấu vắng có lý do, để quản lý xếp người thay và lễ tân dời lịch hẹn.
+Nhân viên xem các ca quản lý đã phân cho mình theo tuần. Muốn nghỉ thì gửi đơn cho **một ngày hoặc nửa ngày** (ca sáng hoặc ca chiều) có ca, kèm lý do. Quản lý xem đơn, thấy các ca và lịch hẹn bị ảnh hưởng, rồi:
 
-### Hiện trạng trong code
+- **Duyệt có người thay**: ca và các lịch hẹn trong ca chuyển sang người thay (cùng vai trò, đang rảnh).
+- **Duyệt không người thay**: chỉ được khi ca không có lịch hẹn nào; ca bị đánh dấu vắng (`IsPresent = false`, `AbsenceReason = "Nghỉ phép: <lý do>"`), nên không mở slot đặt lịch cho ca đó.
+- **Từ chối**: bắt buộc nêu lý do.
 
-- Không có entity, bảng, DTO, controller hay message nào cho đơn nghỉ phép (tìm `Leave` trong `OZE.Domain`, `OZE.Common` không có kết quả).
-- Có sẵn cột liên quan trong `StaffSchedules`: `IsPresent` (bool?) và `AbsenceReason` (string?) (`OZE.Domain/Entities/StaffSchedule.cs`). Hiện không API nào ghi `IsPresent = false` hay `AbsenceReason`; chỉ `StartShiftAsync` đặt `IsPresent = true`, `AbsenceReason = null` (`DoctorScheduleService .cs:103-104`).
-- Kiểm tra "còn ca/lịch hẹn" có sẵn để tái dùng: `StaffRepository.HasUpcomingWorkAsync` (`StaffRepository.cs:68-75`), `WorkShiftRepository.HasBookedAppointmentsAsync` (`WorkShiftRepository.cs:94-104`).
+Lễ tân thấy danh sách **bác sĩ trong ca hôm nay** (phòng, giờ ca, đang làm, chưa vào ca, đã kết thúc ca, nghỉ phép) để lọc màn quầy và chọn bác sĩ cho khách vãng lai hoặc khi chuyển bác sĩ.
 
-## 2. Tiền điều kiện (ĐỀ XUẤT)
+## 2. Tiền điều kiện
 
-- Người gửi đăng nhập, có `StaffProfile` đang `IsActive`.
-- Ngày bắt đầu nghỉ ≥ hôm nay (`ClinicClock`).
-- Duyệt/từ chối: role `ClinicManager`, đơn đang `Pending`.
+- Người gửi có `StaffProfile`.
+- Có ít nhất một ca trong ngày và buổi xin nghỉ. Không ca nào trong đó đã bắt đầu (giờ bắt đầu ≤ giờ VN hiện tại, hoặc đã chấm vào ca).
+- Duyệt, từ chối: đơn đang `Pending`.
 
-## 3. API (ĐỀ XUẤT)
+## 3. API
 
-**Request** `POST api/leave-requests`, quyền mọi role nhân viên
+**`POST api/leave-requests`** (Doctor, Receptionist, DentalImagingTechnician)
 
-| Trường | Kiểu | Bắt buộc | Ràng buộc | Ý nghĩa |
-|---|---|---|---|---|
-| `fromDate` | DateOnly | Có | ≥ hôm nay | Ngày bắt đầu nghỉ |
-| `toDate` | DateOnly | Có | ≥ `fromDate` | Ngày kết thúc |
-| `fromTime` / `toTime` | TimeOnly? | Không | Cả hai cùng có hoặc cùng trống; `fromTime < toTime`; chỉ khi `fromDate == toDate` | Nghỉ một phần ngày |
-| `reason` | string | Có | Tối đa 500 | Lý do |
-
-```json
-{ "fromDate": "2026-11-20", "toDate": "2026-11-21", "reason": "Việc gia đình" }
-```
-
-**Request** `GET api/leave-requests/my` – đơn của tôi. `POST api/leave-requests/{id}/cancel` – người gửi rút đơn khi còn `Pending`.
-
-**Request** `GET api/leave-requests?status=&staffUserId=&fromDate=&toDate=`, quyền `ClinicManager`.
-
-**Request** `POST api/leave-requests/{id}/approve`, quyền `ClinicManager`, body `{ "note": "..." }` (không bắt buộc).
-
-**Request** `POST api/leave-requests/{id}/reject`, quyền `ClinicManager`, body `{ "reason": "..." }` (bắt buộc).
-
-**Response thành công** (ĐỀ XUẤT `ApiResponse<LeaveRequestResponse>`, HTTP 200)
-
-| Trường | Kiểu | Ý nghĩa |
-|---|---|---|
-| `id` | long | Id đơn |
-| `staffUserId`, `staffName`, `role` | string | Người xin nghỉ |
-| `fromDate`, `toDate` | DateOnly | Khoảng nghỉ |
-| `fromTime`, `toTime` | TimeOnly? | Nghỉ một phần ngày |
-| `reason` | string | Lý do |
-| `status` | string | `Pending` / `Approved` / `Rejected` / `Cancelled` |
-| `affectedShiftIds` | long[] | Ca nằm trong khoảng nghỉ |
-| `affectedAppointmentCount` | int | Số lịch hẹn chưa xong trong các ca đó |
-| `reviewedByUserId`, `reviewedAt`, `reviewNote` | | Người duyệt/từ chối |
-| `createdAt` | DateTimeOffset | Lúc gửi |
-
-**Lỗi** (ĐỀ XUẤT – message chưa có trong `ErrorConstants`, cần thêm lớp `LeaveRequestMessage`)
-
-| HTTP | Khi nào | Message (`ErrorConstants`) |
-|---|---|---|
-| 400 | Ngày quá khứ, khoảng ngày/giờ sai, thiếu lý do | Chưa có, cần thêm |
-| 400 | Trùng một đơn `Pending`/`Approved` khác của cùng người | Chưa có, cần thêm |
-| 400 | Duyệt/từ chối/rút đơn không còn `Pending` | Chưa có, cần thêm |
-| 404 | Không có đơn, hoặc đơn của người khác (khi xem/rút) | Chưa có, cần thêm |
-
-## 4. Luồng xử lý trong code (ĐỀ XUẤT)
-
-1. Gửi đơn: kiểm ngày giờ, kiểm trùng đơn, tính các ca giao khoảng nghỉ (`StaffSchedules` cùng `StaffProfileId`) để hiển thị, lưu `Pending`.
-2. Duyệt: kiểm `Pending`; với mỗi ca bị ảnh hưởng đặt `IsPresent = false`, `AbsenceReason = <lý do đơn>`; **không** tự xóa ca, không tự hủy lịch hẹn; đơn → `Approved`, lưu người duyệt và thời điểm; ghi `AuditLog`.
-3. Sau khi duyệt, quản lý dùng F-ADM-05 đổi người cho ca (bị chặn nếu ca còn lịch hẹn – `ShiftHasAppointmentsCannotChange`), lễ tân dời lịch hẹn (F-APT-08) hoặc đổi bác sĩ (F-RCP-07).
-4. Từ chối: kiểm `Pending`, bắt buộc lý do; → `Rejected`; ghi `AuditLog`.
-5. Rút đơn: chỉ người gửi, chỉ `Pending`; → `Cancelled`.
-6. Thông báo cho người gửi khi đơn được duyệt/từ chối (`Notification` hoặc email) – cần chốt kênh.
-
-## 5. Quy tắc nghiệp vụ (ĐỀ XUẤT, chưa có mã trong Dac_ta)
-
-| Mã | Quy tắc | Được kiểm tra ở |
-|---|---|---|
-| (đề xuất BR-ADM-05) | Chỉ xin nghỉ cho ngày từ hôm nay trở đi; không có hai đơn `Pending`/`Approved` chồng thời gian của cùng người | `LeaveRequestService` |
-| (đề xuất BR-ADM-06) | Duyệt đơn không tự xóa ca hay hủy lịch hẹn; ca bị ảnh hưởng đánh dấu vắng có lý do, quản lý tự xếp người thay | `LeaveRequestService` |
-| (đề xuất BR-ADM-07) | Từ chối bắt buộc lý do; duyệt/từ chối ghi `AuditLog` | `LeaveRequestService` |
-| (đề xuất) | Bác sĩ có đơn `Approved` không được nhận lịch hẹn mới trong khoảng nghỉ | Phía F-APT-02 (slot trống) |
-
-## 6. Trạng thái và dữ liệu thay đổi (ĐỀ XUẤT)
-
-| Bảng / đối tượng | Trước | Sau | Ghi chú |
+| Trường | Kiểu | Bắt buộc | Ràng buộc |
 |---|---|---|---|
-| `LeaveRequests` (bảng mới, cần migration) | (không có) | `Pending` | Gửi đơn |
-| `LeaveRequests.Status` | `Pending` | `Approved` / `Rejected` / `Cancelled` | |
-| `StaffSchedules.IsPresent`, `AbsenceReason` | `null` | `false`, lý do | Khi duyệt |
-| `AuditLogs` | | 1 dòng | Duyệt, từ chối |
+| `leaveDate` | DateOnly | Có | ≥ hôm nay (giờ VN) |
+| `slot` | string? | Không | `Morning`, `Afternoon`, hoặc trống (cả ngày). Ca bắt đầu trước 12:00 là ca sáng |
+| `reason` | string | Có | Tối đa 500 ký tự |
 
-## 7. Liên quan
+**`GET api/leave-requests/my`** và **`GET api/leave-requests`** (quản lý) có phân trang, lọc theo `status`, `role`, `slot` (`Morning`, `Afternoon`, `WholeDay`), `fromDate`, `toDate`, `searchKeyword` (tên hoặc lý do). Đơn chờ duyệt đứng đầu.
 
-- Trước đó: F-ADM-01 (nhân viên), F-ADM-05 (ca đã xếp).
-- Sau đó: F-ADM-05 (đổi người cho ca), F-APT-08 (dời lịch), F-RCP-07 (đổi bác sĩ), F-APT-02 (không mở slot cho bác sĩ đang nghỉ).
+**`GET api/leave-requests/{id}`** (quản lý) trả `request` gồm `affectedShifts[]`, `affectedAppointments[]`. Trả thêm `substituteOptions[]` là những người cùng vai trò, không có ca trùng giờ và không có đơn nghỉ trùng.
 
-## 8. Kiểm thử
+**`POST api/leave-requests/{id}/approve`** body `{ "substituteStaffUserId": "..." }`, có thể bỏ trống. **`POST .../reject`** body `{ "reason": "..." }`. **`POST .../cancel`**: chỉ người gửi rút, và chỉ khi đơn còn `Pending`.
 
-- Test hiện có: Chưa có (chức năng chưa làm).
-- Ca cần test khi làm: khoảng ngày sai; trùng đơn; duyệt đơn có ca còn lịch hẹn (ca được đánh vắng, lịch hẹn giữ nguyên); duyệt lại đơn đã duyệt; người khác rút đơn → 404.
+**`GET api/schedules/my?fromDate=&toDate=`**: ca của tôi. Mặc định tuần này và tuần sau, tối đa 62 ngày.
 
-## 9. Còn thiếu / câu hỏi mở
+**`GET api/schedules/doctors-on-duty?date=`**: các ca bác sĩ trong ngày. Mặc định hôm nay. Mỗi dòng gồm `doctorId`, `doctorName`, `roomName`, `shiftStart`, `shiftEnd` và `status`. `status` nhận một trong các giá trị `NotStarted`, `Working`, `Ended`, `OnLeave`.
 
-- Toàn bộ chức năng chưa có code; Dac_ta chưa mô tả nghiệp vụ và chưa có `BR-`.
-- Cần chốt với phòng khám: có hạn mức ngày phép không; có nghỉ nửa ngày không; phải gửi trước bao nhiêu ngày; quản lý tự nghỉ thì ai duyệt; duyệt có cần tự hủy ca không.
-- Cột `StaffSchedules.IsPresent = false` / `AbsenceReason` đã có nhưng chưa nơi nào ghi; chấm vắng (không qua đơn) cũng chưa có API.
+**Lỗi** (`ErrorConstants.LeaveRequestMessage`)
+
+| HTTP | Khi nào | Message |
+|---|---|---|
+| 400 | Ngày đã qua | `DateInPast` |
+| 400 | Không có ca trong buổi đó | `NoShiftToLeave` |
+| 400 | Có ca đã bắt đầu | `ShiftAlreadyStarted` |
+| 400 | Trùng đơn `Pending`/`Approved` (cả ngày trùng mọi buổi) | `AlreadyRequested` |
+| 400 | Buổi không hợp lệ | `SlotInvalid` |
+| 400 | Duyệt không người thay mà ca còn lịch hẹn | `SubstituteRequired` |
+| 400 | Người thay khác vai trò / bận / chính mình | `SubstituteWrongRole`, `SubstituteBusy`, `SubstituteSamePerson` |
+| 400 | Đơn đã xử lý | `NotPending` |
+| 400 | Từ chối không có lý do | `RejectReasonRequired` |
+| 403 | Rút đơn của người khác | `NotOwner` |
+| 404 | Không có đơn | `NotFound` |
+
+## 4. Luồng xử lý
+
+1. Gửi: chuẩn hóa buổi, kiểm ngày, lấy ca của ngày đó theo buổi, kiểm ca chưa bắt đầu, kiểm trùng đơn, lưu `Pending`, ghi `AuditLog` `LEAVE_REQUESTED`.
+2. Duyệt (trong một transaction): kiểm `Pending`, lấy ca theo buổi và lịch hẹn chưa xong có giờ giao với ca.
+   - Có người thay: kiểm cùng vai trò và người thay đang rảnh, rồi đổi `StaffSchedules.StaffProfileId` và `Appointments.DoctorId` sang người thay. Ghi chú vào ca "Thay ca cho …".
+   - Không người thay: nếu còn lịch hẹn thì báo lỗi; nếu không thì đặt `IsPresent = false` và `AbsenceReason` cho ca.
+   - Cuối cùng chuyển đơn sang `Approved`, lưu người duyệt và thời gian, ghi `AuditLog` `LEAVE_APPROVED`.
+3. Từ chối: chuyển `Rejected`, lưu lý do, ghi `AuditLog` `LEAVE_REJECTED`.
+4. Rút: chuyển `Cancelled`, ghi `AuditLog` `LEAVE_CANCELLED`.
+
+## 5. Quy tắc nghiệp vụ
+
+| Mã | Quy tắc |
+|---|---|
+| BR-ADM-05 | Chỉ xin nghỉ ca từ nay về sau và chưa bắt đầu; nghỉ theo ngày hoặc nửa ngày (sáng < 12:00 ≤ chiều); không có hai đơn `Pending`/`Approved` chồng nhau |
+| BR-ADM-06 | Ca có lịch hẹn chỉ được duyệt nghỉ khi có **người thay cùng vai trò, đang rảnh**; lịch hẹn chuyển theo người thay, không hủy lịch của bệnh nhân |
+| BR-ADM-07 | Từ chối bắt buộc lý do; gửi, rút, duyệt, từ chối đều ghi `AuditLog` |
+| BR-ADM-08 | Ca bị duyệt nghỉ mà không có người thay thì bị đánh vắng, nên không còn slot đặt lịch cho ca đó (`AppointmentRepository`: `IsPresent != false`) |
+
+## 6. Dữ liệu thay đổi
+
+| Bảng | Thay đổi |
+|---|---|
+| `LeaveRequests` (mới, migration `AddLeaveRequestsAndCashSessions`) | Thêm đơn, đổi `Status` |
+| `StaffSchedules` | `StaffProfileId` (có người thay), hoặc `IsPresent`, `AbsenceReason` (không người thay) |
+| `Appointments.DoctorId` | Sang người thay |
+| `AuditLogs` | 1 dòng mỗi thao tác |
+
+## 7. Kiểm thử
+
+- `OZE.UnitTest/Services/LeaveRequests/LeaveRequestTests.cs` (tab `OZ-LEAVE-01`, 12 ca).
+- `OZE.UnitTest/Services/Schedules/DoctorsOnDutyTests.cs` (tab `OZ-SCH-01`).
+
+## 8. Còn mở
+
+- Chưa có hạn mức ngày phép và chưa quy định phải gửi trước bao nhiêu ngày. Cần chốt với phòng khám.
+- Chưa có thông báo cho người gửi khi đơn được duyệt hoặc từ chối. Người gửi tự xem trạng thái ở trang Lịch làm việc.
+- Quản lý chưa gửi đơn được (quản lý không có ca).
+- Trang "Phân ca" của quản lý vẫn dùng dữ liệu giả. Đơn được duyệt chỉ hiện trên dữ liệu thật của API ca.

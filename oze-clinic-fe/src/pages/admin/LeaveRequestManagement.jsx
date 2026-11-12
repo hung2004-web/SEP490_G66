@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StatusTabs from "@/components/ui/StatusTabs";
 import { useSearchParams } from "react-router-dom";
 import { CalendarOff } from "lucide-react";
 import { toast } from "react-toastify";
@@ -22,7 +23,9 @@ const SLOT_OPTIONS = LEAVE_SLOT_OPTIONS.map((option) => ({ value: option.value ?
 
 const LeaveRequestRow = ({ request, number, onView }) => (
     <tr>
-        <td data-hide-stack className="num">{number}</td>
+        <td data-hide-stack className="num">
+            {number}
+        </td>
         <td data-primary className="min-w-40">
             <p className="font-semibold text-ink">{request.senderName}</p>
             <p className="text-caption text-muted">{request.senderRole}</p>
@@ -31,8 +34,12 @@ const LeaveRequestRow = ({ request, number, onView }) => (
             <p className="font-semibold text-ink">{formatDate(request.date)}</p>
             <p className="text-caption text-muted">{leaveSlotLabel(request.slot)}</p>
         </td>
-        <td data-label="Lý do" data-block className="min-w-48">{request.reason}</td>
-        <td data-label="Người thay" className="whitespace-nowrap">{request.substituteName ?? "—"}</td>
+        <td data-label="Lý do" data-block className="min-w-48">
+            {request.reason}
+        </td>
+        <td data-label="Người thay" className="whitespace-nowrap">
+            {request.substituteName ?? "—"}
+        </td>
         <td data-label="Trạng thái">
             <StatusBadge status={request.status} labels={LEAVE_REQUEST_STATUS_LABELS} />
         </td>
@@ -59,10 +66,7 @@ const LeaveRequestManagement = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const openId = searchParams.get("id");
 
-    const { loading, value: result } = useAsync(
-        () => getLeaveRequests({ keyword, status, role, slot, page }),
-        [keyword, status, role, slot, page, version],
-    );
+    const { loading, value: result } = useAsync(() => getLeaveRequests({ keyword, status, role, slot, page }), [keyword, status, role, slot, page, version]);
 
     useEffect(() => {
         const nextKeyword = searchInput.trim();
@@ -138,9 +142,23 @@ const LeaveRequestManagement = () => {
                     onChange={setSearchInput}
                     className="w-full sm:w-72"
                 />
-                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="leave-request-status" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
-                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="leave-request-role" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={changeFilter(setRole)} />
-                <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="leave-request-slot" label="Buổi" options={SLOT_OPTIONS} value={slot} onChange={changeFilter(setSlot)} />
+                <StatusTabs className="w-full" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
+                <FilterSelect
+                    className="w-full sm:w-auto sm:min-w-40"
+                    id="leave-request-role"
+                    label="Vai trò"
+                    options={SHIFT_ROLE_OPTIONS}
+                    value={role}
+                    onChange={changeFilter(setRole)}
+                />
+                <FilterSelect
+                    className="w-full sm:w-auto sm:min-w-40"
+                    id="leave-request-slot"
+                    label="Buổi"
+                    options={SLOT_OPTIONS}
+                    value={slot}
+                    onChange={changeFilter(setSlot)}
+                />
             </div>
 
             <div>

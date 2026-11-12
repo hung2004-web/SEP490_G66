@@ -8,6 +8,7 @@ namespace OZE.Common.Models
         public string? Description { get; set; }
         public decimal ReferencePrice { get; set; }
         public int? EstimatedMinutes { get; set; }
+        public int? RecallIntervalMonths { get; set; }
         public string? RequiredRoomType { get; set; }
         public bool IsActive { get; set; }
         public DateTimeOffset CreatedAt { get; set; }

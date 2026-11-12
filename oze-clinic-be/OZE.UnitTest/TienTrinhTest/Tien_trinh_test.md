@@ -32,10 +32,10 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 5 | OZ-ROOM, OZ-ROLE, OZ-STAFF, OZ-WS, OZ-DS | 36–60 | 25 | 0 | 0 | 25 | 0 | 0 |
 | 6 | OZ-APPT, OZ-Q | 61–84 | 24 | 0 | 6 | 17 | 1 | 0 |
 | 7 | OZ-EXAM, OZ-IMG, OZ-MR | 85–113 | 29 | 0 | 5 | 22 | 2 | 0 |
-| 8 | OZ-TP, OZ-INV | 114–125 | 12 | 0 | 0 | 7 | 5 | 0 |
-| 9 | OZ-HOME, OZ-CFG, OZ-LEAVE, OZ-NOTIF, OZ-WH | 126–133 | 8 | 0 | 0 | 2 | 6 | 0 |
+| 8 | OZ-TP, OZ-INV | 114–125 | 12 | 0 | 1 | 7 | 4 | 0 |
+| 9 | OZ-HOME, OZ-CFG, OZ-LEAVE, OZ-NOTIF, OZ-WH | 126–133 | 8 | 0 | 2 | 2 | 4 | 0 |
 | 10 | OZ-SIM | 134–142 | 9 | 0 | 0 | 0 | 0 | 9 |
-| | **Tổng tab hàm** | 4–142 | **139** | **11** | **31** | **73** | **15** | **9** |
+| | **Tổng tab hàm** | 4–142 | **139** | **11** | **34** | **73** | **12** | **9** |
 
 **Thứ tự đề xuất:** đợt 3 → 4 → 7 (phần chụp phim) → 6 (phần có test) → 0, rồi viết test cho các tab ✍️ theo đợt 2 → 5 → 6 → 7 → 8 → 9.
 
@@ -207,7 +207,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 120 | VersionTreatmentPlan | OZ-TP-07 | 0 | ⛔ | | | Phiên bản kế hoạch chưa làm |
 | 121 | CreateInvoice | OZ-INV-01 | 0 | ✍️ | | | Code còn thiếu kiểm tra BR-PAY-01..03 |
 | 122 | GetInvoice | OZ-INV-02 | 0 | ⛔ | | | |
-| 123 | CreatePayment | OZ-INV-03 | 0 | ⛔ | | | |
+| 123 | CreatePayment | OZ-INV-03 | 2 | 📝 | HiepNX | 11/11/2026 | Invoices/RecordPaymentTests: khoản thu chỉ cộng một lần (lỗi cộng đôi PaidAmount đã sửa) |
 | 124 | RequestRefund | OZ-INV-04 | 0 | ⛔ | | | |
 | 125 | ApproveRefund | OZ-INV-05 | 0 | ⛔ | | | |
 
@@ -218,8 +218,8 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 126 | GetHome | OZ-HOME-01 | 0 | ✍️ | | | |
 | 127 | GetSystemConfig | OZ-CFG-01 | 0 | ⛔ | | | |
 | 128 | UpdateSystemConfig | OZ-CFG-02 | 0 | ⛔ | | | |
-| 129 | CreateLeaveRequest | OZ-LEAVE-01 | 0 | ⛔ | | | |
-| 130 | ApproveLeaveRequest | OZ-LEAVE-02 | 0 | ⛔ | | | |
+| 129 | CreateLeaveRequest | OZ-LEAVE-01 | 6 | 📝 | HiepNX | 11/11/2026 | API đã làm: gửi, rút đơn (LeaveRequests/CreateLeaveRequestTests) |
+| 130 | ApproveLeaveRequest | OZ-LEAVE-02 | 6 | 📝 | HiepNX | 11/11/2026 | API đã làm: duyệt có/không người thay, từ chối (LeaveRequests/ApproveLeaveRequestTests) |
 | 131 | GetNotifications | OZ-NOTIF-01 | 0 | ⛔ | | | |
 | 132 | MarkNotifRead | OZ-NOTIF-02 | 0 | ⛔ | | | |
 | 133 | ImagingSimWebhook | OZ-WH-01 | 0 | ✍️ | | | |
@@ -247,6 +247,14 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | Hẹn tái khám từ lượt khám (`ScheduleFollowUpAsync`) | Appointments/ScheduleFollowUpTests: 5 | OZ-APPT-21 |
 | Đặt / nhắc / đặt lịch / nhắc hàng loạt / xem tái khám của tôi (`SetFollowUpAsync`, `RemindFollowUpAsync`, `ScheduleFollowUpAppointmentAsync`, `RemindDueFollowUpsAsync`, `GetMyFollowUpsAsync`) | Examinations/SetFollowUpTests: 5, RemindFollowUpTests: 4, ScheduleFollowUpAppointmentTests: 2, RemindDueFollowUpsTests: 2, GetMyFollowUpsTests: 1 | OZ-EXAM-21..25 |
 | Xem chi tiết, danh sách theo bệnh nhân, sửa, xóa, hủy kế hoạch điều trị | 0 | OZ-TP-08..12 |
+| Bàn giao ca: mở két, ghi chi, đếm tiền, bàn giao (`CashSessionService`) | CashSessions/CashSessionTests: 11 | OZ-CASH-01 |
+| Biểu đồ doanh thu theo ngày (`GetRevenueSeriesAsync`) | Reports/RevenueByDayTests: 2 | OZ-RPT-01 |
+| Bác sĩ trong ca hôm nay (`GetDoctorsOnDutyAsync`) | Schedules/DoctorsOnDutyTests: 1 | OZ-SCH-01 |
+| Ghi kết quả gọi tái khám (`RecordContactAsync`) | Care/RecordFollowUpContactTests: 5 | OZ-CRM-01 |
+| Công nợ và nhắc thanh toán (`DebtService`) | Care/DebtAndReminderTests: 6 | OZ-PAY-07 |
+| Đối soát cuối ngày (`ReconciliationService`) | Care/DailyReconciliationTests: 5 | OZ-PAY-08 |
+| Lễ tân đặt lịch hộ (`BookByReceptionistAsync`) | Appointments/BookByReceptionistTests: 3 | OZ-APPT-22 |
+| Yêu cầu tư vấn (`ConsultationService`) | Care/ConsultationRequestTests: 5 | OZ-CRM-05 |
 
 ## Nhật ký cập nhật
 
@@ -320,3 +328,7 @@ Lệnh hay dùng:
 | Bố cục | 1 dòng trống giữa Condition và Confirm; xóa dòng thừa trước Result; **giữ nguyên khung kẻ** |
 
 **Cách cập nhật file này:** nhận tab → đổi trạng thái thành 🔄 và ghi tên → làm xong đổi thành ✅, ghi ngày → sửa lại bảng "Tổng quan theo đợt" → thêm 1 dòng vào "Nhật ký cập nhật".
+| 11/11/2026 | HiepNX | Làm đơn nghỉ phép (OZ-LEAVE-01, 02: ⛔ → 📝, 6 + 6 test), bàn giao ca (11 test), biểu đồ doanh thu theo ngày (2), bác sĩ trong ca (1). Ba mã OZ-CASH-01, OZ-RPT-01, OZ-SCH-01 chưa có tab trên sheet. Tổng 382 test |
+| 11/11/2026 | HiepNX | Theo góp ý hội đồng: ghi kết quả gọi tái khám (5), công nợ và nhắc thanh toán (6), đối soát cuối ngày (5), nhắc định kỳ trong OZ-APPT-19 CompleteExamination (+2). Ba mã OZ-CRM-01, OZ-PAY-07, OZ-PAY-08 chưa có tab trên sheet. Tổng 400 test |
+| 11/11/2026 | HiepNX | Đặt lịch hộ (3 test đầu vào), yêu cầu tư vấn (5). Tổng 408 test |
+| 11/11/2026 | HiepNX | OZ-INV-03 CreatePayment: 2 test cho lỗi cộng đôi tiền đã thu. Tổng 410 test |
