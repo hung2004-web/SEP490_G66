@@ -1,8 +1,7 @@
 import { cx } from "@/utils/cx";
 import { surfacesText } from "@/utils/examination";
 import ClinicalExamSection from "./ClinicalExamSection";
-
-const linkButton = "cursor-pointer rounded text-caption font-semibold outline-none hover:underline focus-visible:shadow-focus";
+import RowActions from "./RowActions";
 
 // "Tình trạng răng hiện tại": findings of this visit grouped by tooth (number shown on the tooth's first row).
 // entries: [{ id, tooth, condition, surfaces, note }].
@@ -59,14 +58,7 @@ const ToothConditionTable = ({ entries = [], selectedTooth, onSelectTooth, onEdi
                                         <td className="num whitespace-nowrap">{surfacesText(entry.surfaces)}</td>
                                         <td className="min-w-56 text-caption">{entry.note || "—"}</td>
                                         <td className="whitespace-nowrap text-right">
-                                            <span className="inline-flex gap-3">
-                                                <button type="button" className={`${linkButton} text-primary`} onClick={() => onEdit?.(entry)}>
-                                                    Sửa
-                                                </button>
-                                                <button type="button" className={`${linkButton} text-danger`} onClick={() => onRemove?.(entry)}>
-                                                    Xoá
-                                                </button>
-                                            </span>
+                                            <RowActions label={`${entry.condition} răng ${tooth}`} onEdit={onEdit && (() => onEdit(entry))} onRemove={onRemove && (() => onRemove(entry))} />
                                         </td>
                                     </tr>
                                 );

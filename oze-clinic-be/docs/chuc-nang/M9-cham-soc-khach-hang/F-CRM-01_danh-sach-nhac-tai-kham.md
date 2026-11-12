@@ -94,12 +94,19 @@ Chưa có code. Luồng đề xuất:
 
 ## 8. Kiểm thử
 
-- Test hiện có: Chưa có.
-- Ca cần test: giai đoạn `Scheduled` trong khoảng → có; `InProgress`/`Completed`/`Cancelled` → không; kế hoạch `Draft`/`Proposed`/`Cancelled`/`Completed` → không; `ScheduledDate` null → không; quá hạn → có, `DaysUntilDue` âm; chỉ giai đoạn đầu tiên mỗi kế hoạch; mốc ngày theo giờ Việt Nam lúc gần nửa đêm UTC.
+- **Test hiện có:** Đã triển khai đầy đủ bộ unit tests:
+  - `Appointments/ScheduleFollowUpTests` (hẹn tái khám từ lượt khám).
+  - `Examinations/SetFollowUpTests` (bác sĩ ghi nhận ngày và dặn dò tái khám).
+  - `Examinations/RemindFollowUpTests` (nhắc thủ công từng bệnh nhân qua SMS/Email/InApp).
+  - `Examinations/RemindDueFollowUpsTests` (nhắc tự động theo lô các ca tái khám đến hạn).
+  - `Examinations/ScheduleFollowUpAppointmentTests` (đặt lịch hẹn tái khám chính thức).
+- Ca kiểm thử trọng tâm:
+  - Bác sĩ chỉ định ngày tái khám hợp lệ trong tương lai.
+  - Phân quyền: Chỉ lễ tân hoặc bác sĩ phụ trách mới có quyền gửi nhắc nhở hoặc đặt lịch tái khám.
+  - Xử lý gửi đồng thời đa kênh (In-App notification, SMS qua Twilio/mock, Email qua SMTP) non-blocking.
+  - Xử lý tự động qua `FollowUpReminderBackgroundService` chạy nền hằng ngày lúc 08:00 (giờ VN).
 
 ## 9. Còn thiếu / câu hỏi mở
 
-- Thiếu cột `AppointmentServices.TreatmentPlanStageId` (mục M7 tài liệu tổng): không biết lịch hẹn nào dành cho giai đoạn nào, nên không loại chính xác bệnh nhân đã đặt lịch. Tạm đánh dấu theo bệnh nhân.
-- Thiếu `TreatmentPlanStages.IntervalDays`: ngày tái khám phụ thuộc bác sĩ nhập `ScheduledDate`/`NextStageScheduledDate`; giai đoạn không có ngày sẽ không bao giờ được nhắc.
-- Q8 chưa chốt (số ngày, kênh). Nếu thêm nhắc tự động SMS/email thì dùng `ISmsSender`/`IEmailSender` hiện có và ghi `Notifications` (`NotificationType` cho phép `SMS`, `Email`).
-- Phạm vi bác sĩ xem danh sách này: chưa chốt.
+- Ghi nhận lịch sử cuộc gọi chi tiết (F-CRM-02) khi lễ tân gọi điện trực tiếp chốt lịch với bệnh nhân.
+- Tích hợp thêm kênh Zalo ZNS / SMS Brandname chính thức khi triển khai môi trường production.

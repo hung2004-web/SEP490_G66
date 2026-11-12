@@ -4,9 +4,10 @@ import PlanServiceItem from "./PlanServiceItem";
 
 // "Kế hoạch theo dịch vụ đăng ký": the registered services in treatment order, each with its sessions.
 // services: see utils/examination; typeOptionsOf(service) -> [{ id, name, price }];
-// expandedId: the service shown open; errors: result of validatePlan (shown after a submit attempt).
+// expandedIds: the services shown open (each opens and closes on its own; onToggle(serviceId) flips one).
+// errors: result of validatePlan (shown after a submit attempt).
 // onChange receives the whole updated services list (reordered, sessions added / edited / removed).
-const PlanServiceList = ({ services = [], typeOptionsOf, expandedId, errors, onToggle, onChange }) => {
+const PlanServiceList = ({ services = [], typeOptionsOf, expandedIds = [], errors, onToggle, onChange }) => {
     const move = (index, offset) => {
         const next = [...services];
         [next[index], next[index + offset]] = [next[index + offset], next[index]];
@@ -32,14 +33,14 @@ const PlanServiceList = ({ services = [], typeOptionsOf, expandedId, errors, onT
                             index={index}
                             service={service}
                             typeOptions={typeOptionsOf(service)}
-                            expanded={service.id === expandedId}
+                            expanded={expandedIds.includes(service.id)}
                             errors={{
                                 service: errors?.services?.[service.id],
                                 sessions: Object.fromEntries(service.sessions.filter((session) => errors?.sessions?.[session.id]).map((session) => [session.id, errors.sessions[session.id]])),
                             }}
                             canMoveUp={index > 0}
                             canMoveDown={index < services.length - 1}
-                            onToggle={() => onToggle(service.id === expandedId ? null : service.id)}
+                            onToggle={() => onToggle(service.id)}
                             onMoveUp={() => move(index, -1)}
                             onMoveDown={() => move(index, 1)}
                             onAddSession={() => updateSessions(service.id, (sessions) => [...sessions, newPlanSession(`session-${Date.now()}`)])}
