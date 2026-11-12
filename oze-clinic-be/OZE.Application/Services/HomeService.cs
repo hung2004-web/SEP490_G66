@@ -1,31 +1,47 @@
 ﻿using OZE.Application.Interfaces;
 using OZE.Common.Models;
+using OZE.Common.Models.Base;
 using OZE.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OZE.Application.Services
 {
     public class HomeService : IHomeService
     {
-        private readonly IHomeRepository repo;
-        public HomeService(IHomeRepository _repo)
+        private readonly IHomeRepository _repo;
+
+        public HomeService(IHomeRepository repo)
         {
-            repo = _repo;
+            _repo = repo;
         }
-        public async Task<HomePageResponse> GetHomePageAsync()
+
+        public async Task<HomePageResponse> GetHomePageAsync(CancellationToken cancellationToken = default)
         {
-            var services = await repo.GetActiveServiceAsync();
-            var doctors = await repo.GetActiveDoctorAsync();
+            var services = await _repo.GetActiveServiceAsync(cancellationToken);
+            var doctors = await _repo.GetActiveDoctorAsync(cancellationToken);
+
             return new HomePageResponse
             {
                 Services = services.Select(ToServiceResponse).ToList(),
                 Doctors = doctors.Select(ToDoctorResponse).ToList()
             };
+        }
+
+        public async Task<PagedResult<HomeDoctorResponse>> GetDoctorsAsync(DoctorQueryParameters parameters, CancellationToken cancellationToken = default)
+        {
+            var pagedDoctors = await _repo.GetActiveDoctorsPagedAsync(parameters, cancellationToken);
+            var mappedItems = pagedDoctors.Items.Select(ToDoctorResponse).ToList();
+
+            return new PagedResult<HomeDoctorResponse>(
+                mappedItems,
+                pagedDoctors.TotalCount,
+                pagedDoctors.PageNumber,
+                pagedDoctors.PageSize);
+        }
+
+        public async Task<HomeDoctorResponse?> GetDoctorByIdAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var doctor = await _repo.GetActiveDoctorByIdAsync(id, cancellationToken);
+            return doctor != null ? ToDoctorResponse(doctor) : null;
         }
 
         private static HomeDoctorResponse ToDoctorResponse(StaffProfile doctor)
@@ -34,7 +50,13 @@ namespace OZE.Application.Services
             {
                 Id = doctor.Id,
                 FullName = doctor.FullName,
-                Specialization = doctor.Specialization
+                Specialization = doctor.Specialization,
+                LicenseNumber = doctor.LicenseNumber,
+                PhoneNumber = doctor.PhoneNumber,
+                Gender = doctor.Gender,
+                DateOfBirth = doctor.DateOfBirth,
+                HireDate = doctor.HireDate,
+                IsActive = doctor.IsActive
             };
         }
 
@@ -49,7 +71,5 @@ namespace OZE.Application.Services
                 EstimatedMinutes = service.EstimatedMinutes
             };
         }
- 
-        }
     }
-
+}
