@@ -1,14 +1,12 @@
 ﻿using OZE.Common.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using OZE.Common.Models.Base;
 
 namespace OZE.Application.Interfaces
 {
     public interface IHomeService
     {
-        public Task<HomePageResponse> GetHomePageAsync();
+        Task<HomePageResponse> GetHomePageAsync(CancellationToken cancellationToken = default);
+        Task<PagedResult<HomeDoctorResponse>> GetDoctorsAsync(DoctorQueryParameters parameters, CancellationToken cancellationToken = default);
+        Task<HomeDoctorResponse?> GetDoctorByIdAsync(int id, CancellationToken cancellationToken = default);
     }
 }

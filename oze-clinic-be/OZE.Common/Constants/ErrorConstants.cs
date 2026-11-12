@@ -179,6 +179,8 @@ namespace OZE.Common.Constants
         public static class Common
         {
             public const string NotFound = "Not Found";
+            // MSG02
+            public const string NoData = "No Data.";
         }
 
         public static class ServiceMessage
