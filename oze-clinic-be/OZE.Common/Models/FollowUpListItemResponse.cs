@@ -24,6 +24,15 @@ namespace OZE.Common.Models
         public string? FollowUpAppointmentStatus { get; set; }
         public DateTimeOffset? LastRemindedAt { get; set; }
         public int ReminderCount { get; set; }
+        // Set by the service's periodic recall rather than by the doctor
+        public bool IsRecall { get; set; }
+        // The patient declined; no more reminders
+        public bool IsClosed { get; set; }
+        public string? LastContactOutcome { get; set; }
+        public DateTimeOffset? LastContactAt { get; set; }
+        public string? LastContactNote { get; set; }
+        public DateOnly? CallBackDate { get; set; }
+        public int ContactCount { get; set; }
 
         public bool HasActiveAppointment => FollowUpAppointmentId.HasValue 
             && FollowUpAppointmentStatus != "CANCELLED" 

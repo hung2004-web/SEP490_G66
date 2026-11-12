@@ -61,6 +61,7 @@ const SIDEBAR_MENU = {
                 { key: "leave-requests", label: "Đơn xin nghỉ", to: ROUTES.ADMIN_LEAVE_REQUESTS, badge: SIDEBAR_BADGES.PENDING_LEAVES },
                 { key: "refunds", label: "Duyệt hoàn tiền", to: ROUTES.ADMIN_REFUNDS, badge: SIDEBAR_BADGES.PENDING_REFUNDS },
                 { key: "debts", label: "Công nợ", to: ROUTES.ADMIN_DEBTS },
+                { key: "reconciliation", label: "Đối soát cuối ngày", to: ROUTES.ADMIN_RECONCILIATION },
             ],
         },
         {
@@ -105,13 +106,15 @@ const SIDEBAR_MENU = {
     ],
     [USER_ROLES.RECEPTIONIST]: [
         DASHBOARD_LINK,
+        { key: "queue", label: "Hàng chờ", icon: ClipboardList, to: ROUTES.RECEPTION_QUEUE },
         {
             key: "appointments",
             label: "Lịch hẹn",
             icon: CalendarDays,
             children: [
-                { key: "manage-appointments", label: "Quản lý lịch hẹn", to: ROUTES.RECEPTION_APPOINTMENTS },
-                { key: "check-in", label: "Tiếp đón bệnh nhân", to: ROUTES.RECEPTION_CHECK_IN },
+                { key: "schedule", label: "Quản lý lịch hẹn", to: ROUTES.RECEPTION_SCHEDULE },
+                { key: "check-in", label: "Check-in hôm nay", to: ROUTES.RECEPTION_CHECK_IN },
+                { key: "confirm-appointments", label: "Xác nhận lịch hẹn", to: ROUTES.RECEPTION_APPOINTMENTS },
             ],
         },
         {
@@ -119,15 +122,21 @@ const SIDEBAR_MENU = {
             label: "Bệnh nhân",
             icon: Users,
             children: [
-                { key: "patient-list", label: "Bệnh nhân", to: ROUTES.RECEPTION_PATIENTS },
+                { key: "patient-list", label: "Hồ sơ bệnh nhân", to: ROUTES.RECEPTION_PATIENTS },
+                { key: "follow-ups", label: "Nhắc tái khám", to: ROUTES.RECEPTION_FOLLOW_UPS },
                 { key: "consultations", label: "Yêu cầu tư vấn", to: ROUTES.RECEPTION_CONSULTATIONS },
             ],
         },
         {
             key: "finance",
-            label: "Tài chính",
+            label: "Thu ngân",
             icon: Wallet,
-            children: [{ key: "invoices", label: "Thanh toán", to: ROUTES.RECEPTION_INVOICES }],
+            children: [
+                { key: "invoices", label: "Thu tiền", to: ROUTES.RECEPTION_INVOICES },
+                { key: "invoice-list", label: "Hóa đơn", to: ROUTES.RECEPTION_INVOICE_LIST },
+                { key: "debts", label: "Công nợ", to: ROUTES.RECEPTION_DEBTS },
+                { key: "cash-handover", label: "Bàn giao ca", to: ROUTES.RECEPTION_CASH_HANDOVER },
+            ],
         },
         WORK_GROUP,
         ACCOUNT_GROUP,

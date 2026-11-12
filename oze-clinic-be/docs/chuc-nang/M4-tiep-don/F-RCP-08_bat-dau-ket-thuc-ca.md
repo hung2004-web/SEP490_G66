@@ -6,8 +6,9 @@
 |---|---|
 | Module | M4 Tiếp đón và hàng chờ |
 | Trạng thái | ✅ Đã có API |
-| Vai trò được dùng | `Doctor` (bắt đầu/kết thúc ca của mình); `ClinicManager` (mở lại ca, liên quan) |
-| API | `POST api/doctor-schedules/{shiftId}/start`, `POST api/doctor-schedules/{shiftId}/end`; liên quan `POST api/work-shifts/{id}/reopen` |
+| Vai trò được dùng | `Doctor` (bắt đầu/kết thúc ca của mình); `Receptionist`, `DentalImagingTechnician` (chấm công ca của mình qua `api/schedules/my/...`); `ClinicManager` (mở lại ca, liên quan) |
+| API | `POST api/doctor-schedules/{shiftId}/start`, `POST api/doctor-schedules/{shiftId}/end`; cho mọi nhân viên `POST api/schedules/my/{shiftId}/start`, `POST api/schedules/my/{shiftId}/end` (`SchedulesController`, cùng `DoctorScheduleService`, cùng quy tắc); liên quan `POST api/work-shifts/{id}/reopen` |
+| Giao diện | Thanh "Ca của tôi" (`MyShiftBar`): màn Khám bệnh của bác sĩ, Tổng quan lễ tân, Tổng quan kỹ thuật viên, Lịch làm việc. Hiện phòng của ca, nút Bắt đầu ca (từ 30 phút trước giờ ca), Kết thúc ca (bác sĩ có hộp xác nhận nêu hệ quả), lối tắt mở hàng chờ |
 | Code chính | `DoctorSchedulesController.StartShiftAsync` / `EndShiftAsync` → `DoctorScheduleService.StartShiftAsync` / `EndShiftAsync` (file `DoctorScheduleService .cs`, có dấu cách) → `WorkShiftRepository`, `AppointmentRepository`, `QueueService`, `AuditLogService`, `ISmsSender`, `IEmailSender` |
 
 ## 1. Chức năng này làm gì

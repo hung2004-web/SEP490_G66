@@ -1,4 +1,5 @@
 import { useState } from "react";
+import StatusTabs from "@/components/ui/StatusTabs";
 import { toast } from "react-toastify";
 import MonthlyShiftPopup from "@/components/popup/shift/MonthlyShiftPopup";
 import ShiftAssignPopup from "@/components/popup/shift/ShiftAssignPopup";
@@ -49,9 +50,7 @@ const WorkShiftManagement = () => {
     const week = result?.success ? result.data : null;
 
     const isVisible = (cell) =>
-        (!roomId || String(cell.room.id) === roomId) &&
-        (!role || roomTypeRole(cell.room.type) === role) &&
-        (!status || cell.status === status);
+        (!roomId || String(cell.room.id) === roomId) && (!role || roomTypeRole(cell.room.type) === role) && (!status || cell.status === status);
 
     // An editable week opens the planning popups; otherwise the card only shows what happened.
     const openCell = (cell) => {
@@ -105,15 +104,33 @@ const WorkShiftManagement = () => {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <WeekPicker id="shift-week" value={weekStart} onChange={setWeekStart} className="w-full sm:w-auto" />
                 <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-                    <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="shift-room-filter" label="Phòng" options={ROOM_OPTIONS} value={roomId} onChange={setRoomId} />
-                    <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="shift-role-filter" label="Vai trò" options={SHIFT_ROLE_OPTIONS} value={role} onChange={setRole} />
-                    <FilterSelect className="w-full sm:w-auto sm:min-w-40" id="shift-status-filter" label="Trạng thái" options={SHIFT_STATUS_OPTIONS} value={status} onChange={setStatus} />
+                    <FilterSelect
+                        className="w-full sm:w-auto sm:min-w-40"
+                        id="shift-room-filter"
+                        label="Phòng"
+                        options={ROOM_OPTIONS}
+                        value={roomId}
+                        onChange={setRoomId}
+                    />
+                    <FilterSelect
+                        className="w-full sm:w-auto sm:min-w-40"
+                        id="shift-role-filter"
+                        label="Vai trò"
+                        options={SHIFT_ROLE_OPTIONS}
+                        value={role}
+                        onChange={setRole}
+                    />
+                    <StatusTabs className="w-full" label="Trạng thái" options={SHIFT_STATUS_OPTIONS} value={status} onChange={setStatus} />
                 </div>
             </div>
 
             {pendingWork && <p className="alert alert-danger border-0">{pendingWork}</p>}
 
-            {loading || !week ? <div className="skeleton h-160 w-full" aria-hidden="true" /> : <ShiftWeekGrid week={week} isVisible={isVisible} onSelect={openCell} />}
+            {loading || !week ? (
+                <div className="skeleton h-160 w-full" aria-hidden="true" />
+            ) : (
+                <ShiftWeekGrid week={week} isVisible={isVisible} onSelect={openCell} />
+            )}
 
             {dialog?.type === DIALOGS.DETAIL && (
                 <ShiftDetailPopup
@@ -130,12 +147,7 @@ const WorkShiftManagement = () => {
                 />
             )}
             {(dialog?.type === DIALOGS.ASSIGN || dialog?.type === DIALOGS.REPLACE) && (
-                <ShiftAssignPopup
-                    cell={dialog.cell}
-                    replace={dialog.type === DIALOGS.REPLACE}
-                    onClose={() => setDialog(null)}
-                    onSaved={handleSaved}
-                />
+                <ShiftAssignPopup cell={dialog.cell} replace={dialog.type === DIALOGS.REPLACE} onClose={() => setDialog(null)} onSaved={handleSaved} />
             )}
             {dialog?.type === DIALOGS.EDIT && <ShiftEditPopup cell={dialog.cell} onClose={() => setDialog(null)} onSaved={handleSaved} />}
             {dialog?.type === DIALOGS.MONTHLY && <MonthlyShiftPopup onClose={() => setDialog(null)} onSaved={handleSaved} />}

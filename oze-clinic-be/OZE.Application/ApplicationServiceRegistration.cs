@@ -17,6 +17,7 @@ namespace OZE.Application
             services.Configure<AuthSmsSenderOptions>(configuration.GetSection("AuthSmsSenderOptions"));
             services.Configure<RegisterOtpSettings>(configuration.GetSection("RegisterOtpSettings"));
             services.Configure<FollowUpReminderSettings>(configuration.GetSection("FollowUpReminderSettings"));
+            services.Configure<PaymentReminderSettings>(configuration.GetSection("PaymentReminderSettings"));
 
             services.AddMemoryCache();
             services.AddAutoMapper(typeof(OZE.Application.MappingProfiles.BaseMappingObject).Assembly);
@@ -51,10 +52,18 @@ namespace OZE.Application
             services.AddScoped<IRefundService, RefundService>();
             services.AddScoped<IInstallmentService, InstallmentService>();
             services.AddScoped<IInvoiceReportService, InvoiceReportService>();
+            services.AddScoped<IScheduleViewService, ScheduleViewService>();
+            services.AddScoped<ILeaveRequestService, LeaveRequestService>();
+            services.AddScoped<ICashSessionService, CashSessionService>();
+            services.AddScoped<IFollowUpCareService, FollowUpCareService>();
+            services.AddScoped<IDebtService, DebtService>();
+            services.AddScoped<IReconciliationService, ReconciliationService>();
+            services.AddScoped<IConsultationService, ConsultationService>();
             // The audit log reads the signed-in user, IP address and browser from the current request
             services.AddHttpContextAccessor();
             services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddHostedService<OZE.Application.BackgroundServices.FollowUpReminderBackgroundService>();
+            services.AddHostedService<OZE.Application.BackgroundServices.PaymentReminderBackgroundService>();
             return services;
         }
     }

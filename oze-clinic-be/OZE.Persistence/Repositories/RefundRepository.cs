@@ -38,7 +38,8 @@ namespace OZE.Persistence.Repositories
         {
             var query = _context.RefundAdjustmentRequests
                 .AsNoTracking()
-                .Include(x => x.Invoice)
+                .Include(x => x.Invoice).ThenInclude(x => x.Patient)
+                .Include(x => x.Invoice).ThenInclude(x => x.Items)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(status))

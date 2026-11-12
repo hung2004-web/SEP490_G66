@@ -518,6 +518,91 @@ namespace OZE.Common.Constants
             public const string DateRangeTooLarge = "Report date range cannot exceed 366 days.";
             public const string DailyRetrieved = "Daily invoice report has been retrieved.";
             public const string OverviewRetrieved = "Invoice overview report has been retrieved.";
+            public const string SeriesRangeTooLarge = "Revenue chart range cannot exceed 31 days.";
+            public const string SeriesRetrieved = "Revenue by day has been retrieved.";
+        }
+
+        public static class ScheduleMessage
+        {
+            public const string DateRangeInvalid = "'FromDate' must be on or before 'ToDate'.";
+            public const string DateRangeTooLarge = "Date range cannot exceed 62 days.";
+            public const string StaffProfileNotFound = "Your staff profile was not found.";
+            public const string DoctorsRetrieved = "Doctors on duty have been retrieved.";
+            public const string ShiftsRetrieved = "Your shifts have been retrieved.";
+        }
+
+        public static class LeaveRequestMessage
+        {
+            public const string NotFound = "Leave request not found.";
+            public const string StaffNotFound = "Your staff profile was not found.";
+            public const string SlotInvalid = "Slot must be Morning, Afternoon or empty for the whole day.";
+            public const string ReasonRequired = "Please enter the reason for the leave.";
+            public const string DateInPast = "Leave can only be requested for a future shift.";
+            public const string NoShiftToLeave = "You have no shift in that time to take leave from.";
+            public const string ShiftAlreadyStarted = "A shift in that time has already started.";
+            public const string AlreadyRequested = "You already have a pending or approved leave request for that time.";
+            public const string NotOwner = "You can only cancel your own leave request.";
+            public const string NotPending = "This leave request has already been decided.";
+            public const string RejectReasonRequired = "Please enter the reason for rejecting.";
+            public const string SubstituteRequired = "These shifts have booked appointments. Choose a substitute or reschedule the appointments first.";
+            public const string SubstituteNotFound = "Substitute staff not found or inactive.";
+            public const string SubstituteSamePerson = "The substitute must be another staff member.";
+            public const string SubstituteWrongRole = "The substitute must have the same role.";
+            public const string SubstituteBusy = "The substitute already has a shift or leave in that time.";
+            public const string Created = "Leave request has been sent.";
+            public const string Cancelled = "Leave request has been cancelled.";
+            public const string Approved = "Leave request has been approved.";
+            public const string Rejected = "Leave request has been rejected.";
+        }
+
+        public static class ConsultationMessage
+        {
+            public const string Created = "Your request has been sent. The clinic will call you back soon.";
+            public const string AlreadySent = "A request from this phone number was sent a few minutes ago. The clinic will call you back.";
+            public const string NotFound = "Consultation request not found.";
+            public const string StatusInvalid = "Status must be Contacted, Booked or Closed.";
+            public const string Handled = "Consultation request has been updated.";
+        }
+
+        public static class CareMessage
+        {
+            public const string ExaminationNotFound = "Examination not found.";
+            public const string NoFollowUp = "This examination has no follow-up to contact the patient about.";
+            public const string OutcomeInvalid = "Outcome must be Booked, CallBack, Unreachable or Declined.";
+            public const string CallBackDateRequired = "Please choose the day to call the patient back (today or later).";
+            public const string ContactRecorded = "Call result has been recorded.";
+            public const string InvoiceNotFound = "Invoice not found.";
+            public const string NothingOwed = "This invoice has nothing left to pay.";
+            public const string NoContact = "The patient has no phone number or email to send a reminder to.";
+            public const string RemindedRecently = "A payment reminder was sent less than 4 hours ago. Send again only if needed.";
+            public const string PaymentReminded = "Payment reminder has been sent.";
+            public const string SendFailed = "The reminder could not be sent by SMS or email. Try again later or call the patient.";
+            public const string ReconciliationFutureDate = "A day can be reconciled only once it has started.";
+            public const string ReconciliationDone = "This day has already been reconciled.";
+            public const string ReconciliationOpenSessions = "Some cash drawers of this day are still open. Close them before reconciling.";
+            public const string ReconciliationNoteRequired = "There is a cash difference, cash outside the drawers or a transfer still waiting. Please explain in the notes.";
+            public const string ReconciliationConfirmed = "The day has been reconciled.";
+        }
+
+        public static class CashSessionMessage
+        {
+            public const string NoOpenSession = "You have no open cash session. Open one first.";
+            public const string AlreadyOpen = "You already have an open cash session.";
+            public const string NotFound = "Cash session not found.";
+            public const string NotOwner = "You can only view your own cash sessions.";
+            public const string OpeningCashInvalid = "Opening cash cannot be negative.";
+            public const string ExpenseAmountInvalid = "Expense amount must be greater than 0.";
+            public const string ExpenseDescriptionRequired = "Please enter what the money was spent on.";
+            public const string ExpenseCategoryInvalid = "Expense category must be Supplies or Other.";
+            public const string ExpenseNotFound = "Expense not found in your open session.";
+            public const string ExpenseExceedsCash = "The expense is larger than the cash in the drawer.";
+            public const string CountedCashInvalid = "Counted cash cannot be negative.";
+            public const string DifferenceNoteRequired = "The counted cash differs from the expected cash. Please explain in the notes.";
+            public const string HandoverInvalid = "The person receiving the hand-over must be another active receptionist.";
+            public const string Opened = "Cash session has been opened.";
+            public const string ExpenseAdded = "Expense has been recorded.";
+            public const string ExpenseRemoved = "Expense has been removed.";
+            public const string Closed = "Cash session has been closed and handed over.";
         }
 
         public static class PaymentWarningMessage

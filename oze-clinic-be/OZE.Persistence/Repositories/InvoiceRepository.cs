@@ -79,12 +79,28 @@ namespace OZE.Persistence.Repositories
                 query = query.Where(x => x.PaymentStatus == status);
             }
 
+            // Clinic days in +07, so an invoice made at 23:30 belongs to its own day
+            var clinicOffset = TimeSpan.FromHours(ClinicTimeConstants.UtcOffsetHours);
+            if (parameters.FromDate.HasValue)
+            {
+                var from = new DateTimeOffset(parameters.FromDate.Value.ToDateTime(TimeOnly.MinValue), clinicOffset);
+                query = query.Where(x => x.CreatedAt >= from);
+            }
+
+            if (parameters.ToDate.HasValue)
+            {
+                var toExclusive = new DateTimeOffset(parameters.ToDate.Value.ToDateTime(TimeOnly.MinValue), clinicOffset).AddDays(1);
+                query = query.Where(x => x.CreatedAt < toExclusive);
+            }
+
             if (!string.IsNullOrWhiteSpace(parameters.SearchKeyword))
             {
                 var keyword = parameters.SearchKeyword.Trim();
                 query = query.Where(x => x.InvoiceNumber.Contains(keyword)
                     || (x.Notes != null && x.Notes.Contains(keyword))
-                    || (x.Patient != null && x.Patient.FullName.Contains(keyword)));
+                    || (x.Patient != null && (x.Patient.FullName.Contains(keyword)
+                        || x.Patient.PatientCode.Contains(keyword)
+                        || (x.Patient.PhoneNumber != null && x.Patient.PhoneNumber.Contains(keyword)))));
             }
 
             var totalCount = await query.CountAsync(cancellationToken);

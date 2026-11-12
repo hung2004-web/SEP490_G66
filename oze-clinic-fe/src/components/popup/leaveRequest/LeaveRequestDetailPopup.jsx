@@ -57,7 +57,8 @@ const LeaveRequestDetailPopup = ({ request, substituteOptions, onClose, onApprov
 
     const handleApprove = async (event) => {
         event.preventDefault();
-        if (!substituteId) {
+        // A substitute is only needed when patients are booked in the leave time
+        if (!substituteId && request.affectedAppointments.length > 0) {
             setError("Vui lòng chọn người thay.");
             focusRef.current?.focus();
             return;
@@ -105,7 +106,7 @@ const LeaveRequestDetailPopup = ({ request, substituteOptions, onClose, onApprov
                 </FormField>
 
                 {pending && (
-                    <FormField id="leave-substitute" label="Người thay" required error={error}>
+                    <FormField id="leave-substitute" label="Người thay" required={request.affectedAppointments.length > 0} error={error}>
                         <select
                             ref={focusRef}
                             id="leave-substitute"
@@ -118,7 +119,7 @@ const LeaveRequestDetailPopup = ({ request, substituteOptions, onClose, onApprov
                                 setError(null);
                             }}
                         >
-                            <option value="">Chọn người thay</option>
+                            <option value="">{request.affectedAppointments.length > 0 ? "Chọn người thay" : "Không cần người thay"}</option>
                             {substituteOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
                                     {option.label}

@@ -14,6 +14,7 @@ import StepHeading from "@/components/examination/StepHeading";
 import TreatmentPlanStep from "@/components/examination/TreatmentPlanStep";
 import TreatmentStep from "@/components/examination/TreatmentStep";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
+import MyShiftBar from "@/components/staff/MyShiftBar";
 import {
     callPatient,
     endExamination,
@@ -135,14 +136,7 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanC
                 />
             )}
             {shown === STEP.EXAM && (
-                <ClinicalExamStep
-                    queueId={item.id}
-                    record={record}
-                    busy={busy}
-                    onExamChange={onExamChange}
-                    onEnd={onEnd}
-                    onComplete={() => goTo(STEP.PLAN)}
-                />
+                <ClinicalExamStep queueId={item.id} record={record} busy={busy} onExamChange={onExamChange} onEnd={onEnd} onComplete={() => goTo(STEP.PLAN)} />
             )}
             {shown === STEP.PLAN && (
                 <TreatmentPlanStep
@@ -181,6 +175,8 @@ const ExaminationPage = () => {
     const [collapsedChoice, setCollapsedChoice] = useState(null); // null = automatic
     const [busy, setBusy] = useState(false);
     const [confirm, setConfirm] = useState(null); // { type: "absent" | "end", item }
+    // Starting or ending the shift changes who the doctor may call: reload the queue then
+    const [shiftVersion, setShiftVersion] = useState(0);
 
     useEffect(() => {
         getExamWorkspace().then((response) => {
@@ -191,7 +187,7 @@ const ExaminationPage = () => {
             setWorkspace(response.data);
             setSelectedId(defaultSelection(response.data.queue));
         });
-    }, []);
+    }, [shiftVersion]);
 
     useEffect(() => {
         if (selectedId == null) return undefined;
@@ -249,10 +245,20 @@ const ExaminationPage = () => {
     const updateTreatment = updateRecord("treatment");
 
     const renderMain = () => {
-        if (loadFailed) return <p role="alert" className="alert alert-danger">{GENERIC_ERROR_MESSAGE}</p>;
+        if (loadFailed)
+            return (
+                <p role="alert" className="alert alert-danger">
+                    {GENERIC_ERROR_MESSAGE}
+                </p>
+            );
         if (!workspace) return <div className="skeleton h-64 rounded-lg" aria-hidden="true" />;
         if (!selected) return <NoExamView waitingCount={queue.filter((item) => item.status === QUEUE_STATUS.WAITING).length} />;
-        if (record?.id === selectedId && record.failed) return <p role="alert" className="alert alert-danger">Không tải được hồ sơ của bệnh nhân này.</p>;
+        if (record?.id === selectedId && record.failed)
+            return (
+                <p role="alert" className="alert alert-danger">
+                    Không tải được hồ sơ của bệnh nhân này.
+                </p>
+            );
         if (!recordReady) return <div className="skeleton h-64 rounded-lg" aria-hidden="true" />;
         if (selected.status === QUEUE_STATUS.IN_EXAMINATION) {
             return (
@@ -275,63 +281,68 @@ const ExaminationPage = () => {
     };
 
     return (
-        <div className={cx("grid grid-cols-1 items-start gap-5", collapsed ? "lg:grid-cols-[4rem_minmax(0,1fr)]" : "lg:grid-cols-[18.75rem_minmax(0,1fr)]")}>
-            <div className="lg:sticky lg:top-4">
-                {workspace ? (
-                    <QueuePanel
-                        shift={workspace.shift}
-                        items={queue}
-                        doneCount={workspace.doneCount}
-                        selectedId={selectedId}
-                        collapsed={collapsed}
-                        onToggleCollapse={() => setCollapsedChoice(!collapsed)}
-                        onSelect={setSelectedId}
-                        onCall={(id) => runAction(callPatient, id, () => id)}
-                        onMarkAbsent={(id) => setConfirm({ type: "absent", item: queue.find((item) => item.id === id) })}
-                        onStart={(id) => runAction(startExamination, id, () => id)}
-                        onOpenDone={() => toast.info("Danh sách đã khám trong ca đang được xây dựng.")}
+        <>
+            <MyShiftBar onChange={() => setShiftVersion((v) => v + 1)} />
+            <div
+                className={cx("grid grid-cols-1 items-start gap-5", collapsed ? "lg:grid-cols-[4rem_minmax(0,1fr)]" : "lg:grid-cols-[18.75rem_minmax(0,1fr)]")}
+            >
+                <div className="lg:sticky lg:top-4">
+                    {workspace ? (
+                        <QueuePanel
+                            shift={workspace.shift}
+                            items={queue}
+                            doneCount={workspace.doneCount}
+                            selectedId={selectedId}
+                            collapsed={collapsed}
+                            onToggleCollapse={() => setCollapsedChoice(!collapsed)}
+                            onSelect={setSelectedId}
+                            onCall={(id) => runAction(callPatient, id, () => id)}
+                            onMarkAbsent={(id) => setConfirm({ type: "absent", item: queue.find((item) => item.id === id) })}
+                            onStart={(id) => runAction(startExamination, id, () => id)}
+                            onOpenDone={() => toast.info("Danh sách đã khám trong ca đang được xây dựng.")}
+                        />
+                    ) : (
+                        !loadFailed && <div className="skeleton h-96 rounded-lg" aria-hidden="true" />
+                    )}
+                </div>
+
+                <section className="flex min-w-0 flex-col gap-5" aria-label="Khám bệnh">
+                    {renderMain()}
+                </section>
+
+                {confirm?.type === "absent" && (
+                    <ConfirmExamDialog
+                        title="Báo vắng mặt"
+                        description={`Số ${confirm.item.queueNumber} · ${confirm.item.patientName} sẽ bị đưa ra khỏi hàng chờ của ca này.`}
+                        confirmLabel="Báo vắng mặt"
+                        danger
+                        busy={busy}
+                        onConfirm={handleConfirm}
+                        onClose={() => setConfirm(null)}
                     />
-                ) : (
-                    !loadFailed && <div className="skeleton h-96 rounded-lg" aria-hidden="true" />
+                )}
+                {confirm?.type === "send" && (
+                    <ConfirmExamDialog
+                        title="Gửi lễ tân đặt lịch hẹn"
+                        description={`Kết thúc lượt khám của ${confirm.item.patientName} và gửi kế hoạch điều trị cho lễ tân đặt lịch các buổi tiếp theo?`}
+                        confirmLabel="Gửi lễ tân"
+                        busy={busy}
+                        onConfirm={handleConfirm}
+                        onClose={() => setConfirm(null)}
+                    />
+                )}
+                {confirm?.type === "end" && (
+                    <ConfirmExamDialog
+                        title="Kết thúc lượt khám"
+                        description={`Kết thúc lượt khám của ${confirm.item.patientName}? Các bước chưa làm sẽ không còn mở được trong lượt này.`}
+                        confirmLabel="Kết thúc lượt khám"
+                        busy={busy}
+                        onConfirm={handleConfirm}
+                        onClose={() => setConfirm(null)}
+                    />
                 )}
             </div>
-
-            <section className="flex min-w-0 flex-col gap-5" aria-label="Khám bệnh">
-                {renderMain()}
-            </section>
-
-            {confirm?.type === "absent" && (
-                <ConfirmExamDialog
-                    title="Báo vắng mặt"
-                    description={`Số ${confirm.item.queueNumber} · ${confirm.item.patientName} sẽ bị đưa ra khỏi hàng chờ của ca này.`}
-                    confirmLabel="Báo vắng mặt"
-                    danger
-                    busy={busy}
-                    onConfirm={handleConfirm}
-                    onClose={() => setConfirm(null)}
-                />
-            )}
-            {confirm?.type === "send" && (
-                <ConfirmExamDialog
-                    title="Gửi lễ tân đặt lịch hẹn"
-                    description={`Kết thúc lượt khám của ${confirm.item.patientName} và gửi kế hoạch điều trị cho lễ tân đặt lịch các buổi tiếp theo?`}
-                    confirmLabel="Gửi lễ tân"
-                    busy={busy}
-                    onConfirm={handleConfirm}
-                    onClose={() => setConfirm(null)}
-                />
-            )}
-            {confirm?.type === "end" && (
-                <ConfirmExamDialog
-                    title="Kết thúc lượt khám"
-                    description={`Kết thúc lượt khám của ${confirm.item.patientName}? Các bước chưa làm sẽ không còn mở được trong lượt này.`}
-                    confirmLabel="Kết thúc lượt khám"
-                    busy={busy}
-                    onConfirm={handleConfirm}
-                    onClose={() => setConfirm(null)}
-                />
-            )}
-        </div>
+        </>
     );
 };
 

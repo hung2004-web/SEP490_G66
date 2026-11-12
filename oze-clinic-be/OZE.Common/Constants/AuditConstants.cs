@@ -47,5 +47,24 @@ namespace OZE.Common.Constants
         public const string ExaminationFollowUpSet = "EXAMINATION_FOLLOW_UP_SET";
         public const string AppointmentFollowUpScheduled = "APPOINTMENT_FOLLOW_UP_SCHEDULED";
         public const string FollowUpReminded = "FOLLOW_UP_REMINDED";
+
+        public const string LeaveRequestEntity = "LeaveRequest";
+        public const string LeaveRequested = "LEAVE_REQUESTED";
+        public const string LeaveCancelled = "LEAVE_CANCELLED";
+        public const string LeaveApproved = "LEAVE_APPROVED";
+        public const string LeaveRejected = "LEAVE_REJECTED";
+
+        public const string CashSessionEntity = "CashSession";
+        public const string CashSessionOpened = "CASH_SESSION_OPENED";
+        public const string CashExpenseAdded = "CASH_EXPENSE_ADDED";
+        public const string CashExpenseRemoved = "CASH_EXPENSE_REMOVED";
+        public const string CashSessionClosed = "CASH_SESSION_CLOSED";
+
+        public const string FollowUpContactRecorded = "FOLLOW_UP_CONTACT_RECORDED";
+        public const string PaymentReminded = "PAYMENT_REMINDED";
+        public const string DailyReconciled = "DAILY_RECONCILED";
+        public const string ReconciliationEntity = "DailyReconciliation";
+        public const string ConsultationHandled = "CONSULTATION_HANDLED";
+        public const string ConsultationEntity = "ConsultationRequest";
     }
 }

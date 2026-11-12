@@ -103,6 +103,21 @@ namespace OZE.Persistence.Repositories
                 && shiftStart < x.TimeSlotEnd);
         }
 
+        public async Task<List<StaffSchedule>> GetDoctorShiftsOnDateAsync(DateOnly date)
+        {
+            return await context.StaffSchedules
+                .AsNoTracking()
+                .Include(x => x.StaffProfile)
+                .Include(x => x.Room)
+                .Where(x => x.ScheduleDate == date
+                    && x.StaffProfile.IsActive
+                    && context.UserRoles.Any(ur => ur.UserId == x.StaffProfile.UserId
+                        && context.Roles.Any(r => r.Id == ur.RoleId && r.Name == RoleConstants.DoctorRole)))
+                .OrderBy(x => x.ShiftStart)
+                .ThenBy(x => x.StaffProfile.FullName)
+                .ToListAsync();
+        }
+
         public void Remove(StaffSchedule schedule)
         {
             context.StaffSchedules.Remove(schedule);

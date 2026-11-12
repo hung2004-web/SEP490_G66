@@ -111,7 +111,14 @@ namespace OZE.Persistence.Repositories
                 .Include(x => x.Appointment)
                 .Include(x => x.FollowUpAppointment)
                     .ThenInclude(x => x!.Doctor)
+                .Include(x => x.FollowUpContacts)
                 .Where(x => x.FollowUpDate != null || x.FollowUpAppointmentId != null);
+
+            // A follow-up the patient declined leaves the working lists unless asked for
+            if (!parameters.IncludeClosed)
+            {
+                query = query.Where(x => !x.FollowUpClosed);
+            }
 
             if (parameters.FromDate.HasValue)
             {
@@ -171,6 +178,7 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x!.Doctor)
                 .Where(x => (x.FollowUpDate == targetDate || (x.FollowUpAppointment != null && x.FollowUpAppointment.AppointmentDate == targetDate))
                          && (x.FollowUpAppointment == null || (x.FollowUpAppointment.Status != AppointmentConstants.CancelledStatus && x.FollowUpAppointment.Status != AppointmentConstants.CompletedStatus && x.FollowUpAppointment.Status != AppointmentConstants.NoShowStatus))
+                         && !x.FollowUpClosed
                          && (x.FollowUpRemindedAt == null || x.FollowUpRemindedAt < todayStartUtc))
                 .OrderBy(x => x.FollowUpDate)
                 .ToListAsync(cancellationToken);

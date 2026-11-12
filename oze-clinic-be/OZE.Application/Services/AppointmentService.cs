@@ -144,11 +144,98 @@ namespace OZE.Application.Services
             return ToResponse(appointment, patient, slot, lines);
         }
 
+        // F-APT-09: the receptionist books for a known patient, or for a new one by phone, and the booking is CONFIRMED at once
+        // (the receptionist is already talking to the patient, so there is nobody to call back)
+        public async Task<AppointmentResponse> BookByReceptionistAsync(ReceptionBookingRequest request, string receptionistUserId)
+        {
+            Patient? known = null;
+            string? phone = null;
+            string? email = null;
+            if (request.PatientId.HasValue)
+            {
+                known = await _appointmentRepository.GetPatientByIdAsync(request.PatientId.Value);
+                ConditionGuard.Ensure<NotFoundException>(known != null, ErrorConstants.AppointmentMessage.PatientProfileNotFound);
+            }
+            else
+            {
+                ConditionGuard.Ensure(!string.IsNullOrWhiteSpace(request.FullName), ErrorConstants.AuthMessage.FullNameRequired);
+                ConditionGuard.Ensure(PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var normalized), ErrorConstants.AuthMessage.InvalidPhone);
+                phone = normalized;
+                email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+                ConditionGuard.ThrowIf(email != null && !new EmailAddressAttribute().IsValid(email), ErrorConstants.AuthMessage.EmailInvalid);
+            }
+
+            var lines = await ResolveBookingLinesAsync(request.ServiceId, request.VariantId);
+            var (appointment, patient, slot) = await CreateBookingAsync(lines, request.Date!.Value, request.SlotStart!.Value,
+                request.DoctorId, request.Note, receptionistUserId, async () =>
+                {
+                    if (known != null)
+                    {
+                        return known;
+                    }
+
+                    // The phone of an account: book for the patient of that account
+                    var variants = PhoneNumberHelper.GetLookupVariants(phone!);
+                    var user = await _registrationRepository.FindUserByPhoneAsync(variants);
+                    if (user != null)
+                    {
+                        var linked = await _appointmentRepository.GetPatientByUserIdAsync(user.Id);
+                        ConditionGuard.Ensure<NotFoundException>(linked != null, ErrorConstants.AppointmentMessage.PatientProfileNotFound);
+                        return linked!;
+                    }
+
+                    var patients = await _registrationRepository.FindUnlinkedPatientsByPhoneAsync(variants);
+                    ConditionGuard.ThrowIf(patients.Count > 1, ErrorConstants.AuthMessage.MultiplePatientRecords);
+                    var patient = patients.FirstOrDefault();
+                    if (patient == null)
+                    {
+                        patient = new Patient
+                        {
+                            PatientCode = GeneratePatientCode(),
+                            FullName = request.FullName!.Trim(),
+                            PhoneNumber = phone,
+                            Email = email,
+                            CreatedAt = DateTimeOffset.UtcNow
+                        };
+                        await _appointmentRepository.AddPatientAsync(patient);
+                    }
+
+                    return patient;
+                }, initialStatus: AppointmentConstants.ConfirmedStatus);
+
+            await SendReceptionBookingNotificationAsync(patient.PhoneNumber, patient.Email, appointment, lines);
+            await LogCreatedAsync(appointment, lines);
+            return ToResponse(appointment, patient, slot, lines);
+        }
+
+        private async Task SendReceptionBookingNotificationAsync(string? phone, string? email, Appointment appointment, List<BookingLine> lines)
+        {
+            var serviceNames = string.Join(", ", lines.Select(l => l.DisplayName));
+            var message = $"OZE Dental: Your appointment for {serviceNames} " +
+                          $"at {appointment.TimeSlotStart:HH\\:mm} on {appointment.AppointmentDate:dd/MM/yyyy} has been confirmed.";
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    await _smsSender.SendSmsAsync(phone, message);
+                }
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    await _emailSender.SendEmailAsync(email, "OZE Dental - Appointment confirmed", message);
+                }
+            }
+            catch
+            {
+                // The booking is saved; a failed message must not undo it
+            }
+        }
+
         // Re-checks the slot and saves the appointment in one serializable transaction;
         // getPatientAsync runs inside it so a new patient record is saved together with the appointment
         private async Task<(Appointment Appointment, Patient Patient, AvailableSlotResponse Slot)> CreateBookingAsync(
             List<BookingLine> lines, DateOnly date, TimeOnly slotStart, int? doctorId, string? note,
-            string? createdByUserId, Func<Task<Patient>> getPatientAsync, long? excludeAppointmentId = null, long? parentAppointmentId = null)
+            string? createdByUserId, Func<Task<Patient>> getPatientAsync, long? excludeAppointmentId = null, long? parentAppointmentId = null,
+            string initialStatus = AppointmentConstants.PendingStatus)
         {
             var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
 
@@ -180,7 +267,8 @@ namespace OZE.Application.Services
                     TimeSlotStart = chosen.SlotStart,
                     TimeSlotEnd = chosen.SlotEnd,
                     // The slot is held, but the receptionist must confirm the booking before it is approved
-                    Status = AppointmentConstants.PendingStatus,
+                    // (a booking made by the receptionist is confirmed at once)
+                    Status = initialStatus,
                     Notes = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
                     ParentAppointmentId = parentAppointmentId,
                     CreatedAt = DateTimeOffset.UtcNow,
@@ -1109,6 +1197,7 @@ namespace OZE.Application.Services
 
             appointment.Status = AppointmentConstants.CompletedStatus;
             appointment.UpdatedAt = now;
+            ApplyPeriodicRecall(appointment, examination);
 
             await _appointmentRepository.UpdateAsync(appointment);
 
@@ -1124,6 +1213,34 @@ namespace OZE.Application.Services
             var response = MapToResponse(appointment);
             response.PaymentWarnings = await TryBuildPaymentWarningsAsync(appointment.PatientId, cancellationToken);
             return response;
+        }
+
+        // BR-CRM-03: when the doctor set no follow-up, a service done today with a recall interval sets one
+        // (the shortest interval wins, e.g. scaling every 6 months). The receptionist then reminds it like any follow-up.
+        private static void ApplyPeriodicRecall(Appointment appointment, Examination examination)
+        {
+            if (examination.FollowUpDate != null || examination.FollowUpAppointmentId != null)
+            {
+                return;
+            }
+
+            var recalled = appointment.ServiceItems
+                .Where(x => x.Service?.RecallIntervalMonths is > 0)
+                .ToList();
+            if (recalled.Count == 0)
+            {
+                return;
+            }
+
+            var months = recalled.Min(x => x.Service.RecallIntervalMonths!.Value);
+            var names = string.Join(", ", recalled
+                .Where(x => x.Service.RecallIntervalMonths == months)
+                .Select(x => x.Service.ServiceName)
+                .Distinct());
+            examination.FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today).AddMonths(months);
+            var notes = $"Nhắc định kỳ {months} tháng: {names}";
+            examination.FollowUpNotes = notes.Length <= 500 ? notes : notes[..500];
+            examination.FollowUpIsRecall = true;
         }
 
         private async Task<List<PaymentWarning>> TryBuildPaymentWarningsAsync(

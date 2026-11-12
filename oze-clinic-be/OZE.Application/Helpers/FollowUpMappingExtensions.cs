@@ -41,6 +41,7 @@ namespace OZE.Application.Helpers
         /// </summary>
         public static FollowUpListItemResponse ToFollowUpListItem(this Examination x)
         {
+            var lastContact = x.FollowUpContacts?.OrderByDescending(c => c.CreatedAt).FirstOrDefault();
             return new FollowUpListItemResponse
             {
                 ExaminationId = x.Id,
@@ -61,7 +62,14 @@ namespace OZE.Application.Helpers
                 FollowUpTimeSlotStart = x.FollowUpAppointment?.TimeSlotStart,
                 FollowUpAppointmentStatus = x.FollowUpAppointment?.Status,
                 LastRemindedAt = x.FollowUpRemindedAt,
-                ReminderCount = x.FollowUpReminderCount
+                ReminderCount = x.FollowUpReminderCount,
+                IsRecall = x.FollowUpIsRecall,
+                IsClosed = x.FollowUpClosed,
+                LastContactOutcome = lastContact?.Outcome,
+                LastContactAt = lastContact?.CreatedAt,
+                LastContactNote = lastContact?.Note,
+                CallBackDate = lastContact?.CallBackDate,
+                ContactCount = x.FollowUpContacts?.Count ?? 0
             };
         }
     }

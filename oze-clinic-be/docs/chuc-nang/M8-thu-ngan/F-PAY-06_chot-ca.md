@@ -5,9 +5,9 @@
 | Mục | Giá trị |
 |---|---|
 | Module | M8 Thu ngân |
-| Trạng thái | 🟡 Một phần (có báo cáo ngày và báo cáo tổng quan; chưa có chốt ca) |
-| Vai trò được dùng | `Receptionist` (báo cáo ngày), `ClinicManager` (báo cáo theo khoảng ngày) |
-| API | `GET api/invoice-reports/daily`, `GET api/invoice-reports/overview` |
+| Trạng thái | ✅ Đã làm: báo cáo ngày, báo cáo tổng quan, biểu đồ doanh thu theo ngày, bàn giao ca (két tiền mặt) |
+| Vai trò được dùng | `Receptionist` (báo cáo ngày, biểu đồ, bàn giao ca), `ClinicManager` (báo cáo theo khoảng ngày, biểu đồ, xem các ca đã bàn giao) |
+| API | `GET api/invoice-reports/daily`, `GET api/invoice-reports/overview`, `GET api/invoice-reports/revenue-by-day`, `api/cash-sessions/*` (mục 10) |
 | Code chính | `InvoiceReportsController.GetDailyAsync` / `GetOverviewAsync` → `InvoiceReportService.GetDailyAsync` / `GetOverviewAsync` → `InvoiceReportRepository` |
 
 ## 1. Chức năng này làm gì
@@ -109,7 +109,7 @@ Ví dụ:
 
 ## 9. Còn thiếu / câu hỏi mở
 
-- **Chưa có chốt ca** (Q6): không có bảng, API hay bước nhập tiền mặt đếm thực tế, chênh lệch, biên bản không sửa. Thiết kế đề xuất trước đây (`GET api/cashier/shift-summary`, `POST api/cashier/shift-closings`, `GET api/reports/daily`) không được làm theo; code chỉ có hai báo cáo trên.
+- ~~Chưa có chốt ca~~: đã làm ngày 11/11/2026, xem mục 10 (két theo từng lễ tân, đếm tiền, chênh lệch, số đã chốt không đổi).
 - Báo cáo theo **cả phòng khám**, không theo ca hay theo người thu (không lọc `ConfirmedByUserId`, `Payment` không có người tạo).
 - **Không trừ tiền hoàn** và không có tổng hoàn trong ngày (review A21): `confirmedCollectionsTotal` chỉ cộng khoản `CONFIRMED` (`InvoiceReportRepository.cs:39-50`), bỏ qua `RefundAdjustmentRequest` `Processed`.
 - **Số của ngày cũ thay đổi về sau**: void một khoản (thành `FAILED`) làm nó biến khỏi tổng của ngày đã thu; hủy hóa đơn làm nó biến khỏi `newInvoiceCount` của ngày lập. Không có số chốt bất biến để đối chiếu quỹ.
@@ -118,3 +118,31 @@ Ví dụ:
 - Không có số khoản CK/QR đang chờ xác nhận, số lượt khám, `NO_SHOW` (Q15).
 - Lễ tân chỉ xem được một ngày; quản lý không gọi được `daily` (dùng `overview` với `from = to`, nhưng `asOfDate` luôn là hôm nay).
 - Số tiền làm tròn 2 số lẻ (BR-C04).
+
+## 10. Bàn giao ca (két tiền mặt) và biểu đồ doanh thu (làm 11/11/2026)
+
+Màn hình: "Tài chính → Bàn giao ca" (`/reception/cash-handover`, `CashHandover.jsx`). Biểu đồ nằm trên tab "Thu ngân" (`RevenueChart.jsx`).
+
+**Luồng của lễ tân**
+
+1. **Mở két**: nhập số tiền mặt đang có trong két (`POST api/cash-sessions/open`, `openingCash ≥ 0`). Mỗi lễ tân chỉ có một két đang mở; DB có unique index lọc `Status = 'Open'`.
+2. **Thu tiền** như cũ ở F-PAY-03. Khoản tiền mặt mà lễ tân này thu (`ConfirmedByUserId` = mình, `PaidAt` sau lúc mở két) tự được cộng vào két. Chuyển khoản do mình xác nhận chỉ được liệt kê, không tính vào két.
+3. **Ghi khoản chi** (`POST api/cash-sessions/current/expenses`): số tiền > 0, nội dung bắt buộc, loại `Supplies` hoặc `Other`. Không được chi quá số tiền đang có. Ghi nhầm thì xóa được khi két còn mở.
+4. **Đếm tiền và bàn giao** (`POST api/cash-sessions/current/close`): nhập tiền mặt đếm được. Hệ thống tính chênh lệch = đếm được − (đầu ca + tiền mặt đã thu − đã chi). **Có chênh lệch thì bắt buộc ghi chú.** Người nhận là một lễ tân khác đang hoạt động, hoặc để trống khi chốt cuối ngày.
+5. Khi chốt, các số được **lưu cố định** (`CashCollected`, `ExpenseTotal`, `ExpectedCash`, `CountedCash`, `Difference`). Sau này có hủy (void) một khoản thu thì biên bản đã chốt vẫn giữ nguyên.
+
+**API khác**: `GET api/cash-sessions/current` trả `data = null` khi chưa mở két. `GET api/cash-sessions/handover-candidates` trả danh sách người có thể nhận bàn giao. `GET api/cash-sessions` và `GET api/cash-sessions/{id}`: lễ tân chỉ xem được két của mình, quản lý xem được tất cả.
+
+**Biểu đồ** `GET api/invoice-reports/revenue-by-day?from=&to=` (Receptionist, ClinicManager): mỗi ngày giờ VN một dòng `cash`, `transfer` (BANK + QR), `total`. Ngày không có khoản thu vẫn trả 0. Tối đa 31 ngày, mặc định 7 ngày gần nhất. Chỉ tính khoản `CONFIRMED`.
+
+**Quy tắc**: BR-PAY-09, BR-PAY-10 trong Dac_ta.
+
+**Dữ liệu**: bảng mới `CashSessions` và `CashExpenses` (migration `AddLeaveRequestsAndCashSessions`). `AuditLogs`: `CASH_SESSION_OPENED`, `CASH_EXPENSE_ADDED`, `CASH_EXPENSE_REMOVED`, `CASH_SESSION_CLOSED`.
+
+**Test**: `OZE.UnitTest/Services/CashSessions/CashSessionTests.cs` (tab `OZ-CASH-01`, 11 ca), `OZE.UnitTest/Services/Reports/RevenueByDayTests.cs` (tab `OZ-RPT-01`).
+
+**Còn mở**
+- Chưa bắt buộc phải mở két mới được thu tiền mặt. Khoản thu khi chưa mở két không thuộc két nào.
+- Quản lý chưa có màn xem các ca đã bàn giao (API đã có).
+- Khoản hoàn tiền mặt (F-PAY-05, quản lý duyệt) chưa trừ vào két nào.
+
