@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
 import { toast } from "react-toastify";
 import FormField from "@/components/ui/FormField";
 import PasswordInput from "@/components/ui/PasswordInput";
@@ -13,7 +13,15 @@ import { isPasswordEmpty, requiredMessage } from "@/utils/validation";
 const EMPTY_VALUES = { currentPassword: "", newPassword: "", confirmPassword: "" };
 const FIELD_ORDER = ["currentPassword", "newPassword", "confirmPassword"];
 
-const hasValidLength = (password) => password.length >= PASSWORD_LENGTH.MIN && password.length <= PASSWORD_LENGTH.MAX;
+// Shown next to the form; the first two are the rules the form checks.
+const PASSWORD_TIPS = [
+    `Mật khẩu mới dài từ ${PASSWORD_LENGTH.MIN} đến ${PASSWORD_LENGTH.MAX} ký tự và phải khác mật khẩu hiện tại.`,
+    "Nên kết hợp chữ hoa, chữ thường, chữ số và ký tự đặc biệt để khó đoán hơn.",
+    "Không dùng lại mật khẩu của tài khoản khác và không chia sẻ mật khẩu cho bất kỳ ai, kể cả nhân viên phòng khám.",
+    "Nhập sai mật khẩu hiện tại nhiều lần, tài khoản sẽ bị tạm khoá và bạn phải đăng nhập lại.",
+];
+
+const hasValidLength =(password) => password.length >= PASSWORD_LENGTH.MIN && password.length <= PASSWORD_LENGTH.MAX;
 
 // The rules shown under "Mật khẩu mới"; they turn green as soon as they are met.
 const getRules = (values) => [
@@ -109,46 +117,71 @@ const ChangePasswordPage = () => {
         onBlur: handleBlur,
     });
 
+    // Full width: the form (fields one under another) on the left, what to know about the new password on the right.
+    // Below lg the notes go under the form.
     return (
         <>
             <h1 className="page-title mb-6">Đổi mật khẩu</h1>
-            <form ref={formRef} noValidate onSubmit={handleSubmit} className="card-app max-w-xl p-0">
-                <div className="flex flex-col gap-5 p-6">
-                    <FormField id="currentPassword" label="Mật khẩu hiện tại" required error={errors.currentPassword}>
-                        <PasswordInput {...fieldProps("currentPassword", "current-password")} />
-                    </FormField>
+            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                <form ref={formRef} noValidate onSubmit={handleSubmit} className="card-app p-0">
+                    <div className="border-b border-border px-6 py-4">
+                        <h2 className="card-title">Thay đổi mật khẩu đăng nhập</h2>
+                        <p className="mt-1 text-caption text-muted">Nhập mật khẩu đang dùng, rồi đặt mật khẩu mới cho tài khoản.</p>
+                    </div>
+                    <div className="flex flex-col gap-5 p-6">
+                        <FormField id="currentPassword" label="Mật khẩu hiện tại" required error={errors.currentPassword}>
+                            <PasswordInput {...fieldProps("currentPassword", "current-password")} />
+                        </FormField>
 
-                    <FormField id="newPassword" label="Mật khẩu mới" required error={errors.newPassword}>
-                        <PasswordInput {...fieldProps("newPassword", "new-password")} />
-                        <ul id="newPassword-rules" className="flex flex-col gap-1 text-caption">
-                            {rules.map((rule) => {
-                                const Icon = rule.met ? CheckCircle2 : Circle;
-                                return (
-                                    <li key={rule.key} className={cx("flex items-center gap-1.5", rule.met ? "text-success" : "text-muted")}>
-                                        <Icon className="size-3.5 shrink-0" aria-hidden="true" />
-                                        {rule.label}
-                                        <span className="sr-only">{rule.met ? "(đã đạt)" : "(chưa đạt)"}</span>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </FormField>
+                        <FormField id="newPassword" label="Mật khẩu mới" required error={errors.newPassword}>
+                            <PasswordInput {...fieldProps("newPassword", "new-password")} />
+                            <ul id="newPassword-rules" className="flex flex-col gap-1 text-caption">
+                                {rules.map((rule) => {
+                                    const Icon = rule.met ? CheckCircle2 : Circle;
+                                    return (
+                                        <li key={rule.key} className={cx("flex items-center gap-1.5", rule.met ? "text-success" : "text-muted")}>
+                                            <Icon className="size-3.5 shrink-0" aria-hidden="true" />
+                                            {rule.label}
+                                            <span className="sr-only">{rule.met ? "(đã đạt)" : "(chưa đạt)"}</span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </FormField>
 
-                    <FormField id="confirmPassword" label="Xác nhận mật khẩu mới" required error={errors.confirmPassword}>
-                        <PasswordInput {...fieldProps("confirmPassword", "new-password")} />
-                    </FormField>
-                </div>
+                        <FormField id="confirmPassword" label="Xác nhận mật khẩu mới" required error={errors.confirmPassword}>
+                            <PasswordInput {...fieldProps("confirmPassword", "new-password")} />
+                        </FormField>
+                    </div>
 
-                <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
-                    <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => navigate(-1)}>
-                        Hủy
-                    </button>
-                    <button type="submit" className="btn btn-primary" disabled={saving} aria-busy={saving || undefined}>
-                        {saving && <span className="btn-spinner" aria-hidden="true" />}
-                        Lưu mật khẩu
-                    </button>
-                </div>
-            </form>
+                    <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
+                        <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => navigate(-1)}>
+                            Hủy
+                        </button>
+                        <button type="submit" className="btn btn-primary" disabled={saving} aria-busy={saving || undefined}>
+                            {saving && <span className="btn-spinner" aria-hidden="true" />}
+                            Lưu mật khẩu
+                        </button>
+                    </div>
+                </form>
+
+                <aside aria-labelledby="password-tips-title" className="card-app p-0">
+                    <div className="flex items-center gap-2 border-b border-border px-6 py-4">
+                        <ShieldCheck className="size-4 text-primary" aria-hidden="true" />
+                        <h2 id="password-tips-title" className="card-title">
+                            Lưu ý khi đặt mật khẩu
+                        </h2>
+                    </div>
+                    <ul className="flex flex-col gap-3 px-6 py-5 text-body-sm text-ink">
+                        {PASSWORD_TIPS.map((tip) => (
+                            <li key={tip} className="flex gap-2">
+                                <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                                {tip}
+                            </li>
+                        ))}
+                    </ul>
+                </aside>
+            </div>
         </>
     );
 };

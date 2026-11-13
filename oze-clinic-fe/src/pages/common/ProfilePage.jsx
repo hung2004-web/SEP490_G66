@@ -15,7 +15,6 @@ import {
     submitIdentityRequest,
     updateContactInfo,
 } from "@/services/profileService";
-import { cx } from "@/utils/cx";
 import { GENDER_LABELS, PROFILE_LIMITS, PROFILE_MESSAGES, ROLE_LABELS, USER_ROLES, VALIDATION_MESSAGES } from "@/utils/messages";
 import { ROUTES, getErrorRoute } from "@/utils/routes";
 import { isRequiredEmpty, normalizePhone, requiredMessage, validateEmail, validatePhone } from "@/utils/validation";
@@ -593,8 +592,8 @@ const ProfileSkeleton = () => (
                 <div className="skeleton h-4 w-32" />
             </div>
         </div>
-        <div className="skeleton h-64 max-w-3xl" />
-        <div className="skeleton h-80 max-w-3xl" />
+        <div className="skeleton h-48" />
+        <div className="skeleton h-80" />
     </div>
 );
 
@@ -620,22 +619,19 @@ const ProfilePage = () => {
     const profile = updated ?? value.data;
     const isPatient = profile.role === USER_ROLES.PATIENT;
     const isDoctor = profile.role === USER_ROLES.DOCTOR;
-    const hasSideColumn = isPatient || isDoctor;
 
+    // One column across the full width: summary, identity, contact, then the role's own section
+    // (health info for patients, certificates for doctors) at the bottom.
     return (
         <>
             {header}
             <div className="flex flex-col gap-6">
                 <ProfileSummary profile={profile} isPatient={isPatient} />
-                <div className={cx("grid grid-cols-1 items-start gap-6", hasSideColumn ? "lg:grid-cols-[minmax(0,1fr)_22rem]" : "max-w-3xl")}>
-                    <div className="flex flex-col gap-6">
-                        <IdentitySection profile={profile} onChange={setUpdated} />
-                        {/* key: a saved profile resets the form to the stored values. */}
-                        <ContactSection key={JSON.stringify(toContactValues(profile))} profile={profile} isPatient={isPatient} onChange={setUpdated} />
-                    </div>
-                    {isPatient && <HealthInfoCard health={profile.health} onChange={setUpdated} />}
-                    {isDoctor && <CertificatesCard certificates={profile.certificates} onChange={setUpdated} />}
-                </div>
+                <IdentitySection profile={profile} onChange={setUpdated} />
+                {/* key: a saved profile resets the form to the stored values. */}
+                <ContactSection key={JSON.stringify(toContactValues(profile))} profile={profile} isPatient={isPatient} onChange={setUpdated} />
+                {isPatient && <HealthInfoCard health={profile.health} onChange={setUpdated} />}
+                {isDoctor && <CertificatesCard certificates={profile.certificates} onChange={setUpdated} />}
             </div>
         </>
     );
