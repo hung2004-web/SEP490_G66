@@ -26,7 +26,7 @@ import ReceptionFollowUps from "../pages/receptionist/ReceptionFollowUps";
 import ReceptionPayment from "../pages/receptionist/ReceptionPayment";
 import ReceptionQueue from "../pages/receptionist/ReceptionQueue";
 import CashHandover from "../pages/receptionist/CashHandover";
-import MyWorkSchedule from "../pages/staff/MyWorkSchedule";
+import WorkSchedule from "../pages/common/WorkSchedule";
 import MyAppointments from "../pages/patient/MyAppointments";
 import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import MedicalRecord from "../pages/patient/MedicalRecord";
@@ -144,7 +144,7 @@ const ROLE_PAGES = {
     [ROUTES.RECEPTION_PATIENTS]: <ReceptionPatients />,
     [ROUTES.RECEPTION_CONSULTATIONS]: <ReceptionConsultations />,
     [ROUTES.RECEPTION_CASH_HANDOVER]: <CashHandover />,
-    [ROUTES.WORK_SCHEDULE]: <MyWorkSchedule />,
+    [ROUTES.WORK_SCHEDULE]: <WorkSchedule />,
     [ROUTES.APPOINTMENTS]: (
         <Routes>
             <Route index element={<MyAppointments />} />

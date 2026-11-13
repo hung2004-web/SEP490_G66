@@ -154,7 +154,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        await DatabaseSeeder.SeedAsync(services);
+        await DatabaseSeeder.SeedAsync(services, app.Environment.IsDevelopment());
     }
     catch (Exception ex)
     {
