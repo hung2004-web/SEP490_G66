@@ -29,13 +29,13 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 2 | OZ-ME | 15–19 | 5 | 4 | 1 | 0 | 0 | 0 |
 | 3 | OZ-PAT | 20–26 | 7 | 0 | 7 | 0 | 0 | 0 |
 | 4 | OZ-SVC | 27–35 | 9 | 0 | 8 | 0 | 1 | 0 |
-| 5 | OZ-ROOM, OZ-ROLE, OZ-STAFF, OZ-WS, OZ-DS | 36–60 | 25 | 0 | 0 | 25 | 0 | 0 |
+| 5 | OZ-ROOM, OZ-ROLE, OZ-STAFF, OZ-WS, OZ-DS | 36–60 | 25 | 1 | 0 | 24 | 0 | 0 |
 | 6 | OZ-APPT, OZ-Q | 61–84 | 24 | 0 | 6 | 17 | 1 | 0 |
 | 7 | OZ-EXAM, OZ-IMG, OZ-MR | 85–113 | 29 | 0 | 5 | 22 | 2 | 0 |
 | 8 | OZ-TP, OZ-INV | 114–125 | 12 | 0 | 1 | 7 | 4 | 0 |
 | 9 | OZ-HOME, OZ-CFG, OZ-LEAVE, OZ-NOTIF, OZ-WH | 126–133 | 8 | 0 | 2 | 2 | 4 | 0 |
 | 10 | OZ-SIM | 134–142 | 9 | 0 | 0 | 0 | 0 | 9 |
-| | **Tổng tab hàm** | 4–142 | **139** | **15** | **30** | **73** | **12** | **9** |
+| | **Tổng tab hàm** | 4–142 | **139** | **16** | **30** | **72** | **12** | **9** |
 
 **Thứ tự đề xuất:** đợt 3 → 4 → 7 (phần chụp phim) → 6 (phần có test) → 0, rồi viết test cho các tab ✍️ theo đợt 2 → 5 → 6 → 7 → 8 → 9.
 
@@ -120,7 +120,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 48 | UpdateStaff | OZ-STAFF-04 | 0 | ✍️ | | | |
 | 49 | DeactivateStaff | OZ-STAFF-05 | 0 | ✍️ | | | |
 | 50 | ActivateStaff | OZ-STAFF-06 | 0 | ✍️ | | | |
-| 51 | CreateWorkShift | OZ-WS-01 | 0 | ✍️ | | | |
+| 51 | CreateWorkShift | OZ-WS-01 | WorkShifts/CreateWorkShiftTests: 13 (2) | ✅ | HungPVA | 13/11/2026 | 13 UTCID (3N, 3B, 7A) + 2 test controller |
 | 52 | GetWorkShifts | OZ-WS-02 | 0 | ✍️ | | | |
 | 53 | GetWorkShiftById | OZ-WS-03 | 0 | ✍️ | | | |
 | 54 | UpdateWorkShift | OZ-WS-04 | 0 | ✍️ | | | |
@@ -273,6 +273,7 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | 13/11/2026 | DuongDH | OZ-ME-02 UpdateProfile: 📝→✅. Dùng test sẵn (13 UTCID), không viết thêm. `dotnet test --filter Tab=OZ-ME-02` → 13 Passed. Điền sheet UpdateProfile. |
 | 13/11/2026 | DuongDH | OZ-ME-03 ResendConfirmEmail: 📝→✅. Dùng test sẵn (5 UTCID), không viết thêm. `dotnet test --filter Tab=OZ-ME-03` → 5 Passed. Điền sheet ResendConfirmEmail. |
 | 13/11/2026 | DuongDH | OZ-ME-04 VerifyPhoneOtp: 📝→✅. Dùng test sẵn (10 UTCID), không viết thêm. `dotnet test --filter Tab=OZ-ME-04` → 10 Passed. Điền sheet VerifyPhoneOtp. |
+| 13/11/2026 | HungPVA | OZ-WS-01 CreateWorkShift: ✍️→✅. Viết 13 unit test service (3N, 3B, 7A) và 2 test controller. `dotnet test --filter Tab=OZ-WS-01` → 13 Passed. Điền sheet CreateWorkShift. |
 
 ---
 
