@@ -16,7 +16,6 @@ import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
 import ReceptionCheckIn from "../pages/receptionist/ReceptionCheckIn";
 import ReceptionDebts from "../pages/receptionist/ReceptionDebts";
-import ReceptionSchedule from "../pages/receptionist/ReceptionSchedule";
 import ReceptionInvoices from "../pages/receptionist/ReceptionInvoices";
 import ReceptionPatients from "../pages/receptionist/ReceptionPatients";
 import ReceptionConsultations from "../pages/receptionist/ReceptionConsultations";
@@ -139,7 +138,6 @@ const ROLE_PAGES = {
     [ROUTES.RECEPTION_QUEUE]: <ReceptionQueue />,
     [ROUTES.RECEPTION_FOLLOW_UPS]: <ReceptionFollowUps />,
     [ROUTES.RECEPTION_DEBTS]: <ReceptionDebts />,
-    [ROUTES.RECEPTION_SCHEDULE]: <ReceptionSchedule />,
     [ROUTES.RECEPTION_INVOICE_LIST]: <ReceptionInvoices />,
     [ROUTES.RECEPTION_PATIENTS]: <ReceptionPatients />,
     [ROUTES.RECEPTION_CONSULTATIONS]: <ReceptionConsultations />,

@@ -26,7 +26,8 @@ export const ROUTES = {
     PAYMENT_HISTORY: "/payments/history",
     REFUND_REQUESTS: "/payments/refunds",
     // Staff pages use a prefix per role so they never clash with the patient pages above.
-    WORK_SCHEDULE: "/work-schedule",
+    // Shared by doctors, receptionists and imaging technicians (pages/common/WorkSchedule).
+    WORK_SCHEDULE: "/common/work-schedule",
     DOCTOR_APPOINTMENTS: "/doctor/appointments",
     DOCTOR_PATIENTS: "/doctor/patients",
     DOCTOR_TREATMENT_PLANS: "/doctor/treatment-plans",
@@ -44,7 +45,6 @@ export const ROUTES = {
     RECEPTION_QUEUE: "/reception/queue",
     RECEPTION_FOLLOW_UPS: "/reception/follow-ups",
     RECEPTION_DEBTS: "/reception/debts",
-    RECEPTION_SCHEDULE: "/reception/schedule",
     RECEPTION_INVOICE_LIST: "/reception/invoice-list",
     ADMIN_STAFF: "/admin/staff",
     ADMIN_ROLES: "/admin/roles",
@@ -83,7 +83,7 @@ export const ROLE_ROUTES = [
     },
     {
         roles: [USER_ROLES.RECEPTIONIST],
-        paths: [ROUTES.RECEPTION_APPOINTMENTS, ROUTES.RECEPTION_CHECK_IN, ROUTES.RECEPTION_PATIENTS, ROUTES.RECEPTION_CONSULTATIONS, ROUTES.RECEPTION_INVOICES, ROUTES.RECEPTION_CASH_HANDOVER, ROUTES.RECEPTION_QUEUE, ROUTES.RECEPTION_FOLLOW_UPS, ROUTES.RECEPTION_DEBTS, ROUTES.RECEPTION_SCHEDULE, ROUTES.RECEPTION_INVOICE_LIST]
+        paths: [ROUTES.RECEPTION_APPOINTMENTS, ROUTES.RECEPTION_CHECK_IN, ROUTES.RECEPTION_PATIENTS, ROUTES.RECEPTION_CONSULTATIONS, ROUTES.RECEPTION_INVOICES, ROUTES.RECEPTION_CASH_HANDOVER, ROUTES.RECEPTION_QUEUE, ROUTES.RECEPTION_FOLLOW_UPS, ROUTES.RECEPTION_DEBTS, ROUTES.RECEPTION_INVOICE_LIST]
     },
     {
         roles: [USER_ROLES.CLINIC_MANAGER],
