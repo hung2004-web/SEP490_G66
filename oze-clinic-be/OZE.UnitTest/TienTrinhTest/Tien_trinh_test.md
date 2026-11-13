@@ -26,11 +26,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 |---|---|---|---|---|---|---|---|---|
 | 0 | Cover, MethodList, Statistics | 1–3 | 3 | 0 | – | – | – | – |
 | 1 | OZ-AUTH | 4–14 | 11 | 11 | 0 | 0 | 0 | 0 |
-<<<<<<< HEAD
-| 2 | OZ-ME | 15–19 | 5 | 2 | 3 | 0 | 0 | 0 |
-=======
-| 2 | OZ-ME | 15–19 | 5 | 1 | 4 | 0 | 0 | 0 |
->>>>>>> main
+| 2 | OZ-ME | 15–19 | 5 | 3 | 2 | 0 | 0 | 0 |
 | 3 | OZ-PAT | 20–26 | 7 | 0 | 7 | 0 | 0 | 0 |
 | 4 | OZ-SVC | 27–35 | 9 | 0 | 8 | 0 | 1 | 0 |
 | 5 | OZ-ROOM, OZ-ROLE, OZ-STAFF, OZ-WS, OZ-DS | 36–60 | 25 | 0 | 0 | 25 | 0 | 0 |
@@ -39,11 +35,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 | 8 | OZ-TP, OZ-INV | 114–125 | 12 | 0 | 1 | 7 | 4 | 0 |
 | 9 | OZ-HOME, OZ-CFG, OZ-LEAVE, OZ-NOTIF, OZ-WH | 126–133 | 8 | 0 | 2 | 2 | 4 | 0 |
 | 10 | OZ-SIM | 134–142 | 9 | 0 | 0 | 0 | 0 | 9 |
-<<<<<<< HEAD
-| | **Tổng tab hàm** | 4–142 | **139** | **13** | **32** | **73** | **12** | **9** |
-=======
-| | **Tổng tab hàm** | 4–142 | **139** | **12** | **33** | **73** | **12** | **9** |
->>>>>>> main
+| | **Tổng tab hàm** | 4–142 | **139** | **14** | **31** | **73** | **12** | **9** |
 
 **Thứ tự đề xuất:** đợt 3 → 4 → 7 (phần chụp phim) → 6 (phần có test) → 0, rồi viết test cho các tab ✍️ theo đợt 2 → 5 → 6 → 7 → 8 → 9.
 
@@ -79,7 +71,7 @@ Cột **Test trong code** đếm số hàm test ở tầng service (mỗi hàm =
 |---|---|---|---|---|---|---|---|
 | 15 | GetProfile | OZ-ME-01 | Me/GetProfileTests: 4 | ✅ | DuongDH | 13/11/2026 | 4 UTCID, sheet đã điền |
 | 16 | UpdateProfile | OZ-ME-02 | Me/UpdateProfileTests: 13 | ✅ | DuongDH | 13/11/2026 | 13 UTCID, sheet đã điền |
-| 17 | ResendConfirmEmail | OZ-ME-03 | Me/ResendConfirmEmailTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
+| 17 | ResendConfirmEmail | OZ-ME-03 | Me/ResendConfirmEmailTests: 5 | ✅ | DuongDH | 13/11/2026 | 5 UTCID, sheet đã điền |
 | 18 | VerifyPhoneOtp | OZ-ME-04 | Me/VerifyPhoneOtpTests: 10 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
 | 19 | ResendPhoneOtp | OZ-ME-05 | Me/ResendPhoneOtpTests: 5 | 📝 | HiepNX | 10/11/2026 | Đã viết test, chờ điền sheet |
 
@@ -277,12 +269,9 @@ Cần thêm tab (copy một tab mẫu, thêm dòng vào MethodList và Statistic
 | 11/11/2026 | HiepNX | OZ-PAT-06 AddMedicalProfile: thêm 6 test (không tìm thấy, loại/mức độ/trạng thái sai, để trống dùng mặc định, dữ liệu lưu xuống), tổng 7 test
 | 11/11/2026 | HiepNX | OZ-Q-02 CallNext: "Gọi tiếp" dùng chung thứ tự với danh sách chờ (`WaitingOrder`), Urgent bị gọi hụt không còn tụt xuống sau Normal; thêm 5 test, tổng 6
 | 12/11/2026 | HungPVA | Rà soát và chuẩn hóa tài liệu test cho module Tái khám (OZ-EXAM-21..25, OZ-APPT-21); bổ sung XML summary docs cho các DTO/Request và chuẩn hóa mapping extension |
-<<<<<<< HEAD
 | 13/11/2026 | DuongDH | OZ-ME-01 GetProfile: 📝→✅. Dùng test sẵn (4 UTCID), không viết thêm. `dotnet test --filter Tab=OZ-ME-01` → 4 Passed. Điền sheet GetProfile. |
 | 13/11/2026 | DuongDH | OZ-ME-02 UpdateProfile: 📝→✅. Dùng test sẵn (13 UTCID), không viết thêm. `dotnet test --filter Tab=OZ-ME-02` → 13 Passed. Điền sheet UpdateProfile. |
-=======
-| 13/11/2026 | DuongDH | OZ-ME-01 GetProfile: 📝→✅. Dùng test sẵn (4 UTCID), không viết thêm. `dotnet test --filter Tab=OZ-ME-01` → 4 Passed. Điền sheet GetProfile qua Google Sheets API (Created By HiepNX, Executed By DuongDH). |
->>>>>>> main
+| 13/11/2026 | DuongDH | OZ-ME-03 ResendConfirmEmail: 📝→✅. Dùng test sẵn (5 UTCID), không viết thêm. `dotnet test --filter Tab=OZ-ME-03` → 5 Passed. Điền sheet ResendConfirmEmail. |
 
 ---
 
