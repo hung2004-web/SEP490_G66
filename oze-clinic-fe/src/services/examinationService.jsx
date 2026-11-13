@@ -1,14 +1,16 @@
 import {
     EMPTY_EXAM_DRAFT,
+    EMPTY_PRESCRIPTION_DRAFT,
+    EMPTY_TREATMENT_DRAFT,
     GENERAL_CHECKUP_SERVICE_ID,
-    MOCK_EXAM_DONE_COUNT,
+    MOCK_EXAM_DONE,
     MOCK_EXAM_DRAFTS,
     MOCK_EXAM_PLANS,
     MOCK_EXAM_QUEUE,
     MOCK_EXAM_RECORDS,
     MOCK_EXAM_SHIFT,
 } from "../utils/data/mockExamination";
-import { isQueueBusy, newPlanSession, validatePlan } from "../utils/examination";
+import { isQueueBusy, newPlanSession } from "../utils/examination";
 import { QUEUE_STATUS } from "../utils/messages";
 
 // TODO(api): mock only, swap for the exam endpoints (queue, encounter, medical history) once the backend has them.
@@ -20,9 +22,14 @@ const success = (data, message = null) => ({ success: true, message, data, error
 
 const failure = (message) => ({ success: false, message, data: null, errors: null });
 
+// TODO(api): the plan's doctor comes from the encounter.
+const MOCK_DOCTOR_NAME = "BS. Trần Minh Khoa";
+
 // Plan to fill in from the registered treatments: one empty session per service.
-function planFromServices(services) {
+function planFromServices(id, services) {
     return {
+        code: `KH${String(100 + Number(id)).padStart(6, "0")}`,
+        doctorName: MOCK_DOCTOR_NAME,
         services: services
             .filter((service) => service.id !== GENERAL_CHECKUP_SERVICE_ID)
             .map((service) => ({
@@ -37,14 +44,16 @@ function planFromServices(services) {
 
 const state = {
     queue: MOCK_EXAM_QUEUE.map((item) => ({ ...item })),
-    doneCount: MOCK_EXAM_DONE_COUNT,
+    done: MOCK_EXAM_DONE.map((item) => ({ ...item })),
     records: Object.fromEntries(
         Object.entries(MOCK_EXAM_RECORDS).map(([id, record]) => [
             id,
             {
                 ...structuredClone(record),
                 exam: structuredClone(MOCK_EXAM_DRAFTS[id] ?? EMPTY_EXAM_DRAFT),
-                plan: structuredClone(MOCK_EXAM_PLANS[id] ?? planFromServices(record.services)),
+                plan: structuredClone(MOCK_EXAM_PLANS[id] ?? planFromServices(id, record.services)),
+                treatment: structuredClone(EMPTY_TREATMENT_DRAFT),
+                prescription: structuredClone(EMPTY_PRESCRIPTION_DRAFT),
             },
         ]),
     ),
@@ -61,10 +70,24 @@ const clockNow = () => {
 const snapshot = () => ({
     shift: { ...MOCK_EXAM_SHIFT },
     queue: state.queue.map((item) => ({ ...item })),
-    doneCount: state.doneCount,
+    done: state.done.map((item) => ({ ...item })),
 });
 
 const findItem = (id) => state.queue.find((item) => item.id === id);
+
+// Step indexes of "Điều trị" and "Kê đơn thuốc" (see EXAM_STEPS).
+const TREATMENT_STEP = 3;
+const PRESCRIPTION_STEP = 4;
+
+// Marks today's plan session done once something was treated; its service becomes in progress, or done with its last session.
+const completeSession = (record) => {
+    const { sessionId, items } = record.treatment;
+    if (!sessionId || !items.length) return;
+    const service = record.plan.services.find((entry) => entry.sessions.some((session) => session.id === sessionId));
+    if (!service) return;
+    service.sessions = service.sessions.map((session) => (session.id === sessionId ? { ...session, status: "done" } : session));
+    service.status = service.sessions.every((session) => session.status === "done") ? "done" : "inProgress";
+};
 
 // Queue of the doctor's room for the current shift.
 export const getExamWorkspace = async () => {
@@ -138,8 +161,12 @@ export const endExamination = async (queueId) => {
     await wait(MOCK_DELAY_MS);
     const item = findItem(queueId);
     if (!item || item.status !== QUEUE_STATUS.IN_EXAMINATION) return failure("Lượt khám này không còn mở.");
+    const record = state.records[queueId];
+    if ((item.step ?? 0) >= TREATMENT_STEP) completeSession(record);
+    // Completing the visit finalizes the prescription (F-EXM-06 "chốt đơn"); an empty one is dropped.
+    if ((item.step ?? 0) >= PRESCRIPTION_STEP && record?.prescription.items.length) record.prescription.status = "Finalized";
     state.queue = state.queue.filter((entry) => entry.id !== queueId);
-    state.doneCount += 1;
+    state.done.push({ id: item.id, queueNumber: item.queueNumber, patientName: item.patientName, finishedAt: clockNow() });
     return success(snapshot(), `Đã kết thúc lượt khám của ${item.patientName}.`);
 };
 
@@ -186,16 +213,32 @@ export const saveTreatmentPlan = async (queueId, plan) => {
     return success({ savedAt: Date.now() });
 };
 
-// Ends the visit after step 3: the plan goes to reception, who books the treatment sessions.
-export const sendPlanToReception = async (queueId, plan) => {
+// Draft save of step 4. treatment: see EMPTY_TREATMENT_DRAFT.
+export const saveTreatmentDraft = async (queueId, treatment) => {
     await wait(MOCK_DELAY_MS);
-    const item = findItem(queueId);
     const record = state.records[queueId];
-    if (!item || item.status !== QUEUE_STATUS.IN_EXAMINATION || !record) return failure("Lượt khám này không còn mở.");
-    if (!plan.services.length) return failure("Kế hoạch chưa có dịch vụ điều trị nào.");
-    if (validatePlan(plan.services).count) return failure("Kế hoạch còn thông tin chưa nhập.");
-    record.plan = structuredClone(plan);
-    state.queue = state.queue.filter((entry) => entry.id !== queueId);
-    state.doneCount += 1;
-    return success(snapshot(), "Đã gửi lễ tân đặt lịch buổi điều trị tiếp theo.");
+    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
+    record.treatment = structuredClone(treatment);
+    return success({ savedAt: Date.now() });
+};
+
+// Leaving step 4 for the prescription: saves the draft and marks today's session done. Returns the updated plan.
+export const completeTreatmentSession = async (queueId, treatment) => {
+    await wait(MOCK_DELAY_MS);
+    const record = state.records[queueId];
+    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
+    if (!treatment.items.length) return failure("Thêm ít nhất một nội dung điều trị.");
+    record.treatment = structuredClone(treatment);
+    completeSession(record);
+    return success(structuredClone(record.plan));
+};
+
+// Draft save of step 5. prescription: see EMPTY_PRESCRIPTION_DRAFT.
+export const savePrescriptionDraft = async (queueId, prescription) => {
+    await wait(MOCK_DELAY_MS);
+    const record = state.records[queueId];
+    if (!record) return failure("Không tìm thấy hồ sơ của bệnh nhân này.");
+    if (record.prescription.status === "Finalized") return failure("Đơn thuốc đã được chốt, không sửa được nữa.");
+    record.prescription = structuredClone(prescription);
+    return success({ savedAt: Date.now() });
 };

@@ -86,7 +86,11 @@ namespace OZE.Application.Services
                 };
 
                 await _paymentRepository.AddAsync(payment, cancellationToken);
-                payableInvoice.Payments.Add(payment);
+                // AddAsync already attaches the payment to the tracked invoice; adding it again counted it twice in PaidAmount
+                if (!payableInvoice.Payments.Contains(payment))
+                {
+                    payableInvoice.Payments.Add(payment);
+                }
 
                 if (isCash)
                 {

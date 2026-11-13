@@ -22,6 +22,8 @@ namespace OZE.Application.Services
         private readonly IAuditLogService _auditLogService;
         private readonly ILogger<AppointmentService> _logger;
         private readonly IQueueService? _queueService;
+        private readonly IInvoiceRepository? _invoiceRepository;
+        private readonly IInstallmentRepository? _installmentRepository;
 
         public AppointmentService(
             IAppointmentRepository appointmentRepository,
@@ -31,7 +33,9 @@ namespace OZE.Application.Services
             IEmailSender emailSender,
             IAuditLogService auditLogService,
             ILogger<AppointmentService> logger,
-            IQueueService? queueService = null)
+            IQueueService? queueService = null,
+            IInvoiceRepository? invoiceRepository = null,
+            IInstallmentRepository? installmentRepository = null)
         {
             _appointmentRepository = appointmentRepository;
             _registrationRepository = registrationRepository;
@@ -41,6 +45,8 @@ namespace OZE.Application.Services
             _auditLogService = auditLogService;
             _logger = logger;
             _queueService = queueService;
+            _invoiceRepository = invoiceRepository;
+            _installmentRepository = installmentRepository;
         }
 
         public async Task<List<BookableServiceResponse>> GetBookableServicesAsync()
@@ -138,11 +144,98 @@ namespace OZE.Application.Services
             return ToResponse(appointment, patient, slot, lines);
         }
 
+        // F-APT-09: the receptionist books for a known patient, or for a new one by phone, and the booking is CONFIRMED at once
+        // (the receptionist is already talking to the patient, so there is nobody to call back)
+        public async Task<AppointmentResponse> BookByReceptionistAsync(ReceptionBookingRequest request, string receptionistUserId)
+        {
+            Patient? known = null;
+            string? phone = null;
+            string? email = null;
+            if (request.PatientId.HasValue)
+            {
+                known = await _appointmentRepository.GetPatientByIdAsync(request.PatientId.Value);
+                ConditionGuard.Ensure<NotFoundException>(known != null, ErrorConstants.AppointmentMessage.PatientProfileNotFound);
+            }
+            else
+            {
+                ConditionGuard.Ensure(!string.IsNullOrWhiteSpace(request.FullName), ErrorConstants.AuthMessage.FullNameRequired);
+                ConditionGuard.Ensure(PhoneNumberHelper.TryNormalize(request.PhoneNumber, out var normalized), ErrorConstants.AuthMessage.InvalidPhone);
+                phone = normalized;
+                email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+                ConditionGuard.ThrowIf(email != null && !new EmailAddressAttribute().IsValid(email), ErrorConstants.AuthMessage.EmailInvalid);
+            }
+
+            var lines = await ResolveBookingLinesAsync(request.ServiceId, request.VariantId);
+            var (appointment, patient, slot) = await CreateBookingAsync(lines, request.Date!.Value, request.SlotStart!.Value,
+                request.DoctorId, request.Note, receptionistUserId, async () =>
+                {
+                    if (known != null)
+                    {
+                        return known;
+                    }
+
+                    // The phone of an account: book for the patient of that account
+                    var variants = PhoneNumberHelper.GetLookupVariants(phone!);
+                    var user = await _registrationRepository.FindUserByPhoneAsync(variants);
+                    if (user != null)
+                    {
+                        var linked = await _appointmentRepository.GetPatientByUserIdAsync(user.Id);
+                        ConditionGuard.Ensure<NotFoundException>(linked != null, ErrorConstants.AppointmentMessage.PatientProfileNotFound);
+                        return linked!;
+                    }
+
+                    var patients = await _registrationRepository.FindUnlinkedPatientsByPhoneAsync(variants);
+                    ConditionGuard.ThrowIf(patients.Count > 1, ErrorConstants.AuthMessage.MultiplePatientRecords);
+                    var patient = patients.FirstOrDefault();
+                    if (patient == null)
+                    {
+                        patient = new Patient
+                        {
+                            PatientCode = GeneratePatientCode(),
+                            FullName = request.FullName!.Trim(),
+                            PhoneNumber = phone,
+                            Email = email,
+                            CreatedAt = DateTimeOffset.UtcNow
+                        };
+                        await _appointmentRepository.AddPatientAsync(patient);
+                    }
+
+                    return patient;
+                }, initialStatus: AppointmentConstants.ConfirmedStatus);
+
+            await SendReceptionBookingNotificationAsync(patient.PhoneNumber, patient.Email, appointment, lines);
+            await LogCreatedAsync(appointment, lines);
+            return ToResponse(appointment, patient, slot, lines);
+        }
+
+        private async Task SendReceptionBookingNotificationAsync(string? phone, string? email, Appointment appointment, List<BookingLine> lines)
+        {
+            var serviceNames = string.Join(", ", lines.Select(l => l.DisplayName));
+            var message = $"OZE Dental: Your appointment for {serviceNames} " +
+                          $"at {appointment.TimeSlotStart:HH\\:mm} on {appointment.AppointmentDate:dd/MM/yyyy} has been confirmed.";
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    await _smsSender.SendSmsAsync(phone, message);
+                }
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    await _emailSender.SendEmailAsync(email, "OZE Dental - Appointment confirmed", message);
+                }
+            }
+            catch
+            {
+                // The booking is saved; a failed message must not undo it
+            }
+        }
+
         // Re-checks the slot and saves the appointment in one serializable transaction;
         // getPatientAsync runs inside it so a new patient record is saved together with the appointment
         private async Task<(Appointment Appointment, Patient Patient, AvailableSlotResponse Slot)> CreateBookingAsync(
             List<BookingLine> lines, DateOnly date, TimeOnly slotStart, int? doctorId, string? note,
-            string? createdByUserId, Func<Task<Patient>> getPatientAsync, long? excludeAppointmentId = null, long? parentAppointmentId = null)
+            string? createdByUserId, Func<Task<Patient>> getPatientAsync, long? excludeAppointmentId = null, long? parentAppointmentId = null,
+            string initialStatus = AppointmentConstants.PendingStatus)
         {
             var slotMinutes = await GetIntConfigAsync(ConfigKeyConstants.SlotDurationMinutes);
 
@@ -174,7 +267,8 @@ namespace OZE.Application.Services
                     TimeSlotStart = chosen.SlotStart,
                     TimeSlotEnd = chosen.SlotEnd,
                     // The slot is held, but the receptionist must confirm the booking before it is approved
-                    Status = AppointmentConstants.PendingStatus,
+                    // (a booking made by the receptionist is confirmed at once)
+                    Status = initialStatus,
                     Notes = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
                     ParentAppointmentId = parentAppointmentId,
                     CreatedAt = DateTimeOffset.UtcNow,
@@ -425,25 +519,7 @@ namespace OZE.Application.Services
                 ParentAppointmentId = appointment.ParentAppointmentId,
                 ExaminationId = appointment.Examination?.Id,
                 ExaminationStatus = appointment.Examination?.ExaminationStatus,
-                FollowUp = appointment.Examination?.FollowUpDate != null || appointment.Examination?.FollowUpAppointmentId != null
-                    ? new FollowUpSummaryResponse
-                    {
-                        FollowUpDate = appointment.Examination.FollowUpDate,
-                        FollowUpNotes = appointment.Examination.FollowUpNotes,
-                        AppointmentId = appointment.Examination.FollowUpAppointmentId,
-                        AppointmentCode = appointment.Examination.FollowUpAppointment != null
-                            ? $"LH{appointment.Examination.FollowUpAppointment.Id:D6}"
-                            : null,
-                        AppointmentDate = appointment.Examination.FollowUpAppointment?.AppointmentDate,
-                        TimeSlotStart = appointment.Examination.FollowUpAppointment?.TimeSlotStart,
-                        TimeSlotEnd = appointment.Examination.FollowUpAppointment?.TimeSlotEnd,
-                        DoctorId = appointment.Examination.FollowUpAppointment?.DoctorId,
-                        DoctorName = appointment.Examination.FollowUpAppointment?.Doctor?.FullName,
-                        Status = appointment.Examination.FollowUpAppointment?.Status,
-                        RemindedAt = appointment.Examination.FollowUpRemindedAt,
-                        ReminderCount = appointment.Examination.FollowUpReminderCount
-                    }
-                    : null
+                FollowUp = appointment.Examination.ToFollowUpSummary()
             };
         }
 
@@ -477,12 +553,9 @@ namespace OZE.Application.Services
                 waiting = waiting.Where(a => a.Examination != null).ToList();
             }
 
-            return waiting
-                .Select(a => (Appointment: a, Group: GetWaitingGroup(a, lateMinutes)))
-                .OrderByDescending(x => x.Appointment.Priority)
-                .ThenBy(x => x.Group)
-                .ThenBy(x => x.Group == OnTimeGroup ? x.Appointment.TimeSlotStart : null)
-                .ThenBy(x => x.Appointment.CheckInAt)
+            // Same order as "call next" (QueueService), so the patient on top is the one who is called
+            return WaitingOrder.Sort(waiting, a => a, WaitingOrder.SkipCountOf, lateMinutes)
+                .Select(a => (Appointment: a, Group: WaitingOrder.GetGroup(a, lateMinutes)))
                 .Select((x, index) => new WaitingListItemResponse
                 {
                     Position = index + 1,
@@ -498,45 +571,13 @@ namespace OZE.Application.Services
                     RoomId = GetCurrentRoom(x.Appointment)?.Id,
                     RoomName = GetCurrentRoom(x.Appointment)?.RoomName,
                     Priority = x.Appointment.Priority,
-                    IsLate = x.Group == LateGroup,
-                    IsPriorityReturn = x.Group == PriorityReturnGroup,
+                    IsLate = x.Group == WaitingOrder.LateGroup,
+                    IsPriorityReturn = x.Group == WaitingOrder.PriorityReturnGroup,
                     Services = x.Appointment.ServiceItems
                         .Select(i => i.Variant == null ? i.Service.ServiceName : $"{i.Service.ServiceName} - {i.Variant.VariantName}")
                         .ToList()
                 })
                 .ToList();
-        }
-
-        private const int PriorityReturnGroup = 0;
-        private const int OnTimeGroup = 1;
-        private const int LateGroup = 2;
-        private const int WalkInGroup = 3;
-
-        private static int GetWaitingGroup(Appointment appointment, int lateMinutes)
-        {
-            if (appointment.Examination != null)
-            {
-                return PriorityReturnGroup;
-            }
-
-            if (appointment.AppointmentType == AppointmentConstants.WalkInType)
-            {
-                return WalkInGroup;
-            }
-
-            return IsLateCheckIn(appointment, lateMinutes) ? LateGroup : OnTimeGroup;
-        }
-
-        // Arriving early is never late; only a check-in after the booked time plus the allowed delay is
-        private static bool IsLateCheckIn(Appointment appointment, int lateMinutes)
-        {
-            if (appointment.CheckInAt == null || appointment.TimeSlotStart == null)
-            {
-                return false;
-            }
-
-            var bookedAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart.Value);
-            return appointment.CheckInAt.Value.LocalDateTime > bookedAt.AddMinutes(lateMinutes);
         }
 
         public async Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(AppointmentQueryParameters query, string userId, CancellationToken cancellationToken = default)
@@ -572,18 +613,25 @@ namespace OZE.Application.Services
             // A patient can only cancel a pending appointment, and only before the cutoff
             if (ownerUserId != null)
             {
-                ConditionGuard.ThrowIf(appointment.Status == AppointmentConstants.ConfirmedStatus,
+                ConditionGuard.ThrowIf(appointment!.Status == AppointmentConstants.ConfirmedStatus,
                     ErrorConstants.AppointmentMessage.ConfirmedNeedsReceptionistToCancel);
 
                 await EnsureBeforeCutoffAsync(appointment, ErrorConstants.AppointmentMessage.CancelDeadlinePassed);
             }
 
-            var oldStatus = appointment.Status;
+            var oldStatus = appointment!.Status;
             appointment.Status = AppointmentConstants.CancelledStatus;
             appointment.CancellationReason = request!.Reason.Trim();
             appointment.CancelledAt = DateTimeOffset.UtcNow;
             appointment.CancelledByUserId = userId;
             appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
+            // If this appointment was a follow-up appointment, release the active link on the original examination
+            if (appointment.ParentAppointment?.Examination != null && appointment.ParentAppointment.Examination.FollowUpAppointmentId == appointment.Id)
+            {
+                appointment.ParentAppointment.Examination.FollowUpAppointmentId = null;
+                appointment.ParentAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
+            }
 
             await _appointmentRepository.UpdateAsync(appointment);
             await _auditLogService.LogAsync(AuditConstants.AppointmentCancelled, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
@@ -638,6 +686,13 @@ namespace OZE.Application.Services
                 // A patient's change still needs the receptionist's call; staff changed it after talking to the patient
                 appointment.Status = isPatient ? AppointmentConstants.PendingStatus : AppointmentConstants.ConfirmedStatus;
                 appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
+                // Keep parent examination's follow-up date in sync with the rescheduled appointment date
+                if (appointment.ParentAppointment?.Examination != null && appointment.ParentAppointment.Examination.FollowUpAppointmentId == appointment.Id)
+                {
+                    appointment.ParentAppointment.Examination.FollowUpDate = date;
+                    appointment.ParentAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
+                }
 
                 await _appointmentRepository.UpdateAsync(appointment);
                 return slot;
@@ -1142,6 +1197,7 @@ namespace OZE.Application.Services
 
             appointment.Status = AppointmentConstants.CompletedStatus;
             appointment.UpdatedAt = now;
+            ApplyPeriodicRecall(appointment, examination);
 
             await _appointmentRepository.UpdateAsync(appointment);
 
@@ -1153,7 +1209,110 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.AppointmentCompleted, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status, ExaminationId = examination.Id, examination.ExaminationStatus });
 
-            return MapToResponse(appointment);
+            // AD-9: never block clinical completion; attach soft payment warnings for the patient.
+            var response = MapToResponse(appointment);
+            response.PaymentWarnings = await TryBuildPaymentWarningsAsync(appointment.PatientId, cancellationToken);
+            return response;
+        }
+
+        // BR-CRM-03: when the doctor set no follow-up, a service done today with a recall interval sets one
+        // (the shortest interval wins, e.g. scaling every 6 months). The receptionist then reminds it like any follow-up.
+        private static void ApplyPeriodicRecall(Appointment appointment, Examination examination)
+        {
+            if (examination.FollowUpDate != null || examination.FollowUpAppointmentId != null)
+            {
+                return;
+            }
+
+            var recalled = appointment.ServiceItems
+                .Where(x => x.Service?.RecallIntervalMonths is > 0)
+                .ToList();
+            if (recalled.Count == 0)
+            {
+                return;
+            }
+
+            var months = recalled.Min(x => x.Service.RecallIntervalMonths!.Value);
+            var names = string.Join(", ", recalled
+                .Where(x => x.Service.RecallIntervalMonths == months)
+                .Select(x => x.Service.ServiceName)
+                .Distinct());
+            examination.FollowUpDate = DateOnly.FromDateTime(ClinicClock.Today).AddMonths(months);
+            var notes = $"Nhắc định kỳ {months} tháng: {names}";
+            examination.FollowUpNotes = notes.Length <= 500 ? notes : notes[..500];
+            examination.FollowUpIsRecall = true;
+        }
+
+        private async Task<List<PaymentWarning>> TryBuildPaymentWarningsAsync(
+            int patientId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await BuildPaymentWarningsAsync(patientId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Clinical complete already persisted — warnings must not fail the HTTP response.
+                _logger.LogWarning(ex, "Failed to build payment warnings for patient {PatientId} after examination complete.", patientId);
+                return new List<PaymentWarning>();
+            }
+        }
+
+        private async Task<List<PaymentWarning>> BuildPaymentWarningsAsync(
+            int patientId,
+            CancellationToken cancellationToken)
+        {
+            var warnings = new List<PaymentWarning>();
+            if (_invoiceRepository is null && _installmentRepository is null)
+            {
+                return warnings;
+            }
+
+            if (_invoiceRepository is not null)
+            {
+                var outstanding = await _invoiceRepository.GetOutstandingForPatientAsync(patientId, cancellationToken);
+                foreach (var invoice in outstanding)
+                {
+                    var remaining = decimal.Round(
+                        Math.Max(0m, invoice.FinalAmount - invoice.PaidAmount),
+                        2,
+                        MidpointRounding.AwayFromZero);
+                    if (remaining <= 0)
+                    {
+                        continue;
+                    }
+
+                    warnings.Add(new PaymentWarning
+                    {
+                        Code = PaymentConstants.WarningCode.OutstandingBalance,
+                        Message = ErrorConstants.PaymentWarningMessage.OutstandingBalance,
+                        InvoiceId = invoice.Id,
+                        InvoiceNumber = invoice.InvoiceNumber,
+                        RemainingAmount = remaining
+                    });
+                }
+            }
+
+            if (_installmentRepository is not null)
+            {
+                var asOf = DateOnly.FromDateTime(ClinicClock.Today);
+                var overdueCount = await _installmentRepository.CountOverdueForPatientAsync(
+                    patientId,
+                    asOf,
+                    cancellationToken);
+                if (overdueCount > 0)
+                {
+                    warnings.Add(new PaymentWarning
+                    {
+                        Code = PaymentConstants.WarningCode.OverdueInstallment,
+                        Message = ErrorConstants.PaymentWarningMessage.OverdueInstallment,
+                        OverduePeriodCount = overdueCount
+                    });
+                }
+            }
+
+            return warnings;
         }
 
         // Anything above normal needs a reason, so the order of the waiting list can be explained later
@@ -1208,7 +1367,14 @@ namespace OZE.Application.Services
             var originalAppointment = await _appointmentRepository.GetByIdWithExaminationAsync(appointmentId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(originalAppointment != null, ErrorConstants.AppointmentMessage.AppointmentNotFound);
             ConditionGuard.Ensure(originalAppointment!.Examination != null, ErrorConstants.AppointmentMessage.ExaminationNotFoundForAppointment);
-            ConditionGuard.Ensure(originalAppointment.Examination!.FollowUpAppointmentId == null, ErrorConstants.AppointmentMessage.FollowUpAlreadyScheduled);
+
+            // Allow re-scheduling if the previously linked follow-up appointment was cancelled or marked no-show
+            var existingFollowUp = originalAppointment.Examination!.FollowUpAppointment;
+            var hasActiveFollowUp = existingFollowUp != null
+                ? (existingFollowUp.Status != AppointmentConstants.CancelledStatus
+                   && existingFollowUp.Status != AppointmentConstants.NoShowStatus)
+                : originalAppointment.Examination.FollowUpAppointmentId != null;
+            ConditionGuard.ThrowIf(hasActiveFollowUp, ErrorConstants.AppointmentMessage.FollowUpAlreadyScheduled);
 
             ConditionGuard.Ensure(request.Date!.Value > originalAppointment.AppointmentDate, ErrorConstants.ExaminationMessage.FollowUpDateMustBeFuture);
 
@@ -1221,6 +1387,10 @@ namespace OZE.Application.Services
                 excludeAppointmentId: originalAppointment.Id,
                 parentAppointmentId: originalAppointment.Id);
 
+            // Q9: Appointments scheduled by staff/receptionist/doctor are confirmed directly
+            appointment.Status = AppointmentConstants.ConfirmedStatus;
+            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+
             originalAppointment.Examination.FollowUpAppointmentId = appointment.Id;
             originalAppointment.Examination.FollowUpDate = appointment.AppointmentDate;
             if (!string.IsNullOrWhiteSpace(request.Notes))
@@ -1228,7 +1398,9 @@ namespace OZE.Application.Services
                 originalAppointment.Examination.FollowUpNotes = request.Notes.Trim();
             }
             originalAppointment.Examination.UpdatedAt = DateTimeOffset.UtcNow;
-            await _appointmentRepository.SaveChangesAsync();
+
+            // Send instant confirmation notification via SMS/Email to patient
+            await SendConfirmationNotificationAsync(appointment);
 
             if (!string.IsNullOrEmpty(originalAppointment.Patient.UserId))
             {
@@ -1245,8 +1417,9 @@ namespace OZE.Application.Services
                     CreatedAt = DateTimeOffset.UtcNow
                 };
                 await _appointmentRepository.AddNotificationAsync(notification, cancellationToken);
-                await _appointmentRepository.SaveChangesAsync();
             }
+
+            await _appointmentRepository.SaveChangesAsync();
 
             await _auditLogService.LogAsync(
                 AuditConstants.AppointmentFollowUpScheduled,
@@ -1299,25 +1472,7 @@ namespace OZE.Application.Services
                 ParentAppointmentId = appointment.ParentAppointmentId,
                 ExaminationId = appointment.Examination?.Id,
                 ExaminationStatus = appointment.Examination?.ExaminationStatus,
-                FollowUp = appointment.Examination?.FollowUpDate != null || appointment.Examination?.FollowUpAppointmentId != null
-                    ? new FollowUpSummaryResponse
-                    {
-                        FollowUpDate = appointment.Examination.FollowUpDate,
-                        FollowUpNotes = appointment.Examination.FollowUpNotes,
-                        AppointmentId = appointment.Examination.FollowUpAppointmentId,
-                        AppointmentCode = appointment.Examination.FollowUpAppointment != null
-                            ? $"LH{appointment.Examination.FollowUpAppointment.Id:D6}"
-                            : null,
-                        AppointmentDate = appointment.Examination.FollowUpAppointment?.AppointmentDate,
-                        TimeSlotStart = appointment.Examination.FollowUpAppointment?.TimeSlotStart,
-                        TimeSlotEnd = appointment.Examination.FollowUpAppointment?.TimeSlotEnd,
-                        DoctorId = appointment.Examination.FollowUpAppointment?.DoctorId,
-                        DoctorName = appointment.Examination.FollowUpAppointment?.Doctor?.FullName,
-                        Status = appointment.Examination.FollowUpAppointment?.Status,
-                        RemindedAt = appointment.Examination.FollowUpRemindedAt,
-                        ReminderCount = appointment.Examination.FollowUpReminderCount
-                    }
-                    : null
+                FollowUp = appointment.Examination.ToFollowUpSummary()
             };
         }
     }

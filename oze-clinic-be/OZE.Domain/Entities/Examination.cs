@@ -20,6 +20,10 @@ namespace OZE.Domain.Entities
         public long? FollowUpAppointmentId { get; set; }
         public DateTimeOffset? FollowUpRemindedAt { get; set; }
         public int FollowUpReminderCount { get; set; }
+        // True when the follow-up date came from the service's periodic recall, not from the doctor
+        public bool FollowUpIsRecall { get; set; }
+        // True when the patient said they will not come back; no more reminders are sent
+        public bool FollowUpClosed { get; set; }
 
         public virtual Appointment Appointment { get; set; } = null!;
         public virtual Patient Patient { get; set; } = null!;
@@ -28,6 +32,7 @@ namespace OZE.Domain.Entities
         public virtual ICollection<DentalChartEntry> DentalChartEntries { get; set; } = new List<DentalChartEntry>();
         public virtual ICollection<ClinicalDiagnosis> Diagnoses { get; set; } = new List<ClinicalDiagnosis>();
         public virtual ICollection<ImagingRequest> ImagingRequests { get; set; } = new List<ImagingRequest>();
+        public virtual ICollection<FollowUpContact> FollowUpContacts { get; set; } = new List<FollowUpContact>();
         public virtual ICollection<TreatmentPlan> TreatmentPlans { get; set; } = new List<TreatmentPlan>();
         public virtual ICollection<ClinicalRecordAddendum> Addenda { get; set; } = new List<ClinicalRecordAddendum>();
         public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();

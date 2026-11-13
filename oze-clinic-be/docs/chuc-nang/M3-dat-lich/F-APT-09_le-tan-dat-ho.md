@@ -6,9 +6,9 @@
 | Mục | Giá trị |
 |---|---|
 | Module | M3 Đặt lịch |
-| Trạng thái | ⬜ Chưa làm |
+| Trạng thái | ✅ Đã làm (11/11/2026). Phần ĐỀ XUẤT bên dưới giữ để tham khảo; cách làm thực tế ghi ở mục "Đã làm" |
 | Vai trò được dùng | `Receptionist` (đề xuất thêm `ClinicManager` cho khớp các API lễ tân khác) |
-| API | Chưa có. Đề xuất `POST api/appointments/front-desk-booking` |
+| API | `POST api/appointments/reception-booking` (Receptionist) |
 | Code chính | Chưa có. Đề xuất `AppointmentsController.BookByFrontDeskAsync` → `AppointmentService.BookByFrontDeskAsync` → dùng lại `ResolveBookingLinesAsync`, `CreateBookingAsync` |
 
 ## 1. Chức năng này làm gì
@@ -80,3 +80,11 @@ Bệnh nhân gọi điện hoặc đến quầy hẹn lịch cho ngày khác; l�
 - Lễ tân đặt hộ có phải tuân `Booking.MinHoursAhead` (2 giờ) không? Chưa chốt.
 - Có cho chọn giờ ngoài slot (chèn lịch) không? Chưa chốt.
 - Walk-in (`POST walk-in`, M4 F-RCP-02) đã cho lễ tân tạo lịch cho bệnh nhân có tài khoản nhưng chỉ cho **hôm nay** và check-in ngay, không thay được chức năng này.
+
+## Đã làm (11/11/2026)
+
+- `AppointmentService.BookByReceptionistAsync`: nhận `patientId` (hồ sơ có sẵn, kể cả có tài khoản) **hoặc** `fullName` + `phoneNumber` (+ `email`) cho người mới. Số điện thoại của tài khoản thì đặt cho hồ sơ của tài khoản đó; có hồ sơ chưa liên kết thì dùng lại; chưa có thì tạo mới.
+- Dùng chung `CreateBookingAsync` với đặt lịch online (kiểm tra lại slot trong transaction serializable, một bệnh nhân chỉ có một lịch chưa xong, BR-APT-01..04), chỉ khác trạng thái ban đầu là **`CONFIRMED`** và người tạo là lễ tân. Bệnh nhân nhận SMS và email báo lịch đã xác nhận.
+- Màn hình: hộp thoại "Đặt lịch hộ" (`BookingDialog.jsx`) gồm 3 bước: bệnh nhân, dịch vụ, ngày giờ (giờ trống của mọi bác sĩ). Hộp thoại mở từ Quản lý lịch hẹn (nút trên đầu trang hoặc ô trống của lịch tuần), Hồ sơ bệnh nhân và Yêu cầu tư vấn.
+- Test: `OZE.UnitTest/Services/Appointments/BookByReceptionistTests.cs` (tab `OZ-APPT-22`).
+

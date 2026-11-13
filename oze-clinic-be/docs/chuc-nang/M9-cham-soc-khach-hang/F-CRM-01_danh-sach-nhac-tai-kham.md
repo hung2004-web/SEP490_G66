@@ -2,15 +2,18 @@
 
 > Khung: [_KHUNG_CHUC_NANG.md](../_KHUNG_CHUC_NANG.md). Nghiệp vụ tổng: [Dac_ta_nghiep_vu_OZE.md](../../Dac_ta_nghiep_vu_OZE.md), mục M9 (BR-CRM-01), mục 4 "Khám mới hay tái khám", câu hỏi Q8.
 >
-> **Chức năng chưa làm.** Mục 3-6 là **ĐỀ XUẤT**, dựa trên `TreatmentPlans`, `TreatmentPlanStages`, `Patients`, `Appointments` đang có. Chốt với nhóm trước khi code.
+> **Cập nhật 11/11/2026: đã làm, theo cách khác đề xuất ban đầu.** Ngày tái khám lấy từ **phiếu khám** (`Examination.FollowUpDate`, bác sĩ đặt qua `PUT api/examinations/{id}/follow-up`), không lấy từ giai đoạn kế hoạch. Bảng trên cùng là hiện trạng code; mục 1-9 bên dưới là đề xuất cũ theo giai đoạn kế hoạch, **giữ lại để tham khảo**, chưa viết lại.
+>
+> **BR-CRM-02:** chỉ lễ tân nhắc tái khám; quản lý không tham gia. Hệ thống tự nhắc (SMS, email, thông báo trong app) lúc 8h sáng cho người tái khám ngày hôm sau (`FollowUpReminder:RunHour = 8`, `DaysAhead = 1`, `FollowUpReminderBackgroundService`).
 
 | Mục | Giá trị |
 |---|---|
 | Module | M9 Chăm sóc khách hàng và thông báo |
-| Trạng thái | ⬜ Chưa làm |
-| Vai trò được dùng | Đề xuất: `Receptionist` (gọi điện), `ClinicManager` (xem) |
-| API | Đề xuất: `GET api/recall-reminders` |
-| Code chính | Chưa có. Đề xuất: `RecallRemindersController.GetAsync` → `RecallReminderService.GetDueAsync` → `TreatmentPlanRepository` (thêm truy vấn) |
+| Trạng thái | ✅ Đã có API |
+| Vai trò được dùng | Nhắc từng người, nhắc hàng loạt: **chỉ `Receptionist`**. Xem danh sách, đặt lịch tái khám: `Receptionist`, `Doctor` (chỉ bệnh nhân của mình) |
+| API | `GET api/examinations/follow-ups`, `POST api/examinations/{id}/remind-follow-up?force=`, `POST api/examinations/follow-ups/remind-due?targetDate=`, `POST api/examinations/{id}/follow-up/schedule`; bệnh nhân: `GET api/appointments/my-follow-ups` |
+| Code chính | `FollowUpsController` → `ExaminationService.GetFollowUpsAsync` / `RemindFollowUpAsync` / `RemindDueFollowUpsAsync` / `ScheduleFollowUpAppointmentAsync` → `ExaminationRepository` |
+| Kiểm thử | `OZE.UnitTest/Controllers/FollowUpsControllerTests.cs` (quyền), `Services/Examinations/*FollowUp*Tests.cs` |
 
 ## 1. Chức năng này làm gì
 
@@ -91,12 +94,19 @@ Chưa có code. Luồng đề xuất:
 
 ## 8. Kiểm thử
 
-- Test hiện có: Chưa có.
-- Ca cần test: giai đoạn `Scheduled` trong khoảng → có; `InProgress`/`Completed`/`Cancelled` → không; kế hoạch `Draft`/`Proposed`/`Cancelled`/`Completed` → không; `ScheduledDate` null → không; quá hạn → có, `DaysUntilDue` âm; chỉ giai đoạn đầu tiên mỗi kế hoạch; mốc ngày theo giờ Việt Nam lúc gần nửa đêm UTC.
+- **Test hiện có:** Đã triển khai đầy đủ bộ unit tests:
+  - `Appointments/ScheduleFollowUpTests` (hẹn tái khám từ lượt khám).
+  - `Examinations/SetFollowUpTests` (bác sĩ ghi nhận ngày và dặn dò tái khám).
+  - `Examinations/RemindFollowUpTests` (nhắc thủ công từng bệnh nhân qua SMS/Email/InApp).
+  - `Examinations/RemindDueFollowUpsTests` (nhắc tự động theo lô các ca tái khám đến hạn).
+  - `Examinations/ScheduleFollowUpAppointmentTests` (đặt lịch hẹn tái khám chính thức).
+- Ca kiểm thử trọng tâm:
+  - Bác sĩ chỉ định ngày tái khám hợp lệ trong tương lai.
+  - Phân quyền: Chỉ lễ tân hoặc bác sĩ phụ trách mới có quyền gửi nhắc nhở hoặc đặt lịch tái khám.
+  - Xử lý gửi đồng thời đa kênh (In-App notification, SMS qua Twilio/mock, Email qua SMTP) non-blocking.
+  - Xử lý tự động qua `FollowUpReminderBackgroundService` chạy nền hằng ngày lúc 08:00 (giờ VN).
 
 ## 9. Còn thiếu / câu hỏi mở
 
-- Thiếu cột `AppointmentServices.TreatmentPlanStageId` (mục M7 tài liệu tổng): không biết lịch hẹn nào dành cho giai đoạn nào, nên không loại chính xác bệnh nhân đã đặt lịch. Tạm đánh dấu theo bệnh nhân.
-- Thiếu `TreatmentPlanStages.IntervalDays`: ngày tái khám phụ thuộc bác sĩ nhập `ScheduledDate`/`NextStageScheduledDate`; giai đoạn không có ngày sẽ không bao giờ được nhắc.
-- Q8 chưa chốt (số ngày, kênh). Nếu thêm nhắc tự động SMS/email thì dùng `ISmsSender`/`IEmailSender` hiện có và ghi `Notifications` (`NotificationType` cho phép `SMS`, `Email`).
-- Phạm vi bác sĩ xem danh sách này: chưa chốt.
+- Ghi nhận lịch sử cuộc gọi chi tiết (F-CRM-02) khi lễ tân gọi điện trực tiếp chốt lịch với bệnh nhân.
+- Tích hợp thêm kênh Zalo ZNS / SMS Brandname chính thức khi triển khai môi trường production.

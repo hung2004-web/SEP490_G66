@@ -39,6 +39,52 @@ namespace OZE.Application.Services
             return await BuildReportAsync(from, to, asOfDate: today, cancellationToken);
         }
 
+        public async Task<RevenueSeriesResponse> GetRevenueSeriesAsync(
+            RevenueSeriesQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            var to = query.To ?? DateOnly.FromDateTime(ClinicClock.Today);
+            var from = query.From ?? to.AddDays(-6);
+            ConditionGuard.Ensure(from <= to, ErrorConstants.ReportMessage.DateRangeInvalid);
+            ConditionGuard.Ensure(to.DayNumber - from.DayNumber <= 30, ErrorConstants.ReportMessage.SeriesRangeTooLarge);
+
+            var (rangeStart, _) = ClinicDayWindow(from);
+            var (_, rangeEnd) = ClinicDayWindow(to);
+            var payments = await _reportRepository.GetConfirmedPaymentsAsync(rangeStart, rangeEnd, cancellationToken);
+
+            var byDay = payments
+                .GroupBy(x => DateOnly.FromDateTime(ClinicClock.ToClinicTime(x.PaidAt)))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var days = new List<RevenueDay>();
+            for (var day = from; day <= to; day = day.AddDays(1))
+            {
+                var rows = byDay.TryGetValue(day, out var found) ? found : new List<ConfirmedPaymentRow>();
+                var cash = Round(rows.Where(x => x.PaymentMethod == PaymentConstants.Cash).Sum(x => x.Amount));
+                var transfer = Round(rows.Where(x => x.PaymentMethod != PaymentConstants.Cash).Sum(x => x.Amount));
+                days.Add(new RevenueDay
+                {
+                    Date = day,
+                    Cash = cash,
+                    Transfer = transfer,
+                    Total = cash + transfer,
+                    PaymentCount = rows.Count
+                });
+            }
+
+            return new RevenueSeriesResponse
+            {
+                FromDate = from,
+                ToDate = to,
+                CashTotal = days.Sum(x => x.Cash),
+                TransferTotal = days.Sum(x => x.Transfer),
+                Total = days.Sum(x => x.Total),
+                Days = days
+            };
+        }
+
+        private static decimal Round(decimal value) => decimal.Round(value, 2, MidpointRounding.AwayFromZero);
+
         private async Task<InvoiceReportResponse> BuildReportAsync(
             DateOnly fromDate,
             DateOnly toDate,

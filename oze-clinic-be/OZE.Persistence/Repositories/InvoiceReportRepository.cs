@@ -82,6 +82,27 @@ namespace OZE.Persistence.Repositories
             return result;
         }
 
+        public Task<List<ConfirmedPaymentRow>> GetConfirmedPaymentsAsync(
+            DateTimeOffset rangeStartInclusive,
+            DateTimeOffset rangeEndExclusive,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.Payments
+                .AsNoTracking()
+                .Where(x =>
+                    x.PaymentStatus == PaymentConstants.Confirmed
+                    && x.PaidAt != null
+                    && x.PaidAt >= rangeStartInclusive
+                    && x.PaidAt < rangeEndExclusive)
+                .Select(x => new ConfirmedPaymentRow
+                {
+                    PaymentMethod = x.PaymentMethod,
+                    Amount = x.Amount,
+                    PaidAt = x.PaidAt!.Value
+                })
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<(int Count, decimal Amount)> GetOpenOutstandingAsync(
             CancellationToken cancellationToken = default)
         {

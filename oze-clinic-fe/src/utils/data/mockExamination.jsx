@@ -12,7 +12,11 @@ export const MOCK_EXAM_QUEUE = [
     { id: 5, queueNumber: 12, patientName: "Ngô Minh Anh", status: QUEUE_STATUS.WAITING },
 ];
 
-export const MOCK_EXAM_DONE_COUNT = 2;
+// Patients already examined in this shift, in finishing order.
+export const MOCK_EXAM_DONE = [
+    { id: 101, queueNumber: 6, patientName: "Trần Văn Bình", finishedAt: "08:40" },
+    { id: 102, queueNumber: 7, patientName: "Lê Thị Cúc", finishedAt: "09:15" },
+];
 
 const GENERAL_CHECKUP = { id: 1, name: "Khám tổng quát" };
 const SCALING = { id: 2, name: "Lấy cao răng" };
@@ -104,7 +108,6 @@ const VISIT_DETAILS = {
 };
 
 // Visit record per queue entry (key = queue id): patient, booked services, check-in, history, previous visits.
-// visits[].historyItems: what "Bổ sung" copies into the dental history.
 export const MOCK_EXAM_RECORDS = {
     1: {
         encounterCode: "LK-1019-012",
@@ -122,8 +125,8 @@ export const MOCK_EXAM_RECORDS = {
         intake: { reason: "Đau răng hàm dưới, muốn lấy cao răng", checkInAt: "08:21", appointmentTime: "08:30" },
         history: { allergies: ["Penicillin"], conditions: ["Tăng huyết áp"], dental: ["Ê buốt răng", "Từng nhổ răng"] },
         visits: [
-            { id: 9001, date: "15/07/2026", doctor: "BS. Trần Minh Khoa", summary: "Lấy cao răng định kỳ · Cao răng (K03.6)", historyItems: [], detail: VISIT_DETAILS[9001] },
-            { id: 9002, date: "02/03/2026", doctor: "BS. Lê Thu Hà", summary: "Ê buốt răng 36 · Sâu ngà răng 36 (K02.1)", historyItems: ["Ê buốt răng", "Từng trám răng 36"], detail: VISIT_DETAILS[9002] },
+            { id: 9001, date: "15/07/2026", doctor: "BS. Trần Minh Khoa", summary: "Lấy cao răng định kỳ · Cao răng (K03.6)", detail: VISIT_DETAILS[9001] },
+            { id: 9002, date: "02/03/2026", doctor: "BS. Lê Thu Hà", summary: "Ê buốt răng 36 · Sâu ngà răng 36 (K02.1)", detail: VISIT_DETAILS[9002] },
         ],
     },
     2: {
@@ -141,7 +144,7 @@ export const MOCK_EXAM_RECORDS = {
         services: [ROOT_CANAL],
         intake: { reason: "Đau nhức răng hàm trên bên phải về đêm", checkInAt: "08:35", appointmentTime: "09:00" },
         history: { allergies: [], conditions: ["Tiểu đường"], dental: ["Từng điều trị tủy"] },
-        visits: [{ id: 9010, date: "10/01/2026", doctor: "BS. Trần Minh Khoa", summary: "Viêm tủy răng 16 · Điều trị tủy (K04.0)", historyItems: ["Từng điều trị tủy"], detail: VISIT_DETAILS[9010] }],
+        visits: [{ id: 9010, date: "10/01/2026", doctor: "BS. Trần Minh Khoa", summary: "Viêm tủy răng 16 · Điều trị tủy (K04.0)", detail: VISIT_DETAILS[9010] }],
     },
     3: {
         encounterCode: "LK-1019-014",
@@ -175,7 +178,7 @@ export const MOCK_EXAM_RECORDS = {
         services: [SCALING],
         intake: { reason: "Lấy cao răng định kỳ", checkInAt: "08:50", appointmentTime: "09:30" },
         history: { allergies: ["Latex (găng cao su)"], conditions: [], dental: ["Chảy máu chân răng"] },
-        visits: [{ id: 9020, date: "20/02/2026", doctor: "BS. Lê Thu Hà", summary: "Viêm lợi · Lấy cao răng (K05.1)", historyItems: ["Chảy máu chân răng"], detail: VISIT_DETAILS[9020] }],
+        visits: [{ id: 9020, date: "20/02/2026", doctor: "BS. Lê Thu Hà", summary: "Viêm lợi · Lấy cao răng (K05.1)", detail: VISIT_DETAILS[9020] }],
     },
     5: {
         encounterCode: "LK-1019-016",
@@ -222,7 +225,14 @@ export const MOCK_EXAM_DRAFTS = {
 
 export const EMPTY_EXAM_DRAFT = { symptoms: [], note: "", entries: [], films: [], diagnoses: [] };
 
-// Service types the doctor can pick for a session ("Loại dịch vụ"), per registered service id.
+// Step 4 draft: the plan session done today, what was done (items), a note, and the proposed check-up date
+// (followUpDate, "yyyy-mm-dd" or "", only once the whole plan is done).
+export const EMPTY_TREATMENT_DRAFT = { sessionId: "", items: [], note: "", followUpDate: "" };
+
+// Step 5 draft: the prescribed medicines (PrescriptionItems) and the prescription's note (Prescriptions.Notes).
+// status: "Draft" until the visit is completed, then "Finalized".
+export const EMPTY_PRESCRIPTION_DRAFT = { items: [], notes: "", status: "Draft" };
+
 export const MOCK_PLAN_SERVICE_TYPES = {
     2: [
         { id: "scaling-one", name: "Lấy cao răng một hàm", price: 150000 },
@@ -250,6 +260,8 @@ export const GENERAL_CHECKUP_SERVICE_ID = 1;
 // Patients not listed start from their registered services with one empty session each (see the service).
 export const MOCK_EXAM_PLANS = {
     1: {
+        code: "KH000102",
+        doctorName: "BS. Trần Minh Khoa",
         services: [
             {
                 id: "plan-scaling",

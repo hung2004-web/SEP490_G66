@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
@@ -15,17 +16,26 @@ namespace OZE.Application.Services
         private readonly IStaffRepository _staffRepository;
         private readonly IAppointmentService _appointmentService;
         private readonly IAuditLogService _auditLogService;
+        private readonly ISmsSender? _smsSender;
+        private readonly IEmailSender? _emailSender;
+        private readonly ILogger<ExaminationService>? _logger;
 
         public ExaminationService(
             IExaminationRepository examinationRepository,
             IStaffRepository staffRepository,
             IAppointmentService appointmentService,
-            IAuditLogService auditLogService)
+            IAuditLogService auditLogService,
+            ISmsSender? smsSender = null,
+            IEmailSender? emailSender = null,
+            ILogger<ExaminationService>? logger = null)
         {
             _examinationRepository = examinationRepository;
             _staffRepository = staffRepository;
             _appointmentService = appointmentService;
             _auditLogService = auditLogService;
+            _smsSender = smsSender;
+            _emailSender = emailSender;
+            _logger = logger;
         }
 
         public async Task<ExaminationWorkResponse> GetAsync(string userId, long examinationId, CancellationToken cancellationToken = default)
@@ -395,17 +405,22 @@ namespace OZE.Application.Services
         public async Task<ExaminationWorkResponse> SetFollowUpAsync(
             string doctorUserId, long examinationId, SaveFollowUpRequest request, CancellationToken cancellationToken = default)
         {
-            var doctor = await _staffRepository.GetByUserIdAsync(doctorUserId);
-            ConditionGuard.Ensure<NotFoundException>(doctor != null, ErrorConstants.MedicalRecordMessage.DoctorNotFound);
-
-            var examination = await _examinationRepository.GetForWorkAsync(examinationId, cancellationToken);
-            ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
-            ConditionGuard.Ensure<ForbiddenException>(examination!.DoctorId == doctor!.Id, ErrorConstants.ExaminationMessage.NotExaminingDoctor);
+            var (_, examination) = await LoadAsync(doctorUserId, examinationId, cancellationToken);
+            // Allow setting follow-up during InProgress or once Completed; only locked records cannot be changed
+            ConditionGuard.Ensure(examination.ExaminationStatus != ExaminationConstants.Locked, ErrorConstants.ExaminationMessage.AlreadyLocked);
+            examination.UpdatedAt = DateTimeOffset.UtcNow;
 
             if (request.FollowUpDate.HasValue)
             {
                 var today = DateOnly.FromDateTime(ClinicClock.Today);
                 ConditionGuard.Ensure(request.FollowUpDate.Value > today, ErrorConstants.ExaminationMessage.FollowUpDateMustBeFuture);
+            }
+            else
+            {
+                var hasActiveFollowUp = examination.FollowUpAppointment != null
+                    && examination.FollowUpAppointment.Status != AppointmentConstants.CancelledStatus
+                    && examination.FollowUpAppointment.Status != AppointmentConstants.NoShowStatus;
+                ConditionGuard.ThrowIf(hasActiveFollowUp, ErrorConstants.ExaminationMessage.FollowUpAppointmentAlreadyScheduled);
             }
 
             var notes = Clean(request.FollowUpNotes);
@@ -416,7 +431,9 @@ namespace OZE.Application.Services
 
             examination.FollowUpDate = request.FollowUpDate;
             examination.FollowUpNotes = notes;
-            examination.UpdatedAt = DateTimeOffset.UtcNow;
+            // The doctor's own date replaces a periodic recall, and a new date reopens a follow-up the patient declined
+            examination.FollowUpIsRecall = false;
+            examination.FollowUpClosed = false;
 
             await _examinationRepository.SaveChangesAsync(cancellationToken);
 
@@ -435,7 +452,13 @@ namespace OZE.Application.Services
         {
             var examination = await _examinationRepository.GetByIdWithFollowUpAsync(examinationId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
-            ConditionGuard.Ensure(examination!.FollowUpAppointmentId == null, ErrorConstants.ExaminationMessage.FollowUpAppointmentAlreadyScheduled);
+
+            var existingFollowUp = examination!.FollowUpAppointment;
+            var hasActiveFollowUp = existingFollowUp != null
+                ? (existingFollowUp.Status != AppointmentConstants.CancelledStatus
+                   && existingFollowUp.Status != AppointmentConstants.NoShowStatus)
+                : examination.FollowUpAppointmentId != null;
+            ConditionGuard.ThrowIf(hasActiveFollowUp, ErrorConstants.ExaminationMessage.FollowUpAppointmentAlreadyScheduled);
 
             return await _appointmentService.ScheduleFollowUpAsync(examination.AppointmentId, request, userId, cancellationToken);
         }
@@ -453,35 +476,23 @@ namespace OZE.Application.Services
             }
 
             var paged = await _examinationRepository.GetFollowUpsAsync(query, cancellationToken);
+            return paged.ToPagedResult(FollowUpMappingExtensions.ToFollowUpListItem);
+        }
 
-            var items = paged.Items.Select(x => new FollowUpListItemResponse
+        public async Task<List<FollowUpListItemResponse>> GetMyFollowUpsAsync(string patientUserId, CancellationToken cancellationToken = default)
+        {
+            var patient = await _examinationRepository.GetPatientByUserIdAsync(patientUserId, cancellationToken);
+            if (patient == null)
             {
-                ExaminationId = x.Id,
-                OriginalAppointmentId = x.AppointmentId,
-                OriginalAppointmentCode = $"LH{x.AppointmentId:D6}",
-                OriginalAppointmentDate = x.Appointment?.AppointmentDate ?? DateOnly.MinValue,
-                PatientId = x.PatientId,
-                PatientCode = x.Patient?.PatientCode ?? string.Empty,
-                PatientName = x.Patient?.FullName ?? string.Empty,
-                PatientPhoneNumber = x.Patient?.PhoneNumber ?? string.Empty,
-                DoctorId = x.DoctorId,
-                DoctorName = x.Doctor?.FullName ?? string.Empty,
-                FollowUpDate = x.FollowUpDate,
-                FollowUpNotes = x.FollowUpNotes,
-                FollowUpAppointmentId = x.FollowUpAppointmentId,
-                FollowUpAppointmentCode = x.FollowUpAppointment != null ? $"LH{x.FollowUpAppointment.Id:D6}" : null,
-                FollowUpAppointmentDate = x.FollowUpAppointment?.AppointmentDate,
-                FollowUpTimeSlotStart = x.FollowUpAppointment?.TimeSlotStart,
-                FollowUpAppointmentStatus = x.FollowUpAppointment?.Status,
-                LastRemindedAt = x.FollowUpRemindedAt,
-                ReminderCount = x.FollowUpReminderCount
-            }).ToList();
+                return new List<FollowUpListItemResponse>();
+            }
 
-            return new PagedResult<FollowUpListItemResponse>(items, paged.TotalCount, paged.PageNumber, paged.PageSize);
+            var exams = await _examinationRepository.GetPatientFollowUpsAsync(patient.Id, cancellationToken);
+            return exams.Select(FollowUpMappingExtensions.ToFollowUpListItem).ToList();
         }
 
         public async Task<FollowUpListItemResponse> RemindFollowUpAsync(
-            string userId, long examinationId, CancellationToken cancellationToken = default)
+            string userId, long examinationId, bool force = false, CancellationToken cancellationToken = default)
         {
             var examination = await _examinationRepository.GetByIdWithFollowUpAsync(examinationId, cancellationToken);
             ConditionGuard.Ensure<NotFoundException>(examination != null, ErrorConstants.MedicalRecordMessage.ExaminationNotFound);
@@ -490,30 +501,16 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure(followUpDate.HasValue, ErrorConstants.ExaminationMessage.FollowUpNotSet);
 
             var now = DateTimeOffset.UtcNow;
+            if (!force && examination.FollowUpRemindedAt.HasValue && now - examination.FollowUpRemindedAt.Value < TimeSpan.FromHours(4))
+            {
+                throw new BadRequestException("Follow-up reminder has already been sent recently. Please wait before reminding again.");
+            }
+
             examination.FollowUpRemindedAt = now;
             examination.FollowUpReminderCount += 1;
             examination.UpdatedAt = now;
 
-            if (!string.IsNullOrEmpty(examination.Patient?.UserId))
-            {
-                var msg = string.IsNullOrWhiteSpace(examination.FollowUpNotes)
-                    ? $"Phòng khám OZE nhắc bạn về lịch hẹn tái khám vào ngày {followUpDate!.Value:dd/MM/yyyy}."
-                    : $"Phòng khám OZE nhắc bạn về lịch hẹn tái khám vào ngày {followUpDate!.Value:dd/MM/yyyy}: {examination.FollowUpNotes}.";
-
-                var notification = new Notification
-                {
-                    UserId = examination.Patient.UserId,
-                    Title = "Nhắc lịch tái khám",
-                    Message = msg,
-                    NotificationType = "InApp",
-                    Channel = "InApp",
-                    ReferenceType = "Examination",
-                    ReferenceId = examination.Id.ToString(),
-                    DeliveryStatus = "Sent",
-                    CreatedAt = now
-                };
-                await _examinationRepository.AddNotificationAsync(notification, cancellationToken);
-            }
+            await SendFollowUpNotificationsAsync(examination, followUpDate!.Value, now, cancellationToken);
 
             await _examinationRepository.SaveChangesAsync(cancellationToken);
 
@@ -526,32 +523,223 @@ namespace OZE.Application.Services
                     examination.PatientId,
                     FollowUpDate = followUpDate,
                     ReminderCount = examination.FollowUpReminderCount,
-                    RemindedAt = now
+                    RemindedAt = now,
+                    TriggeredBy = userId
                 });
 
-            return new FollowUpListItemResponse
-            {
-                ExaminationId = examination.Id,
-                OriginalAppointmentId = examination.AppointmentId,
-                OriginalAppointmentCode = $"LH{examination.AppointmentId:D6}",
-                OriginalAppointmentDate = examination.Appointment?.AppointmentDate ?? DateOnly.MinValue,
-                PatientId = examination.PatientId,
-                PatientCode = examination.Patient?.PatientCode ?? string.Empty,
-                PatientName = examination.Patient?.FullName ?? string.Empty,
-                PatientPhoneNumber = examination.Patient?.PhoneNumber ?? string.Empty,
-                DoctorId = examination.DoctorId,
-                DoctorName = examination.Doctor?.FullName ?? string.Empty,
-                FollowUpDate = examination.FollowUpDate,
-                FollowUpNotes = examination.FollowUpNotes,
-                FollowUpAppointmentId = examination.FollowUpAppointmentId,
-                FollowUpAppointmentCode = examination.FollowUpAppointment != null ? $"LH{examination.FollowUpAppointment.Id:D6}" : null,
-                FollowUpAppointmentDate = examination.FollowUpAppointment?.AppointmentDate,
-                FollowUpTimeSlotStart = examination.FollowUpAppointment?.TimeSlotStart,
-                FollowUpAppointmentStatus = examination.FollowUpAppointment?.Status,
-                LastRemindedAt = examination.FollowUpRemindedAt,
-                ReminderCount = examination.FollowUpReminderCount
-            };
+            return examination.ToFollowUpListItem();
         }
+
+        public async Task<BatchRemindFollowUpResponse> RemindDueFollowUpsAsync(
+            DateOnly? targetDate = null,
+            string? initiatedByUserId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var effectiveTargetDate = targetDate ?? DateOnly.FromDateTime(ClinicClock.Today.AddDays(1));
+            var dueExaminations = await _examinationRepository.GetDueFollowUpsAsync(effectiveTargetDate, cancellationToken);
+
+            var response = new BatchRemindFollowUpResponse
+            {
+                TargetDate = effectiveTargetDate,
+                TotalTargeted = dueExaminations.Count
+            };
+
+            if (dueExaminations.Count == 0)
+            {
+                return response;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var successfulExams = new List<(Examination Exam, DateOnly FollowUpDate)>();
+            var inAppNotifications = new List<Notification>();
+            var syncLock = new object();
+
+            // Tối ưu 1: Gửi SMS/Email song song có kiểm soát (MaxDegreeOfParallelism = 5)
+            // Tách rời I/O mạng bên ngoài khỏi DbContext để bảo đảm thread-safety cho EF Core
+            var parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Math.Min(5, Math.Max(1, Environment.ProcessorCount)),
+                CancellationToken = cancellationToken
+            };
+
+            await Parallel.ForEachAsync(dueExaminations, parallelOptions, async (exam, ct) =>
+            {
+                try
+                {
+                    var followUpDate = exam.FollowUpDate ?? exam.FollowUpAppointment?.AppointmentDate ?? effectiveTargetDate;
+                    var msg = BuildFollowUpMessage(exam, followUpDate);
+
+                    // Gửi đồng thời SMS và Email cho bệnh nhân (non-blocking, parallel)
+                    await SendExternalRemindersAsync(exam.Patient, msg, exam.Id);
+
+                    Notification? inAppNotification = !string.IsNullOrEmpty(exam.Patient?.UserId)
+                        ? CreateFollowUpInAppNotification(exam.Patient.UserId, msg, exam.Id, now)
+                        : null;
+
+                    lock (syncLock)
+                    {
+                        successfulExams.Add((exam, followUpDate));
+                        if (inAppNotification != null)
+                        {
+                            inAppNotifications.Add(inAppNotification);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Failed to send automatic reminder for examination {ExaminationId}", exam.Id);
+                    lock (syncLock)
+                    {
+                        response.FailedCount++;
+                    }
+                }
+            });
+
+            // Tối ưu 2: Cập nhật Entity State & thêm InApp Notifications trên DbContext theo luồng an toàn
+            foreach (var (exam, _) in successfulExams)
+            {
+                exam.FollowUpRemindedAt = now;
+                exam.FollowUpReminderCount += 1;
+                exam.UpdatedAt = now;
+            }
+
+            foreach (var notification in inAppNotifications)
+            {
+                await _examinationRepository.AddNotificationAsync(notification, cancellationToken);
+            }
+
+            // Tối ưu 3: Commit toàn bộ batch trong 1 round-trip duy nhất xuống Database (thay vì N lần SaveChanges)
+            if (successfulExams.Count > 0)
+            {
+                try
+                {
+                    await _examinationRepository.SaveChangesAsync(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Failed to batch save examination follow-up reminders to database.");
+                    throw;
+                }
+            }
+
+            // Tối ưu 4: Ghi Audit Log và lập danh sách kết quả phản hồi
+            foreach (var (exam, followUpDate) in successfulExams)
+            {
+                try
+                {
+                    await _auditLogService.LogAsync(
+                        AuditConstants.FollowUpReminded,
+                        AuditConstants.ExaminationEntity,
+                        exam.Id.ToString(),
+                        newValues: new
+                        {
+                            exam.PatientId,
+                            FollowUpDate = followUpDate,
+                            ReminderCount = exam.FollowUpReminderCount,
+                            RemindedAt = now,
+                            TriggeredBy = initiatedByUserId ?? "System_AutoWorker"
+                        });
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to log audit entry for follow-up reminder on exam {ExaminationId}", exam.Id);
+                }
+
+                response.RemindedItems.Add(exam.ToFollowUpListItem());
+                response.RemindedCount++;
+            }
+
+            return response;
+        }
+
+        private static string BuildFollowUpMessage(Examination exam, DateOnly followUpDate)
+        {
+            var followUpAppt = exam.FollowUpAppointment;
+            var notes = string.IsNullOrWhiteSpace(exam.FollowUpNotes) ? string.Empty : $" Ghi chú: {exam.FollowUpNotes.Trim()}.";
+
+            if (followUpAppt != null && followUpAppt.TimeSlotStart.HasValue)
+            {
+                var doctorName = followUpAppt.Doctor?.FullName ?? exam.Doctor?.FullName;
+                var doctorText = !string.IsNullOrWhiteSpace(doctorName) ? $" với {doctorName}" : string.Empty;
+                return $"Phòng khám OZE nhắc bạn có lịch hẹn tái khám vào lúc {followUpAppt.TimeSlotStart.Value:HH\\:mm} ngày {followUpAppt.AppointmentDate:dd/MM/yyyy}{doctorText}.{notes}";
+            }
+
+            return $"Phòng khám OZE nhắc bạn về lịch hẹn tái khám vào ngày {followUpDate:dd/MM/yyyy}.{notes} Vui lòng liên hệ phòng khám để xác nhận giờ hẹn khám phù hợp.";
+        }
+
+        private async Task SendExternalRemindersAsync(Patient? patient, string message, long examinationId)
+        {
+            var tasks = new List<Task>();
+
+            if (_smsSender != null && !string.IsNullOrWhiteSpace(patient?.PhoneNumber))
+            {
+                tasks.Add(SendSmsSafeAsync(patient.PhoneNumber, message, examinationId));
+            }
+
+            if (_emailSender != null && !string.IsNullOrWhiteSpace(patient?.Email))
+            {
+                tasks.Add(SendEmailSafeAsync(patient.Email, message, examinationId));
+            }
+
+            if (tasks.Count > 0)
+            {
+                await Task.WhenAll(tasks);
+            }
+        }
+
+        private async Task SendSmsSafeAsync(string phoneNumber, string message, long examinationId)
+        {
+            try
+            {
+                await _smsSender!.SendSmsAsync(phoneNumber, message);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Could not send SMS follow-up reminder for examination {ExaminationId} to {Phone}", examinationId, phoneNumber);
+            }
+        }
+
+        private async Task SendEmailSafeAsync(string email, string message, long examinationId)
+        {
+            try
+            {
+                await _emailSender!.SendEmailAsync(email, "Phòng khám OZE - Nhắc lịch tái khám", message);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Could not send Email follow-up reminder for examination {ExaminationId} to {Email}", examinationId, email);
+            }
+        }
+
+        private async Task SendFollowUpNotificationsAsync(
+            Examination examination, DateOnly followUpDate, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            var msg = BuildFollowUpMessage(examination, followUpDate);
+
+            // 1. In-App Notification (cho bệnh nhân có tài khoản)
+            if (!string.IsNullOrEmpty(examination.Patient?.UserId))
+            {
+                var notification = CreateFollowUpInAppNotification(examination.Patient.UserId, msg, examination.Id, now);
+                await _examinationRepository.AddNotificationAsync(notification, cancellationToken);
+            }
+
+            // 2 & 3. SMS & Email chạy đồng thời (non-blocking song song)
+            await SendExternalRemindersAsync(examination.Patient, msg, examination.Id);
+        }
+
+        private static Notification CreateFollowUpInAppNotification(string userId, string message, long examinationId, DateTimeOffset createdAt) =>
+            new()
+            {
+                UserId = userId,
+                Title = "Nhắc lịch tái khám",
+                Message = message,
+                NotificationType = "InApp",
+                Channel = "InApp",
+                ReferenceType = "Examination",
+                ReferenceId = examinationId.ToString(),
+                DeliveryStatus = "Sent",
+                CreatedAt = createdAt
+            };
 
         // The service and the variant the request names: both must exist and be active, the variant must belong to the service
         private async Task<(Service Service, ServiceVariant? Variant)> ResolveServiceAsync(SaveExaminationServiceRequest request, CancellationToken cancellationToken)
@@ -791,21 +979,7 @@ namespace OZE.Application.Services
             FollowUpDate = examination.FollowUpDate,
             FollowUpNotes = examination.FollowUpNotes,
             FollowUpAppointmentId = examination.FollowUpAppointmentId,
-            FollowUp = examination.FollowUpDate != null || examination.FollowUpAppointmentId != null ? new FollowUpSummaryResponse
-            {
-                FollowUpDate = examination.FollowUpDate,
-                FollowUpNotes = examination.FollowUpNotes,
-                AppointmentId = examination.FollowUpAppointmentId,
-                AppointmentCode = examination.FollowUpAppointment != null ? $"LH{examination.FollowUpAppointment.Id:D6}" : null,
-                AppointmentDate = examination.FollowUpAppointment?.AppointmentDate,
-                TimeSlotStart = examination.FollowUpAppointment?.TimeSlotStart,
-                TimeSlotEnd = examination.FollowUpAppointment?.TimeSlotEnd,
-                DoctorId = examination.FollowUpAppointment?.DoctorId,
-                DoctorName = examination.FollowUpAppointment?.Doctor?.FullName,
-                Status = examination.FollowUpAppointment?.Status,
-                RemindedAt = examination.FollowUpRemindedAt,
-                ReminderCount = examination.FollowUpReminderCount
-            } : null,
+            FollowUp = examination.ToFollowUpSummary(),
             Services = ToServiceResponses(examination, examination.Appointment.ServiceItems),
             Diagnoses = ToDiagnosisResponses(examination.Diagnoses),
             Prescription = ToPrescriptionResponse(examination)

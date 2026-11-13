@@ -52,6 +52,15 @@ namespace OZE.Controllers
                 "Appointment request received. The receptionist will call to confirm."));
         }
 
+        // POST api/appointments/reception-booking (F-APT-09): booked by the receptionist, confirmed at once
+        [HttpPost("reception-booking")]
+        [Authorize(Roles = RoleConstants.ReceptionistRole)]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> BookByReceptionistAsync([FromBody] ReceptionBookingRequest request)
+        {
+            var appointment = await _appointmentService.BookByReceptionistAsync(request, CurrentUserId ?? string.Empty);
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(appointment, "Appointment has been booked and confirmed."));
+        }
+
         // POST api/appointments
         [HttpPost]
         [Authorize(Roles = RoleConstants.PatientRole)]
@@ -160,6 +169,19 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// Retrieves the signed-in patient's own follow-up recommendations and history.
+        /// </summary>
+        [HttpGet("my-follow-ups")]
+        [Authorize(Roles = RoleConstants.PatientRole)]
+        public async Task<ActionResult<ApiResponse<List<FollowUpListItemResponse>>>> GetMyFollowUpsAsync(
+            [FromServices] IExaminationService examinationService,
+            CancellationToken cancellationToken)
+        {
+            var result = await examinationService.GetMyFollowUpsAsync(CurrentUserId ?? string.Empty, cancellationToken);
+            return Ok(ApiResponse<List<FollowUpListItemResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
         /// Retrieves appointment details by appointment ID.
         /// </summary>
         [HttpGet("{id:long}")]
@@ -265,14 +287,17 @@ namespace OZE.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _appointmentService.CompleteExaminationAsync(id, CurrentUserId ?? string.Empty, cancellationToken);
-            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, "Examination completed successfully"));
+            var message = result.PaymentWarnings.Count > 0
+                ? ErrorConstants.PaymentWarningMessage.ExaminationCompletedWithWarnings
+                : ErrorConstants.PaymentWarningMessage.ExaminationCompleted;
+            return Ok(ApiResponse<AppointmentResponse>.SuccessResult(result, message));
         }
 
         /// <summary>
         /// Schedules a follow-up appointment for a finished or in-service visit.
         /// </summary>
         [HttpPost("{id:long}/follow-up")]
-        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole}")]
         public async Task<ActionResult<ApiResponse<AppointmentResponse>>> ScheduleFollowUpAsync(
             [FromRoute] long id,
             [FromBody] ScheduleFollowUpRequest request,
@@ -286,13 +311,13 @@ namespace OZE.Controllers
         /// Retrieves the follow-up reminder list for receptionist and doctors.
         /// </summary>
         [HttpGet("follow-ups")]
-        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        [Authorize(Roles = $"{RoleConstants.DoctorRole},{RoleConstants.ReceptionistRole}")]
         public async Task<ActionResult<ApiResponse<PagedResult<FollowUpListItemResponse>>>> GetFollowUpsAsync(
             [FromQuery] FollowUpQueryParameters query,
             [FromServices] IExaminationService examinationService,
             CancellationToken cancellationToken)
         {
-            var doctorUserId = IsInRole(RoleConstants.DoctorRole) ? CurrentUserId : null;
+            var doctorUserId = IsInRole(RoleConstants.ReceptionistRole) ? null : CurrentUserId;
             var result = await examinationService.GetFollowUpsAsync(query, doctorUserId, cancellationToken);
             return Ok(ApiResponse<PagedResult<FollowUpListItemResponse>>.SuccessResult(result));
         }

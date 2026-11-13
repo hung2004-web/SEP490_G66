@@ -36,6 +36,11 @@ namespace OZE.Persistence.Repositories
             await _context.Patients.AddAsync(patient);
         }
 
+        public Task<Patient?> GetPatientByIdAsync(int patientId)
+        {
+            return _context.Patients.FirstOrDefaultAsync(x => x.Id == patientId && x.DeletedAt == null);
+        }
+
         public async Task<Patient?> GetPatientByUserIdAsync(string userId)
         {
             return await _context.Patients
@@ -134,6 +139,7 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x!.FollowUpAppointment)
                         .ThenInclude(x => x!.Doctor)
                 .Include(x => x.ParentAppointment)
+                    .ThenInclude(x => x!.Examination)
                 .Include(x => x.Examination)
                 .Include(x => x.QueueEntries)
                     .ThenInclude(x => x.Room)
@@ -233,12 +239,13 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x!.FollowUpAppointment)
                         .ThenInclude(x => x!.Doctor)
                 .Include(x => x.ParentAppointment)
+                    .ThenInclude(x => x!.Examination)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Variant)
                 .Include(x => x.Examination)
-                    .ThenInclude(x => x.ImagingRequests)
+                    .ThenInclude(x => x!.ImagingRequests)
                 .Include(x => x.QueueEntries)
                     .ThenInclude(x => x.Room)
                 .Where(x => x.AppointmentDate == date && x.Status == AppointmentConstants.CheckedInStatus);
@@ -276,6 +283,7 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x!.FollowUpAppointment)
                         .ThenInclude(x => x!.Doctor)
                 .Include(x => x.ParentAppointment)
+                    .ThenInclude(x => x!.Examination)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
                 .Include(x => x.ServiceItems)
@@ -292,6 +300,7 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x!.FollowUpAppointment)
                         .ThenInclude(x => x!.Doctor)
                 .Include(x => x.ParentAppointment)
+                    .ThenInclude(x => x!.Examination)
                 .Include(x => x.Examination)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
@@ -345,6 +354,7 @@ namespace OZE.Persistence.Repositories
                     .ThenInclude(x => x!.FollowUpAppointment)
                         .ThenInclude(x => x!.Doctor)
                 .Include(x => x.ParentAppointment)
+                    .ThenInclude(x => x!.Examination)
                 .Include(x => x.ServiceItems)
                     .ThenInclude(x => x.Service)
                 .Include(x => x.ServiceItems)

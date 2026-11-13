@@ -9,6 +9,8 @@ namespace OZE.Domain.Entities
         public decimal ReferencePrice { get; set; }
         public int? EstimatedMinutes { get; set; }
         public string? RequiredRoomType { get; set; }
+        // Months until the patient should come back for this service (e.g. scaling every 6 months); null = no recall
+        public int? RecallIntervalMonths { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }

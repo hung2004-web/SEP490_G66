@@ -123,7 +123,7 @@ Tác động lên danh sách chờ khám: `AppointmentRepository.GetWaitingAppoi
 
 ## 8. Kiểm thử
 
-- Test hiện có (`ImagingRequestServiceTests`): `CreateAsync_ShouldSavePendingRequest_AndNotifyActiveTechnicians`, `CreateAsync_ShouldRejectMissingFields`, `CreateAsync_ShouldRejectImagingTypeOutsideTheAllowedList`, `CreateAsync_ShouldRejectExaminationThatIsNotInProgress`, `CreateAsync_ShouldRejectDoctorWhoIsNotExaminingThisVisit`, `CreateAsync_ShouldReturnNotFound_WhenExaminationDoesNotExist`, `CreateAsync_ShouldReturnNotFound_WhenDoctorProfileDoesNotExist`; xem: `GetByExaminationAsync_*` (4 ca), `GetByIdAsync_*` (3 ca).
+- Test hiện có (`Services/Imaging/CreateImagingRequestTests`): `CreateAsync_ShouldSavePendingRequest_AndNotifyActiveTechnicians`, `CreateAsync_ShouldRejectMissingFields`, `CreateAsync_ShouldRejectImagingTypeOutsideTheAllowedList`, `CreateAsync_ShouldRejectExaminationThatIsNotInProgress`, `CreateAsync_ShouldRejectDoctorWhoIsNotExaminingThisVisit`, `CreateAsync_ShouldReturnNotFound_WhenExaminationDoesNotExist`, `CreateAsync_ShouldReturnNotFound_WhenDoctorProfileDoesNotExist`; xem: `GetByExaminationAsync_*` (4 ca), `GetByIdAsync_*` (3 ca).
 - Ca cần test thêm: service trong test được tạo **không có** `IAppointmentRepository`, `IQueueService`, nên chưa test lịch về `CHECKED_IN`, mục hàng chờ `Examination` về `WAITING`, thêm mục `Imaging`; độ dài `TargetArea` 201 / `ClinicalIndication` 501; không có kỹ thuật viên nào đang hoạt động (không ghi `Notification`).
 
 ## 9. Còn thiếu / câu hỏi mở

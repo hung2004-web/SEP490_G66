@@ -169,7 +169,7 @@ DTO `ResetPasswordRequest`:
 
 ## 8. Kiểm thử
 
-- `AuthServiceTests`:
+- `Services/Auth/*Tests`:
   - `ForgotPasswordAsync_WhenPatientPhoneNeverConfirmed_ShouldNotSendCode`
   - `ForgotPasswordAsync_WhenStaffEmailNotConfirmed_ShouldStillSendCode`
   - `ForgotPasswordAsync_WithEmail_ShouldSendCodeByEmailAndSaveSession`

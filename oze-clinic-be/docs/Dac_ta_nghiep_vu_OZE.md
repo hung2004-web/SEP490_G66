@@ -38,6 +38,8 @@ Mỗi chức năng được mô tả theo cùng một khung: **Mã · Vai trò �
 | Tạo, sửa, xóa nháp, đề xuất kế hoạch điều trị | | | ✔ | | |
 | Xem, duyệt, hủy kế hoạch điều trị | (xem của mình, ⬜) | ✔ | ✔ | | |
 | Hóa đơn, thu tiền, công nợ, chốt ca | | ✔ | | | ✔ |
+| Nhắc tái khám (từng người, hàng loạt) | | ✔ | | | |
+| Xem danh sách tái khám, đặt lịch tái khám | | ✔ | ✔ (bệnh nhân của mình) | | |
 | Duyệt hoàn tiền | | | | | ✔ |
 | Nhân viên, phòng, dịch vụ, ca, cấu hình | | | | | ✔ |
 
@@ -152,7 +154,7 @@ flowchart LR
 | F-ADM-04 | Dịch vụ và nhóm dịch vụ, bật/tắt | `api/services` | ✅ (CRUD biến thể cho admin ⬜) |
 | F-ADM-05 | Ca làm việc, lịch bác sĩ, mở lại ca | `api/work-shifts`, `api/doctor-schedules` | ✅ |
 | F-ADM-06 | Sửa cấu hình hệ thống | | ⬜ |
-| F-ADM-07 | Đơn nghỉ phép | | ⬜ |
+| F-ADM-07 | Đơn nghỉ phép, lịch làm việc của tôi, bác sĩ trong ca hôm nay | `api/leave-requests`, `api/schedules/my`, `api/schedules/doctors-on-duty` | ✅ |
 
 | Mã | Quy tắc |
 |---|---|
@@ -160,6 +162,10 @@ flowchart LR
 | BR-ADM-02 | Vô hiệu hóa nhân viên thì thu hồi refresh token, lần làm mới sau báo `ACCOUNT_DISABLED` |
 | BR-ADM-03 | Phòng còn ca sắp tới thì không đổi loại hoặc ngừng hoạt động; phòng đã có lịch sử thì không xóa, chỉ đặt `Inactive` |
 | BR-ADM-04 | Dịch vụ đang được dùng thì không xóa; mã dịch vụ không trùng; giá ≥ 0, thời lượng > 0 |
+| BR-ADM-05 | Xin nghỉ theo **ngày hoặc nửa ngày** (ca bắt đầu trước 12:00 là sáng), chỉ cho ca **chưa bắt đầu**; phải có ca trong thời gian đó; không có hai đơn `Pending`/`Approved` chồng nhau |
+| BR-ADM-06 | Ca có lịch hẹn chỉ được duyệt nghỉ khi có **người thay cùng vai trò, đang rảnh**; ca và lịch hẹn chuyển sang người thay, **không hủy lịch của bệnh nhân** |
+| BR-ADM-07 | Từ chối đơn bắt buộc lý do; người gửi chỉ rút được đơn còn `Pending`; mọi thao tác ghi `AuditLog` |
+| BR-ADM-08 | Duyệt nghỉ không có người thay thì ca bị đánh vắng (`IsPresent = false`), không còn slot đặt lịch |
 
 ### M3. Đặt lịch
 
@@ -173,8 +179,9 @@ flowchart LR
 | F-APT-06 | Xác nhận lịch | Lễ tân | `POST {id}/confirm` | ✅ |
 | F-APT-07 | Hủy lịch | Bệnh nhân, lễ tân, quản lý | `POST {id}/cancel` | ✅ |
 | F-APT-08 | Đổi lịch | Bệnh nhân, lễ tân | `POST {id}/reschedule` | ✅ |
-| F-APT-09 | Lễ tân đặt hộ (tự xác nhận) | Lễ tân | | ⬜ (đang dùng `guest-booking` rồi xác nhận tay) |
+| F-APT-09 | Lễ tân đặt hộ (tự xác nhận): bệnh nhân có sẵn hoặc mới theo số điện thoại; màn Quản lý lịch hẹn (lịch tuần), Hồ sơ bệnh nhân, Yêu cầu tư vấn | Lễ tân | `POST api/appointments/reception-booking` | ✅ |
 | F-APT-10 | Cảnh báo lịch `PENDING` quá hạn xác nhận | Lễ tân | | ⬜ |
+| F-APT-11 | Ghi kết quả liên lạc với khách (gọi đi, khách gọi đến) và đặt lại lịch đã hủy | Lễ tân | Đề xuất `POST/GET {id}/contact-attempts`, `POST {id}/rebook` | ⬜ **Đề xuất, chờ nhóm chốt** |
 
 | Mã | Quy tắc |
 |---|---|
@@ -187,6 +194,17 @@ flowchart LR
 | BR-APT-07 | Lễ tân và quản lý hủy mọi lúc, **bắt buộc lý do**. Hủy xong các dịch vụ chưa làm chuyển `CANCELLED` |
 | BR-APT-08 | Đổi lịch: bệnh nhân tự đổi lịch `PENDING` trong hạn; lịch `CONFIRMED` phải qua lễ tân. Đổi lịch **sửa trên lịch cũ** và ghi audit, không tạo lịch mới |
 | BR-APT-09 | Số điện thoại đã có tài khoản thì khách vãng lai phải đăng nhập để đặt |
+
+**Đề xuất 11/11/2026, chờ nhóm chốt (F-APT-11).** Web không ghi lại được cuộc gọi bằng điện thoại ngoài, nên hệ thống không chứng minh lễ tân đã gọi; hệ thống lưu **lời khai có ghi danh**: ai, lúc nào, kết quả gì. Chi tiết: [F-APT-11](chuc-nang/M3-dat-lich/F-APT-11_ghi-nhan-lien-lac.md).
+
+| Mã | Quy tắc |
+|---|---|
+| BR-APT-10 | Mỗi lần liên lạc với khách về một lịch hẹn ghi **một dòng nhật ký**: chiều (lễ tân gọi đi / khách gọi đến), người ghi, thời điểm, kết quả, ghi chú. Nhật ký **không sửa, không xóa** |
+| BR-APT-11 | Lễ tân xác nhận lịch `PENDING` bằng cách **ghi kết quả liên lạc**, không bấm xác nhận trống. Kết quả quyết định trạng thái: *Đã xác nhận, đúng thông tin* → `CONFIRMED`; *Đã xác nhận, có sửa thông tin* → sửa hồ sơ rồi `CONFIRMED`; *Khách muốn đổi giờ* → đổi lịch (BR-APT-08) và `CONFIRMED`; *Không liên lạc được* → giữ `PENDING`, tăng số lần gọi; *Sai số / không phải người đặt* → `CANCELLED`; *Khách báo hủy* → `CANCELLED` |
+| BR-APT-12 | *Đã xác nhận, có sửa thông tin*: sửa hồ sơ và chuyển `CONFIRMED` **trong cùng một giao dịch**; sửa không hợp lệ thì lịch giữ `PENDING`. Nhật ký lưu giá trị cũ và mới. Bệnh nhân có tài khoản: lễ tân **không sửa SĐT, email** (bệnh nhân tự đổi qua `PUT api/me`). SMS/email xác nhận gửi tới thông tin **sau khi sửa** |
+| BR-APT-13 | *Không liên lạc được*: cách lần gọi trước ít nhất `Booking.ContactRetryMinutes` (15). Sau `Booking.ContactMaxAttempts` (3) lần, lịch được đánh dấu đỏ và gợi ý hủy với lý do "Không liên lạc được"; **lễ tân quyết định**, hệ thống không tự hủy (Q10) |
+| BR-APT-14 | Khách gọi lại sau khi lịch đổi trạng thái: `PENDING` → xác nhận như BR-APT-11; `CONFIRMED` → hủy, đổi giờ, sửa thông tin như bình thường, có ghi nhật ký "khách gọi đến"; `CANCELLED` → **không mở lại lịch cũ**, dùng **"Đặt lại"**: tạo lịch mới cùng bệnh nhân, dịch vụ, bác sĩ, giữ giờ cũ nếu còn trống (không thì gợi ý giờ gần nhất), lịch mới `CONFIRMED` ngay và liên kết với lịch cũ |
+| BR-APT-15 | Lịch còn `PENDING` khi giờ hẹn còn dưới `Booking.PendingWarnHours` (2) giờ được đưa lên đầu danh sách lễ tân và đánh dấu cảnh báo (F-APT-10) |
 
 ### M4. Tiếp đón và hàng chờ
 
@@ -294,12 +312,14 @@ flowchart LR
 
 | Mã | Chức năng | API | Trạng thái |
 |---|---|---|---|
-| F-PAY-01 | Lập hóa đơn | `POST api/invoices` | 🟡 (thiếu kiểm tra, xem BR-PAY-01..03) |
-| F-PAY-02 | Xem hóa đơn, hóa đơn theo bệnh nhân, danh sách công nợ | | ⬜ |
-| F-PAY-03 | Thu tiền | `POST api/invoices/{id}/payments` | ⬜ |
-| F-PAY-04 | Ứng trước và trả góp | | ⬜ (chờ quy tắc) |
-| F-PAY-05 | Hủy hóa đơn, hoàn tiền | | ⬜ |
-| F-PAY-06 | Chốt ca, báo cáo cuối ngày | | ⬜ |
+| F-PAY-01 | Lập hóa đơn (màn Thu tiền: lượt khám xong chưa có hóa đơn, điền sẵn dịch vụ đã làm) | `POST api/invoices` | 🟡 (backend còn thiếu kiểm tra, xem BR-PAY-01..03) |
+| F-PAY-02 | Xem hóa đơn; **công nợ bệnh nhân** (còn nợ, kỳ góp đến hạn/quá hạn) | `GET api/debts` | ✅ |
+| F-PAY-07 | **Nhắc thanh toán** (SMS, email): lễ tân bấm nhắc; hệ thống tự nhắc kỳ góp đến hạn ngày mai và kỳ quá hạn mỗi tuần | `POST api/debts/{invoiceId}/remind`, `PaymentReminderBackgroundService` | ✅ |
+| F-PAY-08 | **Đối soát cuối ngày** (quản lý): các két trong ngày, tiền theo phương thức, chuyển khoản chờ, hoàn tiền; chốt sổ ngày | `api/reconciliations/daily` | ✅ |
+| F-PAY-03 | Thu tiền | `POST api/invoices/{id}/payments` | ✅ |
+| F-PAY-04 | Ứng trước và trả góp | | 🟡 (chưa kiểm BR-PAY-06) |
+| F-PAY-05 | Hủy hóa đơn, hoàn tiền (lễ tân gửi yêu cầu ở màn Thu tiền, quản lý duyệt ở màn Duyệt hoàn tiền) | `api/invoices/{id}/refund-requests`, `api/refund-requests` | ✅ |
+| F-PAY-06 | Chốt ca (két tiền mặt, khoản chi, đếm tiền, bàn giao), báo cáo cuối ngày, biểu đồ doanh thu theo ngày | `api/cash-sessions`, `api/invoice-reports/*` | ✅ |
 
 | Mã | Quy tắc |
 |---|---|
@@ -311,18 +331,28 @@ flowchart LR
 | BR-PAY-06 | Ứng trước **1/3 đến 1/2** giá kế hoạch (chờ chốt mức, mục 8) |
 | BR-PAY-07 | Hoàn tiền = tiền ứng trước − phần đã làm; **chủ phòng khám duyệt** qua `RefundAdjustmentRequest` |
 | BR-PAY-08 | Trễ hạn trả góp **chỉ nhắc qua điện thoại**, không phạt, không khóa điều trị |
+| BR-PAY-09 | Mỗi lễ tân **một két đang mở**. Tiền mặt phải có = đầu ca + tiền mặt **chính lễ tân đó** thu trong ca − khoản chi; chuyển khoản không tính vào két; không chi quá số đang có |
+| BR-PAY-10 | Chốt ca: đếm tiền thực tế, **có chênh lệch thì bắt buộc ghi chú**; người nhận là lễ tân khác hoặc trống (chốt cuối ngày); số đã chốt **không thay đổi** về sau |
+| BR-PAY-11 | Nhắc thanh toán chỉ khi hóa đơn còn nợ và bệnh nhân có số điện thoại hoặc email. Lễ tân nhắc lại cùng hóa đơn trong vòng **4 giờ** phải xác nhận. Mỗi lần nhắc lưu nội dung, kênh, người gửi (`PaymentReminders`). Nhắc không gửi được qua kênh nào thì không ghi là đã nhắc |
+| BR-PAY-12 | Hệ thống tự nhắc lúc 8 giờ: kỳ góp **đến hạn ngày mai** (một lần), kỳ **quá hạn** tối đa **mỗi 7 ngày một lần**. Không phạt, không khóa điều trị (BR-PAY-08) |
+| BR-PAY-13 | Đối soát ngày: **không chốt khi còn két của ngày đó chưa bàn giao**; có chênh lệch két, tiền mặt thu khi không mở két hoặc chuyển khoản còn chờ thì **bắt buộc ghi chú**. Mỗi ngày chốt một lần, số liệu lưu cố định (`DailyReconciliations`) |
 
 ### M9. Chăm sóc khách hàng và thông báo
 
 | Mã | Chức năng | Trạng thái |
 |---|---|---|
-| F-CRM-01 | Danh sách bệnh nhân cần nhắc tái khám (giai đoạn sắp đến hạn) | ⬜ |
-| F-CRM-02 | Nhật ký gọi nhắc (đã gọi, hẹn lại, không nghe máy) | ⬜ |
+| F-CRM-01 | Danh sách tái khám (3 nhóm: sắp đến hạn, quá hạn chưa đặt, đã đặt lịch), nhắc tái khám, đặt lịch tái khám | ✅ |
+| F-CRM-05 | **Yêu cầu tư vấn** từ trang web: khách để tên, số điện thoại; lễ tân gọi lại, đặt lịch hoặc ghi kết quả (Mới, Đã liên hệ, Đã đặt lịch, Đã đóng) | ✅ |
+| F-CRM-04 | **Nhắc tái khám định kỳ theo dịch vụ** (`Services.RecallIntervalMonths`, ví dụ lấy cao răng 6 tháng) | ✅ |
+| F-CRM-02 | Nhật ký gọi nhắc: đã đặt lịch, hẹn gọi lại, không liên lạc được, không quay lại (`api/examinations/{id}/follow-up/contacts`) | ✅ |
 | F-CRM-03 | API đọc thông báo trong hệ thống | ⬜ (đã ghi `Notification` khi tạo chỉ định phim) |
 
 | Mã | Quy tắc |
 |---|---|
 | BR-CRM-01 | Kế hoạch có ngày tái khám, **lễ tân gọi chốt giờ** rồi đặt lịch cho giai đoạn đó |
+| BR-CRM-02 | **Chỉ lễ tân** nhắc tái khám (từng người hoặc hàng loạt). Quản lý không tham gia nhắc tái khám. Bác sĩ đặt ngày tái khám và xem danh sách bệnh nhân của mình. Hệ thống tự gửi nhắc (SMS, email, thông báo) lúc 8h sáng cho người tái khám ngày hôm sau |
+| BR-CRM-03 | Khám xong mà bác sĩ **không** đặt ngày tái khám: nếu có dịch vụ có chu kỳ nhắc thì hệ thống tự đặt ngày tái khám = hôm nay + chu kỳ **ngắn nhất**, đánh dấu "Định kỳ". Ngày bác sĩ tự đặt luôn được ưu tiên |
+| BR-CRM-04 | Mỗi cuộc gọi chăm sóc ghi **một dòng nhật ký** (kết quả, ghi chú, người gọi, thời điểm), không sửa xóa. "Hẹn gọi lại" bắt buộc ngày gọi lại ≥ hôm nay. "Không quay lại" **đóng** lượt tái khám: hệ thống thôi nhắc và ẩn khỏi danh sách |
 
 ---
 
@@ -350,6 +380,9 @@ Bệnh nhân A đặt khám tổng quát 9:00 thứ Hai.
 | `Booking.MinHoursAhead` | 2 | BR-APT-04 |
 | `Booking.CancelCutoffHours` | 24 | BR-APT-06, BR-APT-08 |
 | `Booking.GeneralExamServiceCode` | (phải seed tay) | BR-APT-01 |
+| `Booking.ContactRetryMinutes` | 15 (đề xuất, chưa có) | BR-APT-13 |
+| `Booking.ContactMaxAttempts` | 3 (đề xuất, chưa có) | BR-APT-13 |
+| `Booking.PendingWarnHours` | 2 (đề xuất, chưa có) | BR-APT-15 |
 | `Clinic.SlotDurationMinutes` | 30 | F-APT-02 (bước nhảy giờ bắt đầu slot; slot cắt theo giờ ca bác sĩ) |
 | `CheckIn.LateMinutes` | 15 | BR-RCP-02 (check-in sau giờ hẹn + số phút này thì tính là đến trễ) |
 | `Clinic.WorkStartTime` / `WorkEndTime` | 08:00 / 17:00 | **Có trong DB nhưng code chưa đọc** |
@@ -379,6 +412,7 @@ Chưa chốt thì làm theo cột "Mặc định tạm" và ghi rõ trong code l
 | Q13 | Một buổi làm nhiều giai đoạn được không? | Được |
 | Q14 | Bệnh nhân xem và đồng ý kế hoạch trên app hay chỉ tại quầy? | Xem trên app, đồng ý tại quầy |
 | Q15 | Báo cáo cuối ngày gồm những số liệu nào? | Số lượt khám, NO_SHOW, doanh thu theo phương thức, công nợ |
+| Q16 | Xác nhận lịch: có cần bước bệnh nhân tự xác nhận (OTP khi đặt, link trong SMS/email) để giảm cuộc gọi không? Lịch từ tài khoản đã xác minh OTP có tự `CONFIRMED` không? | Chưa làm; trước mắt chỉ làm nhật ký liên lạc (BR-APT-10..15). Tự xác nhận và click-to-call ghi vào hướng phát triển |
 
 ---
 
@@ -388,3 +422,10 @@ Chưa chốt thì làm theo cột "Mặc định tạm" và ghi rõ trong code l
 |---|---|---|
 | 10/11/2026 | HiepNX | Tạo tài liệu từ code hiện tại, biên bản họp và hai tài liệu tổng quan |
 | 10/11/2026 | HiepNX | Tách 68 chức năng ra `chuc-nang/`. Sửa theo code: BR-APT-01 (giá khám tổng quát), BR-APT-02 (dịch vụ và biến thể), vòng đời phiếu khám và chỉ định chụp, các khóa cấu hình code chưa đọc |
+| 11/11/2026 | HiepNX | Chốt BR-CRM-02: chỉ lễ tân nhắc tái khám, quản lý không tham gia. Thêm 2 dòng vào ma trận quyền. Code: tách API tái khám sang `FollowUpsController` (trước đây quyền Doctor của `ExaminationsController` chặn lễ tân 403) |
+| 11/11/2026 | HiepNX | Viết lại 6 file M8 (`F-PAY-01..06`) theo code hiện tại; cập nhật trạng thái bảng M8. Không đổi BR-PAY; chỗ code lệch BR và câu hỏi Q1, Q2, Q4, Q5, Q6 code đã quyết khác mặc định ghi ở mục 9 từng file |
+| 11/11/2026 | HiepNX | Làm F-ADM-07 (đơn nghỉ phép theo ngày/nửa ngày, duyệt có người thay, lịch làm việc của tôi, bác sĩ trong ca) và hoàn tất F-PAY-06 (bàn giao ca, biểu đồ doanh thu theo ngày). Thêm BR-ADM-05..08, BR-PAY-09..10; bảng mới `LeaveRequests`, `CashSessions`, `CashExpenses` |
+| 11/11/2026 | HiepNX | Đề xuất (chờ nhóm chốt) F-APT-11 và BR-APT-10..15: nhật ký liên lạc khi xác nhận lịch, kết quả cuộc gọi quyết định trạng thái, khách gọi lại sau khi lịch đổi trạng thái, đặt lại lịch đã hủy; thêm 3 khóa cấu hình đề xuất và Q16 |
+| 11/11/2026 | HiepNX | Theo góp ý hội đồng (CSKH định kỳ; công nợ, nhắc thanh toán, hoàn tiền, đối soát cuối ngày): thêm F-CRM-04, F-PAY-07, F-PAY-08; F-CRM-02 ✅; BR-CRM-03..04, BR-PAY-11..13; bảng mới `FollowUpContacts`, `PaymentReminders`, `DailyReconciliations`, cột `Services.RecallIntervalMonths`, `Examinations.FollowUpIsRecall`, `FollowUpClosed` |
+| 11/11/2026 | HiepNX | Hoàn tất màn lễ tân: F-APT-09 đặt lịch hộ ✅ (lịch được xác nhận ngay, dùng chung quy tắc slot BR-APT-01..04), F-CRM-05 yêu cầu tư vấn (bảng mới `ConsultationRequests`, cùng một số điện thoại không gửi lại trong 10 phút), màn Hồ sơ bệnh nhân (xem, tạo, sửa, duyệt kế hoạch điều trị khi bệnh nhân đồng ý) |
+| 11/11/2026 | HiepNX | Sửa lỗi F-PAY-03: mỗi khoản thu bị cộng **hai lần** vào `Invoices.PaidAmount` (EF tự gắn khoản thu vào hóa đơn rồi code thêm tay lần nữa), làm hóa đơn thu thiếu vẫn thành "Đã thu đủ". Dữ liệu cũ cần tính lại `PaidAmount` từ các khoản `CONFIRMED`. Thêm lọc hóa đơn theo ngày lập (`fromDate`, `toDate`), tìm theo mã/số điện thoại bệnh nhân, và `GET api/payment-history` (lịch sử thanh toán) |

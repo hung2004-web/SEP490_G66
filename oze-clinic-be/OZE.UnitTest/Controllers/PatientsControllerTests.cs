@@ -103,6 +103,56 @@ namespace OZE.UnitTest.Controllers
         }
 
         [Fact]
+        public async Task UpdatePatientAsync_ShouldReturnOk_WhenSuccessful()
+        {
+            // Arrange
+            var request = new UpdatePatientRequest { FullName = "Nguyen Van A Updated" };
+            _patientServiceMock
+                .Setup(s => s.UpdatePatientAsync(1, request, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResponse<PatientDto>.SuccessResult(new PatientDto { Id = 1, FullName = "Nguyen Van A Updated" }));
+
+            // Act
+            var actionResult = await _controller.UpdatePatientAsync(1, request, CancellationToken.None);
+
+            // Assert
+            var okResult = actionResult.Result as OkObjectResult;
+            okResult.Should().NotBeNull();
+            (okResult!.Value as ApiResponse<PatientDto>)!.Data!.FullName.Should().Be("Nguyen Van A Updated");
+        }
+
+        [Fact]
+        public async Task UpdatePatientAsync_ShouldReturnNotFound_WhenPatientDoesNotExist()
+        {
+            // Arrange
+            var request = new UpdatePatientRequest { FullName = "Nguyen Van A" };
+            _patientServiceMock
+                .Setup(s => s.UpdatePatientAsync(999, request, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.PatientNotFound));
+
+            // Act
+            var actionResult = await _controller.UpdatePatientAsync(999, request, CancellationToken.None);
+
+            // Assert
+            (actionResult.Result as NotFoundObjectResult).Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task UpdatePatientAsync_ShouldReturnBadRequest_WhenContactBelongsToAccount()
+        {
+            // Arrange
+            var request = new UpdatePatientRequest { FullName = "Nguyen Van A", PhoneNumber = "0987654321" };
+            _patientServiceMock
+                .Setup(s => s.UpdatePatientAsync(2, request, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResponse<PatientDto>.FailureResult(ErrorConstants.PatientMessage.ContactManagedByAccount));
+
+            // Act
+            var actionResult = await _controller.UpdatePatientAsync(2, request, CancellationToken.None);
+
+            // Assert
+            (actionResult.Result as BadRequestObjectResult).Should().NotBeNull();
+        }
+
+        [Fact]
         public async Task CreatePatientAsync_ShouldReturnCreatedAtAction_WhenValidRequest()
         {
             // Arrange

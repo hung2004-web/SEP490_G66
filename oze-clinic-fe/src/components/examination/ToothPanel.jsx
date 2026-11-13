@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { isPrimaryTooth, surfacesText, toothLabel } from "@/utils/examination";
+import RowActions from "./RowActions";
 import { ConditionField, NoteField, SurfacePicker } from "./ToothEntryFields";
 
 const EMPTY_FORM = { condition: "", surfaces: [], note: "", replaced: false };
-
-const linkButton = "cursor-pointer rounded text-caption font-semibold outline-none hover:underline focus-visible:shadow-focus";
 
 // Panel of the selected tooth: findings already recorded (edit / delete) and a form to add another one.
 // entries: findings of this tooth. onAdd receives { tooth, condition, surfaces, note, replaced? }.
@@ -43,12 +42,7 @@ const ToothPanel = ({ tooth, entries = [], onAdd, onEdit, onRemove, onClose }) =
                                     {entry.note && ` · ${entry.note}`}
                                     {entry.replaced && " · Đã thay răng vĩnh viễn"}
                                 </span>
-                                <button type="button" className={`${linkButton} text-primary`} onClick={() => onEdit(entry)}>
-                                    Sửa
-                                </button>
-                                <button type="button" className={`${linkButton} text-danger`} onClick={() => onRemove(entry)}>
-                                    Xoá
-                                </button>
+                                <RowActions label={`${entry.condition} răng ${tooth}`} onEdit={() => onEdit(entry)} onRemove={() => onRemove(entry)} />
                             </li>
                         ))}
                     </ul>

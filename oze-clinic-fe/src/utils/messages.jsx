@@ -268,6 +268,14 @@ export const XRAY_STATUS = {
     reviewed: { label: "Đã xem", badge: "badge-success" },
 };
 
+// Doctor review of an X-ray result ("Duyệt kết quả chụp").
+export const IMAGING_REVIEW_STATUS = {
+    pending: { label: "Chờ duyệt", badge: "badge-warning" },
+    retake: { label: "Cần chụp lại", badge: "badge-danger" },
+    approved: { label: "Đã duyệt", badge: "badge-success" },
+    cancelled: { label: "Đã huỷ", badge: "badge-neutral" },
+};
+
 export const XRAY_TYPES = [
     "Panorama",
     "Cephalometric",

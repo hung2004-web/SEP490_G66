@@ -118,7 +118,7 @@ Ví dụ:
 
 ## 8. Kiểm thử
 
-- Test hiện có (`OZE.UnitTest/Services/AppointmentStartExaminationTests.cs`):
+- Test hiện có (`OZE.UnitTest/Services/Appointments/StartExaminationTests.cs`):
   - `StartExaminationAsync_ShouldCreateOneExamination_WhenCheckedInForThisDoctor`
   - `StartExaminationAsync_ShouldReject_WhenNotCheckedIn` (theory: `PENDING`, `CONFIRMED`, `IN_SERVICE`, `COMPLETED`, `CANCELLED`, `NO_SHOW`)
   - `StartExaminationAsync_ShouldReject_WhenTheAppointmentIsNotToday`
@@ -127,7 +127,7 @@ Ví dụ:
   - `StartExaminationAsync_ShouldReject_WhenTheDoctorIsNotAssigned`
   - `StartExaminationAsync_ShouldReturnNotFound_WhenAppointmentDoesNotExist`
   - `StartExaminationAsync_ShouldReturnNotFound_WhenTheAccountHasNoDoctorProfile`
-- `AppointmentPriorityReturnAndQueueTests.StartExaminationAsync_ShouldResumeExistingExamination_WhenReturningFromImaging`.
+- `StartExaminationResumeTests.StartExaminationAsync_ShouldResumeExistingExamination_WhenReturningFromImaging`.
 - Ca cần test thêm: bác sĩ ngoài ca bị chặn với lượt mới nhưng vẫn tiếp tục được phiếu cũ; trùng unique index trả `ExaminationAlreadyStarted`; hàng chờ chuyển `IN_PROGRESS`; audit được ghi.
 
 ## 9. Còn thiếu / câu hỏi mở

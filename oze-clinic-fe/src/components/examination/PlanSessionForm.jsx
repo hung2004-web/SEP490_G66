@@ -1,13 +1,9 @@
 import { useId } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { parseMoney } from "@/utils/examination";
 import { formatNumber } from "@/utils/format";
 import { PLAN_SESSION_STATUS } from "@/utils/messages";
-
-// "400.000" -> 400000; empty -> null.
-const parseMoney = (text) => {
-    const digits = text.replace(/\D/g, "");
-    return digits ? Number(digits) : null;
-};
+import RowActions from "./RowActions";
 
 const Required = () => <span className="text-danger-solid"> *</span>;
 
@@ -36,14 +32,7 @@ const PlanSessionForm = ({ index, session, typeOptions = [], errors = {}, onChan
                 <span className="num rounded-full bg-primary-soft px-2 py-0.5 text-caption font-semibold text-primary">Buổi {index + 1}</span>
                 <StatusBadge status={session.status} labels={PLAN_SESSION_STATUS} />
                 {onRemove && (
-                    <button
-                        type="button"
-                        className="ml-auto cursor-pointer rounded text-caption font-semibold text-danger outline-none hover:underline focus-visible:shadow-focus"
-                        aria-label={`Xoá buổi ${index + 1}`}
-                        onClick={onRemove}
-                    >
-                        Xoá
-                    </button>
+                    <RowActions className="ml-auto" label={`buổi ${index + 1}`} onRemove={onRemove} />
                 )}
             </div>
 

@@ -14,6 +14,19 @@ import DashboardPage from "../pages/common/DashboardPage";
 import ProfilePage from "../pages/common/ProfilePage";
 import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
+import ReceptionCheckIn from "../pages/receptionist/ReceptionCheckIn";
+import ReceptionDebts from "../pages/receptionist/ReceptionDebts";
+import ReceptionSchedule from "../pages/receptionist/ReceptionSchedule";
+import ReceptionInvoices from "../pages/receptionist/ReceptionInvoices";
+import ReceptionPatients from "../pages/receptionist/ReceptionPatients";
+import ReceptionConsultations from "../pages/receptionist/ReceptionConsultations";
+import DailyReconciliation from "../pages/admin/DailyReconciliation";
+import ReceptionConfirm from "../pages/receptionist/ReceptionConfirm";
+import ReceptionFollowUps from "../pages/receptionist/ReceptionFollowUps";
+import ReceptionPayment from "../pages/receptionist/ReceptionPayment";
+import ReceptionQueue from "../pages/receptionist/ReceptionQueue";
+import CashHandover from "../pages/receptionist/CashHandover";
+import MyWorkSchedule from "../pages/staff/MyWorkSchedule";
 import MyAppointments from "../pages/patient/MyAppointments";
 import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import MedicalRecord from "../pages/patient/MedicalRecord";
@@ -24,13 +37,13 @@ import RefundRequests from "../pages/patient/RefundRequests";
 import AuditLogManagement from "../pages/admin/AuditLogManagement";
 import LeaveRequestManagement from "../pages/admin/LeaveRequestManagement";
 import RefundRequestManagement from "../pages/admin/RefundRequestManagement";
-import DebtManagement from "../pages/admin/DebtManagement";
 import RoomManagement from "../pages/admin/RoomManagement";
 import ServiceManagement from "../pages/admin/ServiceManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
 import WorkShiftManagement from "../pages/admin/WorkShiftManagement";
 import SystemSettings from "../pages/admin/SystemSettings";
 import ExaminationPage from "../pages/doctor/ExaminationPage";
+import ImagingReviewPage from "../pages/doctor/ImagingReviewPage";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
 import useSession from "../hooks/useSession";
@@ -119,6 +132,19 @@ const sharedRoutes = [
 
 // Role pages (ROLE_ROUTES) that are built so far.
 const ROLE_PAGES = {
+    // Receptionist sidebar pages open the counter workspace on the matching tab
+    [ROUTES.RECEPTION_APPOINTMENTS]: <ReceptionConfirm />,
+    [ROUTES.RECEPTION_CHECK_IN]: <ReceptionCheckIn />,
+    [ROUTES.RECEPTION_INVOICES]: <ReceptionPayment />,
+    [ROUTES.RECEPTION_QUEUE]: <ReceptionQueue />,
+    [ROUTES.RECEPTION_FOLLOW_UPS]: <ReceptionFollowUps />,
+    [ROUTES.RECEPTION_DEBTS]: <ReceptionDebts />,
+    [ROUTES.RECEPTION_SCHEDULE]: <ReceptionSchedule />,
+    [ROUTES.RECEPTION_INVOICE_LIST]: <ReceptionInvoices />,
+    [ROUTES.RECEPTION_PATIENTS]: <ReceptionPatients />,
+    [ROUTES.RECEPTION_CONSULTATIONS]: <ReceptionConsultations />,
+    [ROUTES.RECEPTION_CASH_HANDOVER]: <CashHandover />,
+    [ROUTES.WORK_SCHEDULE]: <MyWorkSchedule />,
     [ROUTES.APPOINTMENTS]: (
         <Routes>
             <Route index element={<MyAppointments />} />
@@ -157,6 +183,7 @@ const ROLE_PAGES = {
         </Routes>
     ),
     [ROUTES.DOCTOR_EXAMINATION]: <ExaminationPage />,
+    [ROUTES.DOCTOR_IMAGING_REVIEWS]: <ImagingReviewPage />,
     [ROUTES.ADMIN_ROOMS]: <RoomManagement />,
     [ROUTES.ADMIN_SERVICES]: <ServiceManagement />,
     [ROUTES.ADMIN_STAFF]: <StaffManagement />,
@@ -165,25 +192,20 @@ const ROLE_PAGES = {
     [ROUTES.ADMIN_SYSTEM_LOGS]: <AuditLogManagement />,
     [ROUTES.ADMIN_LEAVE_REQUESTS]: <LeaveRequestManagement />,
     [ROUTES.ADMIN_REFUNDS]: <RefundRequestManagement />,
-    [ROUTES.ADMIN_DEBTS]: <DebtManagement />
+    // Real debts from the API; the manager sees them without the receptionist's reminder and payment buttons
+    [ROUTES.ADMIN_DEBTS]: <ReceptionDebts forManager />,
+    [ROUTES.ADMIN_RECONCILIATION]: <DailyReconciliation />
 }
 
 // Titles of the sidebar pages not built yet (same labels as the sidebar); they show ComingSoonPage inside the layout.
 const COMING_SOON_TITLES = {
     [ROUTES.APPOINTMENTS]: "Lịch hẹn của tôi",
-    [ROUTES.DOCTOR_IMAGING_REVIEWS]: "Duyệt kết quả chụp",
     [ROUTES.DOCTOR_APPOINTMENTS]: "Lịch hẹn khám",
     [ROUTES.DOCTOR_PATIENTS]: "Bệnh nhân",
     [ROUTES.DOCTOR_TREATMENT_PLANS]: "Kế hoạch điều trị",
     [ROUTES.DOCTOR_IMAGING_REQUESTS]: "Yêu cầu chụp phim",
     [ROUTES.TECHNICIAN_IMAGING_REQUESTS]: "Yêu cầu chụp phim",
     [ROUTES.TECHNICIAN_IMAGING_RESULTS]: "Kết quả hình ảnh",
-    [ROUTES.RECEPTION_APPOINTMENTS]: "Quản lý lịch hẹn",
-    [ROUTES.RECEPTION_CHECK_IN]: "Tiếp đón bệnh nhân",
-    [ROUTES.RECEPTION_PATIENTS]: "Bệnh nhân",
-    [ROUTES.RECEPTION_CONSULTATIONS]: "Yêu cầu tư vấn",
-    [ROUTES.RECEPTION_INVOICES]: "Thanh toán",
-    [ROUTES.WORK_SCHEDULE]: "Lịch làm việc",
     [ROUTES.ADMIN_ROLES]: "Vai trò",
 }
 

@@ -542,6 +542,140 @@ namespace OZE.Persistence.Migrations
                     b.ToTable("AuditLogs", (string)null);
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.CashExpense", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long>("CashSessionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Other");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CashExpenses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CashExpenses_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_CashExpenses_Category", "[Category] IN ('Supplies', 'Other')");
+                        });
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.CashSession", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal?>("CashCollected")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal?>("CountedCash")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<decimal?>("Difference")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ExpectedCash")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ExpenseTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("HandoverToUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("OpenedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("OpenedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("OpeningCash")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Open");
+
+                    b.Property<decimal?>("TransferConfirmed")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OpenedAt")
+                        .HasDatabaseName("IX_CashSessions_OpenedAt");
+
+                    b.HasIndex("OpenedByUserId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CashSessions_OneOpenPerUser")
+                        .HasFilter("[Status] = 'Open'");
+
+                    b.ToTable("CashSessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CashSessions_CountedCash", "[CountedCash] IS NULL OR [CountedCash] >= 0");
+
+                            t.HasCheckConstraint("CK_CashSessions_OpeningCash", "[OpeningCash] >= 0");
+
+                            t.HasCheckConstraint("CK_CashSessions_Status", "[Status] IN ('Open', 'Closed')");
+                        });
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.ClinicalDiagnosis", b =>
                 {
                     b.Property<long>("Id")
@@ -626,6 +760,130 @@ namespace OZE.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_ClinicalRecordAddenda_Type", "[AddendumType] IN ('Correction', 'Addition', 'Clarification')");
                         });
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.ConsultationRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("HandleNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("HandledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("HandledByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("New");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("IX_ConsultationRequests_Status_Created");
+
+                    b.ToTable("ConsultationRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ConsultationRequests_Status", "[Status] IN ('New', 'Contacted', 'Booked', 'Closed')");
+                        });
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.DailyReconciliation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("CashCollected")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CashCounted")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CashDifference")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CashExpected")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly>("ClinicDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("ConfirmedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ConfirmedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("PendingTransferAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PendingTransferCount")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("RefundTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SessionCount")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TransferConfirmed")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClinicDate")
+                        .IsUnique()
+                        .HasDatabaseName("UX_DailyReconciliations_ClinicDate");
+
+                    b.ToTable("DailyReconciliations", (string)null);
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.DentalChartEntry", b =>
@@ -715,8 +973,14 @@ namespace OZE.Persistence.Migrations
                     b.Property<long?>("FollowUpAppointmentId")
                         .HasColumnType("bigint");
 
+                    b.Property<bool>("FollowUpClosed")
+                        .HasColumnType("bit");
+
                     b.Property<DateOnly?>("FollowUpDate")
                         .HasColumnType("date");
+
+                    b.Property<bool>("FollowUpIsRecall")
+                        .HasColumnType("bit");
 
                     b.Property<string>("FollowUpNotes")
                         .HasMaxLength(500)
@@ -766,6 +1030,49 @@ namespace OZE.Persistence.Migrations
                     b.ToTable("Examinations", null, t =>
                         {
                             t.HasCheckConstraint("CK_Examinations_Status", "[ExaminationStatus] IN ('InProgress', 'Completed', 'Locked')");
+                        });
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.FollowUpContact", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateOnly?>("CallBackDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<long>("ExaminationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExaminationId", "CreatedAt")
+                        .HasDatabaseName("IX_FollowUpContacts_Exam_Created");
+
+                    b.ToTable("FollowUpContacts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FollowUpContacts_Outcome", "[Outcome] IN ('Booked', 'CallBack', 'Unreachable', 'Declined')");
                         });
                 });
 
@@ -1158,6 +1465,74 @@ namespace OZE.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.LeaveRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+                    b.Property<DateOnly>("LeaveDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Slot")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("StaffProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<int?>("SubstituteStaffProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_LeaveRequests_Pending")
+                        .HasFilter("[Status] = 'Pending'");
+
+                    b.HasIndex("StaffProfileId", "LeaveDate")
+                        .HasDatabaseName("IX_LeaveRequests_Staff_Date");
+
+                    b.ToTable("LeaveRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_LeaveRequests_Slot", "[Slot] IS NULL OR [Slot] IN ('Morning', 'Afternoon')");
+
+                            t.HasCheckConstraint("CK_LeaveRequests_Status", "[Status] IN ('Pending', 'Approved', 'Rejected', 'Cancelled')");
+                        });
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.Notification", b =>
                 {
                     b.Property<long>("Id")
@@ -1545,6 +1920,48 @@ namespace OZE.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.PaymentReminder", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Channels")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<long?>("InstallmentPeriodId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("InvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsAutomatic")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("SentByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId", "SentAt")
+                        .HasDatabaseName("IX_PaymentReminders_Invoice_Sent");
+
+                    b.ToTable("PaymentReminders", (string)null);
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.Prescription", b =>
                 {
                     b.Property<long>("Id")
@@ -1888,6 +2305,9 @@ namespace OZE.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
+
+                    b.Property<int?>("RecallIntervalMonths")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("ReferencePrice")
                         .ValueGeneratedOnAdd()
@@ -2597,6 +3017,41 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("Variant");
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.CashExpense", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.CashSession", "CashSession")
+                        .WithMany("Expenses")
+                        .HasForeignKey("CashSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_CashExpenses_CashSessions");
+
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_CashExpenses_CreatedBy");
+
+                    b.Navigation("CashSession");
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.CashSession", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("HandoverToUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_CashSessions_HandoverTo");
+
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("OpenedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_CashSessions_OpenedBy");
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.ClinicalDiagnosis", b =>
                 {
                     b.HasOne("OZE.Domain.Entities.StaffProfile", "DiagnosedByDoctor")
@@ -2637,6 +3092,25 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("CreatedByDoctor");
 
                     b.Navigation("Examination");
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.ConsultationRequest", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("HandledByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_ConsultationRequests_HandledBy");
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.DailyReconciliation", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_DailyReconciliations_ConfirmedBy");
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.DentalChartEntry", b =>
@@ -2702,6 +3176,25 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("FollowUpAppointment");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.FollowUpContact", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_FollowUpContacts_CreatedBy");
+
+                    b.HasOne("OZE.Domain.Entities.Examination", "Examination")
+                        .WithMany("FollowUpContacts")
+                        .HasForeignKey("ExaminationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_FollowUpContacts_Examinations");
+
+                    b.Navigation("Examination");
                 });
 
             modelBuilder.Entity("OZE.Domain.Entities.ImagingRequest", b =>
@@ -2854,6 +3347,32 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("TreatmentPlanStage");
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.LeaveRequest", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_LeaveRequests_ReviewedBy");
+
+                    b.HasOne("OZE.Domain.Entities.StaffProfile", "StaffProfile")
+                        .WithMany()
+                        .HasForeignKey("StaffProfileId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_LeaveRequests_StaffProfiles");
+
+                    b.HasOne("OZE.Domain.Entities.StaffProfile", "SubstituteStaffProfile")
+                        .WithMany()
+                        .HasForeignKey("SubstituteStaffProfileId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_LeaveRequests_Substitute");
+
+                    b.Navigation("StaffProfile");
+
+                    b.Navigation("SubstituteStaffProfile");
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.Notification", b =>
                 {
                     b.HasOne("OZE.Domain.Entities.ApplicationUser", null)
@@ -2931,6 +3450,26 @@ namespace OZE.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired()
                         .HasConstraintName("FK_Payments_Invoices");
+
+                    b.Navigation("InstallmentPeriod");
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("OZE.Domain.Entities.PaymentReminder", b =>
+                {
+                    b.HasOne("OZE.Domain.Entities.InstallmentPeriod", "InstallmentPeriod")
+                        .WithMany()
+                        .HasForeignKey("InstallmentPeriodId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_PaymentReminders_InstallmentPeriods");
+
+                    b.HasOne("OZE.Domain.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_PaymentReminders_Invoices");
 
                     b.Navigation("InstallmentPeriod");
 
@@ -3179,6 +3718,11 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("ServiceItems");
                 });
 
+            modelBuilder.Entity("OZE.Domain.Entities.CashSession", b =>
+                {
+                    b.Navigation("Expenses");
+                });
+
             modelBuilder.Entity("OZE.Domain.Entities.Examination", b =>
                 {
                     b.Navigation("Addenda");
@@ -3186,6 +3730,8 @@ namespace OZE.Persistence.Migrations
                     b.Navigation("DentalChartEntries");
 
                     b.Navigation("Diagnoses");
+
+                    b.Navigation("FollowUpContacts");
 
                     b.Navigation("ImagingRequests");
 

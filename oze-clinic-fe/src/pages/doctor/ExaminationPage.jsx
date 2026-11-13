@@ -9,10 +9,13 @@ import ExamStepper from "@/components/examination/ExamStepper";
 import ExamTimer from "@/components/examination/ExamTimer";
 import MedicalHistoryStep from "@/components/examination/MedicalHistoryStep";
 import PatientCard from "@/components/examination/PatientCard";
+import PrescriptionStep from "@/components/examination/PrescriptionStep";
 import QueuePanel from "@/components/examination/QueuePanel";
 import StepHeading from "@/components/examination/StepHeading";
 import TreatmentPlanStep from "@/components/examination/TreatmentPlanStep";
+import TreatmentStep from "@/components/examination/TreatmentStep";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
+import MyShiftBar from "@/components/staff/MyShiftBar";
 import {
     callPatient,
     endExamination,
@@ -20,7 +23,6 @@ import {
     getExamWorkspace,
     markAbsent,
     saveMedicalHistory,
-    sendPlanToReception,
     setExamStep,
     startExamination,
 } from "@/services/examinationService";
@@ -29,11 +31,11 @@ import { cx } from "@/utils/cx";
 import { EXAM_STEP_TITLES, EXAM_STEPS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
 
-const STEP = { HISTORY: 0, EXAM: 1, PLAN: 2 };
+const STEP = { HISTORY: 0, EXAM: 1, PLAN: 2, TREATMENT: 3, PRESCRIPTION: 4 };
 
 // Breadcrumb / "Tiếp theo" wording that differs from the step names (EXAM_STEPS).
 const BREADCRUMB_LABEL = { [STEP.HISTORY]: "Thông tin bệnh nhân", [STEP.PLAN]: "Kế hoạch điều trị" };
-const NEXT_LABEL = { [STEP.PLAN]: "Chuyển sang phòng điều trị" };
+const NEXT_LABEL = { [STEP.PLAN]: "Chuyển sang phòng điều trị", [STEP.PRESCRIPTION]: "Kết thúc lượt khám" };
 const CALLED_STATUS = { label: "Đã gọi · chờ vào phòng", tone: "warning" };
 
 // Patient shown on the right: the one in the room, else the one called. Nobody until the doctor calls someone in;
@@ -58,17 +60,6 @@ const NoExamView = ({ waitingCount }) => (
     </>
 );
 
-// Steps 4–5 (treatment room) are built in their own tasks.
-const PendingStep = ({ title, onBack }) => (
-    <div className="card-app flex flex-col items-center gap-3 py-14 text-center">
-        <p className="font-semibold text-ink">{title}</p>
-        <p className="text-muted">Bước này đang được xây dựng.</p>
-        <button type="button" className="btn btn-secondary" onClick={onBack}>
-            Quay lại bước Lập kế hoạch điều trị
-        </button>
-    </div>
-);
-
 // Patient called in, exam not started: process still locked, patient card and what reception recorded.
 const CalledView = ({ item, record }) => (
     <>
@@ -79,7 +70,7 @@ const CalledView = ({ item, record }) => (
 );
 
 // Exam in progress: process stepper, patient card with timer, then the content of the step being viewed.
-const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanChange, onStep, onSendToReception, onEnd }) => {
+const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanChange, onTreatmentChange, onPrescriptionChange, onStep, onEnd }) => {
     const current = item.step ?? STEP.HISTORY;
     const [viewing, setViewing] = useState(current);
     const shown = Math.min(viewing, current);
@@ -150,11 +141,24 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanC
                     busy={busy}
                     onPlanChange={onPlanChange}
                     onEnd={onEnd}
-                    onSendToReception={onSendToReception}
                     onComplete={() => goTo(STEP.PLAN + 1)}
                 />
             )}
-            {shown > STEP.PLAN && <PendingStep title={EXAM_STEP_TITLES[shown]} onBack={() => goTo(STEP.PLAN)} />}
+            {shown === STEP.TREATMENT && (
+                <TreatmentStep
+                    queueId={item.id}
+                    record={record}
+                    busy={busy}
+                    onTreatmentChange={onTreatmentChange}
+                    onPlanChange={onPlanChange}
+                    onEditPlan={() => goTo(STEP.PLAN)}
+                    onEnd={onEnd}
+                    onComplete={() => goTo(STEP.TREATMENT + 1)}
+                />
+            )}
+            {shown === STEP.PRESCRIPTION && (
+                <PrescriptionStep queueId={item.id} record={record} busy={busy} onPrescriptionChange={onPrescriptionChange} onEnd={onEnd} />
+            )}
         </>
     );
 };
@@ -168,6 +172,8 @@ const ExaminationPage = () => {
     const [collapsedChoice, setCollapsedChoice] = useState(null); // null = automatic
     const [busy, setBusy] = useState(false);
     const [confirm, setConfirm] = useState(null); // { type: "absent" | "end", item }
+    // Starting or ending the shift changes who the doctor may call: reload the queue then
+    const [shiftVersion, setShiftVersion] = useState(0);
 
     useEffect(() => {
         getExamWorkspace().then((response) => {
@@ -178,7 +184,7 @@ const ExaminationPage = () => {
             setWorkspace(response.data);
             setSelectedId(defaultSelection(response.data.queue));
         });
-    }, []);
+    }, [shiftVersion]);
 
     useEffect(() => {
         if (selectedId == null) return undefined;
@@ -220,7 +226,6 @@ const ExaminationPage = () => {
     const confirmActions = {
         absent: markAbsent,
         end: endExamination,
-        send: (id) => sendPlanToReception(id, confirm.plan),
     };
 
     const handleConfirm = async () => {
@@ -233,6 +238,8 @@ const ExaminationPage = () => {
     const updateHistory = updateRecord("history");
     const updateExam = updateRecord("exam");
     const updatePlan = updateRecord("plan");
+    const updateTreatment = updateRecord("treatment");
+    const updatePrescription = updateRecord("prescription");
 
     const renderMain = () => {
         if (loadFailed) return <p role="alert" className="alert alert-danger">{GENERIC_ERROR_MESSAGE}</p>;
@@ -250,8 +257,9 @@ const ExaminationPage = () => {
                     onHistoryChange={updateHistory}
                     onExamChange={updateExam}
                     onPlanChange={updatePlan}
+                    onTreatmentChange={updateTreatment}
+                    onPrescriptionChange={updatePrescription}
                     onStep={(step) => runAction((id) => setExamStep(id, step), selected.id, keep)}
-                    onSendToReception={(plan) => setConfirm({ type: "send", item: selected, plan })}
                     onEnd={() => setConfirm({ type: "end", item: selected })}
                 />
             );
@@ -260,22 +268,22 @@ const ExaminationPage = () => {
     };
 
     return (
+        <>
+        <MyShiftBar onChange={() => setShiftVersion((v) => v + 1)} />
         <div className={cx("grid grid-cols-1 items-start gap-5", collapsed ? "lg:grid-cols-[4rem_minmax(0,1fr)]" : "lg:grid-cols-[18.75rem_minmax(0,1fr)]")}>
             <div className="lg:sticky lg:top-4">
                 {workspace ? (
                     <QueuePanel
                         shift={workspace.shift}
                         items={queue}
-                        doneCount={workspace.doneCount}
+                        done={workspace.done}
                         selectedId={selectedId}
                         collapsed={collapsed}
                         onToggleCollapse={() => setCollapsedChoice(!collapsed)}
                         onSelect={setSelectedId}
                         onCall={(id) => runAction(callPatient, id, () => id)}
                         onMarkAbsent={(id) => setConfirm({ type: "absent", item: queue.find((item) => item.id === id) })}
-                        onStart={(id) => runAction(startExamination, id, () => id)}
-                        onOpenDone={() => toast.info("Danh sách đã khám trong ca đang được xây dựng.")}
-                    />
+                        onStart={(id) => runAction(startExamination, id, () => id)}                    />
                 ) : (
                     !loadFailed && <div className="skeleton h-96 rounded-lg" aria-hidden="true" />
                 )}
@@ -296,27 +304,23 @@ const ExaminationPage = () => {
                     onClose={() => setConfirm(null)}
                 />
             )}
-            {confirm?.type === "send" && (
-                <ConfirmExamDialog
-                    title="Gửi lễ tân đặt lịch hẹn"
-                    description={`Kết thúc lượt khám của ${confirm.item.patientName} và gửi kế hoạch điều trị cho lễ tân đặt lịch các buổi tiếp theo?`}
-                    confirmLabel="Gửi lễ tân"
-                    busy={busy}
-                    onConfirm={handleConfirm}
-                    onClose={() => setConfirm(null)}
-                />
-            )}
             {confirm?.type === "end" && (
+                // Reached the prescription (last step): ending completes the visit and finalizes the prescription.
                 <ConfirmExamDialog
-                    title="Kết thúc lượt khám"
-                    description={`Kết thúc lượt khám của ${confirm.item.patientName}? Các bước chưa làm sẽ không còn mở được trong lượt này.`}
-                    confirmLabel="Kết thúc lượt khám"
+                    title={confirm.item.step >= STEP.PRESCRIPTION ? "Hoàn tất lượt khám" : "Kết thúc lượt khám"}
+                    description={
+                        confirm.item.step >= STEP.PRESCRIPTION
+                            ? `Hoàn tất lượt khám của ${confirm.item.patientName}? Đơn thuốc sẽ được chốt và không sửa được nữa.`
+                            : `Kết thúc lượt khám của ${confirm.item.patientName}? Các bước chưa làm sẽ không còn mở được trong lượt này.`
+                    }
+                    confirmLabel={confirm.item.step >= STEP.PRESCRIPTION ? "Hoàn tất" : "Kết thúc lượt khám"}
                     busy={busy}
                     onConfirm={handleConfirm}
                     onClose={() => setConfirm(null)}
                 />
             )}
         </div>
+        </>
     );
 };
 

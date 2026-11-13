@@ -205,7 +205,7 @@ export const getReport = async ({ period = REPORT_PERIODS.WEEK, offset = 0 } = {
 
 export const getPendingRequests = async () => {
     await wait(MOCK_DELAY_MS);
-    const leaves = pendingLeaveRequests().map((request) => ({
+    const leaves = (await pendingLeaveRequests()).map((request) => ({
         id: request.id,
         type: REQUEST_TYPES.LEAVE,
         senderName: request.senderName,
@@ -213,7 +213,7 @@ export const getPendingRequests = async () => {
         content: `${formatDate(request.date)} · ${leaveSlotLabel(request.slot)} · ${request.reason}`,
         submittedAt: request.submittedAt,
     }));
-    const refunds = pendingRefundRequests().map((request) => ({
+    const refunds = (await pendingRefundRequests()).map((request) => ({
         id: request.id,
         type: REQUEST_TYPES.REFUND,
         senderName: request.patientName,

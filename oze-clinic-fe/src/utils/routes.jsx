@@ -40,6 +40,12 @@ export const ROUTES = {
     RECEPTION_PATIENTS: "/reception/patients",
     RECEPTION_CONSULTATIONS: "/reception/consultations",
     RECEPTION_INVOICES: "/reception/invoices",
+    RECEPTION_CASH_HANDOVER: "/reception/cash-handover",
+    RECEPTION_QUEUE: "/reception/queue",
+    RECEPTION_FOLLOW_UPS: "/reception/follow-ups",
+    RECEPTION_DEBTS: "/reception/debts",
+    RECEPTION_SCHEDULE: "/reception/schedule",
+    RECEPTION_INVOICE_LIST: "/reception/invoice-list",
     ADMIN_STAFF: "/admin/staff",
     ADMIN_ROLES: "/admin/roles",
     ADMIN_ROOMS: "/admin/rooms",
@@ -48,6 +54,7 @@ export const ROUTES = {
     ADMIN_LEAVE_REQUESTS: "/admin/leave-requests",
     ADMIN_REFUNDS: "/admin/refunds",
     ADMIN_DEBTS: "/admin/debts",
+    ADMIN_RECONCILIATION: "/admin/reconciliation",
     ADMIN_SYSTEM_LOGS: "/admin/system-logs",
     ADMIN_SETTINGS: "/admin/settings",
     ERROR: "/error/:code",
@@ -76,7 +83,7 @@ export const ROLE_ROUTES = [
     },
     {
         roles: [USER_ROLES.RECEPTIONIST],
-        paths: [ROUTES.RECEPTION_APPOINTMENTS, ROUTES.RECEPTION_CHECK_IN, ROUTES.RECEPTION_PATIENTS, ROUTES.RECEPTION_CONSULTATIONS, ROUTES.RECEPTION_INVOICES]
+        paths: [ROUTES.RECEPTION_APPOINTMENTS, ROUTES.RECEPTION_CHECK_IN, ROUTES.RECEPTION_PATIENTS, ROUTES.RECEPTION_CONSULTATIONS, ROUTES.RECEPTION_INVOICES, ROUTES.RECEPTION_CASH_HANDOVER, ROUTES.RECEPTION_QUEUE, ROUTES.RECEPTION_FOLLOW_UPS, ROUTES.RECEPTION_DEBTS, ROUTES.RECEPTION_SCHEDULE, ROUTES.RECEPTION_INVOICE_LIST]
     },
     {
         roles: [USER_ROLES.CLINIC_MANAGER],
@@ -85,6 +92,7 @@ export const ROLE_ROUTES = [
             ROUTES.ADMIN_ROLES,
             ROUTES.ADMIN_WORK_SHIFTS,
             ROUTES.ADMIN_LEAVE_REQUESTS,
+            ROUTES.ADMIN_RECONCILIATION,
             ROUTES.ADMIN_ROOMS,
             ROUTES.ADMIN_SERVICES,
             ROUTES.ADMIN_REFUNDS,

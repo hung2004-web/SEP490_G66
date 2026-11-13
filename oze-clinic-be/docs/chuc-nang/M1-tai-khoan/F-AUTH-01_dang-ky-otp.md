@@ -208,7 +208,7 @@ DTO `ResendOtpRequest`: `sessionId` (string, bắt buộc, `SessionIdRequired`).
 
 ## 8. Kiểm thử
 
-- `AuthServiceTests`:
+- `Services/Auth/*Tests`:
   - `RegisterAsync_WithNewPhone_ShouldCreateLockedPatientAccountAndSendSms`
   - `RegisterAsync_WhenSuccessful_ShouldSavePendingSessionAndReturnIt`
   - `RegisterAsync_WithEmailMethod_ShouldSendCodeByEmailOnly`

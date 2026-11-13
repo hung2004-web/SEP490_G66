@@ -78,6 +78,23 @@ namespace OZE.Persistence.Repositories
             return pendingPastDue.Count;
         }
 
+        public Task<int> CountOverdueForPatientAsync(
+            int patientId,
+            DateOnly asOfDate,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.InstallmentPeriods
+                .AsNoTracking()
+                .CountAsync(
+                    x => x.InstallmentPlan.Invoice.PatientId == patientId
+                         && x.InstallmentPlan.Invoice.PaymentStatus != InvoiceConstants.Cancelled
+                         && x.InstallmentPlan.Invoice.PaymentStatus != InvoiceConstants.Refunded
+                         && x.InstallmentPlan.Invoice.PaymentStatus != InvoiceConstants.PartiallyRefunded
+                         && (x.Status == InstallmentConstants.PeriodOverdue
+                             || (x.Status == InstallmentConstants.PeriodPending && x.DueDate < asOfDate)),
+                    cancellationToken);
+        }
+
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             return _context.SaveChangesAsync(cancellationToken);

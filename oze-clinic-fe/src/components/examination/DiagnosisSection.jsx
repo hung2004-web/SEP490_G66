@@ -1,5 +1,6 @@
 import { icdName } from "@/utils/examination";
 import ClinicalExamSection from "./ClinicalExamSection";
+import RowActions from "./RowActions";
 
 const linkButton = "cursor-pointer rounded text-caption font-semibold outline-none hover:underline focus-visible:shadow-focus";
 
@@ -53,18 +54,7 @@ const DiagnosisSection = ({ items = [], onAdd, onEdit, onRemove }) => (
                                 </td>
                                 <td className="min-w-56">{item.note || "—"}</td>
                                 <td className="whitespace-nowrap text-right">
-                                    <span className="inline-flex gap-3">
-                                        {onEdit && (
-                                            <button type="button" className={`${linkButton} text-primary`} onClick={() => onEdit(item)}>
-                                                Sửa
-                                            </button>
-                                        )}
-                                        {onRemove && (
-                                            <button type="button" className={`${linkButton} text-danger`} onClick={() => onRemove(item)}>
-                                                Xoá
-                                            </button>
-                                        )}
-                                    </span>
+                                    <RowActions label={`chẩn đoán ${item.code}`} onEdit={onEdit && (() => onEdit(item))} onRemove={onRemove && (() => onRemove(item))} />
                                 </td>
                             </tr>
                         ))}

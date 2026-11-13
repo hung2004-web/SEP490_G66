@@ -48,6 +48,25 @@ Các trường: `staffUserId` (userId ở bước 1), `scheduleDate` (ngày từ
 
 Tạo ca cho vài ngày liền để có nhiều slot. Slot được sinh theo `Clinic.SlotDurationMinutes` (30 phút) và chỉ hiện khi cách hiện tại ít nhất `Booking.MinHoursAhead` giờ.
 
+### Tài khoản test trong database local (chỉ dùng trên máy dev)
+
+| Vai trò | Đăng nhập bằng | Mật khẩu |
+|---|---|---|
+| Quản lý | `admin@oze.com` | `Admin@123456` (tạo bởi `DatabaseSeeder`) |
+| Lễ tân | `letan.mau@example.test` hoặc `0912345602` | `Admin@123456` |
+
+Tài khoản lễ tân được tạo 11/11/2026 qua `POST api/staff` (bằng tài khoản quản lý). Mật khẩu tạm của API này chỉ gửi qua email, mà SendGrid chưa cấu hình, nên mật khẩu được đặt lại trong database bằng cách chép `PasswordHash` của tài khoản quản lý:
+
+```sql
+SET QUOTED_IDENTIFIER ON;
+UPDATE Users
+SET PasswordHash = (SELECT PasswordHash FROM Users WHERE Email = 'admin@oze.com'),
+    SecurityStamp = CONVERT(nvarchar(36), NEWID()), EmailConfirmed = 1, AccessFailedCount = 0, LockoutEnd = NULL
+WHERE Email = 'letan.mau@example.test';
+```
+
+Không dùng các tài khoản và mật khẩu này trên môi trường thật.
+
 ## 4. Chạy thử bằng Swagger
 
 | # | Gọi | Mong đợi |
