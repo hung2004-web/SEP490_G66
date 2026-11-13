@@ -20,6 +20,23 @@ namespace OZE.Application
             services.Configure<PaymentReminderSettings>(configuration.GetSection("PaymentReminderSettings"));
 
             services.AddMemoryCache();
+
+            // Shared cache for OTP sessions, OTP send counts, signed-out tokens and the active service list.
+            // Redis when ConnectionStrings:Redis is set (survives a restart); the server's memory otherwise,
+            // so a machine without Redis still runs.
+            var redisConnection = configuration.GetConnectionString("Redis");
+            if (!string.IsNullOrWhiteSpace(redisConnection))
+            {
+                services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = redisConnection;
+                    options.InstanceName = "oze:";
+                });
+            }
+            else
+            {
+                services.AddDistributedMemoryCache();
+            }
             services.AddAutoMapper(typeof(OZE.Application.MappingProfiles.BaseMappingObject).Assembly);
 
             // Register Services
@@ -37,9 +54,9 @@ namespace OZE.Application
             services.AddScoped<ISmsSender, SmsSender>();
             services.AddScoped<IWorkShipService, WorkShiftService>();
             services.AddScoped<ITreatmentPlanService, TreatmentPlanService>();
-            services.AddSingleton<IPendingRegistrationStore, MemoryPendingRegistrationStore>();
-            services.AddSingleton<IPendingProfileUpdateStore, MemoryPendingProfileUpdateStore>();
-            services.AddSingleton<IPasswordResetStore, MemoryPasswordResetStore>();
+            services.AddSingleton<IPendingRegistrationStore, PendingRegistrationStore>();
+            services.AddSingleton<IPendingProfileUpdateStore, PendingProfileUpdateStore>();
+            services.AddSingleton<IPasswordResetStore, PasswordResetStore>();
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();

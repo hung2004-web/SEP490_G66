@@ -8,7 +8,7 @@
 | Trạng thái | ✅ Đã có API |
 | Vai trò được dùng | Mọi vai trò; gọi ẩn danh `[AllowAnonymous]` |
 | API | `POST api/auth/forgot-password`, `POST api/auth/verify-reset-otp`, `POST api/auth/reset-password` |
-| Code chính | `AuthController.ForgotPasswordAsync / VerifyResetOtpAsync / ResetPasswordAsync` → `AuthService` cùng tên → `UserManager`, `IRegistrationRepository.FindUserByPhoneAsync`, `IPasswordResetStore` (`MemoryPasswordResetStore`), `IOtpSendLimiter`, `IUserRefreshTokenRepository` |
+| Code chính | `AuthController.ForgotPasswordAsync / VerifyResetOtpAsync / ResetPasswordAsync` → `AuthService` cùng tên → `UserManager`, `IRegistrationRepository.FindUserByPhoneAsync`, `IPasswordResetStore` (`PasswordResetStore`), `IOtpSendLimiter`, `IUserRefreshTokenRepository` |
 
 ## 1. Chức năng này làm gì
 

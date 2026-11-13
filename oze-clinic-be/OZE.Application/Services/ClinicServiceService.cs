@@ -1,8 +1,9 @@
 using AutoMapper;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
+using OZE.Application.Services.Caching;
 using OZE.Common.Constants;
 using OZE.Common.Models;
 using OZE.Common.Models.Base;
@@ -17,13 +18,13 @@ namespace OZE.Application.Services
         private readonly IServiceRepository _serviceRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<ClinicServiceService> _logger;
-        private readonly IMemoryCache? _cache;
+        private readonly IDistributedCache? _cache;
 
         public ClinicServiceService(
             IServiceRepository serviceRepository,
             IMapper mapper,
             ILogger<ClinicServiceService> logger,
-            IMemoryCache? cache = null)
+            IDistributedCache? cache = null)
         {
             _serviceRepository = serviceRepository;
             _mapper = mapper;
@@ -42,24 +43,25 @@ namespace OZE.Application.Services
         public async Task<ApiResponse<IReadOnlyList<ServiceDto>>> GetActiveServicesAsync(
             CancellationToken cancellationToken = default)
         {
-            if (_cache != null && _cache.TryGetValue(ActiveServicesCacheKey, out IReadOnlyList<ServiceDto>? cachedDtos) && cachedDtos != null)
+            var cachedDtos = _cache == null ? null : await _cache.GetJsonAsync<List<ServiceDto>>(ActiveServicesCacheKey, cancellationToken);
+            if (cachedDtos != null)
             {
-                return ApiResponse<IReadOnlyList<ServiceDto>>.SuccessResult(cachedDtos);
+                return ApiResponse<IReadOnlyList<ServiceDto>>.SuccessResult(cachedDtos.AsReadOnly());
             }
 
             var services = await _serviceRepository.GetActiveServicesAsync(cancellationToken);
-            var dtos = _mapper.Map<List<ServiceDto>>(services).AsReadOnly();
+            var dtos = _mapper.Map<List<ServiceDto>>(services);
 
             if (_cache != null)
             {
-                _cache.Set(ActiveServicesCacheKey, dtos, new MemoryCacheEntryOptions
+                await _cache.SetJsonAsync(ActiveServicesCacheKey, dtos, new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
                     SlidingExpiration = TimeSpan.FromMinutes(2)
-                });
+                }, cancellationToken);
             }
 
-            return ApiResponse<IReadOnlyList<ServiceDto>>.SuccessResult(dtos);
+            return ApiResponse<IReadOnlyList<ServiceDto>>.SuccessResult(dtos.AsReadOnly());
         }
 
         public async Task<ApiResponse<ServiceDto>> GetServiceByIdAsync(
