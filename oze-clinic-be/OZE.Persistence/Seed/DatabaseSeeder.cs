@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OZE.Common.Constants;
@@ -8,7 +8,7 @@ namespace OZE.Persistence.Seed
 {
     public static class DatabaseSeeder
     {
-        public static async Task SeedAsync(IServiceProvider serviceProvider)
+        public static async Task SeedAsync(IServiceProvider serviceProvider, bool seedSampleData = false)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseSeeder");
             var roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
@@ -59,6 +59,12 @@ namespace OZE.Persistence.Seed
                     var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
                     logger.LogError("Failed to create default Clinic Manager user: {Errors}", errors);
                 }
+            }
+
+            // 3. Sample data (Development only), built from the FE mock data so every screen shows the same clinic
+            if (seedSampleData)
+            {
+                await SampleDataSeeder.SeedAsync(serviceProvider);
             }
         }
     }

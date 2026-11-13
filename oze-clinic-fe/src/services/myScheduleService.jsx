@@ -21,6 +21,12 @@ export const LEAVE_STATUS = {
 // A shift starting before 12:00 belongs to the morning, the same rule as the backend
 export const slotOfShift = (shiftStart) => (shiftStart < "12:00" ? "Morning" : "Afternoon");
 
+// The two shifts of a clinic day (value = slotOfShift of a shift in it)
+export const SHIFT_SESSIONS = [
+    { value: "Morning", label: "Ca sáng", start: "08:00", end: "12:00" },
+    { value: "Afternoon", label: "Ca chiều", start: "13:30", end: "19:00" },
+];
+
 export const getMyShifts = ({ fromDate, toDate }) => call(() => api.get("/api/schedules/my", { params: { fromDate, toDate } }));
 
 export const getMyLeaveRequests = ({ page = 1, pageSize = 20 } = {}) =>

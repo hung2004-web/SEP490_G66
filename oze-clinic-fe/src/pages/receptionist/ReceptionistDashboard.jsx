@@ -163,7 +163,7 @@ const ReceptionistDashboard = () => {
     // Today in figures
     const countOf = (statuses) => data.today.filter((a) => statuses.includes(a.status)).length;
     const figures = [
-        { label: "Lịch hẹn hôm nay", value: data.today.length, to: ROUTES.RECEPTION_SCHEDULE },
+        { label: "Lịch hẹn hôm nay", value: data.today.length, to: ROUTES.RECEPTION_CHECK_IN },
         { label: "Đã khám xong", value: countOf(["COMPLETED"]), to: ROUTES.RECEPTION_CHECK_IN },
         { label: "Không đến hoặc hủy", value: countOf(["NO_SHOW", "CANCELLED"]), to: ROUTES.RECEPTION_CHECK_IN },
         { label: "Đã thu hôm nay", value: money(data.paid), to: ROUTES.RECEPTION_INVOICE_LIST },
