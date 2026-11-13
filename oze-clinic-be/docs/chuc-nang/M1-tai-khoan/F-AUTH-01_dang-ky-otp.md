@@ -8,7 +8,7 @@
 | Trạng thái | ✅ Đã có API |
 | Vai trò được dùng | Khách (chưa đăng nhập, `[AllowAnonymous]`) |
 | API | `POST api/auth/register`, `POST api/auth/verify-otp`, `POST api/auth/resend-otp` |
-| Code chính | `AuthController.RegisterAsync / VerifyOtpAsync / ResendOtpAsync` → `AuthService.RegisterAsync / VerifyOtpAsync / ResendOtpAsync` → `IRegistrationRepository` (`RegistrationRepository`), `UserManager<ApplicationUser>`, `IPendingRegistrationStore` (`MemoryPendingRegistrationStore`), `IOtpSendLimiter` (`OtpSendLimiter`) |
+| Code chính | `AuthController.RegisterAsync / VerifyOtpAsync / ResendOtpAsync` → `AuthService.RegisterAsync / VerifyOtpAsync / ResendOtpAsync` → `IRegistrationRepository` (`RegistrationRepository`), `UserManager<ApplicationUser>`, `IPendingRegistrationStore` (`PendingRegistrationStore`), `IOtpSendLimiter` (`OtpSendLimiter`) |
 
 ## 1. Chức năng này làm gì
 
@@ -144,7 +144,7 @@ DTO `ResendOtpRequest`: `sessionId` (string, bắt buộc, `SessionIdRequired`).
 10. Tạo `PendingRegistration` (session id, user id, security stamp, thông tin hồ sơ, `ExpiresAt`, `LastSentAt`, `FailedAttempts = 0`) (`AuthService.cs:127-142`).
 11. Sinh OTP 6 số bằng `RandomNumberGenerator`, chỉ lưu hash SHA-256 của `"{sessionId}:{otp}"` (`AuthService.cs:144-145`, `OtpHelper.cs:8-18`).
 12. Gửi OTP: Email → `IEmailSender.SendRegistrationOtpAsync`; SMS → `ISmsSender.SendSmsAsync` nội dung `"Ma OTP OZE cua ban la {otp}. Hieu luc {n} phut."`. Lỗi → `OtpSendFailed` (tài khoản dở dang vẫn còn trong DB) (`AuthService.cs:146-149`, `416-438`).
-13. Lưu phiên vào `IMemoryCache` khóa `pending-registration:{sessionId}`, TTL = thời gian còn lại (`AuthService.cs:151`, `MemoryPendingRegistrationStore.cs:17-26`).
+13. Lưu phiên vào `IDistributedCache` (Redis nếu cấu hình `ConnectionStrings:Redis`, không thì RAM) khóa `pending-registration:{sessionId}`, TTL = thời gian còn lại (`AuthService.cs:151`, `PendingRegistrationStore.cs:19-28`).
 14. Trả `RegisterPendingResponse` + message theo kênh (`AuthService.cs:153`, `444-463`).
 
 **Verify OTP**
