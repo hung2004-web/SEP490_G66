@@ -8,7 +8,7 @@ import FilterSelect from "@/components/ui/FilterSelect";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import useAsync from "@/hooks/useAsync";
-import { REFUND_DOCTOR_OPTIONS, confirmRefundRequest, getRefundRequest, getRefundRequests, rejectRefundRequest } from "@/services/refundRequestService";
+import { confirmRefundRequest, getRefundDoctorOptions, getRefundRequest, getRefundRequests, rejectRefundRequest } from "@/services/refundRequestService";
 import { REFUND_REQUEST_STATUSES, REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
 
 const SEARCH_DELAY_MS = 300;
@@ -107,7 +107,7 @@ const RefundRequestManagement = () => {
                     className="w-full sm:w-auto sm:min-w-40"
                     id="refund-request-doctor"
                     label="Bác sĩ phụ trách"
-                    options={REFUND_DOCTOR_OPTIONS}
+                    options={getRefundDoctorOptions()}
                     value={doctorId}
                     onChange={changeFilter(setDoctorId)}
                 />

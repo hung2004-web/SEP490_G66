@@ -3,6 +3,7 @@ import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { REFUND_REQUEST_STATUSES, REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
 import { formatCurrency, formatDateTime } from "@/utils/format";
+import { REFUND_REQUEST_ADMIN_TEXT } from "@/utils/messages";
 import RejectRefundRequestPopup from "./RejectRefundRequestPopup";
 
 const InfoPanel = ({ rows }) => (
@@ -25,8 +26,6 @@ const TextPanel = ({ title, children }) => (
 
 // "Yêu cầu hoàn tiền" popup. Only a pending request can be decided; onConfirm() and onReject(reason) save the decision and
 // the parent closes the popup when that succeeds.
-// request: { code, requestedByName, createdAt, patientName, patientCode, doctorName, invoiceNumber, serviceNames,
-// treatmentContent, paidAmount, reason, status, rejectReason }.
 const RefundRequestDetailPopup = ({ request, onClose, onConfirm, onReject }) => {
     const [saving, setSaving] = useState(false);
     const [rejecting, setRejecting] = useState(false);
@@ -66,6 +65,9 @@ const RefundRequestDetailPopup = ({ request, onClose, onConfirm, onReject }) => 
                             { label: "Dịch vụ đăng ký", value: request.serviceNames },
                             { label: "Nội dung điều trị", value: request.treatmentContent },
                             { label: "Số tiền đã thanh toán", value: <span className="num">{formatCurrency(request.paidAmount)}</span> },
+                            ...(Number.isFinite(request.amount)
+                                ? [{ label: REFUND_REQUEST_ADMIN_TEXT.AMOUNT, value: <span className="num">{formatCurrency(request.amount)}</span> }]
+                                : []),
                         ]}
                     />
                 </section>

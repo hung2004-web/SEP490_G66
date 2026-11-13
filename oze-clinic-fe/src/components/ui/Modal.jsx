@@ -7,7 +7,7 @@ const SCROLL_LOCK_CLASS = "overflow-hidden";
 
 // Centered dialog: locks page scroll, keeps Tab inside, closes on Escape or backdrop click, returns focus on close.
 // The first field (or the close button) gets focus on open; pass initialFocusRef to pick another element.
-const Modal = ({ title, description, size, onClose, initialFocusRef, closeDisabled = false, children }) => {
+const Modal = ({ title, description, size, onClose, initialFocusRef, closeButtonRef, closeDisabled = false, children }) => {
     const titleId = useId();
     const descriptionId = useId();
     const dialogRef = useRef(null);
@@ -80,6 +80,7 @@ const Modal = ({ title, description, size, onClose, initialFocusRef, closeDisabl
                         )}
                     </div>
                     <button
+                        ref={closeButtonRef}
                         type="button"
                         className="btn btn-icon -mr-2 -mt-2 shrink-0 hover:bg-surface-tint"
                         aria-label="Đóng"
