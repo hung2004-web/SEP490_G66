@@ -8,6 +8,7 @@ import { clinicClock, report } from "@/components/reception/receptionUtils";
 import {
     LEAVE_SLOTS,
     LEAVE_STATUS,
+    SHIFT_SESSIONS,
     cancelLeaveRequest,
     createLeaveRequest,
     getMyLeaveRequests,
@@ -18,12 +19,12 @@ import {
 import { clinicToday } from "@/services/receptionService";
 import { cx } from "@/utils/cx";
 
-// "Lịch làm việc" for doctors, receptionists and imaging technicians, laid out like the receptionist's "Quản lý lịch hẹn":
-// the week as a time grid (one row per half hour, one column per day) with each of my shifts as a block over its hours.
+// "Lịch làm việc" for doctors, receptionists and imaging technicians: the week as a grid of two shifts a day
+// (Ca sáng 08:00–12:00, Ca chiều 13:30–19:00, see SHIFT_SESSIONS) and seven days, each cell showing my shift there.
 // Click a shift for its details and to ask for leave; leave is approved by the manager.
+// Below md the grid becomes a list of the days of the week.
 
 const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const ROW_MINUTES = 30;
 
 const hhmm = (time) => time?.slice(0, 5) ?? "";
 const ddmm = (date) => date.split("-").reverse().slice(0, 2).join("/");
@@ -36,10 +37,9 @@ const mondayOf = (date) => {
     const [y, m, d] = date.split("-").map(Number);
     return addDays(date, -((new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7));
 };
-const toMinutes = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
-const fromMinutes = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-const floorRow = (minutes) => Math.floor(minutes / ROW_MINUTES) * ROW_MINUTES;
-const ceilRow = (minutes) => Math.ceil(minutes / ROW_MINUTES) * ROW_MINUTES;
+const sessionRange = (session) => `${session.start}–${session.end}`;
+const shiftRange = (shift) => `${hhmm(shift.shiftStart)}–${hhmm(shift.shiftEnd)}`;
+const sessionOf = (shift) => SHIFT_SESSIONS.find((session) => session.value === slotOfShift(shift.shiftStart));
 
 // Clinic "now" as yyyy-mm-ddTHH:mm, comparable with a shift's date and start time
 const nowClinic = () => `${clinicToday()}T${clinicClock()}`;
@@ -51,24 +51,29 @@ const TONES = {
     off: { label: "Nghỉ", block: "border-border bg-surface-muted text-muted", dot: "bg-border-strong" },
 };
 
-// The shifts of one day merged into blocks: overlapping shifts share one block.
-const blocksOfDay = (dayShifts) => {
-    const blocks = [];
-    [...dayShifts]
-        .sort((a, b) => a.shiftStart.localeCompare(b.shiftStart))
-        .forEach((shift) => {
-            const start = floorRow(toMinutes(shift.shiftStart));
-            const end = Math.max(ceilRow(toMinutes(shift.shiftEnd)), start + ROW_MINUTES);
-            const last = blocks.at(-1);
-            if (last && start < last.end) {
-                last.end = Math.max(last.end, end);
-                last.shifts.push(shift);
-            } else {
-                blocks.push({ start, end, shifts: [shift] });
-            }
-        });
-    return blocks;
+// Attendance of a shift, as one line
+const attendanceOf = (shift) => {
+    if (shift.isPresent === false) return `Vắng${shift.absenceReason ? ` · ${shift.absenceReason}` : ""}`;
+    if (shift.actualStartTime) return `Vào ${hhmm(shift.actualStartTime)}${shift.actualEndTime ? ` · Ra ${hhmm(shift.actualEndTime)}` : " · đang trong ca"}`;
+    return "Chưa chấm công";
 };
+
+// One shift in a cell: room, its hours when they differ from the usual hours of the shift, then attendance or leave.
+const ShiftCard = ({ shift, session, tone, onOpen }) => (
+    <button
+        type="button"
+        onClick={() => onOpen(shift)}
+        className={cx(
+            "flex min-h-11 w-full flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-md border px-2 py-1.5 text-left outline-none transition-shadow hover:shadow-md focus-visible:shadow-focus",
+            tone.block,
+        )}
+        aria-label={`${session.label} ${ddmm(shift.scheduleDate)} ${shiftRange(shift)}: ${tone.label}`}
+    >
+        <span className={cx("w-full truncate font-semibold", tone === TONES.off && "line-through")}>{shift.roomName ?? shift.assignment ?? "Chưa gán phòng"}</span>
+        {shiftRange(shift) !== sessionRange(session) && <span className="num">{shiftRange(shift)}</span>}
+        <span className="w-full truncate opacity-80">{tone === TONES.work ? attendanceOf(shift) : tone.label}</span>
+    </button>
+);
 
 const WorkSchedule = () => {
     const today = clinicToday();
@@ -118,19 +123,23 @@ const WorkSchedule = () => {
     // Future shifts without leave yet can still be asked off
     const leaveable = shifts.filter((shift) => `${shift.scheduleDate}T${hhmm(shift.shiftStart)}` > nowClinic() && !leaveOf(shift));
 
-    // Rows from 08:00 to 17:30, widened to any shift outside that
-    const rows = useMemo(() => {
-        const first = Math.min(8 * 60, ...weekShifts.map((shift) => floorRow(toMinutes(shift.shiftStart))));
-        const last = Math.max(17 * 60 + 30, ...weekShifts.map((shift) => ceilRow(toMinutes(shift.shiftEnd)) - ROW_MINUTES));
-        return Array.from({ length: (last - first) / ROW_MINUTES + 1 }, (_, i) => first + i * ROW_MINUTES);
-    }, [weekShifts]);
+    // shiftsBySlot[day][session] = my shifts of that day in that shift
+    const shiftsBySlot = useMemo(() => {
+        const map = Object.fromEntries(days.map((day) => [day, Object.fromEntries(SHIFT_SESSIONS.map((session) => [session.value, []]))]));
+        [...weekShifts]
+            .sort((a, b) => a.shiftStart.localeCompare(b.shiftStart))
+            .forEach((shift) => map[shift.scheduleDate]?.[slotOfShift(shift.shiftStart)].push(shift));
+        return map;
+    }, [days, weekShifts]);
 
-    const blocksByDay = useMemo(
-        () => Object.fromEntries(days.map((day) => [day, blocksOfDay(weekShifts.filter((shift) => shift.scheduleDate === day))])),
-        [days, weekShifts],
-    );
-
-    const isPast = (day, row) => day < today || (day === today && fromMinutes(row) < clinicClock());
+    // Counts shown next to the legend, per look of the shifts
+    const counts = Object.fromEntries(Object.keys(TONES).map((key) => [key, weekShifts.filter((shift) => toneOf(shift) === TONES[key]).length]));
+    const isPastSlot = (day, session) => day < today || (day === today && session.end <= clinicClock());
+    const renderCell = (day, session) => {
+        const cellShifts = shiftsBySlot[day][session.value];
+        if (cellShifts.length === 0) return <span className="block px-2 py-1.5 text-muted/70">Không có ca</span>;
+        return cellShifts.map((shift) => <ShiftCard key={shift.id} shift={shift} session={session} tone={toneOf(shift)} onOpen={setOpened} />);
+    };
 
     return (
         <div className="app-content min-h-full">
@@ -162,20 +171,22 @@ const WorkSchedule = () => {
                     <span className="flex-1" />
                     <p className="num text-caption text-muted">{weekShifts.length} ca trong tuần</p>
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-5 py-2 text-caption text-muted">
-                    {Object.values(TONES).map((tone) => (
-                        <span key={tone.label} className="inline-flex items-center gap-1.5">
+                <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-border px-5 py-2 text-caption text-muted">
+                    {Object.entries(TONES).map(([key, tone]) => (
+                        <span key={key} className="inline-flex items-center gap-1.5">
                             <i aria-hidden className={cx("size-2 rounded-full", tone.dot)} />
                             {tone.label}
+                            <span className="num font-semibold text-ink">{counts[key]}</span>
                         </span>
                     ))}
                 </div>
 
-                <div className={cx("overflow-x-auto border-t border-border", state.loading && "opacity-60")}>
-                    <table className="w-full min-w-[820px] table-fixed border-collapse text-caption">
+                {/* md and up: two rows (the shifts) by seven columns (the days) */}
+                <div className={cx("hidden overflow-x-auto border-t border-border md:block", state.loading && "opacity-60")}>
+                    <table className="w-full min-w-190 table-fixed border-collapse text-caption">
                         <thead>
                             <tr className="bg-surface-muted">
-                                <th className="w-16 px-2 py-2 text-left font-medium text-muted">Giờ</th>
+                                <th className="w-28 px-3 py-2 text-left font-medium text-muted">Ca</th>
                                 {days.map((day, i) => (
                                     <th key={day} className={cx("border-l border-border px-2 py-2 font-medium", day === today ? "bg-primary-soft text-primary" : "text-muted")}>
                                         {WEEKDAYS[i]} <span className="num font-semibold text-ink">{ddmm(day)}</span>
@@ -184,51 +195,47 @@ const WorkSchedule = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {rows.map((row) => (
-                                <tr key={row} className="border-t border-border">
-                                    <th scope="row" className="num px-2 py-1 text-left align-top font-medium text-muted">
-                                        {fromMinutes(row)}
+                            {SHIFT_SESSIONS.map((session) => (
+                                <tr key={session.value} className="border-t border-border">
+                                    <th scope="row" className="px-3 py-2 text-left align-top">
+                                        <span className="block text-label text-ink">{session.label}</span>
+                                        <span className="num block font-normal text-muted">{sessionRange(session)}</span>
                                     </th>
-                                    {days.map((day) => {
-                                        const blocks = blocksByDay[day];
-                                        // Rows inside a block are covered by the block's cell (rowSpan)
-                                        if (blocks.some((block) => row > block.start && row < block.end)) return null;
-                                        const block = blocks.find((item) => item.start === row);
-                                        const base = cx("border-l border-border p-0.5 align-top", day === today && "bg-primary-softer", !block && isPast(day, row) && "bg-surface-muted/50");
-                                        if (!block) return <td key={day} className={cx("h-12", base)} />;
-                                        return (
-                                            <td key={day} rowSpan={(block.end - block.start) / ROW_MINUTES} className={base}>
-                                                <div className="flex h-full flex-col gap-0.5">
-                                                    {block.shifts.map((shift) => {
-                                                        const tone = toneOf(shift);
-                                                        return (
-                                                            <button
-                                                                key={shift.id}
-                                                                type="button"
-                                                                onClick={() => setOpened(shift)}
-                                                                className={cx(
-                                                                    "flex min-h-11 w-full flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-md border px-1.5 py-1 text-left outline-none transition-shadow hover:shadow-md focus-visible:shadow-focus",
-                                                                    tone.block,
-                                                                )}
-                                                                aria-label={`Ca ${ddmm(day)} ${hhmm(shift.shiftStart)}–${hhmm(shift.shiftEnd)}: ${tone.label}`}
-                                                            >
-                                                                <span className={cx("num font-semibold", tone === TONES.off && "line-through")}>
-                                                                    {hhmm(shift.shiftStart)}–{hhmm(shift.shiftEnd)}
-                                                                </span>
-                                                                <span className="w-full truncate">{shift.roomName ?? shift.assignment ?? "Chưa gán phòng"}</span>
-                                                                {tone !== TONES.work && <span className="font-semibold">{tone.label}</span>}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </td>
-                                        );
-                                    })}
+                                    {days.map((day) => (
+                                        <td
+                                            key={day}
+                                            className={cx("h-24 border-l border-border p-1 align-top", day === today && "bg-primary-softer", isPastSlot(day, session) && "bg-surface-muted/50")}
+                                        >
+                                            <div className="flex h-full flex-col gap-1">{renderCell(day, session)}</div>
+                                        </td>
+                                    ))}
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
+
+                {/* Below md: one row per day with its two shifts side by side */}
+                <ul className={cx("divide-y divide-border border-t border-border md:hidden", state.loading && "opacity-60")}>
+                    {days.map((day, i) => (
+                        <li key={day} className={cx("flex flex-col gap-2 px-4 py-3", day === today && "bg-primary-softer")}>
+                            <p className={cx("text-label", day === today ? "text-primary" : "text-ink")}>
+                                {WEEKDAYS[i]} <span className="num">{ddmm(day)}</span>
+                                {day === today && <span className="ml-2 text-caption font-normal">Hôm nay</span>}
+                            </p>
+                            <div className="grid grid-cols-2 gap-2 text-caption">
+                                {SHIFT_SESSIONS.map((session) => (
+                                    <div key={session.value} className="flex min-w-0 flex-col gap-1">
+                                        <span className="text-muted">
+                                            {session.label} · <span className="num">{sessionRange(session)}</span>
+                                        </span>
+                                        {renderCell(day, session)}
+                                    </div>
+                                ))}
+                            </div>
+                        </li>
+                    ))}
+                </ul>
                 {!state.loading && weekShifts.length === 0 && <p className="border-t border-border px-5 py-4 text-center text-body-sm text-muted">Tuần này bạn chưa được phân ca nào.</p>}
             </Card>
 
@@ -294,24 +301,18 @@ const WorkSchedule = () => {
 
 // Details of one shift: hours, room, attendance and leave.
 const ShiftDrawer = ({ shift, tone, leave, canAskLeave, onAskLeave, onClose }) => {
-    const attendance =
-        shift.isPresent === false
-            ? `Vắng${shift.absenceReason ? ` · ${shift.absenceReason}` : ""}`
-            : shift.actualStartTime
-              ? `Vào ${hhmm(shift.actualStartTime)}${shift.actualEndTime ? ` · Ra ${hhmm(shift.actualEndTime)}` : " · đang trong ca"}`
-              : "Chưa chấm công";
     const rows = [
         ["Ngày", dmy(shift.scheduleDate)],
-        ["Giờ ca", `${hhmm(shift.shiftStart)}–${hhmm(shift.shiftEnd)}`],
+        ["Ca", `${sessionOf(shift).label} · ${shiftRange(shift)}`],
         ["Phòng", shift.roomName ?? "Chưa gán phòng"],
         ["Nhiệm vụ", shift.assignment],
-        ["Chấm công", attendance],
+        ["Chấm công", attendanceOf(shift)],
         ["Nghỉ", leave ? `${LEAVE_STATUS[leave.status]?.label ?? leave.status} · ${leaveSlotText(leave.slot)}` : null],
         ["Ghi chú", shift.notes],
     ].filter(([, value]) => value);
 
     return (
-        <Drawer title={`Ca ${ddmm(shift.scheduleDate)} · ${hhmm(shift.shiftStart)}–${hhmm(shift.shiftEnd)}`} description={tone.label} onClose={onClose}>
+        <Drawer title={`${sessionOf(shift).label} ${ddmm(shift.scheduleDate)} · ${shiftRange(shift)}`} description={tone.label} onClose={onClose}>
             <dl className="flex flex-col gap-2 text-body-sm">
                 {rows.map(([label, value]) => (
                     <div key={label} className="flex gap-3">
@@ -342,7 +343,7 @@ const LeaveDialog = ({ shifts, initialDate, onClose, onSubmit }) => {
     const covered = shifts.filter((shift) => shift.scheduleDate === date && (!slot || slotOfShift(shift.shiftStart) === slot));
 
     return (
-        <Modal title="Xin nghỉ" description="Chọn ngày có ca. Nghỉ cả ngày là nghỉ mọi ca trong ngày đó." onClose={onClose}>
+        <Modal title="Xin nghỉ" onClose={onClose}>
             <form
                 className="flex flex-col gap-4"
                 onSubmit={async (event) => {
@@ -383,7 +384,7 @@ const LeaveDialog = ({ shifts, initialDate, onClose, onSubmit }) => {
                         ))}
                     </div>
                     <p className="text-caption text-muted">
-                        Nghỉ {covered.length} ca: {covered.map((shift) => `${hhmm(shift.shiftStart)}–${hhmm(shift.shiftEnd)}`).join(", ")}
+                        Nghỉ {covered.length} ca: {covered.map(shiftRange).join(", ")}
                     </p>
                 </fieldset>
                 <div className="field">
