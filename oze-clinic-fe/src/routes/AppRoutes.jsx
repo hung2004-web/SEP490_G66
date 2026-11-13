@@ -41,7 +41,7 @@ import ServiceManagement from "../pages/admin/ServiceManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
 import WorkShiftManagement from "../pages/admin/WorkShiftManagement";
 import SystemSettings from "../pages/admin/SystemSettings";
-import ExaminationPage from "../pages/doctor/ExaminationPage";
+import ExaminationPage from "../pages/doctor/examination/ExaminationPage";
 import ImagingReviewPage from "../pages/doctor/ImagingReviewPage";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";

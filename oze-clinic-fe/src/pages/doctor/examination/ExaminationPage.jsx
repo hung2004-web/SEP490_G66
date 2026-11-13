@@ -2,18 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Stethoscope } from "lucide-react";
 import { toast } from "react-toastify";
-import ClinicalExamStep from "@/components/examination/ClinicalExamStep";
 import ConfirmExamDialog from "@/components/examination/ConfirmExamDialog";
 import ExamPreStart from "@/components/examination/ExamPreStart";
 import ExamStepper from "@/components/examination/ExamStepper";
 import ExamTimer from "@/components/examination/ExamTimer";
-import MedicalHistoryStep from "@/components/examination/MedicalHistoryStep";
 import PatientCard from "@/components/examination/PatientCard";
-import PrescriptionStep from "@/components/examination/PrescriptionStep";
 import QueuePanel from "@/components/examination/QueuePanel";
 import StepHeading from "@/components/examination/StepHeading";
-import TreatmentPlanStep from "@/components/examination/TreatmentPlanStep";
-import TreatmentStep from "@/components/examination/TreatmentStep";
 import Breadcrumb from "@/components/navigation/Breadcrumb";
 import MyShiftBar from "@/components/staff/MyShiftBar";
 import {
@@ -30,6 +25,11 @@ import useMediaQuery from "@/hooks/useMediaQuery";
 import { cx } from "@/utils/cx";
 import { EXAM_STEP_TITLES, EXAM_STEPS, GENERIC_ERROR_MESSAGE, QUEUE_STATUS } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
+import ClinicalExamTab from "./tab/ClinicalExamTab";
+import PatientRecordTab from "./tab/PatientRecordTab";
+import PrescriptionTab from "./tab/PrescriptionTab";
+import TreatmentPlanTab from "./tab/TreatmentPlanTab";
+import TreatmentTab from "./tab/TreatmentTab";
 
 const STEP = { HISTORY: 0, EXAM: 1, PLAN: 2, TREATMENT: 3, PRESCRIPTION: 4 };
 
@@ -37,6 +37,64 @@ const STEP = { HISTORY: 0, EXAM: 1, PLAN: 2, TREATMENT: 3, PRESCRIPTION: 4 };
 const BREADCRUMB_LABEL = { [STEP.HISTORY]: "Thông tin bệnh nhân", [STEP.PLAN]: "Kế hoạch điều trị" };
 const NEXT_LABEL = { [STEP.PLAN]: "Chuyển sang phòng điều trị", [STEP.PRESCRIPTION]: "Kết thúc lượt khám" };
 const CALLED_STATUS = { label: "Đã gọi · chờ vào phòng", tone: "warning" };
+
+// The tabs of a visit, in order (index = STEP, the stepper shows EXAM_STEPS for them). Each tab is a component in ./tab;
+// render gets what the frame shares: the queue item, the record, busy, the record updaters (on*Change), goTo(step) and onEnd.
+const EXAM_TABS = [
+    {
+        step: STEP.HISTORY,
+        render: ({ item, record, busy, handlers, goTo, onEnd }) => (
+            <PatientRecordTab
+                queueId={item.id}
+                record={record}
+                busy={busy}
+                onHistoryChange={handlers.onHistoryChange}
+                onNext={async (history) => {
+                    await saveMedicalHistory(item.id, history);
+                    handlers.onHistoryChange(history);
+                    goTo(STEP.EXAM);
+                }}
+                onEnd={(history) => {
+                    handlers.onHistoryChange(history);
+                    onEnd();
+                }}
+            />
+        ),
+    },
+    {
+        step: STEP.EXAM,
+        render: ({ item, record, busy, handlers, goTo, onEnd }) => (
+            <ClinicalExamTab queueId={item.id} record={record} busy={busy} onExamChange={handlers.onExamChange} onEnd={onEnd} onComplete={() => goTo(STEP.PLAN)} />
+        ),
+    },
+    {
+        step: STEP.PLAN,
+        render: ({ item, record, busy, handlers, goTo, onEnd }) => (
+            <TreatmentPlanTab queueId={item.id} record={record} busy={busy} onPlanChange={handlers.onPlanChange} onEnd={onEnd} onComplete={() => goTo(STEP.TREATMENT)} />
+        ),
+    },
+    {
+        step: STEP.TREATMENT,
+        render: ({ item, record, busy, handlers, goTo, onEnd }) => (
+            <TreatmentTab
+                queueId={item.id}
+                record={record}
+                busy={busy}
+                onTreatmentChange={handlers.onTreatmentChange}
+                onPlanChange={handlers.onPlanChange}
+                onEditPlan={() => goTo(STEP.PLAN)}
+                onEnd={onEnd}
+                onComplete={() => goTo(STEP.PRESCRIPTION)}
+            />
+        ),
+    },
+    {
+        step: STEP.PRESCRIPTION,
+        render: ({ item, record, busy, handlers, onEnd }) => (
+            <PrescriptionTab queueId={item.id} record={record} busy={busy} onPrescriptionChange={handlers.onPrescriptionChange} onEnd={onEnd} />
+        ),
+    },
+];
 
 // Patient shown on the right: the one in the room, else the one called. Nobody until the doctor calls someone in;
 // waiting patients cannot be opened.
@@ -69,8 +127,9 @@ const CalledView = ({ item, record }) => (
     </>
 );
 
-// Exam in progress: process stepper, patient card with timer, then the content of the step being viewed.
-const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanChange, onTreatmentChange, onPrescriptionChange, onStep, onEnd }) => {
+// Exam in progress: the frame (back link, breadcrumb, stepper, patient card with timer, step heading) around the tab
+// being viewed (EXAM_TABS). handlers: { onHistoryChange, onExamChange, onPlanChange, onTreatmentChange, onPrescriptionChange }.
+const InExamView = ({ item, record, busy, handlers, onStep, onEnd }) => {
     const current = item.step ?? STEP.HISTORY;
     const [viewing, setViewing] = useState(current);
     const shown = Math.min(viewing, current);
@@ -79,12 +138,6 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanC
         if (step > current && !(await onStep(step))) return;
         setViewing(step);
         window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-
-    const handleNextFromHistory = async (history) => {
-        await saveMedicalHistory(item.id, history);
-        onHistoryChange(history);
-        goTo(STEP.EXAM);
     };
 
     return (
@@ -111,54 +164,7 @@ const InExamView = ({ item, record, busy, onHistoryChange, onExamChange, onPlanC
             />
             <StepHeading index={shown} total={EXAM_STEPS.length} title={EXAM_STEP_TITLES[shown]} nextLabel={NEXT_LABEL[shown] ?? EXAM_STEPS[shown + 1]} />
 
-            {shown === STEP.HISTORY && (
-                <MedicalHistoryStep
-                    queueId={item.id}
-                    record={record}
-                    busy={busy}
-                    onHistoryChange={onHistoryChange}
-                    onNext={handleNextFromHistory}
-                    onEnd={(history) => {
-                        onHistoryChange(history);
-                        onEnd();
-                    }}
-                />
-            )}
-            {shown === STEP.EXAM && (
-                <ClinicalExamStep
-                    queueId={item.id}
-                    record={record}
-                    busy={busy}
-                    onExamChange={onExamChange}
-                    onEnd={onEnd}
-                    onComplete={() => goTo(STEP.PLAN)}
-                />
-            )}
-            {shown === STEP.PLAN && (
-                <TreatmentPlanStep
-                    queueId={item.id}
-                    record={record}
-                    busy={busy}
-                    onPlanChange={onPlanChange}
-                    onEnd={onEnd}
-                    onComplete={() => goTo(STEP.PLAN + 1)}
-                />
-            )}
-            {shown === STEP.TREATMENT && (
-                <TreatmentStep
-                    queueId={item.id}
-                    record={record}
-                    busy={busy}
-                    onTreatmentChange={onTreatmentChange}
-                    onPlanChange={onPlanChange}
-                    onEditPlan={() => goTo(STEP.PLAN)}
-                    onEnd={onEnd}
-                    onComplete={() => goTo(STEP.TREATMENT + 1)}
-                />
-            )}
-            {shown === STEP.PRESCRIPTION && (
-                <PrescriptionStep queueId={item.id} record={record} busy={busy} onPrescriptionChange={onPrescriptionChange} onEnd={onEnd} />
-            )}
+            {EXAM_TABS.find((tab) => tab.step === shown)?.render({ item, record, busy, handlers, goTo, onEnd })}
         </>
     );
 };
@@ -235,11 +241,13 @@ const ExaminationPage = () => {
 
     // Keeps the page's copy of the record in sync with the drafts edited in the steps.
     const updateRecord = (key) => (value) => setRecord((current) => (current?.data ? { ...current, data: { ...current.data, [key]: value } } : current));
-    const updateHistory = updateRecord("history");
-    const updateExam = updateRecord("exam");
-    const updatePlan = updateRecord("plan");
-    const updateTreatment = updateRecord("treatment");
-    const updatePrescription = updateRecord("prescription");
+    const recordHandlers = {
+        onHistoryChange: updateRecord("history"),
+        onExamChange: updateRecord("exam"),
+        onPlanChange: updateRecord("plan"),
+        onTreatmentChange: updateRecord("treatment"),
+        onPrescriptionChange: updateRecord("prescription"),
+    };
 
     const renderMain = () => {
         if (loadFailed) return <p role="alert" className="alert alert-danger">{GENERIC_ERROR_MESSAGE}</p>;
@@ -254,11 +262,7 @@ const ExaminationPage = () => {
                     item={selected}
                     record={record.data}
                     busy={busy}
-                    onHistoryChange={updateHistory}
-                    onExamChange={updateExam}
-                    onPlanChange={updatePlan}
-                    onTreatmentChange={updateTreatment}
-                    onPrescriptionChange={updatePrescription}
+                    handlers={recordHandlers}
                     onStep={(step) => runAction((id) => setExamStep(id, step), selected.id, keep)}
                     onEnd={() => setConfirm({ type: "end", item: selected })}
                 />

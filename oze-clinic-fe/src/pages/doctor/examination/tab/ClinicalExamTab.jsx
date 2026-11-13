@@ -4,16 +4,16 @@ import useAutosave from "@/hooks/useAutosave";
 import useSession from "@/hooks/useSession";
 import { requestXray, saveExamDraft } from "@/services/examinationService";
 import { CHART_TYPE, CHILD_CHART_MAX_AGE, isPrimaryTooth } from "@/utils/examination";
-import DiagnosisDialog from "./DiagnosisDialog";
-import DiagnosisSection from "./DiagnosisSection";
-import ExamDentalChart from "./ExamDentalChart";
-import StepActionBar from "./StepActionBar";
-import SymptomSection from "./SymptomSection";
-import ToothConditionTable from "./ToothConditionTable";
-import ToothEntryDialog from "./ToothEntryDialog";
-import ToothPanel from "./ToothPanel";
-import XrayRequestDialog from "./XrayRequestDialog";
-import XraySection from "./XraySection";
+import DiagnosisDialog from "@/components/examination/DiagnosisDialog";
+import DiagnosisSection from "@/components/examination/DiagnosisSection";
+import ExamDentalChart from "@/components/examination/ExamDentalChart";
+import StepActionBar from "@/components/examination/StepActionBar";
+import SymptomSection from "@/components/examination/SymptomSection";
+import ToothConditionTable from "@/components/examination/ToothConditionTable";
+import ToothEntryDialog from "@/components/examination/ToothEntryDialog";
+import ToothPanel from "@/components/examination/ToothPanel";
+import XrayRequestDialog from "@/components/examination/XrayRequestDialog";
+import XraySection from "@/components/examination/XraySection";
 
 const COMPLETE_HINT = "Cần ít nhất một chẩn đoán xác định để chuyển sang lập kế hoạch điều trị.";
 
@@ -22,7 +22,7 @@ const newId = (prefix) => `${prefix}-${Date.now()}`;
 // Step 2 "Khám & Chẩn đoán": symptoms, dental chart findings, X-ray orders and final diagnoses.
 // record.exam is the saved draft ({ symptoms, note, entries, films, diagnoses }); every change is saved
 // automatically and passed to onExamChange so the page keeps it when the doctor moves between steps.
-const ClinicalExamStep = ({ queueId, record, busy = false, onExamChange, onComplete, onEnd }) => {
+const ClinicalExamTab = ({ queueId, record, busy = false, onExamChange, onComplete, onEnd }) => {
     const { userName } = useSession();
     const { value: exam, setValue: setExam, statusText, saving, saveNow } = useAutosave((draft) => saveExamDraft(queueId, draft), record.exam, onExamChange);
     const [chartType, setChartType] = useState(record.patient.age <= CHILD_CHART_MAX_AGE ? CHART_TYPE.CHILD : CHART_TYPE.ADULT);
@@ -173,4 +173,4 @@ const ClinicalExamStep = ({ queueId, record, busy = false, onExamChange, onCompl
     );
 };
 
-export default ClinicalExamStep;
+export default ClinicalExamTab;

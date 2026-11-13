@@ -4,9 +4,9 @@ import useAutosave from "@/hooks/useAutosave";
 import { saveTreatmentPlan } from "@/services/examinationService";
 import { MOCK_PLAN_SERVICE_TYPES } from "@/utils/data/mockExamination";
 import { validatePlan } from "@/utils/examination";
-import PlanServiceList from "./PlanServiceList";
-import PlanSummaryCard from "./PlanSummaryCard";
-import StepActionBar from "./StepActionBar";
+import PlanServiceList from "@/components/examination/PlanServiceList";
+import PlanSummaryCard from "@/components/examination/PlanSummaryCard";
+import StepActionBar from "@/components/examination/StepActionBar";
 
 // TODO(api): service types should come from the service catalogue endpoint.
 const typeOptionsOf = (service) => MOCK_PLAN_SERVICE_TYPES[service.serviceId] ?? [];
@@ -17,7 +17,7 @@ const NO_SERVICE_HINT = "Bệnh nhân chỉ đăng ký khám tổng quát, khôn
 // record.plan is the saved draft ({ services }); every change is saved automatically and passed to onPlanChange.
 // The plan is checked (validatePlan) before onComplete (go to the treatment room); errors stay visible and update
 // while the doctor fixes them.
-const TreatmentPlanStep = ({ queueId, record, busy = false, onPlanChange, onComplete, onEnd }) => {
+const TreatmentPlanTab = ({ queueId, record, busy = false, onPlanChange, onComplete, onEnd }) => {
     const { value: plan, setValue: setPlan, statusText, saveNow } = useAutosave((draft) => saveTreatmentPlan(queueId, draft), record.plan, onPlanChange);
     // Services shown open; each one opens and closes independently of the others.
     const [expandedIds, setExpandedIds] = useState(() => (record.plan.services[0] ? [record.plan.services[0].id] : []));
@@ -85,4 +85,4 @@ const TreatmentPlanStep = ({ queueId, record, busy = false, onPlanChange, onComp
     );
 };
 
-export default TreatmentPlanStep;
+export default TreatmentPlanTab;

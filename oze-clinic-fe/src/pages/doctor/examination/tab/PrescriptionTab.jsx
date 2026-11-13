@@ -3,13 +3,13 @@ import { toast } from "react-toastify";
 import useAutosave from "@/hooks/useAutosave";
 import { savePrescriptionDraft } from "@/services/examinationService";
 import { GENERIC_ERROR_MESSAGE } from "@/utils/messages";
-import AllergyAlert from "./AllergyAlert";
-import PrescriptionErrorAlert from "./PrescriptionErrorAlert";
-import PrescriptionItemDeleteDialog from "./PrescriptionItemDeleteDialog";
-import PrescriptionItemDialog from "./PrescriptionItemDialog";
-import PrescriptionNoteCard from "./PrescriptionNoteCard";
-import PrescriptionTable from "./PrescriptionTable";
-import StepActionBar from "./StepActionBar";
+import AllergyAlert from "@/components/examination/AllergyAlert";
+import PrescriptionErrorAlert from "@/components/examination/PrescriptionErrorAlert";
+import PrescriptionItemDeleteDialog from "@/components/examination/PrescriptionItemDeleteDialog";
+import PrescriptionItemDialog from "@/components/examination/PrescriptionItemDialog";
+import PrescriptionNoteCard from "@/components/examination/PrescriptionNoteCard";
+import PrescriptionTable from "@/components/examination/PrescriptionTable";
+import StepActionBar from "@/components/examination/StepActionBar";
 
 // TODO(api): contraindication warnings come from the AI check ({ [itemId]: message }); none until it is connected.
 const NO_WARNINGS = {};
@@ -18,7 +18,7 @@ const NO_WARNINGS = {};
 // record.prescription is the saved draft ({ items, notes, status }); changes are saved automatically and passed to
 // onPrescriptionChange. "Hoàn tất & kết thúc lượt khám" saves, then onEnd (the page confirms, the visit's end finalizes
 // the prescription). A visit without medicine can be completed too.
-const PrescriptionStep = ({ queueId, record, busy = false, onPrescriptionChange, onEnd }) => {
+const PrescriptionTab = ({ queueId, record, busy = false, onPrescriptionChange, onEnd }) => {
     const { value: prescription, setValue: setPrescription, statusText, saveNow } = useAutosave(
         (value) => savePrescriptionDraft(queueId, value),
         record.prescription,
@@ -90,4 +90,4 @@ const PrescriptionStep = ({ queueId, record, busy = false, onPrescriptionChange,
     );
 };
 
-export default PrescriptionStep;
+export default PrescriptionTab;
