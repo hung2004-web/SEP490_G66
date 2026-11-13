@@ -8,9 +8,14 @@ import ReviewPatientStrip from "@/components/imagingReview/ReviewPatientStrip";
 import ReviewRequestList from "@/components/imagingReview/ReviewRequestList";
 import useAsync from "@/hooks/useAsync";
 import { approveImagingReview, getImagingReviews, requestImagingRetake } from "@/services/imagingReviewService";
+import { IMAGING_REVIEW_STATUS } from "@/utils/messages";
 
-// Tabs of the list: "Đang xử lý" = sent back to the technician for a retake.
-const FILTER_STATUSES = { pending: ["pending"], processing: ["retake"], all: null };
+// Status order of the list (Chờ duyệt first), so the first result shown is one to review.
+const STATUS_ORDER = Object.keys(IMAGING_REVIEW_STATUS);
+const statusRank = (status) => {
+    const rank = STATUS_ORDER.indexOf(status);
+    return rank === -1 ? STATUS_ORDER.length : rank;
+};
 
 const normalize = (value) => value.normalize("NFC").trim().toLocaleLowerCase("vi");
 
@@ -24,7 +29,8 @@ const resultSubtitle = (review) =>
 
 const ImagingReviewPage = () => {
     const [search, setSearch] = useState("");
-    const [filter, setFilter] = useState("pending");
+    // "" = Tất cả, otherwise an IMAGING_REVIEW_STATUS key.
+    const [filter, setFilter] = useState("");
     const [selectedId, setSelectedId] = useState(null);
     const [dialog, setDialog] = useState(null);
     const [busy, setBusy] = useState(false);
@@ -36,15 +42,17 @@ const ImagingReviewPage = () => {
     const reviews = useMemo(() => (result?.success ? result.data.map((review) => updated[review.id] ?? review) : []), [result, updated]);
 
     const visible = useMemo(() => {
-        const statuses = FILTER_STATUSES[filter];
         const keyword = normalize(search);
-        return reviews.filter((review) => (!statuses || statuses.includes(review.status)) && matchesSearch(review, keyword));
+        return reviews
+            .filter((review) => (!filter || review.status === filter) && matchesSearch(review, keyword))
+            .sort((a, b) => statusRank(a.status) - statusRank(b.status));
     }, [reviews, filter, search]);
 
-    const counts = {
-        pending: reviews.filter((review) => FILTER_STATUSES.pending.includes(review.status)).length,
-        processing: reviews.filter((review) => FILTER_STATUSES.processing.includes(review.status)).length,
-    };
+    // Count per status tab, "" = Tất cả.
+    const counts = { "": reviews.length };
+    STATUS_ORDER.forEach((status) => {
+        counts[status] = reviews.filter((review) => review.status === status).length;
+    });
 
     // Keep the chosen result while it is in the list, otherwise show the first one.
     const selected = visible.find((review) => review.id === selectedId) ?? visible[0] ?? null;
@@ -79,7 +87,7 @@ const ImagingReviewPage = () => {
 
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
                 {loading ? (
-                    <div className="flex w-full flex-col gap-3 lg:w-[360px] lg:shrink-0" aria-hidden="true">
+                    <div className="flex w-full flex-col gap-3 lg:w-90 lg:shrink-0" aria-hidden="true">
                         <div className="skeleton h-10 w-full" />
                         <div className="skeleton h-9 w-64" />
                         <div className="skeleton h-21 w-full" />
