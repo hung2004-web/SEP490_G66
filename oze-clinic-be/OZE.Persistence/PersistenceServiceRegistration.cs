@@ -38,6 +38,7 @@ namespace OZE.Persistence
 
             services.AddScoped<IUserRefreshTokenRepository, UserRefreshTokenRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IRoomRepository, RoomRepository>();
             services.AddScoped<IRegistrationRepository, RegistrationRepository>();
             services.AddScoped<IPatientRepository, PatientRepository>();

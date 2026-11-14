@@ -24,6 +24,7 @@ namespace OZE.Application.Services
         private readonly IQueueService? _queueService;
         private readonly IInvoiceRepository? _invoiceRepository;
         private readonly IInstallmentRepository? _installmentRepository;
+        private readonly INotificationService? _notifications;
 
         public AppointmentService(
             IAppointmentRepository appointmentRepository,
@@ -35,7 +36,8 @@ namespace OZE.Application.Services
             ILogger<AppointmentService> logger,
             IQueueService? queueService = null,
             IInvoiceRepository? invoiceRepository = null,
-            IInstallmentRepository? installmentRepository = null)
+            IInstallmentRepository? installmentRepository = null,
+            INotificationService? notifications = null)
         {
             _appointmentRepository = appointmentRepository;
             _registrationRepository = registrationRepository;
@@ -47,6 +49,7 @@ namespace OZE.Application.Services
             _queueService = queueService;
             _invoiceRepository = invoiceRepository;
             _installmentRepository = installmentRepository;
+            _notifications = notifications;
         }
 
         public async Task<List<BookableServiceResponse>> GetBookableServicesAsync()
@@ -122,6 +125,7 @@ namespace OZE.Application.Services
                 });
 
             await SendBookingNotificationAsync(phone, email, appointment, lines);
+            await NotifyNewOnlineBookingAsync(appointment, patient);
             await LogCreatedAsync(appointment, lines);
             return ToResponse(appointment, patient, slot, lines);
         }
@@ -140,6 +144,7 @@ namespace OZE.Application.Services
                 });
 
             await SendBookingNotificationAsync(patient.PhoneNumber, patient.Email, appointment, lines);
+            await NotifyNewOnlineBookingAsync(appointment, patient);
             await LogCreatedAsync(appointment, lines);
             return ToResponse(appointment, patient, slot, lines);
         }
@@ -204,6 +209,8 @@ namespace OZE.Application.Services
                 }, initialStatus: AppointmentConstants.ConfirmedStatus);
 
             await SendReceptionBookingNotificationAsync(patient.PhoneNumber, patient.Email, appointment, lines);
+            await NotifyAsync(n => n.NotifyPatientAsync(patient.Id, Content(NotificationConstants.Text.AppointmentBookedByClinicTitle, NotificationConstants.Text.AppointmentBookedByClinicMessage, appointment)));
+            await NotifyDoctorOfNewAppointmentAsync(appointment, patient.FullName);
             await LogCreatedAsync(appointment, lines);
             return ToResponse(appointment, patient, slot, lines);
         }
@@ -645,6 +652,27 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.AppointmentCancelled, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status }, appointment.CancellationReason);
 
+            var cancelArgs = new object[] { Hm(appointment.TimeSlotStart), Dmy(appointment.AppointmentDate), appointment.CancellationReason };
+            if (ownerUserId != null)
+            {
+                // The patient cancelled online: the desk should know the slot is free
+                await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ReceptionistRole },
+                    new NotificationContent(NotificationConstants.Text.PatientCancelledTitle,
+                        string.Format(NotificationConstants.Text.PatientCancelledMessage, new object[] { appointment.Patient?.FullName ?? string.Empty }.Concat(cancelArgs).ToArray()),
+                        NotificationConstants.Reference.Appointment, appointment.Id.ToString()), cancellationToken: cancellationToken));
+            }
+            else
+            {
+                await NotifyAsync(n => n.NotifyPatientAsync(appointment.PatientId,
+                    new NotificationContent(NotificationConstants.Text.AppointmentCancelledTitle, string.Format(NotificationConstants.Text.AppointmentCancelledMessage, cancelArgs),
+                        NotificationConstants.Reference.Appointment, appointment.Id.ToString()), cancellationToken));
+            }
+            if (oldStatus == AppointmentConstants.ConfirmedStatus)
+            {
+                await NotifyAsync(n => n.NotifyStaffAsync(appointment.DoctorId,
+                    Content(NotificationConstants.Text.AppointmentCancelledForDoctorTitle, NotificationConstants.Text.AppointmentCancelledForDoctorMessage, appointment, appointment.Patient?.FullName), cancellationToken));
+            }
+
             return MapToResponse(appointment);
         }
 
@@ -714,6 +742,28 @@ namespace OZE.Application.Services
                 await SendConfirmationNotificationAsync(appointment);
             }
 
+            var patientName = appointment.Patient?.FullName;
+            if (isPatient)
+            {
+                await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ReceptionistRole },
+                    Content(NotificationConstants.Text.PatientRescheduledTitle, NotificationConstants.Text.PatientRescheduledMessage, appointment, patientName), cancellationToken: cancellationToken));
+            }
+            else
+            {
+                await NotifyAsync(n => n.NotifyPatientAsync(appointment.PatientId,
+                    Content(NotificationConstants.Text.AppointmentRescheduledTitle, NotificationConstants.Text.AppointmentRescheduledMessage, appointment), cancellationToken));
+                await NotifyDoctorOfNewAppointmentAsync(appointment, patientName);
+            }
+            // The doctor who had a confirmed visit at the old time no longer has it
+            if (before.Status == AppointmentConstants.ConfirmedStatus && before.DoctorId.HasValue
+                && (before.DoctorId != appointment.DoctorId || isPatient))
+            {
+                await NotifyAsync(n => n.NotifyStaffAsync(before.DoctorId,
+                    new NotificationContent(NotificationConstants.Text.AppointmentMovedAwayTitle,
+                        string.Format(NotificationConstants.Text.AppointmentMovedAwayMessage, patientName, Hm(before.TimeSlotStart), Dmy(before.AppointmentDate)),
+                        NotificationConstants.Reference.Appointment, appointment.Id.ToString()), cancellationToken));
+            }
+
             return MapToResponse(appointment);
         }
 
@@ -732,6 +782,9 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.AppointmentConfirmed, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { Status = oldStatus }, new { appointment.Status });
             await SendConfirmationNotificationAsync(appointment);
+            await NotifyAsync(n => n.NotifyPatientAsync(appointment.PatientId,
+                Content(NotificationConstants.Text.AppointmentConfirmedTitle, NotificationConstants.Text.AppointmentConfirmedMessage, appointment), cancellationToken));
+            await NotifyDoctorOfNewAppointmentAsync(appointment, appointment.Patient?.FullName);
 
             return MapToResponse(appointment);
         }
@@ -920,6 +973,9 @@ namespace OZE.Application.Services
 
             await _auditLogService.LogAsync(AuditConstants.AppointmentDoctorReassigned, AuditConstants.AppointmentEntity, appointment.Id.ToString(),
                 new { DoctorId = oldDoctorId }, new { DoctorId = newDoctorId, RoomId = room?.Id });
+            await NotifyAsync(n => n.NotifyStaffAsync(newDoctorId,
+                new NotificationContent(NotificationConstants.Text.PatientReassignedTitle, string.Format(NotificationConstants.Text.PatientReassignedMessage, appointment.Patient?.FullName),
+                    NotificationConstants.Reference.Appointment, appointment.Id.ToString()), cancellationToken));
 
             var response = MapToResponse(appointment);
             response.DoctorId = newDoctorId;
@@ -1392,6 +1448,33 @@ namespace OZE.Application.Services
                     appointment.DoctorId,
                     Services = lines.Select(l => l.DisplayName)
                 });
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
+
+        private static string Hm(TimeOnly? time) => time?.ToString("HH:mm") ?? string.Empty;
+        private static string Dmy(DateOnly date) => date.ToString("dd/MM/yyyy");
+
+        // A notification about one appointment. With a name the text starts with it ({0} name, {1} time, {2} date),
+        // otherwise {0} time, {1} date
+        private static NotificationContent Content(string title, string template, Appointment appointment, string? name = null)
+        {
+            var message = name == null
+                ? string.Format(template, Hm(appointment.TimeSlotStart), Dmy(appointment.AppointmentDate))
+                : string.Format(template, name, Hm(appointment.TimeSlotStart), Dmy(appointment.AppointmentDate));
+            return new NotificationContent(title, message, NotificationConstants.Reference.Appointment, appointment.Id.ToString());
+        }
+
+        // A new PENDING booking made online: every receptionist, so someone calls the patient back
+        private Task NotifyNewOnlineBookingAsync(Appointment appointment, Patient patient) =>
+            NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ReceptionistRole },
+                Content(NotificationConstants.Text.NewOnlineBookingTitle, NotificationConstants.Text.NewOnlineBookingMessage, appointment, patient.FullName)));
+
+        // The doctor learns about a visit once it is confirmed
+        private Task NotifyDoctorOfNewAppointmentAsync(Appointment appointment, string? patientName) =>
+            NotifyAsync(n => n.NotifyStaffAsync(appointment.DoctorId,
+                Content(NotificationConstants.Text.NewAppointmentForDoctorTitle, NotificationConstants.Text.NewAppointmentForDoctorMessage, appointment, patientName ?? string.Empty)));
 
         // A patient can only cancel or reschedule while the appointment is further away than the cutoff
         private async Task EnsureBeforeCutoffAsync(Appointment appointment, string errorMessage)

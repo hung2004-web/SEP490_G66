@@ -13,15 +13,18 @@ namespace OZE.Application.Services
         private readonly IRefundRepository _refundRepository;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly INotificationService? _notifications;
 
         public RefundService(
             IRefundRepository refundRepository,
             IInvoiceRepository invoiceRepository,
-            IAuditLogService auditLogService)
+            IAuditLogService auditLogService,
+            INotificationService? notifications = null)
         {
             _refundRepository = refundRepository;
             _invoiceRepository = invoiceRepository;
             _auditLogService = auditLogService;
+            _notifications = notifications;
         }
 
         public Task<RefundRequestResponse> RequestAsync(
@@ -87,10 +90,18 @@ namespace OZE.Application.Services
                         refundRequest.PaymentId,
                         requestedByUserId
                     });
+                await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ClinicManagerRole },
+                    new NotificationContent(NotificationConstants.Text.NewRefundRequestTitle,
+                        string.Format(NotificationConstants.Text.NewRefundRequestMessage, NotificationFormat.Money(refundRequest.Amount), invoice.InvoiceNumber, reason),
+                        NotificationConstants.Reference.RefundRequest, refundRequest.Id.ToString()), cancellationToken: cancellationToken));
 
                 return ToResponse(refundRequest, invoice);
             }, cancellationToken);
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
 
         public async Task<IReadOnlyList<RefundRequestResponse>> GetListAsync(
             RefundRequestQueryParameters parameters,
@@ -207,6 +218,13 @@ namespace OZE.Application.Services
                     refundRequest.Id.ToString(),
                     null,
                     new { refundRequest.InvoiceId, refundRequest.Amount, refundRequest.ProcessedAt });
+                await NotifyAsync(n => n.NotifyPatientAsync(invoice.PatientId,
+                    new NotificationContent(NotificationConstants.Text.RefundApprovedTitle, string.Format(NotificationConstants.Text.RefundApprovedMessage, NotificationFormat.Money(refundRequest.Amount), invoice.InvoiceNumber),
+                        NotificationConstants.Reference.Invoice, invoice.Id.ToString()), cancellationToken));
+                await NotifyAsync(n => n.NotifyUsersAsync(new[] { refundRequest.RequestedByUserId },
+                    new NotificationContent(NotificationConstants.Text.RefundDecidedForRequesterTitle,
+                        string.Format(NotificationConstants.Text.RefundDecidedForRequesterMessage, invoice.InvoiceNumber, "đã duyệt, hoàn " + NotificationFormat.Money(refundRequest.Amount)),
+                        NotificationConstants.Reference.RefundRequest, refundRequest.Id.ToString()), cancellationToken));
 
                 return ToResponse(refundRequest, invoice);
             }, cancellationToken);
@@ -256,6 +274,13 @@ namespace OZE.Application.Services
                         rejectionReason,
                         rejectedByUserId
                     });
+                await NotifyAsync(n => n.NotifyPatientAsync(invoice.PatientId,
+                    new NotificationContent(NotificationConstants.Text.RefundRejectedTitle, string.Format(NotificationConstants.Text.RefundRejectedMessage, invoice.InvoiceNumber, rejectionReason),
+                        NotificationConstants.Reference.Invoice, invoice.Id.ToString()), cancellationToken));
+                await NotifyAsync(n => n.NotifyUsersAsync(new[] { refundRequest.RequestedByUserId },
+                    new NotificationContent(NotificationConstants.Text.RefundDecidedForRequesterTitle,
+                        string.Format(NotificationConstants.Text.RefundDecidedForRequesterMessage, invoice.InvoiceNumber, "bị từ chối, lý do: " + rejectionReason),
+                        NotificationConstants.Reference.RefundRequest, refundRequest.Id.ToString()), cancellationToken));
 
                 return ToResponse(refundRequest, invoice);
             }, cancellationToken);

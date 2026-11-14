@@ -26,6 +26,7 @@ namespace OZE.Application.Services
         private readonly ISmsSender? _smsSender;
         private readonly IEmailSender? _emailSender;
         private readonly ILogger<DoctorScheduleService>? _logger;
+        private readonly INotificationService? _notifications;
 
         public DoctorScheduleService(IWorkShiftRepository workShiftRepository,
             IAppointmentRepository appointmentRepository,
@@ -35,11 +36,13 @@ namespace OZE.Application.Services
             IAuditLogRepository? auditLogRepository = null,
             ISmsSender? smsSender = null,
             IEmailSender? emailSender = null,
-            ILogger<DoctorScheduleService>? logger = null)
+            ILogger<DoctorScheduleService>? logger = null,
+            INotificationService? notifications = null)
         {
             _smsSender = smsSender;
             _emailSender = emailSender;
             _logger = logger;
+            _notifications = notifications;
             _auditLogRepository = auditLogRepository;
             _workShiftRepository = workShiftRepository;
             _appointmentRepository = appointmentRepository;
@@ -175,8 +178,20 @@ namespace OZE.Application.Services
             });
 
             await NotifyShiftEndedAsync(doctor.FullName, newlyNotified);
+            // The desk moves the waiting patients and reschedules the booked ones
+            var left = response.WaitingAppointmentIds.Count + response.UpcomingAppointmentIds.Count;
+            if (left > 0)
+            {
+                await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ReceptionistRole },
+                    new NotificationContent(NotificationConstants.Text.ShiftEndedReceptionTitle, string.Format(NotificationConstants.Text.ShiftEndedReceptionMessage, doctor.FullName, left),
+                        NotificationConstants.Reference.WorkShift, shift.Id.ToString())));
+            }
             return response;
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
 
         // Tells each patient by SMS and email; a failed message must not undo the end of the shift, so errors are only logged
         private async Task NotifyShiftEndedAsync(string doctorName, List<(Appointment Appointment, bool Waiting)> patients)
@@ -187,6 +202,8 @@ namespace OZE.Application.Services
                     ? string.Format(ErrorConstants.DoctorScheduleMessage.ShiftEndedWaitingNotice, doctorName)
                     : string.Format(ErrorConstants.DoctorScheduleMessage.ShiftEndedUpcomingNotice, doctorName,
                         appointment.TimeSlotStart?.ToString("HH:mm"), appointment.AppointmentDate.ToString("dd/MM/yyyy"));
+                await NotifyAsync(n => n.NotifyPatientAsync(appointment.PatientId,
+                    new NotificationContent(NotificationConstants.Text.AppointmentShiftEndedTitle, message, NotificationConstants.Reference.Appointment, appointment.Id.ToString())));
                 try
                 {
                     if (_smsSender != null && !string.IsNullOrWhiteSpace(appointment.Patient?.PhoneNumber))

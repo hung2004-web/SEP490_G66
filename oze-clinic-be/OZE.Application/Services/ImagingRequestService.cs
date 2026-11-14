@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
@@ -13,17 +14,20 @@ namespace OZE.Application.Services
         private readonly IStaffRepository _staffRepository;
         private readonly IAppointmentRepository? _appointmentRepository;
         private readonly IQueueService? _queueService;
+        private readonly INotificationService? _notifications;
 
         public ImagingRequestService(
             IImagingRequestRepository imagingRequestRepository,
             IStaffRepository staffRepository,
             IAppointmentRepository? appointmentRepository = null,
-            IQueueService? queueService = null)
+            IQueueService? queueService = null,
+            INotificationService? notifications = null)
         {
             _imagingRequestRepository = imagingRequestRepository;
             _staffRepository = staffRepository;
             _appointmentRepository = appointmentRepository;
             _queueService = queueService;
+            _notifications = notifications;
         }
 
         public async Task<ImagingRequestResponse> CreateAsync(
@@ -193,6 +197,12 @@ namespace OZE.Application.Services
 
             await _imagingRequestRepository.SaveChangesAsync(cancellationToken);
 
+            // The technicians stop preparing for it
+            var cancelledFor = (await _imagingRequestRepository.GetExaminationAsync(found.ExaminationId, cancellationToken))?.Patient?.FullName ?? string.Empty;
+            await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.DentalImagingTechnicianRole },
+                new NotificationContent(NotificationConstants.Text.ImagingCancelledTitle, string.Format(NotificationConstants.Text.ImagingCancelledMessage, found.ImagingType, cancelledFor, cancelReason),
+                    NotificationConstants.Reference.ImagingRequest, found.Id.ToString()), cancellationToken: cancellationToken));
+
             // Nothing to take any more: the patient leaves the imaging queue, unless another order of the visit is still waiting
             if (_queueService != null && !await HasOtherOpenRequestAsync(found, cancellationToken))
             {
@@ -268,6 +278,10 @@ namespace OZE.Application.Services
             return true;
         }
 
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
+
         // Marks the request done and, when the patient is waiting for the doctor, puts the patient back at the front of the examination queue
         private async Task<Examination?> CompleteAndReturnPatientAsync(ImagingRequest request, CancellationToken cancellationToken)
         {
@@ -277,6 +291,11 @@ namespace OZE.Application.Services
             await _imagingRequestRepository.SaveChangesAsync(cancellationToken);
 
             var examination = await _imagingRequestRepository.GetExaminationAsync(request.ExaminationId, cancellationToken);
+            // The doctor who ordered it can read the film
+            await NotifyAsync(n => n.NotifyStaffAsync(request.RequestedByDoctorId,
+                new NotificationContent(NotificationConstants.Text.ImagingCompletedTitle,
+                    string.Format(NotificationConstants.Text.ImagingCompletedMessage, request.ImagingType, examination?.Patient?.FullName ?? string.Empty),
+                    NotificationConstants.Reference.Examination, request.ExaminationId.ToString()), cancellationToken));
             var appointment = examination?.Appointment;
             if (appointment == null)
             {

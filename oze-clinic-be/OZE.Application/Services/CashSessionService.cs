@@ -1,3 +1,4 @@
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
@@ -13,11 +14,13 @@ namespace OZE.Application.Services
     {
         private readonly ICashSessionRepository _cashSessionRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly INotificationService? _notifications;
 
-        public CashSessionService(ICashSessionRepository cashSessionRepository, IAuditLogService auditLogService)
+        public CashSessionService(ICashSessionRepository cashSessionRepository, IAuditLogService auditLogService, INotificationService? notifications = null)
         {
             _cashSessionRepository = cashSessionRepository;
             _auditLogService = auditLogService;
+            _notifications = notifications;
         }
 
         public async Task<CashSessionResponse?> GetCurrentAsync(string userId, CancellationToken cancellationToken = default)
@@ -151,8 +154,25 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.CashSessionClosed, AuditConstants.CashSessionEntity, session.Id.ToString(),
                 newValues: new { session.ExpectedCash, session.CountedCash, session.Difference, session.HandoverToUserId });
 
-            return await ToResponseAsync(session, cancellationToken);
+            var response = await ToResponseAsync(session, cancellationToken);
+            await NotifyAsync(n => n.NotifyUsersAsync(new[] { handoverTo },
+                new NotificationContent(NotificationConstants.Text.CashHandoverTitle, string.Format(NotificationConstants.Text.CashHandoverMessage, response.OpenedByName, NotificationFormat.Money(counted)),
+                    NotificationConstants.Reference.CashSession, session.Id.ToString()), cancellationToken));
+            if (difference != 0)
+            {
+                // A drawer that does not match the books is for the manager to look at
+                await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ClinicManagerRole },
+                    new NotificationContent(NotificationConstants.Text.CashDifferenceTitle,
+                        string.Format(NotificationConstants.Text.CashDifferenceMessage, response.OpenedByName, (difference > 0 ? "+" : "-") + NotificationFormat.Money(Math.Abs(difference)), notes),
+                        NotificationConstants.Reference.CashSession, session.Id.ToString()), cancellationToken: cancellationToken));
+            }
+
+            return response;
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
 
         public async Task<List<StaffOption>> GetHandoverCandidatesAsync(string userId, CancellationToken cancellationToken = default)
         {

@@ -88,19 +88,22 @@ namespace OZE.Application.Services
         private readonly ISmsSender? _smsSender;
         private readonly IEmailSender? _emailSender;
         private readonly ILogger<DebtService>? _logger;
+        private readonly INotificationService? _notifications;
 
         public DebtService(
             ICareRepository careRepository,
             IAuditLogService auditLogService,
             ISmsSender? smsSender = null,
             IEmailSender? emailSender = null,
-            ILogger<DebtService>? logger = null)
+            ILogger<DebtService>? logger = null,
+            INotificationService? notifications = null)
         {
             _careRepository = careRepository;
             _auditLogService = auditLogService;
             _smsSender = smsSender;
             _emailSender = emailSender;
             _logger = logger;
+            _notifications = notifications;
         }
 
         public async Task<DebtListResponse> GetDebtsAsync(DebtQuery query, CancellationToken cancellationToken = default)
@@ -146,6 +149,7 @@ namespace OZE.Application.Services
             var message = BuildMessage(invoice, debt, period, today);
             var reminder = await SendAndRecordAsync(invoice, period?.Id, message, isAutomatic: false, userId, cancellationToken);
             await _careRepository.SaveChangesAsync(cancellationToken);
+            await NotifyReminderAsync(invoice, message, cancellationToken);
 
             await _auditLogService.LogAsync(AuditConstants.PaymentReminded, AuditConstants.InvoiceEntity, invoiceId.ToString(),
                 newValues: new { reminder.Channels, reminder.InstallmentPeriodId });
@@ -200,6 +204,7 @@ namespace OZE.Application.Services
                 .ToList();
 
             var response = new BatchPaymentReminderResponse { TotalTargeted = due.Count };
+            var sent = new List<(Invoice Invoice, string Message)>();
             foreach (var period in due)
             {
                 var invoice = period.InstallmentPlan.Invoice;
@@ -212,7 +217,9 @@ namespace OZE.Application.Services
                 try
                 {
                     var debt = ToDebt(invoice, new Dictionary<long, (int, DateTimeOffset)>(), today);
-                    await SendAndRecordAsync(invoice, period.Id, BuildMessage(invoice, debt, period, today), isAutomatic: true, CareConstants.SystemUser, cancellationToken);
+                    var message = BuildMessage(invoice, debt, period, today);
+                    await SendAndRecordAsync(invoice, period.Id, message, isAutomatic: true, CareConstants.SystemUser, cancellationToken);
+                    sent.Add((invoice, message));
                     response.RemindedCount++;
                 }
                 catch (Exception ex)
@@ -223,8 +230,20 @@ namespace OZE.Application.Services
             }
 
             await _careRepository.SaveChangesAsync(cancellationToken);
+            foreach (var (invoice, message) in sent)
+            {
+                await NotifyReminderAsync(invoice, message, cancellationToken);
+            }
             return response;
         }
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
+
+        // The same text as the SMS / email, also in the app for a patient with an account
+        private Task NotifyReminderAsync(Invoice invoice, string message, CancellationToken cancellationToken) =>
+            NotifyAsync(n => n.NotifyPatientAsync(invoice.PatientId,
+                new NotificationContent(NotificationConstants.Text.PaymentReminderTitle, message, NotificationConstants.Reference.Invoice, invoice.Id.ToString()), cancellationToken));
 
         private async Task<PaymentReminder> SendAndRecordAsync(
             Invoice invoice,

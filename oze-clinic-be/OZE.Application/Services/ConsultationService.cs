@@ -31,12 +31,14 @@ namespace OZE.Application.Services
         private readonly IConsultationRepository _repository;
         private readonly ICareRepository _careRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly INotificationService? _notifications;
 
-        public ConsultationService(IConsultationRepository repository, ICareRepository careRepository, IAuditLogService auditLogService)
+        public ConsultationService(IConsultationRepository repository, ICareRepository careRepository, IAuditLogService auditLogService, INotificationService? notifications = null)
         {
             _repository = repository;
             _careRepository = careRepository;
             _auditLogService = auditLogService;
+            _notifications = notifications;
         }
 
         public async Task<ConsultationResponse> CreateAsync(CreateConsultationRequest request, CancellationToken cancellationToken = default)
@@ -61,8 +63,15 @@ namespace OZE.Application.Services
             };
             await _repository.AddAsync(entity, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
+            await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ReceptionistRole },
+                new NotificationContent(NotificationConstants.Text.NewConsultationTitle, string.Format(NotificationConstants.Text.NewConsultationMessage, entity.FullName, entity.PhoneNumber),
+                    NotificationConstants.Reference.ConsultationRequest, entity.Id.ToString()), cancellationToken: cancellationToken));
             return ToResponse(entity, new Dictionary<string, string>());
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
 
         public async Task<PagedResult<ConsultationResponse>> GetPagedAsync(ConsultationQuery query, CancellationToken cancellationToken = default)
         {

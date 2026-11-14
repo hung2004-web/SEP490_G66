@@ -18,12 +18,14 @@ namespace OZE.Application.Services
         private readonly IWorkShiftRepository _workShipRepository;
         private readonly IStaffRepository _staffRepository;
         private readonly IRoomRepository _roomRepository;
+        private readonly INotificationService? _notifications;
 
-        public WorkShiftService(IWorkShiftRepository workShipRepository, IStaffRepository staffRepository, IRoomRepository roomRepository)
+        public WorkShiftService(IWorkShiftRepository workShipRepository, IStaffRepository staffRepository, IRoomRepository roomRepository, INotificationService? notifications = null)
         {
             _workShipRepository = workShipRepository;
             _staffRepository = staffRepository;
             _roomRepository = roomRepository;
+            _notifications = notifications;
         }
 
         public async Task<WorkShipResponse> CreateWorkShipAsync(CreateWorkShiftRequest request)
@@ -72,9 +74,19 @@ namespace OZE.Application.Services
 
             await _workShipRepository.AddAsync(schedule);
             await _workShipRepository.SaveChangesAsync();
+            await NotifyAsync(n => n.NotifyUsersAsync(new[] { staff.UserId },
+                new NotificationContent(NotificationConstants.Text.WorkShiftAssignedTitle,
+                    string.Format(NotificationConstants.Text.WorkShiftAssignedMessage, NotificationFormat.Time(schedule.ShiftStart), NotificationFormat.Time(schedule.ShiftEnd), NotificationFormat.Date(schedule.ScheduleDate), RoomText(room)),
+                    NotificationConstants.Reference.WorkShift, schedule.Id.ToString())));
 
             return ToResponse(schedule, staff, room);
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
+
+        private static string RoomText(Room? room) => room == null ? string.Empty : $", {room.RoomName}";
 
         private static WorkShipResponse ToResponse(StaffSchedule schedule, StaffProfile staff, Room? room)
         {
@@ -129,8 +141,12 @@ namespace OZE.Application.Services
                 shift.StaffProfileId, shift.ScheduleDate, shift.ShiftStart, shift.ShiftEnd);
             ConditionGuard.ThrowIf(hasAppointments, ErrorConstants.WorkShiftMessage.ShiftHasAppointments);
 
+            var removedStaffId = shift.StaffProfileId;
+            var removedText = string.Format(NotificationConstants.Text.WorkShiftRemovedMessage, NotificationFormat.Time(shift.ShiftStart), NotificationFormat.Time(shift.ShiftEnd), NotificationFormat.Date(shift.ScheduleDate));
             _workShipRepository.Remove(shift);
             await _workShipRepository.SaveChangesAsync();
+            await NotifyAsync(n => n.NotifyStaffAsync(removedStaffId,
+                new NotificationContent(NotificationConstants.Text.WorkShiftRemovedTitle, removedText, NotificationConstants.Reference.WorkShift, null)));
         }
 
         private static DateOnly GetStartOfWeek(DateOnly date)
@@ -169,6 +185,8 @@ namespace OZE.Application.Services
                 ConditionGuard.Ensure(room!.Status == RoomConstants.ActiveStatus, ErrorConstants.WorkShiftMessage.RoomNotActive);
             }
 
+            var oldStaffId = shift.StaffProfileId;
+            var oldText = string.Format(NotificationConstants.Text.WorkShiftRemovedMessage, NotificationFormat.Time(shift.ShiftStart), NotificationFormat.Time(shift.ShiftEnd), NotificationFormat.Date(shift.ScheduleDate));
             var isStaffOrTimeChanged = staff.Id != shift.StaffProfileId
                 || scheduleDate != shift.ScheduleDate
                 || shiftStart != shift.ShiftStart
@@ -204,6 +222,23 @@ namespace OZE.Application.Services
 
             _workShipRepository.Update(shift);
             await _workShipRepository.SaveChangesAsync();
+
+            if (oldStaffId != staff.Id)
+            {
+                // Given to someone else: the old person loses the shift, the new one gets it
+                await NotifyAsync(n => n.NotifyStaffAsync(oldStaffId, new NotificationContent(NotificationConstants.Text.WorkShiftRemovedTitle, oldText, NotificationConstants.Reference.WorkShift, null)));
+                await NotifyAsync(n => n.NotifyUsersAsync(new[] { staff.UserId },
+                    new NotificationContent(NotificationConstants.Text.WorkShiftAssignedTitle,
+                        string.Format(NotificationConstants.Text.WorkShiftAssignedMessage, NotificationFormat.Time(shift.ShiftStart), NotificationFormat.Time(shift.ShiftEnd), NotificationFormat.Date(shift.ScheduleDate), RoomText(room)),
+                        NotificationConstants.Reference.WorkShift, shift.Id.ToString())));
+            }
+            else
+            {
+                await NotifyAsync(n => n.NotifyUsersAsync(new[] { staff.UserId },
+                    new NotificationContent(NotificationConstants.Text.WorkShiftChangedTitle,
+                        string.Format(NotificationConstants.Text.WorkShiftChangedMessage, NotificationFormat.Date(shift.ScheduleDate), NotificationFormat.Time(shift.ShiftStart), NotificationFormat.Time(shift.ShiftEnd), RoomText(room)),
+                        NotificationConstants.Reference.WorkShift, shift.Id.ToString())));
+            }
 
             // Pass the new staff and room; shift.StaffProfile / shift.Room still point to the old ones
             return ToResponse(shift, staff, room);
