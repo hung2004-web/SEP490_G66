@@ -1,4 +1,4 @@
-// TODO(api): mock only. The backend Rooms API has no floor or description fields yet.
+// TODO(api): mock only, for the shift and service pages. The "Phòng" page uses the Rooms API and utils/room.
 export const ROOM_TYPES = {
     GENERAL: "general",
     MINOR_SURGERY: "minor_surgery",

@@ -8,7 +8,7 @@ import SearchInput from "@/components/ui/SearchInput";
 import useAsync from "@/hooks/useAsync";
 import { getRooms } from "@/services/roomService";
 import { cx } from "@/utils/cx";
-import { ROOM_STATUS_OPTIONS, ROOM_TYPE_OPTIONS, roomTypeLabel } from "@/utils/data/mockRooms";
+import { ROOM_STATUS_OPTIONS, ROOM_TYPE_OPTIONS, roomTypeLabel } from "@/utils/room";
 
 const SEARCH_DELAY_MS = 300;
 const SKELETON_ROW_COUNT = 3;
