@@ -38,6 +38,18 @@ namespace OZE.UnitTest.Services.WorkShifts
         protected static DateOnly TomorrowDate => TodayDate.AddDays(1);
         protected static DateOnly YesterdayDate => TodayDate.AddDays(-1);
 
+ feat/SCRUM-879-Unittest-for-CreateWorkShift
+        protected static DateOnly StartOfCurrentWeek
+        {
+            get
+            {
+                var today = DateOnly.FromDateTime(ClinicClock.Today);
+                var daysSinceWeekStart = ((int)today.DayOfWeek - (int)WorkShiftConstants.WeekStartDay + WorkShiftConstants.DaysInWeek) % WorkShiftConstants.DaysInWeek;
+                return today.AddDays(-daysSinceWeekStart);
+            }
+        }
+
+ main
         protected StaffProfile CreateSampleStaff(bool isActive = true)
         {
             return new StaffProfile
@@ -63,6 +75,34 @@ namespace OZE.UnitTest.Services.WorkShifts
             };
         }
 
+ feat/SCRUM-879-Unittest-for-CreateWorkShift
+        protected StaffSchedule CreateSampleSchedule(long id = 1, DateOnly? date = null, Room? room = null, StaffProfile? staff = null)
+        {
+            var staffProfile = staff ?? CreateSampleStaff();
+            var scheduleDate = date ?? TomorrowDate;
+            var assignedRoom = room ?? CreateSampleRoom();
+            return new StaffSchedule
+            {
+                Id = id,
+                StaffProfileId = staffProfile.Id,
+                StaffProfile = staffProfile,
+                RoomId = assignedRoom?.Id,
+                Room = assignedRoom,
+                ScheduleDate = scheduleDate,
+                ShiftStart = new TimeOnly(8, 0),
+                ShiftEnd = new TimeOnly(12, 0),
+                Assignment = "Kham rang tong quat",
+                Notes = "Ghi chu ca truc",
+                IsPresent = true,
+                AbsenceReason = null,
+                ActualStartTime = new TimeOnly(7, 55),
+                ActualEndTime = new TimeOnly(12, 5),
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+        }
+
+
+ main
         protected CreateWorkShiftRequest CreateValidRequest()
         {
             return new CreateWorkShiftRequest
