@@ -13,5 +13,12 @@ namespace OZE.Application.Interfaces
         Task<ApiResponse<ServiceDto>> UpdateServiceAsync(int id, UpdateServiceRequest request, CancellationToken cancellationToken = default);
         Task<ApiResponse<ServiceDto>> ToggleServiceStatusAsync(int id, bool isActive, CancellationToken cancellationToken = default);
         Task<ApiResponse<bool>> DeleteServiceAsync(int id, CancellationToken cancellationToken = default);
+
+        // Service variants (clinic manager)
+        Task<ApiResponse<IReadOnlyList<ServiceVariantDto>>> GetVariantsAsync(int serviceId, CancellationToken cancellationToken = default);
+        Task<ApiResponse<ServiceVariantDto>> CreateVariantAsync(int serviceId, SaveServiceVariantRequest request, CancellationToken cancellationToken = default);
+        Task<ApiResponse<ServiceVariantDto>> UpdateVariantAsync(int serviceId, int variantId, SaveServiceVariantRequest request, CancellationToken cancellationToken = default);
+        Task<ApiResponse<ServiceVariantDto>> ToggleVariantStatusAsync(int serviceId, int variantId, bool isActive, CancellationToken cancellationToken = default);
+        Task<ApiResponse<bool>> DeleteVariantAsync(int serviceId, int variantId, CancellationToken cancellationToken = default);
     }
 }

@@ -169,6 +169,62 @@ namespace OZE.Persistence.Repositories
             return Task.CompletedTask;
         }
 
+        public async Task<List<ServiceVariant>> GetVariantsByServiceIdAsync(int serviceId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ServiceVariants
+                .AsNoTracking()
+                .Where(v => v.ServiceId == serviceId)
+                .OrderBy(v => v.DisplayOrder)
+                .ThenBy(v => v.Id)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<ServiceVariant?> GetVariantByIdAsync(int serviceId, int variantId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ServiceVariants
+                .FirstOrDefaultAsync(v => v.Id == variantId && v.ServiceId == serviceId, cancellationToken);
+        }
+
+        public async Task<bool> VariantCodeExistsAsync(string variantCode, int? excludeId = null, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(variantCode))
+            {
+                return false;
+            }
+
+            var normalizedCode = variantCode.Trim().ToUpperInvariant();
+            var query = _context.ServiceVariants.AsNoTracking().Where(v => v.VariantCode == normalizedCode);
+            if (excludeId.HasValue)
+            {
+                query = query.Where(v => v.Id != excludeId.Value);
+            }
+
+            return await query.AnyAsync(cancellationToken);
+        }
+
+        public async Task<bool> VariantHasOpenAppointmentsAsync(int variantId, DateOnly today, CancellationToken cancellationToken = default)
+        {
+            return await _context.AppointmentServiceItems.AnyAsync(x => x.VariantId == variantId
+                && x.Appointment.AppointmentDate >= today
+                && AppointmentConstants.UnfinishedStatuses.Contains(x.Appointment.Status), cancellationToken);
+        }
+
+        public async Task<bool> IsVariantInUseAsync(int variantId, CancellationToken cancellationToken = default)
+        {
+            return await _context.AppointmentServiceItems.AnyAsync(a => a.VariantId == variantId, cancellationToken);
+        }
+
+        public async Task AddVariantAsync(ServiceVariant variant, CancellationToken cancellationToken = default)
+        {
+            await _context.ServiceVariants.AddAsync(variant, cancellationToken);
+        }
+
+        public Task DeleteVariantAsync(ServiceVariant variant, CancellationToken cancellationToken = default)
+        {
+            _context.ServiceVariants.Remove(variant);
+            return Task.CompletedTask;
+        }
+
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             await _context.SaveChangesAsync(cancellationToken);

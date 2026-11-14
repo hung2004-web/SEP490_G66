@@ -267,6 +267,191 @@ namespace OZE.Application.Services
             return ApiResponse<bool>.SuccessResult(true, "Service deleted successfully");
         }
 
+        public async Task<ApiResponse<IReadOnlyList<ServiceVariantDto>>> GetVariantsAsync(
+            int serviceId,
+            CancellationToken cancellationToken = default)
+        {
+            var service = await _serviceRepository.GetByIdAsync(serviceId, asNoTracking: true, cancellationToken);
+            if (service == null)
+            {
+                return ApiResponse<IReadOnlyList<ServiceVariantDto>>.FailureResult(ErrorConstants.ServiceMessage.ServiceNotFound);
+            }
+
+            var variants = await _serviceRepository.GetVariantsByServiceIdAsync(serviceId, cancellationToken);
+            var dtos = _mapper.Map<List<ServiceVariantDto>>(variants);
+            return ApiResponse<IReadOnlyList<ServiceVariantDto>>.SuccessResult(dtos.AsReadOnly());
+        }
+
+        public async Task<ApiResponse<ServiceVariantDto>> CreateVariantAsync(
+            int serviceId,
+            SaveServiceVariantRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var service = await _serviceRepository.GetByIdAsync(serviceId, asNoTracking: true, cancellationToken);
+            if (service == null)
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(ErrorConstants.ServiceMessage.ServiceNotFound);
+            }
+
+            var error = ValidateVariant(request);
+            if (error != null)
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(error);
+            }
+
+            var normalizedCode = request.VariantCode.Trim().ToUpperInvariant();
+            if (await _serviceRepository.VariantCodeExistsAsync(normalizedCode, null, cancellationToken))
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(ErrorConstants.ServiceVariantMessage.VariantCodeExist);
+            }
+
+            var variant = new ServiceVariant
+            {
+                ServiceId = serviceId,
+                VariantCode = normalizedCode,
+                VariantName = request.VariantName.Trim(),
+                Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+                ReferencePrice = request.ReferencePrice,
+                EstimatedMinutes = request.EstimatedMinutes,
+                DisplayOrder = request.DisplayOrder,
+                IsActive = request.IsActive ?? true,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            await _serviceRepository.AddVariantAsync(variant, cancellationToken);
+            await _serviceRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Variant {VariantCode} created for service {ServiceId}", variant.VariantCode, serviceId);
+
+            return ApiResponse<ServiceVariantDto>.SuccessResult(_mapper.Map<ServiceVariantDto>(variant), "Variant created successfully");
+        }
+
+        public async Task<ApiResponse<ServiceVariantDto>> UpdateVariantAsync(
+            int serviceId,
+            int variantId,
+            SaveServiceVariantRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var variant = await _serviceRepository.GetVariantByIdAsync(serviceId, variantId, cancellationToken);
+            if (variant == null)
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(ErrorConstants.ServiceVariantMessage.VariantNotFound);
+            }
+
+            var error = ValidateVariant(request);
+            if (error != null)
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(error);
+            }
+
+            var normalizedCode = request.VariantCode.Trim().ToUpperInvariant();
+            if (await _serviceRepository.VariantCodeExistsAsync(normalizedCode, variantId, cancellationToken))
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(ErrorConstants.ServiceVariantMessage.VariantCodeExist);
+            }
+
+            var newIsActive = request.IsActive ?? variant.IsActive;
+            if (variant.IsActive && !newIsActive
+                && await _serviceRepository.VariantHasOpenAppointmentsAsync(variantId, DateOnly.FromDateTime(ClinicClock.Today), cancellationToken))
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(ErrorConstants.ServiceVariantMessage.HasOpenAppointments);
+            }
+
+            // Booked appointments keep the price and duration they were booked with, so changing them here is safe
+            variant.VariantCode = normalizedCode;
+            variant.VariantName = request.VariantName.Trim();
+            variant.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+            variant.ReferencePrice = request.ReferencePrice;
+            variant.EstimatedMinutes = request.EstimatedMinutes;
+            variant.DisplayOrder = request.DisplayOrder;
+            variant.IsActive = newIsActive;
+            variant.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _serviceRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Variant {VariantId} of service {ServiceId} updated", variantId, serviceId);
+
+            return ApiResponse<ServiceVariantDto>.SuccessResult(_mapper.Map<ServiceVariantDto>(variant), "Variant updated successfully");
+        }
+
+        public async Task<ApiResponse<ServiceVariantDto>> ToggleVariantStatusAsync(
+            int serviceId,
+            int variantId,
+            bool isActive,
+            CancellationToken cancellationToken = default)
+        {
+            var variant = await _serviceRepository.GetVariantByIdAsync(serviceId, variantId, cancellationToken);
+            if (variant == null)
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(ErrorConstants.ServiceVariantMessage.VariantNotFound);
+            }
+
+            var statusText = isActive ? "activated" : "deactivated";
+            if (variant.IsActive == isActive)
+            {
+                return ApiResponse<ServiceVariantDto>.SuccessResult(_mapper.Map<ServiceVariantDto>(variant), $"Variant {statusText} successfully");
+            }
+
+            // Same rule as the service: unfinished appointments must not point at a variant nobody can book
+            if (!isActive && await _serviceRepository.VariantHasOpenAppointmentsAsync(variantId, DateOnly.FromDateTime(ClinicClock.Today), cancellationToken))
+            {
+                return ApiResponse<ServiceVariantDto>.FailureResult(ErrorConstants.ServiceVariantMessage.HasOpenAppointments);
+            }
+
+            variant.IsActive = isActive;
+            variant.UpdatedAt = DateTimeOffset.UtcNow;
+            await _serviceRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Variant {VariantId} of service {ServiceId} status toggled to {IsActive}", variantId, serviceId, isActive);
+
+            return ApiResponse<ServiceVariantDto>.SuccessResult(_mapper.Map<ServiceVariantDto>(variant), $"Variant {statusText} successfully");
+        }
+
+        public async Task<ApiResponse<bool>> DeleteVariantAsync(
+            int serviceId,
+            int variantId,
+            CancellationToken cancellationToken = default)
+        {
+            var variant = await _serviceRepository.GetVariantByIdAsync(serviceId, variantId, cancellationToken);
+            if (variant == null)
+            {
+                return ApiResponse<bool>.FailureResult(ErrorConstants.ServiceVariantMessage.VariantNotFound);
+            }
+
+            // A variant that was ever booked stays for history; the manager turns it off instead
+            if (await _serviceRepository.IsVariantInUseAsync(variantId, cancellationToken))
+            {
+                return ApiResponse<bool>.FailureResult(ErrorConstants.ServiceVariantMessage.VariantInUse);
+            }
+
+            await _serviceRepository.DeleteVariantAsync(variant, cancellationToken);
+            await _serviceRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Variant {VariantId} of service {ServiceId} deleted", variantId, serviceId);
+
+            return ApiResponse<bool>.SuccessResult(true, "Variant deleted successfully");
+        }
+
+        private static string? ValidateVariant(SaveServiceVariantRequest request)
+        {
+            if (request.ReferencePrice < 0)
+            {
+                return ErrorConstants.ServiceVariantMessage.InvalidPrice;
+            }
+
+            if (request.EstimatedMinutes.HasValue && request.EstimatedMinutes.Value <= 0)
+            {
+                return ErrorConstants.ServiceVariantMessage.InvalidEstimatedMinutes;
+            }
+
+            if (request.DisplayOrder < 0)
+            {
+                return ErrorConstants.ServiceVariantMessage.InvalidDisplayOrder;
+            }
+
+            return null;
+        }
+
         private void InvalidateActiveServicesCache()
         {
             _cache?.Remove(ActiveServicesCacheKey);

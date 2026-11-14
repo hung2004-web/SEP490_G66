@@ -194,6 +194,18 @@ namespace OZE.Common.Constants
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
         }
 
+        // Service variant management for the clinic manager
+        public static class ServiceVariantMessage
+        {
+            public const string VariantNotFound = "Service variant not found in system";
+            public const string VariantCodeExist = "Variant code already exists in system";
+            public const string InvalidPrice = "Reference price must be greater than or equal to 0";
+            public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
+            public const string InvalidDisplayOrder = "Display order must be greater than or equal to 0";
+            public const string HasOpenAppointments = "This variant is in appointments that are not finished yet; it cannot be turned off now";
+            public const string VariantInUse = "Cannot delete variant because it is already used in appointments. Please deactivate the variant instead.";
+        }
+
         // Track Treatment Progress (UC-52 / SCRUM-351). Texts follow System Messages where applicable.
         public static class TreatmentPlanMessage
         {

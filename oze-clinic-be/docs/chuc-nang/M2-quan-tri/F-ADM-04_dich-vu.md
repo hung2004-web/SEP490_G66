@@ -5,7 +5,7 @@
 | Mục | Giá trị |
 |---|---|
 | Module | M2 Quản trị |
-| Trạng thái | 🟡 Một phần: CRUD dịch vụ ✅; CRUD biến thể dịch vụ (`ServiceVariant`) cho quản lý ⬜ |
+| Trạng thái | 🟡 BE xong: CRUD dịch vụ ✅, CRUD biến thể dịch vụ (`ServiceVariant`) ✅; FE quản lý biến thể ⬜ |
 | Vai trò được dùng | Xem: mọi người (`[AllowAnonymous]`); tạo/sửa/bật tắt/xóa: `ClinicManager` |
 | API | `GET api/services`, `GET api/services/active`, `GET api/services/{id}`, `GET api/services/by-code/{code}`, `POST api/services`, `PUT api/services/{id}`, `PATCH api/services/{id}/status`, `DELETE api/services/{id}` |
 | Code chính | `ServicesController` → `ClinicServiceService` → `ServiceRepository` |
@@ -93,6 +93,24 @@ Response `ApiResponse<ServiceDto>`, HTTP 200, `message = "Service activated succ
 ### 3.7 `DELETE api/services/{id}` – xóa
 
 Response `ApiResponse<bool>` (`data = true`), HTTP 200, `message = "Service deleted successfully"`.
+
+### 3.8 Biến thể dịch vụ (`ClinicManager`)
+
+| Method | Route | Body | Kết quả |
+|---|---|---|---|
+| GET | `api/services/{serviceId}/variants` | - | `List<ServiceVariantDto>` cả đang bật và đã tắt, theo `DisplayOrder` |
+| POST | `api/services/{serviceId}/variants` | `SaveServiceVariantRequest` | 201, biến thể mới (mặc định đang bật) |
+| PUT | `api/services/{serviceId}/variants/{variantId}` | `SaveServiceVariantRequest` | 200; `isActive` bỏ trống thì giữ trạng thái |
+| PATCH | `api/services/{serviceId}/variants/{variantId}/status` | `{ "isActive": bool }` | 200 |
+| DELETE | `api/services/{serviceId}/variants/{variantId}` | - | 200, `data = true` |
+
+`SaveServiceVariantRequest`: `variantCode` (bắt buộc, ≤ 20, lưu chữ hoa, duy nhất toàn hệ thống), `variantName` (bắt buộc, ≤ 100), `description` (≤ 500), `referencePrice` (≥ 0, giá riêng, không lấy giá dịch vụ), `estimatedMinutes` (> 0 hoặc bỏ trống), `displayOrder` (≥ 0), `isActive`.
+
+Quy tắc:
+- Biến thể phải thuộc đúng `serviceId` trên route, không thì 404 `VariantNotFound`. Dịch vụ không tồn tại: 404 `ServiceNotFound`.
+- Không tắt được biến thể đang có trong lịch hẹn chưa xong từ hôm nay trở đi (`ServiceVariantMessage.HasOpenAppointments`).
+- Không xóa được biến thể đã từng được đặt (`VariantInUse`), chỉ tắt. Lịch đã đặt giữ giá và thời lượng lúc đặt nên sửa giá biến thể không ảnh hưởng.
+- Xóa dịch vụ thì biến thể bị xóa theo (cascade).
 
 ### `ServiceDto`
 
@@ -188,13 +206,14 @@ Response `ApiResponse<bool>` (`data = true`), HTTP 200, `message = "Service dele
 
 - Test hiện có:
   - `Services/ClinicServices/*Tests`: `GetServicesAsync_ShouldReturnPagedServices`, `GetActiveServicesAsync_ShouldCacheResults`, `GetServiceByIdAsync_ShouldReturnService_WhenExists`, `GetServiceByIdAsync_ShouldReturnFailure_WhenNotFound`, `GetServiceByCodeAsync_ShouldReturnService_WhenExists`, `GetServiceByCodeAsync_ShouldReturnFailure_WhenCodeIsInvalid`, `CreateServiceAsync_ShouldCreateServiceAndInvalidateCache_WhenValid`, `CreateServiceAsync_ShouldFail_WhenCodeAlreadyExists`, `CreateServiceAsync_ShouldFail_WhenInvalidRoomType`, `CreateServiceAsync_ShouldFail_WhenPriceNegative`, `CreateServiceAsync_ShouldFail_WhenEstimatedMinutesNonPositive`, `UpdateServiceAsync_ShouldUpdateServiceAndInvalidateCache_WhenValid`, `UpdateServiceAsync_ShouldFail_WhenNotFound`, `ToggleServiceStatusAsync_ShouldToggleStatusAndInvalidateCache`, `ToggleServiceStatusAsync_ShouldShortCircuit_WhenStatusUnchanged`, `DeleteServiceAsync_ShouldDeleteAndInvalidateCache_WhenNotInUse`, `DeleteServiceAsync_ShouldFail_WhenServiceInUse`.
+  - `Services/ClinicServices/ServiceVariantTests` (OZ-SVC-10): danh sách, tạo (chuẩn hóa mã, mã trùng, giá/thời lượng/thứ tự sai, dịch vụ không tồn tại), sửa, tắt khi còn lịch mở, xóa khi đã được đặt.
   - `ServicesControllerTests`: `GetServicesAsync_ShouldReturnOk_WhenServicesExist`, `CreateServiceAsync_ShouldReturnCreatedAtAction_WhenValidRequest`, `ToggleStatusAsync_ShouldReturnOk_WhenServiceExists`, `DeleteServiceAsync_ShouldReturnOk_WhenServiceDeletedSuccessfully`, `UpdateServiceAsync_ShouldReturnOk_WhenServiceUpdatedSuccessfully`.
 - Ca cần test thêm: tắt dịch vụ còn lịch mở (PUT với `isActive = false` và PATCH) → `HasOpenAppointments`; PUT bỏ trống `isActive` giữ trạng thái; mã trùng khi sửa; controller trả 404 cho `ServiceNotFound` ở PUT/PATCH/DELETE; xóa dịch vụ chỉ có trong `AppointmentServiceItems`.
 
 ## 9. Còn thiếu / câu hỏi mở
 
 - **Lệch Dac_ta**: F-ADM-04 ghi "Dịch vụ và nhóm dịch vụ" và BR-APT-02 nói về nhóm có `AllowMultipleSelection`. Trong code, bảng nhóm (`ServiceCategory`) đã bị thay bằng **biến thể dịch vụ** `ServiceVariant` (migration `20261030111932_ReplaceServiceCategoryWithServiceVariant`); không còn `AllowMultipleSelection` ngoài migration cũ. Cần sửa Dac_ta.
-- CRUD `ServiceVariant` cho quản lý chưa có API (khớp ghi chú ⬜ trong Dac_ta). `ServiceDto` không trả danh sách biến thể.
+- `ServiceDto` không trả danh sách biến thể; FE lấy riêng qua `GET api/services/{serviceId}/variants`. FE chưa có màn hình quản lý biến thể.
 - Message `ServiceInUse` chỉ nhắc hóa đơn và kế hoạch điều trị, nhưng code còn chặn khi dịch vụ có trong lịch hẹn (`AppointmentServiceItems`).
 - Message thành công ("Service created successfully"...) và message validation viết cứng, không nằm trong `ErrorConstants` (BR-C08). Lỗi validation trả `ValidationProblemDetails`, không phải `ApiResponse` (BR-C07).
 - `GET api/services` không mặc định lọc `IsActive`: khách không đăng nhập xem được cả dịch vụ đã tắt.
