@@ -68,14 +68,22 @@ const BookingDialog = ({ patient: givenPatient = null, initial = {}, onClose, on
         setLookedUp(true);
     };
 
-    const toggle = (kind, id) => {
-        setPicked((current) => {
-            const list = current[kind];
-            return { ...current, [kind]: list.includes(id) ? list.filter((x) => x !== id) : [...list, id] };
-        });
+    const change = (update) => {
+        setPicked(update);
         setSlot(null);
         setSlots((s) => ({ ...s, loading: true }));
     };
+
+    // A service without variants is ticked on its own
+    const toggleService = (id) =>
+        change((current) => ({ ...current, serviceIds: current.serviceIds.includes(id) ? current.serviceIds.filter((x) => x !== id) : [...current.serviceIds, id] }));
+
+    // A service with variants is booked through exactly one of them: picking one replaces the other, picking it again clears it
+    const pickVariant = (service, id) =>
+        change((current) => {
+            const others = current.variantIds.filter((x) => !service.variants.some((v) => v.variantId === x));
+            return { ...current, variantIds: current.variantIds.includes(id) ? others : [...others, id] };
+        });
 
     const total = useMemo(
         () =>
@@ -159,24 +167,31 @@ const BookingDialog = ({ patient: givenPatient = null, initial = {}, onClose, on
                     <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
                         {services.map((s) => (
                             <div key={s.serviceId}>
-                                <label className="flex items-center gap-2 text-body-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={s.isMandatory || picked.serviceIds.includes(s.serviceId)}
-                                        disabled={s.isMandatory}
-                                        onChange={() => toggle("serviceIds", s.serviceId)}
-                                    />
-                                    <span className="flex-1 text-ink">{s.serviceName}</span>
-                                    <span className="num text-muted">{money(s.referencePrice)}</span>
-                                </label>
-                                {s.variants.length > 0 && (
+                                {s.variants.length > 0 && !s.isMandatory ? (
+                                    <p className="flex items-center gap-2 text-body-sm">
+                                        <span className="flex-1 text-ink">{s.serviceName}</span>
+                                        <span className="text-caption text-muted">Chọn một loại</span>
+                                    </p>
+                                ) : (
+                                    <label className="flex items-center gap-2 text-body-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={s.isMandatory || picked.serviceIds.includes(s.serviceId)}
+                                            disabled={s.isMandatory}
+                                            onChange={() => toggleService(s.serviceId)}
+                                        />
+                                        <span className="flex-1 text-ink">{s.serviceName}</span>
+                                        <span className="num text-muted">{money(s.referencePrice)}</span>
+                                    </label>
+                                )}
+                                {s.variants.length > 0 && !s.isMandatory && (
                                     <div className="mt-1 ml-6 grid gap-1 sm:grid-cols-2">
                                         {s.variants.map((v) => (
                                             <label key={v.variantId} className="flex items-center gap-2 text-caption">
                                                 <input
                                                     type="checkbox"
                                                     checked={picked.variantIds.includes(v.variantId)}
-                                                    onChange={() => toggle("variantIds", v.variantId)}
+                                                    onChange={() => pickVariant(s, v.variantId)}
                                                 />
                                                 <span className="flex-1">{v.variantName}</span>
                                                 <span className="num text-muted">{money(v.referencePrice)}</span>

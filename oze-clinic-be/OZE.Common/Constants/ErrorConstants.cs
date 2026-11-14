@@ -247,6 +247,8 @@ namespace OZE.Common.Constants
             public const string PatientProfileNotFound = "No patient profile is linked to this account";
             public const string VariantNotFound = "Service variant not found";
             public const string VariantInactive = "This service variant is not available for booking";
+            public const string VariantRequired = "Please choose a variant for the service {0}";
+            public const string OneVariantPerService = "Please choose only one variant for the service {0}";
             public const string GeneralExamServiceMissing = "The general exam service is not set up. Please contact the clinic";
             public const string ServicesNeedDifferentRooms = "These services need different rooms and cannot be booked in one appointment";
             public const string DateRequired = "Appointment date is required";

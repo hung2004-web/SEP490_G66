@@ -393,6 +393,14 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<NotFoundException>(variants.Count == variantIds.Count, ErrorConstants.AppointmentMessage.VariantNotFound);
             ConditionGuard.Ensure(variants.All(v => v.IsActive && v.Service.IsActive), ErrorConstants.AppointmentMessage.VariantInactive);
 
+            // A service that has active variants is booked through exactly one of them, never on its own
+            var serviceNeedingVariant = picked.FirstOrDefault(s => s.Variants.Any(v => v.IsActive));
+            ConditionGuard.Ensure(serviceNeedingVariant == null,
+                string.Format(ErrorConstants.AppointmentMessage.VariantRequired, serviceNeedingVariant?.ServiceName));
+            var serviceWithManyVariants = variants.GroupBy(v => v.ServiceId).FirstOrDefault(g => g.Count() > 1);
+            ConditionGuard.Ensure(serviceWithManyVariants == null,
+                string.Format(ErrorConstants.AppointmentMessage.OneVariantPerService, serviceWithManyVariants?.First().Service.ServiceName));
+
             // Keep the order the patient chose; a variant is a separate line next to its service
             var lines = new List<BookingLine> { new(exam!, null) };
             lines.AddRange(pickedIds.Select(id => new BookingLine(picked.First(s => s.Id == id), null)));

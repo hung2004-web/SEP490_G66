@@ -54,7 +54,10 @@ namespace OZE.Persistence.Repositories
 
         public Task<Service?> GetServiceAsync(int serviceId, CancellationToken cancellationToken = default)
         {
-            return _context.Services.FirstOrDefaultAsync(x => x.Id == serviceId, cancellationToken);
+            // Active variants are loaded so the exam can tell a service that needs a variant chosen
+            return _context.Services
+                .Include(x => x.Variants.Where(v => v.IsActive))
+                .FirstOrDefaultAsync(x => x.Id == serviceId, cancellationToken);
         }
 
         public Task<ServiceVariant?> GetVariantAsync(int variantId, CancellationToken cancellationToken = default)

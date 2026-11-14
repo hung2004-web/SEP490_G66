@@ -203,8 +203,10 @@ namespace OZE.Persistence.Repositories
 
         public async Task<List<Service>> GetServicesByIdsAsync(IReadOnlyCollection<int> serviceIds)
         {
+            // Active variants are loaded so booking can tell a service that needs a variant chosen
             return await _context.Services
                 .AsNoTracking()
+                .Include(s => s.Variants.Where(v => v.IsActive))
                 .Where(s => serviceIds.Contains(s.Id))
                 .ToListAsync();
         }

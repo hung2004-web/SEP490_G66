@@ -748,6 +748,10 @@ namespace OZE.Application.Services
             ConditionGuard.Ensure<NotFoundException>(service != null, ErrorConstants.AppointmentMessage.ServiceNotFound);
             ConditionGuard.Ensure(service!.IsActive, ErrorConstants.AppointmentMessage.ServiceInactive);
 
+            // A service that has active variants is added through one of them, never on its own
+            ConditionGuard.Ensure(request.VariantId.HasValue || !service.Variants.Any(v => v.IsActive),
+                string.Format(ErrorConstants.AppointmentMessage.VariantRequired, service.ServiceName));
+
             ServiceVariant? variant = null;
             if (request.VariantId.HasValue)
             {

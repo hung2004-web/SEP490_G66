@@ -1,5 +1,5 @@
 import { Plus, X } from "lucide-react";
-import { BOOKING_IDS, UNKNOWN_VARIANT, canAddSelection, findService, hasItem, isServiceFull, isUnknownDisabled, itemLabel } from "@/utils/booking";
+import { BOOKING_IDS, canAddSelection, findService, isServiceFull, itemLabel } from "@/utils/booking";
 import { cx } from "@/utils/cx";
 import { BOOKING_TEXT } from "@/utils/messages";
 
@@ -14,29 +14,19 @@ const GONE_ID = "booking-service-gone";
 
 const SUB_LABEL = "mb-1.5 block text-label text-body";
 
-const toVariantPick = (value) => {
-    if (!value) return null;
-    return value === UNKNOWN_VARIANT ? UNKNOWN_VARIANT : Number(value);
-};
+const toVariantPick = (value) => (value ? Number(value) : null);
 
-const VariantOptions = ({ service, items }) => {
+const VariantOptions = ({ service }) => {
     if (!service) return <option value="">{BOOKING_TEXT.VARIANT_NEED_SERVICE}</option>;
     if (!service.variants.length) return <option value="">{BOOKING_TEXT.VARIANT_NOT_NEEDED}</option>;
     return (
         <>
             <option value="">{BOOKING_TEXT.VARIANT_PLACEHOLDER}</option>
-            {service.variants.map((variant) => {
-                const chosen = hasItem(items, service.id, variant.id);
-                return (
-                    <option key={variant.id} value={variant.id} disabled={chosen}>
-                        {variant.name}
-                        {chosen && BOOKING_TEXT.CHOSEN_SUFFIX}
-                    </option>
-                );
-            })}
-            <option value={UNKNOWN_VARIANT} disabled={isUnknownDisabled(service, items)}>
-                {BOOKING_TEXT.VARIANT_UNKNOWN}
-            </option>
+            {service.variants.map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                    {variant.name}
+                </option>
+            ))}
         </>
     );
 };
@@ -95,7 +85,7 @@ const BookingServicePicker = ({ services, items, pickService, pickVariant, error
                         aria-describedby={error ? ERROR_ID : undefined}
                         onChange={(event) => onPickVariant(toVariantPick(event.target.value))}
                     >
-                        <VariantOptions service={service} items={items} />
+                        <VariantOptions service={service} />
                     </select>
                 </div>
                 <div>
