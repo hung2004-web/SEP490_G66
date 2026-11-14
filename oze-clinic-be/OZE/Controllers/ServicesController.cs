@@ -167,5 +167,90 @@ namespace OZE.Controllers
 
             return Ok(result);
         }
+
+        /// <summary>
+        /// Lists every variant of a service, active and inactive. Requires ClinicManager role.
+        /// </summary>
+        [HttpGet("{serviceId:int}/variants")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<ServiceVariantDto>>>> GetVariantsAsync(
+            [FromRoute] int serviceId,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.GetVariantsAsync(serviceId, cancellationToken);
+            return result.Success ? Ok(result) : NotFound(result);
+        }
+
+        /// <summary>
+        /// Adds a variant to a service. Requires ClinicManager role.
+        /// </summary>
+        [HttpPost("{serviceId:int}/variants")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<ServiceVariantDto>>> CreateVariantAsync(
+            [FromRoute] int serviceId,
+            [FromBody] SaveServiceVariantRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.CreateVariantAsync(serviceId, request, cancellationToken);
+            if (!result.Success)
+            {
+                return VariantFailure(result);
+            }
+
+            return StatusCode(StatusCodes.Status201Created, result);
+        }
+
+        /// <summary>
+        /// Updates a variant of a service. Requires ClinicManager role.
+        /// </summary>
+        [HttpPut("{serviceId:int}/variants/{variantId:int}")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<ServiceVariantDto>>> UpdateVariantAsync(
+            [FromRoute] int serviceId,
+            [FromRoute] int variantId,
+            [FromBody] SaveServiceVariantRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.UpdateVariantAsync(serviceId, variantId, request, cancellationToken);
+            return result.Success ? Ok(result) : VariantFailure(result);
+        }
+
+        /// <summary>
+        /// Turns a variant on or off. Requires ClinicManager role.
+        /// </summary>
+        [HttpPatch("{serviceId:int}/variants/{variantId:int}/status")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<ServiceVariantDto>>> ToggleVariantStatusAsync(
+            [FromRoute] int serviceId,
+            [FromRoute] int variantId,
+            [FromBody] ToggleServiceStatusRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.ToggleVariantStatusAsync(serviceId, variantId, request.IsActive, cancellationToken);
+            return result.Success ? Ok(result) : VariantFailure(result);
+        }
+
+        /// <summary>
+        /// Deletes a variant that was never booked. Requires ClinicManager role.
+        /// </summary>
+        [HttpDelete("{serviceId:int}/variants/{variantId:int}")]
+        [Authorize(Roles = RoleConstants.ClinicManagerRole)]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteVariantAsync(
+            [FromRoute] int serviceId,
+            [FromRoute] int variantId,
+            CancellationToken cancellationToken)
+        {
+            var result = await _clinicService.DeleteVariantAsync(serviceId, variantId, cancellationToken);
+            return result.Success ? Ok(result) : VariantFailure(result);
+        }
+
+        // Not found for a missing service or variant, bad request for everything else
+        private ObjectResult VariantFailure<T>(ApiResponse<T> result)
+        {
+            return result.Message == ErrorConstants.ServiceMessage.ServiceNotFound
+                || result.Message == ErrorConstants.ServiceVariantMessage.VariantNotFound
+                ? NotFound(result)
+                : BadRequest(result);
+        }
     }
 }

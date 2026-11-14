@@ -19,6 +19,16 @@ namespace OZE.Application.Interfaces
         Task AddAsync(Service service, CancellationToken cancellationToken = default);
         Task UpdateAsync(Service service, CancellationToken cancellationToken = default);
         Task DeleteAsync(Service service, CancellationToken cancellationToken = default);
+
+        // Service variants
+        Task<List<ServiceVariant>> GetVariantsByServiceIdAsync(int serviceId, CancellationToken cancellationToken = default);
+        Task<ServiceVariant?> GetVariantByIdAsync(int serviceId, int variantId, CancellationToken cancellationToken = default);
+        Task<bool> VariantCodeExistsAsync(string variantCode, int? excludeId = null, CancellationToken cancellationToken = default);
+        // The variant is in an appointment of the given day or later that is not finished yet
+        Task<bool> VariantHasOpenAppointmentsAsync(int variantId, DateOnly today, CancellationToken cancellationToken = default);
+        Task<bool> IsVariantInUseAsync(int variantId, CancellationToken cancellationToken = default);
+        Task AddVariantAsync(ServiceVariant variant, CancellationToken cancellationToken = default);
+        Task DeleteVariantAsync(ServiceVariant variant, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }
