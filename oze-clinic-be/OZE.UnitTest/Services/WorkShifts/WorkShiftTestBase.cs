@@ -38,7 +38,6 @@ namespace OZE.UnitTest.Services.WorkShifts
         protected static DateOnly TomorrowDate => TodayDate.AddDays(1);
         protected static DateOnly YesterdayDate => TodayDate.AddDays(-1);
 
- feat/SCRUM-879-Unittest-for-CreateWorkShift
         protected static DateOnly StartOfCurrentWeek
         {
             get
@@ -49,7 +48,6 @@ namespace OZE.UnitTest.Services.WorkShifts
             }
         }
 
- main
         protected StaffProfile CreateSampleStaff(bool isActive = true)
         {
             return new StaffProfile
@@ -75,7 +73,6 @@ namespace OZE.UnitTest.Services.WorkShifts
             };
         }
 
- feat/SCRUM-879-Unittest-for-CreateWorkShift
         protected StaffSchedule CreateSampleSchedule(long id = 1, DateOnly? date = null, Room? room = null, StaffProfile? staff = null)
         {
             var staffProfile = staff ?? CreateSampleStaff();
@@ -102,7 +99,6 @@ namespace OZE.UnitTest.Services.WorkShifts
         }
 
 
- main
         protected CreateWorkShiftRequest CreateValidRequest()
         {
             return new CreateWorkShiftRequest
