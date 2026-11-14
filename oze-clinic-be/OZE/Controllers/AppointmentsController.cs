@@ -99,6 +99,18 @@ namespace OZE.Controllers
         }
 
         /// <summary>
+        /// PENDING appointments past their confirmation deadline (waited too long, or the visit is close), for the desk to call.
+        /// Only a warning: nothing is cancelled.
+        /// </summary>
+        [HttpGet("pending-overdue")]
+        [Authorize(Roles = $"{RoleConstants.ReceptionistRole},{RoleConstants.ClinicManagerRole}")]
+        public async Task<ActionResult<ApiResponse<List<PendingOverdueResponse>>>> GetPendingOverdueAsync(CancellationToken cancellationToken)
+        {
+            var result = await _appointmentService.GetPendingOverdueAsync(cancellationToken);
+            return Ok(ApiResponse<List<PendingOverdueResponse>>.SuccessResult(result));
+        }
+
+        /// <summary>
         /// A checked-in patient who left without being seen: marked NO_SHOW and taken out of the queue.
         /// </summary>
         [HttpPost("{id:long}/no-show")]

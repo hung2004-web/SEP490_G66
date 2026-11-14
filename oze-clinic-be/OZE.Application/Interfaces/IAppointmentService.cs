@@ -29,6 +29,9 @@ namespace OZE.Application.Interfaces
         // and the ones booked for a time that is still to come
         Task<List<NeedsAttentionResponse>> GetNeedsAttentionAsync(CancellationToken cancellationToken = default);
 
+        // PENDING appointments past their confirmation deadline: waited too long or the visit is close. Read only, nothing is cancelled
+        Task<List<PendingOverdueResponse>> GetPendingOverdueAsync(CancellationToken cancellationToken = default);
+
         // Moves a waiting patient to another doctor who has a shift to offer today: the patient goes to that doctor's room
         // and gets a new number at the end of that doctor's queue
         Task<AppointmentResponse> ReassignDoctorAsync(long id, ReassignDoctorRequest request, CancellationToken cancellationToken = default);
