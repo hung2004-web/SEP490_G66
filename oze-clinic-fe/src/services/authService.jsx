@@ -1,6 +1,6 @@
 import api from "./api";
-import { BACKEND_LOGIN_CODES, BACKEND_ROLE_NAMES, GENERIC_ERROR_MESSAGE, MESSAGES, VALIDATION_MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
-import { getDefaultMockUserId, getMockCurrentUser, getMockUsers, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
+import { BACKEND_LOGIN_CODES, GENERIC_ERROR_MESSAGE, MESSAGES, VALIDATION_MESSAGES, VERIFICATION_METHOD } from "../utils/messages";
+import { getDefaultMockUserId, getMockCurrentUser, setMockCurrentUserId, updateMockUser } from "../utils/data/mockData";
 import { invalidMessage } from "../utils/validation";
 import { clearSession, getSessionRefreshToken, getSessionToken, isAccessTokenExpired, saveSession, sessionFromAuthResult } from "./sessionStore";
 
@@ -26,8 +26,8 @@ const sendLogout = (refreshToken) => {
     api.post("/api/Auth/logout", { refreshToken }, AUTH_REQUEST_CONFIG).catch(() => { });
 };
 
-// mockUserId: the signed-in mock account; for an API sign-in, the default mock user of the role.
-const completeSignIn = (body, mockUserId) => {
+// The default mock user of the role is kept as the current mock user, for the pages not wired to the API yet.
+const completeSignIn = (body) => {
     if (body?.success !== true) return loginFailure(body?.code);
 
     const data = body.data;
@@ -41,48 +41,17 @@ const completeSignIn = (body, mockUserId) => {
         return failure(GENERIC_ERROR_MESSAGE);
     }
 
-    setMockCurrentUserId(mockUserId ?? getDefaultMockUserId(session.role));
+    setMockCurrentUserId(getDefaultMockUserId(session.role));
     saveSession(session);
     return success({ role: session.role });
 };
 
-const MOCK_SESSION_MINUTES = 60;
-
-const toBase64Url = (value) =>
-    btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(value))))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-
-// Unsigned token with the claims sessionStore reads (sub, role, FullName, exp). Only the frontend reads it.
-const mockAccessToken = (user) => {
-    const header = toBase64Url({ alg: "none", typ: "JWT" });
-    const payload = toBase64Url({
-        sub: user.id,
-        role: BACKEND_ROLE_NAMES[user.role],
-        FullName: user.fullname,
-        exp: Math.floor(Date.now() / 1000) + MOCK_SESSION_MINUTES * 60,
-    });
-    return `${header}.${payload}.mock`;
-};
-
-// Mock accounts in utils/data/mockData (password "password123"), used when the API cannot be reached.
-const mockSignIn = async ({ identifier, password }) => {
-    await wait(MOCK_DELAY_MS);
-    const user = getMockUsers().find((candidate) => candidate.phone === identifier || candidate.email === identifier);
-    if (!user || user.password !== password) return loginFailure(BACKEND_LOGIN_CODES.INVALID_CREDENTIALS);
-    return completeSignIn(success({ token: mockAccessToken(user), refreshToken: `mock-refresh-${user.id}` }), user.id);
-};
-
-// No ApiResponse (network error, timeout, missing VITE_API_URL) or a server error such as the database being down.
-const isApiUnavailable = (error) => typeof error.response?.data?.success !== "boolean" || error.response.status >= 500;
-
+// A failure without an ApiResponse code (network error, timeout, server error) gets the generic message.
 export const signIn = async ({ identifier, password }) => {
     try {
         const response = await api.post("/api/Auth/login", { identifier, password }, AUTH_REQUEST_CONFIG);
         return completeSignIn(response.data);
     } catch (error) {
-        if (isApiUnavailable(error)) return mockSignIn({ identifier, password });
         return loginFailure(error.response?.data?.code);
     }
 };

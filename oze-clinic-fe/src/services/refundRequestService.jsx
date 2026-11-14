@@ -2,11 +2,12 @@ import { getMockCurrentUser } from "../utils/data/mockData";
 import { buildMedicalRecordData } from "../utils/data/mockMedicalRecord";
 import { MOCK_DASHBOARD_PATIENT_ID } from "../utils/data/mockPatientDashboard";
 import { buildPatientDebtMock } from "../utils/data/mockPatientDebts";
-import { MOCK_PATIENT_REFUND_REQUESTS, REFUND_REQUEST_STATUSES } from "../utils/data/mockRefundRequests";
+import { MOCK_PATIENT_REFUND_REQUESTS } from "../utils/data/mockRefundRequests";
 import { normalizeText } from "../utils/format";
 import { GENERIC_ERROR_MESSAGE } from "../utils/messages";
 import {
     REFUND_REASON_MAX,
+    REFUND_REQUEST_STATUSES,
     fromApiRequest,
     isDefiniteRefundError,
     nextCode,
@@ -36,11 +37,6 @@ const INVOICES_SWITCH_KEY = "mock_refund_invoices";
 export const REFUND_REQUEST_PAGE_SIZE = 5;
 
 export const REFUND_REQUESTS_CHANGED_EVENT = "app:refund-requests-changed";
-
-// The backend does not link a refund to a doctor, so the page's doctor filter has no options
-export const REFUND_DOCTOR_OPTIONS = [];
-
-export const getRefundDoctorOptions = () => REFUND_DOCTOR_OPTIONS;
 
 const success = (data, message = null) => ({ success: true, message, code: null, data, errors: null });
 

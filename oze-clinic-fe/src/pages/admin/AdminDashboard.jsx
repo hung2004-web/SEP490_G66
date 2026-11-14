@@ -9,8 +9,7 @@ import PeriodNavigator from "@/components/ui/PeriodNavigator";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import StatusBadge from "@/components/ui/StatusBadge";
 import useAsync from "@/hooks/useAsync";
-import { REPORT_PERIODS, getPendingRequests, getReport, getReportOffset } from "@/services/adminReportService";
-import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
+import { REPORT_PERIODS, REQUEST_TYPES, getPendingRequests, getReport, getReportOffset } from "@/services/adminReportService";
 import { formatCurrency, formatDateTime } from "@/utils/format";
 import { ROUTES } from "@/utils/routes";
 

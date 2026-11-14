@@ -1,6 +1,6 @@
 import { ReceiptText } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
+import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/refundRequest";
 import { formatCurrency } from "@/utils/format";
 
 const SKELETON_ROW_COUNT = 5;

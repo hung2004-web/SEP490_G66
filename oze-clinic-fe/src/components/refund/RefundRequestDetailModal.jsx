@@ -3,10 +3,9 @@ import { Check, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { cx } from "@/utils/cx";
-import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
 import { formatCurrency } from "@/utils/format";
 import { REFUND_REQUEST_TEXT } from "@/utils/messages";
-import { clinicDate, clinicDateTime, forWhatText, processSteps } from "@/utils/refundRequest";
+import { REFUND_REQUEST_STATUS_LABELS, clinicDate, clinicDateTime, forWhatText, processSteps } from "@/utils/refundRequest";
 import { getPaymentHistoryRoute } from "@/utils/routes";
 
 const DOT_CLASS = {

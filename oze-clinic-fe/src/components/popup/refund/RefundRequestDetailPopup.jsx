@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { REFUND_REQUEST_STATUSES, REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
+import { REFUND_REQUEST_STATUSES, REFUND_REQUEST_STATUS_LABELS } from "@/utils/refundRequest";
 import { formatCurrency, formatDateTime } from "@/utils/format";
 import { REFUND_REQUEST_ADMIN_TEXT } from "@/utils/messages";
 import RejectRefundRequestPopup from "./RejectRefundRequestPopup";

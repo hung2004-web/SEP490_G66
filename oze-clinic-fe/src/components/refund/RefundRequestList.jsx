@@ -5,10 +5,9 @@ import DetailLink from "@/components/ui/DetailLink";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { cx } from "@/utils/cx";
-import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
 import { formatCurrency } from "@/utils/format";
 import { REFUND_REQUEST_TEXT } from "@/utils/messages";
-import { REFUND_PAGE_SIZE, clinicDate } from "@/utils/refundRequest";
+import { REFUND_PAGE_SIZE, REFUND_REQUEST_STATUS_LABELS, clinicDate } from "@/utils/refundRequest";
 
 const ForWhat = ({ request }) => {
     const items = request.itemNames.join(", ");

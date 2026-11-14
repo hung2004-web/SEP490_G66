@@ -3,10 +3,10 @@ import { ArrowUpDown, Info, ListFilter, Search, X } from "lucide-react";
 import { FilterPopover, SortPopover } from "@/components/medicalRecord/ExaminationFilterPopover";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { cx } from "@/utils/cx";
-import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
 import { REFUND_REQUEST_TEXT } from "@/utils/messages";
 import {
     REFUND_FILTER_BUTTON_ID,
+    REFUND_REQUEST_STATUS_LABELS,
     REFUND_SEARCH_ID,
     REFUND_SORTS,
     REFUND_SORT_BUTTON_ID,

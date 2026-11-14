@@ -3,7 +3,7 @@ import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import { createRoom, updateRoom } from "@/services/roomService";
 import { cx } from "@/utils/cx";
-import { ROOM_STATUSES, ROOM_STATUS_OPTIONS, ROOM_TYPE_OPTIONS } from "@/utils/data/mockRooms";
+import { ROOM_STATUSES, ROOM_STATUS_OPTIONS, ROOM_TYPE_OPTIONS } from "@/utils/room";
 import { isRequiredEmpty, requiredMessage } from "@/utils/validation";
 
 const ROOM_LIMITS = { NAME_MAX: 100, FLOOR_MAX: 20, DESCRIPTION_MAX: 500 };
@@ -92,15 +92,18 @@ const RoomFormPopup = ({ room, onClose, onSaved }) => {
                         <input {...fieldProps("floor")} className="input" placeholder="Ví dụ: Tầng 1" maxLength={ROOM_LIMITS.FLOOR_MAX} />
                     </FormField>
                 </div>
-                <FormField id="room-status" label="Trạng thái" required error={errors.status}>
-                    <select {...fieldProps("status")} className="input">
-                        {ROOM_STATUS_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </FormField>
+                {/* A new room always starts active (the backend sets it), so the status is only chosen when editing */}
+                {editing && (
+                    <FormField id="room-status" label="Trạng thái" required error={errors.status}>
+                        <select {...fieldProps("status")} className="input">
+                            {ROOM_STATUS_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </FormField>
+                )}
                 <FormField id="room-description" label="Mô tả">
                     <textarea {...fieldProps("description")} className="input" rows={3} maxLength={ROOM_LIMITS.DESCRIPTION_MAX} />
                 </FormField>

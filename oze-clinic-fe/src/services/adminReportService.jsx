@@ -1,6 +1,6 @@
 import { formatDate, toDateOnly } from "../utils/format";
-import { MOCK_APPOINTMENT_RATES, MOCK_DEBTS, MOCK_REVENUE_SHARES, REQUEST_TYPES } from "../utils/data/mockAdminReport";
-import { leaveSlotLabel } from "../utils/data/mockShifts";
+import { MOCK_APPOINTMENT_RATES, MOCK_DEBTS, MOCK_REVENUE_SHARES } from "../utils/data/mockAdminReport";
+import { leaveSlotLabel } from "../utils/shift";
 import { pendingLeaveRequests } from "./leaveRequestService";
 import { pendingRefundRequests } from "./refundRequestService";
 
@@ -13,6 +13,12 @@ export const REPORT_PERIODS = {
     WEEK: "week",
     MONTH: "month",
     YEAR: "year",
+};
+
+// Kinds of request waiting for the manager (getPendingRequests).
+export const REQUEST_TYPES = {
+    LEAVE: "leave",
+    REFUND: "refund",
 };
 
 const WEEKDAYS_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -204,7 +210,6 @@ export const getReport = async ({ period = REPORT_PERIODS.WEEK, offset = 0 } = {
 };
 
 export const getPendingRequests = async () => {
-    await wait(MOCK_DELAY_MS);
     const leaves = (await pendingLeaveRequests()).map((request) => ({
         id: request.id,
         type: REQUEST_TYPES.LEAVE,

@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { LEAVE_REQUEST_STATUSES, LEAVE_REQUEST_STATUS_LABELS, LEAVE_SLOT_OPTIONS } from "@/utils/data/mockShifts";
+import { LEAVE_REQUEST_STATUSES, LEAVE_REQUEST_STATUS_LABELS, LEAVE_SLOT_OPTIONS } from "@/utils/shift";
 import { formatDateTime } from "@/utils/format";
 import RejectLeaveRequestPopup from "./RejectLeaveRequestPopup";
 

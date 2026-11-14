@@ -1,4 +1,4 @@
-import { REFUND_REQUEST_STATUSES } from "@/utils/data/mockRefundRequests";
+import { REFUND_REQUEST_STATUSES } from "@/utils/refundRequest";
 
 export const PLAN_PAY_TYPE = { 7101: "installment", 7102: "step" };
 
