@@ -112,7 +112,6 @@ const SIDEBAR_MENU = {
             label: "Lịch hẹn",
             icon: CalendarDays,
             children: [
-                { key: "schedule", label: "Quản lý lịch hẹn", to: ROUTES.RECEPTION_SCHEDULE },
                 { key: "check-in", label: "Check-in hôm nay", to: ROUTES.RECEPTION_CHECK_IN },
                 { key: "confirm-appointments", label: "Xác nhận lịch hẹn", to: ROUTES.RECEPTION_APPOINTMENTS },
             ],

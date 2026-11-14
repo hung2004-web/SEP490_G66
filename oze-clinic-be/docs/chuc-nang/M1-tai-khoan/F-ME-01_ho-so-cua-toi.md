@@ -8,7 +8,7 @@
 | Trạng thái | ✅ Đã có API (nhân viên chỉ xem, chưa tự sửa được) |
 | Vai trò được dùng | `GET`: mọi role đã đăng nhập; `PUT`, `verify-phone-otp`, `resend-phone-otp`: `Patient` |
 | API | `GET api/me`, `PUT api/me`, `POST api/me/verify-phone-otp`, `POST api/me/resend-phone-otp` |
-| Code chính | `MeController.GetProfileAsync / UpdateProfileAsync / VerifyPhoneOtpAsync / ResendPhoneOtpAsync` → `UserService.GetUserProfileAsync / UpdateProfileAsync / VerifyPhoneOtpAsync / ResendPhoneOtpAsync` → `UserManager`, `IPatientRepository` (`PatientRepository`), `IRegistrationRepository`, `IPendingProfileUpdateStore` (`MemoryPendingProfileUpdateStore`), `IOtpSendLimiter`, `ISmsSender`, `IEmailSender` |
+| Code chính | `MeController.GetProfileAsync / UpdateProfileAsync / VerifyPhoneOtpAsync / ResendPhoneOtpAsync` → `UserService.GetUserProfileAsync / UpdateProfileAsync / VerifyPhoneOtpAsync / ResendPhoneOtpAsync` → `UserManager`, `IPatientRepository` (`PatientRepository`), `IRegistrationRepository`, `IPendingProfileUpdateStore` (`PendingProfileUpdateStore`), `IOtpSendLimiter`, `ISmsSender`, `IEmailSender` |
 
 ## 1. Chức năng này làm gì
 

@@ -1,6 +1,6 @@
 using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OZE.Application.Interfaces;
@@ -23,7 +23,7 @@ namespace OZE.UnitTest.Services.ClinicServices
         {
             // Arrange: Seed cache first to verify invalidation
             var activeListKey = "ClinicServices_ActiveList";
-            _cache.Set(activeListKey, new List<ServiceDto>());
+            _cache.SetString(activeListKey, "[]");
 
             var request = new CreateServiceRequest
             {
@@ -56,7 +56,7 @@ namespace OZE.UnitTest.Services.ClinicServices
             result.Data.ServiceName.Should().Be("Tram rang");
             result.Data.RequiredRoomType.Should().Be("GeneralTreatment"); // normalized to PascalCase
 
-            _cache.TryGetValue(activeListKey, out _).Should().BeFalse(); // Cache invalidated
+            _cache.GetString(activeListKey).Should().BeNull(); // Cache invalidated
             _serviceRepositoryMock.Verify(r => r.AddAsync(It.Is<Service>(s => s.ServiceCode == "DV-NEW" && s.RequiredRoomType == "GeneralTreatment"), It.IsAny<CancellationToken>()), Times.Once);
         }
 

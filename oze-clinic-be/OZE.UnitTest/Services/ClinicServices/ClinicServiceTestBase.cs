@@ -1,6 +1,8 @@
 using AutoMapper;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OZE.Application.Interfaces;
@@ -20,7 +22,7 @@ namespace OZE.UnitTest.Services.ClinicServices
         protected readonly Mock<IServiceRepository> _serviceRepositoryMock;
         protected readonly Mock<ILogger<ClinicServiceService>> _loggerMock;
         protected readonly IMapper _mapper;
-        protected readonly IMemoryCache _cache;
+        protected readonly IDistributedCache _cache;
         protected readonly ClinicServiceService _service;
 
         protected ClinicServiceTestBase()
@@ -34,7 +36,7 @@ namespace OZE.UnitTest.Services.ClinicServices
             });
             _mapper = config.CreateMapper();
 
-            _cache = new MemoryCache(new MemoryCacheOptions());
+            _cache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
 
             _service = new ClinicServiceService(
                 _serviceRepositoryMock.Object,

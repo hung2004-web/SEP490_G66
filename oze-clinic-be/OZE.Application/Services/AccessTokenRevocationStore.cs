@@ -1,14 +1,16 @@
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using OZE.Application.Interfaces;
+using OZE.Application.Services.Caching;
 
 namespace OZE.Application.Services
 {
-    // In memory, like the OTP sessions: kept only until the token would have expired anyway
+    // Signed-out tokens, kept only until the token would have expired anyway.
+    // In Redis they survive a restart, so a token signed out before the restart stays refused.
     public class AccessTokenRevocationStore : IAccessTokenRevocationStore
     {
-        private readonly IMemoryCache _cache;
+        private readonly IDistributedCache _cache;
 
-        public AccessTokenRevocationStore(IMemoryCache cache)
+        public AccessTokenRevocationStore(IDistributedCache cache)
         {
             _cache = cache;
         }
@@ -17,11 +19,11 @@ namespace OZE.Application.Services
         {
             if (expiresAt > DateTimeOffset.UtcNow)
             {
-                _cache.Set(Key(tokenId), true, expiresAt);
+                _cache.SetJson(Key(tokenId), true, expiresAt);
             }
         }
 
-        public bool IsRevoked(string tokenId) => _cache.TryGetValue(Key(tokenId), out _);
+        public bool IsRevoked(string tokenId) => _cache.Get(Key(tokenId)) != null;
 
         private static string Key(string tokenId) => "revoked-jti:" + tokenId;
     }

@@ -16,7 +16,6 @@ import ChangePasswordPage from "../pages/common/ChangePasswordPage";
 import ComingSoonPage from "../pages/common/ComingSoonPage";
 import ReceptionCheckIn from "../pages/receptionist/ReceptionCheckIn";
 import ReceptionDebts from "../pages/receptionist/ReceptionDebts";
-import ReceptionSchedule from "../pages/receptionist/ReceptionSchedule";
 import ReceptionInvoices from "../pages/receptionist/ReceptionInvoices";
 import ReceptionPatients from "../pages/receptionist/ReceptionPatients";
 import ReceptionConsultations from "../pages/receptionist/ReceptionConsultations";
@@ -26,7 +25,7 @@ import ReceptionFollowUps from "../pages/receptionist/ReceptionFollowUps";
 import ReceptionPayment from "../pages/receptionist/ReceptionPayment";
 import ReceptionQueue from "../pages/receptionist/ReceptionQueue";
 import CashHandover from "../pages/receptionist/CashHandover";
-import MyWorkSchedule from "../pages/staff/MyWorkSchedule";
+import WorkSchedule from "../pages/common/WorkSchedule";
 import MyAppointments from "../pages/patient/MyAppointments";
 import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import MedicalRecord from "../pages/patient/MedicalRecord";
@@ -42,7 +41,7 @@ import ServiceManagement from "../pages/admin/ServiceManagement";
 import StaffManagement from "../pages/admin/StaffManagement";
 import WorkShiftManagement from "../pages/admin/WorkShiftManagement";
 import SystemSettings from "../pages/admin/SystemSettings";
-import ExaminationPage from "../pages/doctor/ExaminationPage";
+import ExaminationPage from "../pages/doctor/examination/ExaminationPage";
 import ImagingReviewPage from "../pages/doctor/ImagingReviewPage";
 import GlobalException from "../pages/globalException/GlobalException";
 import GlobalErrorListener from "../components/error/GlobalErrorListener";
@@ -139,12 +138,11 @@ const ROLE_PAGES = {
     [ROUTES.RECEPTION_QUEUE]: <ReceptionQueue />,
     [ROUTES.RECEPTION_FOLLOW_UPS]: <ReceptionFollowUps />,
     [ROUTES.RECEPTION_DEBTS]: <ReceptionDebts />,
-    [ROUTES.RECEPTION_SCHEDULE]: <ReceptionSchedule />,
     [ROUTES.RECEPTION_INVOICE_LIST]: <ReceptionInvoices />,
     [ROUTES.RECEPTION_PATIENTS]: <ReceptionPatients />,
     [ROUTES.RECEPTION_CONSULTATIONS]: <ReceptionConsultations />,
     [ROUTES.RECEPTION_CASH_HANDOVER]: <CashHandover />,
-    [ROUTES.WORK_SCHEDULE]: <MyWorkSchedule />,
+    [ROUTES.WORK_SCHEDULE]: <WorkSchedule />,
     [ROUTES.APPOINTMENTS]: (
         <Routes>
             <Route index element={<MyAppointments />} />

@@ -1,17 +1,19 @@
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using OZE.Application.Interfaces;
+using OZE.Application.Services.Caching;
 using OZE.Common.Constants;
 using OZE.Common.Exceptions;
 
 namespace OZE.Application.Services
 {
-    // In memory, like the OTP sessions themselves: counts are per server and start again after a restart
+    // Codes sent per contact in a window, kept in the shared cache so a restart does not reset the count.
+    // The lock guards one server; the app runs as a single instance.
     public class OtpSendLimiter : IOtpSendLimiter
     {
         private static readonly object Gate = new();
-        private readonly IMemoryCache _cache;
+        private readonly IDistributedCache _cache;
 
-        public OtpSendLimiter(IMemoryCache cache)
+        public OtpSendLimiter(IDistributedCache cache)
         {
             _cache = cache;
         }
@@ -22,15 +24,17 @@ namespace OZE.Application.Services
             lock (Gate)
             {
                 // The window starts with the first code and is not pushed back by the next ones
-                var window = _cache.TryGetValue(key, out SendWindow? current) && current != null
+                var now = DateTimeOffset.UtcNow;
+                var current = _cache.GetJson<SendWindow>(key);
+                var window = current != null && current.EndsAt > now
                     ? current
-                    : new SendWindow(0, DateTimeOffset.UtcNow.AddMinutes(SecurityConstants.OtpSendWindowMinutes));
+                    : new SendWindow(0, now.AddMinutes(SecurityConstants.OtpSendWindowMinutes));
                 if (window.Count >= SecurityConstants.OtpSendsPerWindow)
                 {
                     throw new TooManyRequestsException(ErrorConstants.AuthMessage.OtpTooManyRequests);
                 }
 
-                _cache.Set(key, window with { Count = window.Count + 1 }, window.EndsAt);
+                _cache.SetJson(key, window with { Count = window.Count + 1 }, window.EndsAt);
             }
         }
 

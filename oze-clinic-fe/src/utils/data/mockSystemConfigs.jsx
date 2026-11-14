@@ -17,6 +17,6 @@ export const MOCK_SYSTEM_CONFIGS = [
     { key: "CheckIn.LateMinutes", group: "checkIn", label: "Trễ quá thì đánh dấu NO_SHOW", dataType: "int", unit: "phút", min: 0, max: 240, value: "15" },
     { key: "Queue.AutoExpireMinutes", group: "queue", label: "Chờ quá thì tự huỷ khỏi hàng chờ", dataType: "int", unit: "phút", min: 5, max: 480, value: "60" },
     { key: "Clinic.WorkStartTime", group: "clinic", label: "Giờ mở cửa", dataType: "time", value: "08:00" },
-    { key: "Clinic.WorkEndTime", group: "clinic", label: "Giờ đóng cửa", dataType: "time", value: "17:00" },
+    { key: "Clinic.WorkEndTime", group: "clinic", label: "Giờ đóng cửa", dataType: "time", value: "19:00" },
     { key: "Clinic.SlotDurationMinutes", group: "clinic", label: "Độ dài một khung giờ hẹn", dataType: "int", unit: "phút", min: 5, max: 240, value: "30" },
 ];

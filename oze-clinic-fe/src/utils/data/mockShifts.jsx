@@ -8,7 +8,7 @@ export const SHIFT_SLOTS = {
 
 export const SHIFT_SLOT_OPTIONS = [
     { value: SHIFT_SLOTS.MORNING, label: "Ca sáng", start: "08:00", end: "12:00" },
-    { value: SHIFT_SLOTS.AFTERNOON, label: "Ca chiều", start: "13:00", end: "17:00" },
+    { value: SHIFT_SLOTS.AFTERNOON, label: "Ca chiều", start: "13:30", end: "19:00" },
 ];
 
 export const SHIFT_STATUSES = {

@@ -133,16 +133,16 @@ classDiagram
     class JwtTokenGenerator
     class EmailSender
     class SmsSender
-    class MemoryPendingRegistrationStore
-    class MemoryPasswordResetStore
+    class PendingRegistrationStore
+    class PasswordResetStore
 
     UserRefreshTokenRepository ..|> IUserRefreshTokenRepository : implements
     RegistrationRepository ..|> IRegistrationRepository : implements
     JwtTokenGenerator ..|> IJwtTokenGenerator : implements
     EmailSender ..|> IEmailSender : implements
     SmsSender ..|> ISmsSender : implements
-    MemoryPendingRegistrationStore ..|> IPendingRegistrationStore : implements
-    MemoryPasswordResetStore ..|> IPasswordResetStore : implements
+    PendingRegistrationStore ..|> IPendingRegistrationStore : implements
+    PasswordResetStore ..|> IPasswordResetStore : implements
 ```
 
 ## Config cho mermaid.live (tab Config)

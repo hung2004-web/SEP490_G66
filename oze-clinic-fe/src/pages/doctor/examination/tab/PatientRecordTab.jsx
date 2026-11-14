@@ -1,12 +1,12 @@
 import useHistoryAutosave from "@/hooks/useHistoryAutosave";
-import MedicalHistoryCard from "./MedicalHistoryCard";
-import PatientInfoCard from "./PatientInfoCard";
-import PreviousVisitsCard from "./PreviousVisitsCard";
-import StepActionBar from "./StepActionBar";
+import MedicalHistoryCard from "@/components/examination/MedicalHistoryCard";
+import PatientInfoCard from "@/components/examination/PatientInfoCard";
+import PreviousVisitsCard from "@/components/examination/PreviousVisitsCard";
+import StepActionBar from "@/components/examination/StepActionBar";
 
 // Step 1 "Lập hồ sơ bệnh án": read-only identity, medical history the doctor completes (saved as a draft
 // shortly after each change), previous visits. onHistoryChange gets every edit; onNext / onEnd receive the latest history.
-const MedicalHistoryStep = ({ queueId, record, busy = false, onHistoryChange, onNext, onEnd }) => {
+const PatientRecordTab = ({ queueId, record, busy = false, onHistoryChange, onNext, onEnd }) => {
     const { history, setHistory, statusText } = useHistoryAutosave(queueId, record.history, onHistoryChange);
 
     return (
@@ -26,4 +26,4 @@ const MedicalHistoryStep = ({ queueId, record, busy = false, onHistoryChange, on
     );
 };
 
-export default MedicalHistoryStep;
+export default PatientRecordTab;

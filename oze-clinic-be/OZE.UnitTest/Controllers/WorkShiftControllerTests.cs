@@ -94,6 +94,7 @@ namespace OZE.UnitTest.Controllers
             var error = await act.Should().ThrowAsync<NotFoundException>();
             error.Which.Message.Should().Be(ErrorConstants.WorkShiftMessage.StaffNotFound);
         }
+ feat/SCRUM-879-Unittest-for-CreateWorkShift
 
         [Fact]
         public async Task GetWorkShiftsAsync_ShouldReturnOk_WithShiftList()
@@ -160,5 +161,7 @@ namespace OZE.UnitTest.Controllers
             var error = await act.Should().ThrowAsync<BadRequestException>();
             error.Which.Message.Should().Be(ErrorConstants.WorkShiftMessage.InvalidDateRange);
         }
+
+ main
     }
 }

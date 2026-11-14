@@ -5,14 +5,14 @@ import { completeTreatmentSession, saveTreatmentDraft } from "@/services/examina
 import { currentTreatmentSessionId, initialTreatmentItems, planSessionList, upcomingPlanSessions } from "@/utils/examination";
 import { getClinicToday } from "@/utils/format";
 import { GENERIC_ERROR_MESSAGE } from "@/utils/messages";
-import FollowUpCard from "./FollowUpCard";
-import SessionInvoiceCard from "./SessionInvoiceCard";
-import StepActionBar from "./StepActionBar";
-import TreatmentItemDeleteDialog from "./TreatmentItemDeleteDialog";
-import TreatmentItemDialog from "./TreatmentItemDialog";
-import TreatmentItemTable from "./TreatmentItemTable";
-import TreatmentNoteCard from "./TreatmentNoteCard";
-import TreatmentSessionCard from "./TreatmentSessionCard";
+import FollowUpCard from "@/components/examination/FollowUpCard";
+import SessionInvoiceCard from "@/components/examination/SessionInvoiceCard";
+import StepActionBar from "@/components/examination/StepActionBar";
+import TreatmentItemDeleteDialog from "@/components/examination/TreatmentItemDeleteDialog";
+import TreatmentItemDialog from "@/components/examination/TreatmentItemDialog";
+import TreatmentItemTable from "@/components/examination/TreatmentItemTable";
+import TreatmentNoteCard from "@/components/examination/TreatmentNoteCard";
+import TreatmentSessionCard from "@/components/examination/TreatmentSessionCard";
 
 // Draft to start from: today's session picked, a new draft pre-filled with that session.
 const initialDraftOf = ({ plan, treatment }) => {
@@ -26,7 +26,7 @@ const initialDraftOf = ({ plan, treatment }) => {
 // When today's session is the last one of the plan, the doctor can also propose a check-up date ("Hẹn tái khám").
 // record.treatment is the saved draft; changes are saved automatically and passed to onTreatmentChange.
 // "Chuyển sang Đơn thuốc" marks the session done (onPlanChange gets the new plan) then onComplete.
-const TreatmentStep = ({ queueId, record, busy = false, onTreatmentChange, onPlanChange, onEditPlan, onComplete, onEnd }) => {
+const TreatmentTab = ({ queueId, record, busy = false, onTreatmentChange, onPlanChange, onEditPlan, onComplete, onEnd }) => {
     const [initialDraft] = useState(() => initialDraftOf(record));
     const { value: draft, setValue: setDraft, statusText, saveNow } = useAutosave((value) => saveTreatmentDraft(queueId, value), initialDraft, onTreatmentChange);
     const [dialog, setDialog] = useState(null); // { type: "add" | "edit" | "delete", item? }
@@ -126,4 +126,4 @@ const TreatmentStep = ({ queueId, record, busy = false, onTreatmentChange, onPla
     );
 };
 
-export default TreatmentStep;
+export default TreatmentTab;
