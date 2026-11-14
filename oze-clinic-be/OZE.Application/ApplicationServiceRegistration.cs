@@ -80,6 +80,7 @@ namespace OZE.Application
             // The audit log reads the signed-in user, IP address and browser from the current request
             services.AddHttpContextAccessor();
             services.AddScoped<IAuditLogService, AuditLogService>();
+            services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
             services.AddHostedService<OZE.Application.BackgroundServices.FollowUpReminderBackgroundService>();
             services.AddHostedService<OZE.Application.BackgroundServices.PaymentReminderBackgroundService>();
             return services;
