@@ -13,7 +13,7 @@ import {
     toMockSlotEnd,
 } from "../utils/data/mockBooking";
 import { addDays, getClinicToday, parseDateOnly, toDateOnly } from "../utils/format";
-import { APPOINTMENT_STATUS, BOOKING_ERROR_CODE, BOOKING_MAX_DAYS_AHEAD, BOOKING_TEXT, GENERIC_ERROR_MESSAGE, USER_ROLES } from "../utils/messages";
+import { APPOINTMENT_STATUS, BOOKING_ERROR_CODE, BOOKING_MAX_DAYS_AHEAD, GENERIC_ERROR_MESSAGE, USER_ROLES } from "../utils/messages";
 
 const MOCK_DELAY_MS = 300;
 const MOCK_SWITCH_KEY = "mock_booking";
@@ -93,7 +93,7 @@ const describeServices = (payload) => {
     const mandatory = services.filter((service) => service.isMandatory).map((service) => service.name);
     const withoutVariant = payload.ServiceId.map((id) => byId.get(id))
         .filter(Boolean)
-        .map((service) => (service.variants.length ? `${service.name} · ${BOOKING_TEXT.VARIANT_UNKNOWN_LABEL}` : service.name));
+        .map((service) => service.name);
     const withVariant = payload.VariantId.map((variantId) => {
         const service = services.find((item) => item.variants.some((variant) => variant.id === variantId));
         const variant = service?.variants.find((item) => item.id === variantId);

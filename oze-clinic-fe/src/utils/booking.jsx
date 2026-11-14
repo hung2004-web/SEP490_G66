@@ -3,7 +3,6 @@ import { BOOKING_MAX_DAYS_AHEAD, BOOKING_TEXT } from "./messages";
 
 export const DAYS_PER_WEEK = 7;
 export const NOON = "12:00:00";
-export const UNKNOWN_VARIANT = "unknown";
 
 export const BOOKING_IDS = {
     NOTE: "booking-note",
@@ -121,41 +120,32 @@ export const monthHasUsableWeek = (month, bounds, today) => calendarWeeks(month,
 
 export const findService = (services, serviceId) => services.find((service) => service.id === serviceId) ?? null;
 
-export const hasItem = (items, serviceId, variantId) => items.some((item) => item.serviceId === serviceId && item.variantId === variantId);
-
 export const itemLabel = (services, item) => {
     const service = findService(services, item.serviceId);
     if (!service) return "";
-    if (item.variantId === null) return service.variants.length ? `${service.name} · ${BOOKING_TEXT.VARIANT_UNKNOWN_LABEL}` : service.name;
+    if (item.variantId === null) return service.name;
     const variant = service.variants.find((option) => option.id === item.variantId);
     return variant ? `${service.name} · ${variant.name}` : service.name;
 };
 
-export const isServiceFull = (service, items) =>
-    service.variants.length ? service.variants.every((variant) => hasItem(items, service.id, variant.id)) : hasItem(items, service.id, null);
-
-export const isUnknownDisabled = (service, items) => items.some((item) => item.serviceId === service.id);
+// One line per service: a service with variants is added through exactly one variant, a service without variants on its own
+export const isServiceFull = (service, items) => items.some((item) => item.serviceId === service.id);
 
 export const canAddSelection = (service, pickVariant, items) =>
-    Boolean(service) && (service.variants.length ? pickVariant !== null : !hasItem(items, service.id, null));
-
-const pickToVariantId = (pickVariant) => (pickVariant === UNKNOWN_VARIANT ? null : pickVariant);
+    Boolean(service) && !isServiceFull(service, items) && (!service.variants.length || pickVariant !== null);
 
 export const getPendingSelection = (services, items, pickService, pickVariant) => {
     const service = findService(services, pickService);
     if (!service) return null;
-    if (!service.variants.length) return hasItem(items, service.id, null) ? null : service.name;
-    if (pickVariant === null) return items.some((item) => item.serviceId === service.id) ? null : service.name;
-    return itemLabel(services, { serviceId: service.id, variantId: pickToVariantId(pickVariant) });
+    if (isServiceFull(service, items)) return null;
+    if (!service.variants.length || pickVariant === null) return service.name;
+    return itemLabel(services, { serviceId: service.id, variantId: pickVariant });
 };
 
 export const addItem = (items, services, pickService, pickVariant) => {
     const service = findService(services, pickService);
-    const item = { serviceId: pickService, variantId: service.variants.length ? pickToVariantId(pickVariant) : null };
-    const unknownIndex = items.findIndex((entry) => entry.serviceId === pickService && entry.variantId === null);
-    const next = item.variantId !== null && unknownIndex >= 0 ? items.map((entry, index) => (index === unknownIndex ? item : entry)) : [...items, item];
-    const hasMore = service.variants.some((variant) => !hasItem(next, service.id, variant.id));
-    return { items: next, item, keepService: service.variants.length > 0 && hasMore };
+    const item = { serviceId: pickService, variantId: service.variants.length ? pickVariant : null };
+    return { items: [...items, item], item, keepService: false };
 };
 
 export const removeGoneVariants = (services, variantIds) =>
@@ -167,20 +157,22 @@ export const reconcileServices = (items, pick, oldServices, newServices) => {
     const replaced = new Set();
     items.forEach((item) => {
         const service = findService(newServices, item.serviceId);
-        const variantAlive = item.variantId === null || service?.variants.some((variant) => variant.id === item.variantId);
+        // A plain line is valid only while the service has no variants; a variant line while that variant is still offered
+        const variantAlive = item.variantId === null ? !service?.variants.length : service?.variants.some((variant) => variant.id === item.variantId);
         if (service && variantAlive) {
             next.push(item);
             return;
         }
         goneLabels.push(itemLabel(oldServices, item));
-        if (!service || replaced.has(service.id)) return;
+        // The patient picks a variant again; only a service left without variants is kept on its own
+        if (!service || service.variants.length || replaced.has(service.id)) return;
         const stillChosen = items.some((other) => other.serviceId === service.id && other !== item && (other.variantId === null || service.variants.some((variant) => variant.id === other.variantId)));
         if (stillChosen) return;
         replaced.add(service.id);
         next.push({ serviceId: service.id, variantId: null });
     });
     const service = findService(newServices, pick.pickService);
-    const variantAlive = pick.pickVariant === null || pick.pickVariant === UNKNOWN_VARIANT || service?.variants.some((variant) => variant.id === pick.pickVariant);
+    const variantAlive = pick.pickVariant === null || service?.variants.some((variant) => variant.id === pick.pickVariant);
     return {
         items: next,
         goneLabels,
