@@ -194,6 +194,13 @@ namespace OZE.Common.Constants
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
         }
 
+        // Audit log, read only (clinic manager)
+        public static class AuditLogMessage
+        {
+            public const string NotFound = "Audit log not found.";
+            public const string InvalidDateRange = "From date must be on or before to date.";
+        }
+
         // In-app notifications (F-CRM-03)
         public static class NotificationMessage
         {
