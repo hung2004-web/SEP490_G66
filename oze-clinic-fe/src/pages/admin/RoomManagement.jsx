@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import StatusTabs from "@/components/ui/StatusTabs";
 import { CheckCircle2, DoorOpen, Pencil } from "lucide-react";
 import RoomFormPopup from "@/components/popup/room/RoomFormPopup";
+import FilterBar, { FILTER_SEARCH_CLASS, FILTER_SELECT_CLASS } from "@/components/ui/FilterBar";
 import FilterSelect from "@/components/ui/FilterSelect";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
@@ -100,7 +100,7 @@ const RoomManagement = () => {
     };
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
             <div className="page-header mb-0 items-center">
                 <div>
                     <h1 className="page-title">Phòng</h1>
@@ -123,14 +123,17 @@ const RoomManagement = () => {
                 )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <FilterBar
+                canClear={Boolean(filtered || searchInput)}
+                onClear={clearFilters}
+            >
                 <SearchInput
                     id="room-search"
                     label="Tìm kiếm phòng"
                     placeholder="Tìm theo tên phòng, tầng, mô tả"
                     value={searchInput}
                     onChange={setSearchInput}
-                    className="w-full sm:w-72"
+                    className={FILTER_SEARCH_CLASS}
                 />
                 <FilterSelect
                     id="room-type-filter"
@@ -138,15 +141,17 @@ const RoomManagement = () => {
                     options={ROOM_TYPE_OPTIONS}
                     value={type}
                     onChange={changeFilter(setType)}
-                    className="w-full sm:w-auto sm:min-w-40"
+                    className={FILTER_SELECT_CLASS}
                 />
-                <StatusTabs className="w-full" label="Trạng thái" options={ROOM_STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
-                {(filtered || searchInput) && (
-                    <button type="button" className="btn btn-link" onClick={clearFilters}>
-                        Xoá bộ lọc
-                    </button>
-                )}
-            </div>
+                <FilterSelect
+                    className={FILTER_SELECT_CLASS}
+                    id="room-status-filter"
+                    label="Trạng thái"
+                    options={ROOM_STATUS_OPTIONS}
+                    value={status}
+                    onChange={changeFilter(setStatus)}
+                />
+            </FilterBar>
 
             <div>
                 <div className="table-wrap">

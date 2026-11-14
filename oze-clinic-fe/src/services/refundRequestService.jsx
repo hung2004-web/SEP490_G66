@@ -38,11 +38,6 @@ export const REFUND_REQUEST_PAGE_SIZE = 5;
 
 export const REFUND_REQUESTS_CHANGED_EVENT = "app:refund-requests-changed";
 
-// The backend does not link a refund to a doctor, so the page's doctor filter has no options
-export const REFUND_DOCTOR_OPTIONS = [];
-
-export const getRefundDoctorOptions = () => REFUND_DOCTOR_OPTIONS;
-
 const success = (data, message = null) => ({ success: true, message, code: null, data, errors: null });
 
 const failure = (message, { code = null, data = null, errors = null } = {}) => ({ success: false, message, code, data, errors });

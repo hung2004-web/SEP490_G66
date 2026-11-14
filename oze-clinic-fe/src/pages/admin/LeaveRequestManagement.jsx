@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import StatusTabs from "@/components/ui/StatusTabs";
 import { useSearchParams } from "react-router-dom";
 import { CalendarOff } from "lucide-react";
 import { toast } from "react-toastify";
 import LeaveRequestDetailPopup from "@/components/popup/leaveRequest/LeaveRequestDetailPopup";
+import FilterBar, { FILTER_SEARCH_CLASS, FILTER_SELECT_CLASS } from "@/components/ui/FilterBar";
 import FilterSelect from "@/components/ui/FilterSelect";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
@@ -105,6 +105,15 @@ const LeaveRequestManagement = () => {
         setPage(1);
     };
 
+    const clearFilters = () => {
+        setSearchInput("");
+        setKeyword("");
+        setStatus("");
+        setRole("");
+        setSlot("");
+        setPage(1);
+    };
+
     const closeDetail = () => {
         setViewing(null);
         setSearchParams({}, { replace: true });
@@ -133,18 +142,20 @@ const LeaveRequestManagement = () => {
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <FilterBar
+                canClear={Boolean(filtered || searchInput)}
+                onClear={clearFilters}
+            >
                 <SearchInput
                     id="leave-request-search"
                     label="Tìm đơn xin nghỉ"
                     placeholder="Tìm theo tên nhân viên, lý do"
                     value={searchInput}
                     onChange={setSearchInput}
-                    className="w-full sm:w-72"
+                    className={FILTER_SEARCH_CLASS}
                 />
-                <StatusTabs className="w-full" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
                 <FilterSelect
-                    className="w-full sm:w-auto sm:min-w-40"
+                    className={FILTER_SELECT_CLASS}
                     id="leave-request-role"
                     label="Vai trò"
                     options={SHIFT_ROLE_OPTIONS}
@@ -152,14 +163,22 @@ const LeaveRequestManagement = () => {
                     onChange={changeFilter(setRole)}
                 />
                 <FilterSelect
-                    className="w-full sm:w-auto sm:min-w-40"
+                    className={FILTER_SELECT_CLASS}
                     id="leave-request-slot"
                     label="Buổi"
                     options={SLOT_OPTIONS}
                     value={slot}
                     onChange={changeFilter(setSlot)}
                 />
-            </div>
+                <FilterSelect
+                    className={FILTER_SELECT_CLASS}
+                    id="leave-request-status"
+                    label="Trạng thái"
+                    options={STATUS_OPTIONS}
+                    value={status}
+                    onChange={changeFilter(setStatus)}
+                />
+            </FilterBar>
 
             <div>
                 <div className="table-wrap">

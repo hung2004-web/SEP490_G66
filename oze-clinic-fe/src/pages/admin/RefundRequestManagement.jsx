@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import StatusTabs from "@/components/ui/StatusTabs";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import RefundRequestDetailPopup from "@/components/popup/refund/RefundRequestDetailPopup";
 import RefundRequestTable from "@/components/refund/RefundRequestTable";
+import FilterBar, { FILTER_SEARCH_CLASS, FILTER_SELECT_CLASS } from "@/components/ui/FilterBar";
 import FilterSelect from "@/components/ui/FilterSelect";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import useAsync from "@/hooks/useAsync";
-import { confirmRefundRequest, getRefundDoctorOptions, getRefundRequest, getRefundRequests, rejectRefundRequest } from "@/services/refundRequestService";
+import { confirmRefundRequest, getRefundRequest, getRefundRequests, rejectRefundRequest } from "@/services/refundRequestService";
 import { REFUND_REQUEST_STATUSES, REFUND_REQUEST_STATUS_LABELS } from "@/utils/refundRequest";
 
 const SEARCH_DELAY_MS = 300;
@@ -19,7 +19,6 @@ const RefundRequestManagement = () => {
     const [searchInput, setSearchInput] = useState("");
     const [keyword, setKeyword] = useState("");
     const [status, setStatus] = useState("");
-    const [doctorId, setDoctorId] = useState("");
     const [page, setPage] = useState(1);
     const [version, setVersion] = useState(0);
     const [viewing, setViewing] = useState(null);
@@ -27,7 +26,7 @@ const RefundRequestManagement = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const openId = searchParams.get("id");
 
-    const { loading, value: result } = useAsync(() => getRefundRequests({ keyword, status, doctorId, page }), [keyword, status, doctorId, page, version]);
+    const { loading, value: result } = useAsync(() => getRefundRequests({ keyword, status, page }), [keyword, status, page, version]);
 
     useEffect(() => {
         const nextKeyword = searchInput.trim();
@@ -65,6 +64,15 @@ const RefundRequestManagement = () => {
         setPage(1);
     };
 
+    const filtered = Boolean(keyword || status);
+
+    const clearFilters = () => {
+        setSearchInput("");
+        setKeyword("");
+        setStatus("");
+        setPage(1);
+    };
+
     const closeDetail = () => {
         setViewing(null);
         setSearchParams({}, { replace: true });
@@ -93,32 +101,34 @@ const RefundRequestManagement = () => {
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <FilterBar
+                canClear={Boolean(filtered || searchInput)}
+                onClear={clearFilters}
+            >
                 <SearchInput
                     id="refund-request-search"
                     label="Tìm yêu cầu hoàn tiền"
-                    placeholder="Tìm theo bệnh nhân, mã bệnh nhân, hoá đơn"
+                    placeholder="Tìm theo tên/mã bệnh nhân, hoá đơn"
                     value={searchInput}
                     onChange={setSearchInput}
-                    className="w-full sm:w-96"
+                    className={FILTER_SEARCH_CLASS}
                 />
-                <StatusTabs className="w-full" label="Trạng thái" options={STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
                 <FilterSelect
-                    className="w-full sm:w-auto sm:min-w-40"
-                    id="refund-request-doctor"
-                    label="Bác sĩ phụ trách"
-                    options={getRefundDoctorOptions()}
-                    value={doctorId}
-                    onChange={changeFilter(setDoctorId)}
+                    className={FILTER_SELECT_CLASS}
+                    id="refund-request-status"
+                    label="Trạng thái"
+                    options={STATUS_OPTIONS}
+                    value={status}
+                    onChange={changeFilter(setStatus)}
                 />
-            </div>
+            </FilterBar>
 
             <div>
                 <RefundRequestTable
                     requests={requests}
                     firstNumber={firstNumber}
                     loading={loading}
-                    filtered={Boolean(keyword || status || doctorId)}
+                    filtered={filtered}
                     onView={(id) => setSearchParams({ id: String(id) }, { replace: true })}
                 />
                 {data?.totalItems > 0 && (

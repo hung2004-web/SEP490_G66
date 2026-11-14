@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import StatusTabs from "@/components/ui/StatusTabs";
 import { Eye, Lock, LockOpen, Pencil, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import LockAccountPopup from "@/components/popup/staff/LockAccountPopup";
 import StaffDetailPopup from "@/components/popup/staff/StaffDetailPopup";
 import StaffFormPopup from "@/components/popup/staff/StaffFormPopup";
+import FilterBar, { FILTER_SEARCH_CLASS, FILTER_SELECT_CLASS } from "@/components/ui/FilterBar";
 import FilterSelect from "@/components/ui/FilterSelect";
 import Pagination from "@/components/ui/Pagination";
 import PersonCell from "@/components/ui/PersonCell";
@@ -99,6 +99,14 @@ const StaffManagement = () => {
         setPage(1);
     };
 
+    const clearFilters = () => {
+        setSearchInput("");
+        setKeyword("");
+        setRole("");
+        setStatus("");
+        setPage(1);
+    };
+
     const openCreate = () => setDialog({ kind: "form", member: null });
     const openView = (member) => setDialog({ kind: "detail", member });
     const openEdit = (member) => setDialog({ kind: "form", member });
@@ -142,14 +150,17 @@ const StaffManagement = () => {
                 </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <FilterBar
+                canClear={Boolean(filtered || searchInput)}
+                onClear={clearFilters}
+            >
                 <SearchInput
                     id="staff-search"
                     label="Tìm nhân viên"
                     placeholder="Tìm theo tên, email, SĐT"
                     value={searchInput}
                     onChange={setSearchInput}
-                    className="w-full sm:w-72"
+                    className={FILTER_SEARCH_CLASS}
                 />
                 <FilterSelect
                     id="staff-role"
@@ -157,10 +168,17 @@ const StaffManagement = () => {
                     options={STAFF_ROLE_OPTIONS}
                     value={role}
                     onChange={changeFilter(setRole)}
-                    className="w-full sm:w-auto sm:min-w-40"
+                    className={FILTER_SELECT_CLASS}
                 />
-                <StatusTabs className="w-full" label="Trạng thái" options={ACCOUNT_STATUS_OPTIONS} value={status} onChange={changeFilter(setStatus)} />
-            </div>
+                <FilterSelect
+                    className={FILTER_SELECT_CLASS}
+                    id="staff-status"
+                    label="Trạng thái"
+                    options={ACCOUNT_STATUS_OPTIONS}
+                    value={status}
+                    onChange={changeFilter(setStatus)}
+                />
+            </FilterBar>
 
             <div>
                 <div className="table-wrap">

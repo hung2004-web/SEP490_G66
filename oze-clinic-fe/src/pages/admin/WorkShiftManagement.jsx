@@ -1,5 +1,4 @@
 import { useState } from "react";
-import StatusTabs from "@/components/ui/StatusTabs";
 import { toast } from "react-toastify";
 import MonthlyShiftPopup from "@/components/popup/shift/MonthlyShiftPopup";
 import ShiftAssignPopup from "@/components/popup/shift/ShiftAssignPopup";
@@ -7,6 +6,7 @@ import ShiftDetailPopup from "@/components/popup/shift/ShiftDetailPopup";
 import ShiftEditPopup from "@/components/popup/shift/ShiftEditPopup";
 import UnassignedShiftPopup from "@/components/popup/shift/UnassignedShiftPopup";
 import ShiftWeekGrid from "@/components/shift/ShiftWeekGrid";
+import FilterBar, { FILTER_SELECT_CLASS } from "@/components/ui/FilterBar";
 import FilterSelect from "@/components/ui/FilterSelect";
 import WeekPicker from "@/components/ui/WeekPicker";
 import useAsync from "@/hooks/useAsync";
@@ -63,6 +63,12 @@ const WorkShiftManagement = () => {
         setDialog({ type: cell.staff ? DIALOGS.DETAIL : DIALOGS.UNASSIGNED, cell });
     };
 
+    const clearFilters = () => {
+        setRoomId("");
+        setRole("");
+        setStatus("");
+    };
+
     const handleSaved = (message) => {
         setDialog(null);
         toast.success(message);
@@ -81,7 +87,7 @@ const WorkShiftManagement = () => {
     const pendingWork = week?.editable ? pendingWorkText(week) : null;
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
             <div className="page-header mb-0 items-center">
                 <div>
                     <h1 className="page-title">Phân ca</h1>
@@ -101,28 +107,37 @@ const WorkShiftManagement = () => {
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <WeekPicker id="shift-week" value={weekStart} onChange={setWeekStart} className="w-full sm:w-auto" />
-                <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-                    <FilterSelect
-                        className="w-full sm:w-auto sm:min-w-40"
-                        id="shift-room-filter"
-                        label="Phòng"
-                        options={ROOM_OPTIONS}
-                        value={roomId}
-                        onChange={setRoomId}
-                    />
-                    <FilterSelect
-                        className="w-full sm:w-auto sm:min-w-40"
-                        id="shift-role-filter"
-                        label="Vai trò"
-                        options={SHIFT_ROLE_OPTIONS}
-                        value={role}
-                        onChange={setRole}
-                    />
-                    <StatusTabs className="w-full" label="Trạng thái" options={SHIFT_STATUS_OPTIONS} value={status} onChange={setStatus} />
-                </div>
-            </div>
+            <WeekPicker id="shift-week" value={weekStart} onChange={setWeekStart} className="w-full sm:w-auto" />
+
+            <FilterBar
+                canClear={Boolean(roomId || role || status)}
+                onClear={clearFilters}
+            >
+                <FilterSelect
+                    className={FILTER_SELECT_CLASS}
+                    id="shift-room-filter"
+                    label="Phòng"
+                    options={ROOM_OPTIONS}
+                    value={roomId}
+                    onChange={setRoomId}
+                />
+                <FilterSelect
+                    className={FILTER_SELECT_CLASS}
+                    id="shift-role-filter"
+                    label="Vai trò"
+                    options={SHIFT_ROLE_OPTIONS}
+                    value={role}
+                    onChange={setRole}
+                />
+                <FilterSelect
+                    className={FILTER_SELECT_CLASS}
+                    id="shift-status-filter"
+                    label="Trạng thái"
+                    options={SHIFT_STATUS_OPTIONS}
+                    value={status}
+                    onChange={setStatus}
+                />
+            </FilterBar>
 
             {pendingWork && <p className="alert alert-danger border-0">{pendingWork}</p>}
 
