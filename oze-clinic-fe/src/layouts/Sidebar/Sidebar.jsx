@@ -5,12 +5,11 @@ import LogoOze from "@/assets/logo/Logo-OZE-ngang.png";
 import LogoOzeSquare from "@/assets/logo/Logo_OZE.png";
 import useAsync from "@/hooks/useAsync";
 import useSession from "@/hooks/useSession";
-import { getPendingRequests } from "@/services/adminReportService";
+import { REQUEST_TYPES, getPendingRequests } from "@/services/adminReportService";
 import { getDoctorPendingCounts } from "@/services/doctorWorkService";
 import { LEAVE_REQUESTS_CHANGED_EVENT } from "@/services/leaveRequestService";
 import { REFUND_REQUESTS_CHANGED_EVENT } from "@/services/refundRequestService";
 import { cx } from "@/utils/cx";
-import { REQUEST_TYPES } from "@/utils/data/mockAdminReport";
 import { GUEST_HEADER_TEXT, USER_ROLES } from "@/utils/messages";
 import { SIDEBAR_BADGES, getSidebarMenu } from "@/utils/sidebarMenu";
 

@@ -2,11 +2,12 @@ import { getMockCurrentUser } from "../utils/data/mockData";
 import { buildMedicalRecordData } from "../utils/data/mockMedicalRecord";
 import { MOCK_DASHBOARD_PATIENT_ID } from "../utils/data/mockPatientDashboard";
 import { buildPatientDebtMock } from "../utils/data/mockPatientDebts";
-import { MOCK_PATIENT_REFUND_REQUESTS, REFUND_REQUEST_STATUSES } from "../utils/data/mockRefundRequests";
+import { MOCK_PATIENT_REFUND_REQUESTS } from "../utils/data/mockRefundRequests";
 import { normalizeText } from "../utils/format";
 import { GENERIC_ERROR_MESSAGE } from "../utils/messages";
 import {
     REFUND_REASON_MAX,
+    REFUND_REQUEST_STATUSES,
     fromApiRequest,
     isDefiniteRefundError,
     nextCode,

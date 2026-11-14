@@ -24,8 +24,3 @@ export const MOCK_DEBTS = {
         { invoiceCode: "HD000201", patientName: "Trịnh Văn Khải", note: "Kế hoạch · Bọc răng sứ 26", remaining: 2000000 },
     ],
 };
-
-export const REQUEST_TYPES = {
-    LEAVE: "leave",
-    REFUND: "refund",
-};

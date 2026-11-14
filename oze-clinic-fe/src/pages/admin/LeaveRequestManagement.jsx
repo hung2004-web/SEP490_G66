@@ -11,7 +11,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import useAsync from "@/hooks/useAsync";
 import { WHOLE_DAY_FILTER, approveLeaveRequest, getLeaveRequest, getLeaveRequests, rejectLeaveRequest } from "@/services/leaveRequestService";
 import { SHIFT_ROLE_OPTIONS } from "@/services/shiftService";
-import { LEAVE_REQUEST_STATUSES, LEAVE_REQUEST_STATUS_LABELS, LEAVE_SLOT_OPTIONS, leaveSlotLabel } from "@/utils/data/mockShifts";
+import { LEAVE_REQUEST_STATUSES, LEAVE_REQUEST_STATUS_LABELS, LEAVE_SLOT_OPTIONS, leaveSlotLabel } from "@/utils/shift";
 import { formatDate } from "@/utils/format";
 
 const SEARCH_DELAY_MS = 300;

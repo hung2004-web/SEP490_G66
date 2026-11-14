@@ -5,7 +5,7 @@ import Modal from "@/components/ui/Modal";
 import useAsync from "@/hooks/useAsync";
 import { WEEKDAYS_SHORT, createMonthlyShifts, getShiftStaff, roomsForRole } from "@/services/shiftService";
 import { cx } from "@/utils/cx";
-import { SHIFT_SLOTS, SHIFT_SLOT_OPTIONS } from "@/utils/data/mockShifts";
+import { SHIFT_SLOTS, SHIFT_SLOT_OPTIONS } from "@/utils/shift";
 import { formatDayMonth, toDateOnly } from "@/utils/format";
 import { requiredMessage } from "@/utils/validation";
 

@@ -9,7 +9,7 @@ import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import useAsync from "@/hooks/useAsync";
 import { confirmRefundRequest, getRefundDoctorOptions, getRefundRequest, getRefundRequests, rejectRefundRequest } from "@/services/refundRequestService";
-import { REFUND_REQUEST_STATUSES, REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
+import { REFUND_REQUEST_STATUSES, REFUND_REQUEST_STATUS_LABELS } from "@/utils/refundRequest";
 
 const SEARCH_DELAY_MS = 300;
 

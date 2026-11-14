@@ -1,15 +1,8 @@
 import { formatDate, toDateOnly } from "../utils/format";
 import { USER_ROLES } from "../utils/messages";
 import { MOCK_ROOMS, ROOM_STATUSES, ROOM_TYPES } from "../utils/data/mockRooms";
-import {
-    LEAVE_REQUEST_STATUSES,
-    MOCK_ABSENCES,
-    MOCK_LEAVES,
-    MOCK_SHIFT_TEMPLATE,
-    MOCK_UNASSIGNED,
-    SHIFT_SLOT_OPTIONS,
-    SHIFT_STATUSES,
-} from "../utils/data/mockShifts";
+import { MOCK_ABSENCES, MOCK_LEAVES, MOCK_SHIFT_TEMPLATE, MOCK_UNASSIGNED, SHIFT_STATUSES } from "../utils/data/mockShifts";
+import { LEAVE_REQUEST_STATUSES, SHIFT_SLOT_OPTIONS } from "../utils/shift";
 import { ACCOUNT_STATUSES, MOCK_STAFF } from "../utils/data/mockStaff";
 
 // TODO(api): mock only. Shifts live in memory, so changes last until the page is reloaded.

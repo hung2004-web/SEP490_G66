@@ -1,4 +1,4 @@
-import { LEAVE_REQUEST_STATUSES } from "../utils/data/mockShifts";
+import { LEAVE_REQUEST_STATUSES } from "../utils/shift";
 import { BACKEND_ROLE_NAMES } from "../utils/messages";
 import api from "./api";
 import { call } from "./receptionService";

@@ -1,6 +1,6 @@
 import DetailLink from "@/components/ui/DetailLink";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
+import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/refundRequest";
 import { formatCurrency } from "@/utils/format";
 import { CLINIC_HOTLINE, PATIENT_DEBT_TEXT } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";

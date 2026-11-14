@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { cx } from "@/utils/cx";
-import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/data/mockRefundRequests";
+import { REFUND_REQUEST_STATUS_LABELS } from "@/utils/refundRequest";
 import { PATIENT_DEBT_TEXT } from "@/utils/messages";
 import { ROUTES } from "@/utils/routes";
 
