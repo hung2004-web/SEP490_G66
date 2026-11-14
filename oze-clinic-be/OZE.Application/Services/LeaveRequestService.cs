@@ -18,17 +18,20 @@ namespace OZE.Application.Services
         private readonly IWorkShiftRepository _workShiftRepository;
         private readonly IStaffRepository _staffRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly INotificationService? _notifications;
 
         public LeaveRequestService(
             ILeaveRequestRepository leaveRequestRepository,
             IWorkShiftRepository workShiftRepository,
             IStaffRepository staffRepository,
-            IAuditLogService auditLogService)
+            IAuditLogService auditLogService,
+            INotificationService? notifications = null)
         {
             _leaveRequestRepository = leaveRequestRepository;
             _workShiftRepository = workShiftRepository;
             _staffRepository = staffRepository;
             _auditLogService = auditLogService;
+            _notifications = notifications;
         }
 
         public async Task<LeaveRequestResponse> CreateAsync(
@@ -68,9 +71,17 @@ namespace OZE.Application.Services
 
             await _auditLogService.LogAsync(AuditConstants.LeaveRequested, EntityType, leave.Id.ToString(),
                 newValues: new { leave.LeaveDate, leave.Slot, leave.Reason });
+            await NotifyAsync(n => n.NotifyRolesAsync(new[] { RoleConstants.ClinicManagerRole },
+                new NotificationContent(NotificationConstants.Text.NewLeaveRequestTitle,
+                    string.Format(NotificationConstants.Text.NewLeaveRequestMessage, staff.FullName, NotificationFormat.LeaveSlot(leave.Slot), NotificationFormat.Date(leave.LeaveDate), leave.Reason),
+                    NotificationConstants.Reference.LeaveRequest, leave.Id.ToString()), userId, cancellationToken));
 
             return await ToResponseAsync(leave, withDetails: true, cancellationToken);
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
 
         public async Task<PagedResult<LeaveRequestResponse>> GetMineAsync(
             string userId,
@@ -182,6 +193,15 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.LeaveApproved, EntityType, leave.Id.ToString(),
                 oldValues: new { Status = LeaveRequestConstants.Pending },
                 newValues: new { leave.Status, leave.SubstituteStaffProfileId });
+            var substituteText = leave.SubstituteStaffProfile == null ? string.Empty : string.Format(NotificationConstants.Text.LeaveSubstituteSuffix, leave.SubstituteStaffProfile.FullName);
+            await NotifyAsync(n => n.NotifyStaffAsync(leave.StaffProfileId,
+                new NotificationContent(NotificationConstants.Text.LeaveApprovedTitle,
+                    string.Format(NotificationConstants.Text.LeaveApprovedMessage, NotificationFormat.LeaveSlot(leave.Slot), NotificationFormat.Date(leave.LeaveDate), substituteText),
+                    NotificationConstants.Reference.LeaveRequest, leave.Id.ToString()), cancellationToken));
+            await NotifyAsync(n => n.NotifyStaffAsync(leave.SubstituteStaffProfileId,
+                new NotificationContent(NotificationConstants.Text.SubstituteAssignedTitle,
+                    string.Format(NotificationConstants.Text.SubstituteAssignedMessage, leave.StaffProfile?.FullName, NotificationFormat.LeaveSlot(leave.Slot), NotificationFormat.Date(leave.LeaveDate)),
+                    NotificationConstants.Reference.WorkShift, null), cancellationToken));
 
             return await ToResponseAsync(leave, withDetails: true, cancellationToken);
         }
@@ -209,6 +229,10 @@ namespace OZE.Application.Services
             await _auditLogService.LogAsync(AuditConstants.LeaveRejected, EntityType, leave.Id.ToString(),
                 oldValues: new { Status = LeaveRequestConstants.Pending },
                 newValues: new { leave.Status, leave.RejectionReason });
+            await NotifyAsync(n => n.NotifyStaffAsync(leave.StaffProfileId,
+                new NotificationContent(NotificationConstants.Text.LeaveRejectedTitle,
+                    string.Format(NotificationConstants.Text.LeaveRejectedMessage, NotificationFormat.LeaveSlot(leave.Slot), NotificationFormat.Date(leave.LeaveDate), reason),
+                    NotificationConstants.Reference.LeaveRequest, leave.Id.ToString()), cancellationToken));
 
             return await ToResponseAsync(leave, withDetails: false, cancellationToken);
         }

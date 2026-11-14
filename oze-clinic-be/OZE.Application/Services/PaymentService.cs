@@ -13,15 +13,18 @@ namespace OZE.Application.Services
         private readonly IPaymentRepository _paymentRepository;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly INotificationService? _notifications;
 
         public PaymentService(
             IPaymentRepository paymentRepository,
             IInvoiceRepository invoiceRepository,
-            IAuditLogService auditLogService)
+            IAuditLogService auditLogService,
+            INotificationService? notifications = null)
         {
             _paymentRepository = paymentRepository;
             _invoiceRepository = invoiceRepository;
             _auditLogService = auditLogService;
+            _notifications = notifications;
         }
 
         public Task<PaymentResponse> RecordAsync(
@@ -107,6 +110,10 @@ namespace OZE.Application.Services
                     payment.Id.ToString(),
                     null,
                     new { payment.InvoiceId, payment.Amount, payment.PaymentMethod, payment.Purpose, payment.PaymentStatus, recordedByUserId });
+                if (isCash)
+                {
+                    await NotifyPaidAsync(payableInvoice, payment, cancellationToken);
+                }
 
                 return ToResponse(payment, payableInvoice);
             }, cancellationToken);
@@ -147,10 +154,21 @@ namespace OZE.Application.Services
                     payment.Id.ToString(),
                     null,
                     new { payment.InvoiceId, payment.Amount, confirmedByUserId });
+                await NotifyPaidAsync(invoice, payment, cancellationToken);
 
                 return ToResponse(payment, invoice);
             }, cancellationToken);
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
+
+        // The patient sees the money was received
+        private Task NotifyPaidAsync(Invoice invoice, Payment payment, CancellationToken cancellationToken) =>
+            NotifyAsync(n => n.NotifyPatientAsync(invoice.PatientId,
+                new NotificationContent(NotificationConstants.Text.PaymentConfirmedTitle, string.Format(NotificationConstants.Text.PaymentConfirmedMessage, NotificationFormat.Money(payment.Amount), invoice.InvoiceNumber),
+                    NotificationConstants.Reference.Invoice, invoice.Id.ToString()), cancellationToken));
 
         public Task<PaymentResponse> VoidAsync(
             long paymentId,

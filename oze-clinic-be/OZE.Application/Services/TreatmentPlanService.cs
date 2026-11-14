@@ -14,18 +14,25 @@ namespace OZE.Application.Services
         private readonly IStaffRepository _staffRepository;
         private readonly IMedicalRecordRepository _medicalRecordRepository;
         private readonly IServiceRepository _serviceRepository;
+        private readonly INotificationService? _notifications;
 
         public TreatmentPlanService(
             ITreatmentPlanRepository treatmentPlanRepository,
             IStaffRepository staffRepository,
             IMedicalRecordRepository medicalRecordRepository,
-            IServiceRepository serviceRepository)
+            IServiceRepository serviceRepository,
+            INotificationService? notifications = null)
         {
             _treatmentPlanRepository = treatmentPlanRepository;
             _staffRepository = staffRepository;
             _medicalRecordRepository = medicalRecordRepository;
             _serviceRepository = serviceRepository;
+            _notifications = notifications;
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
 
         // A doctor works only on the plans of patients they examine, like the medical record itself
         private async Task<StaffProfile> EnsureAccessAsync(string userId, TreatmentPlan plan)
@@ -197,6 +204,10 @@ namespace OZE.Application.Services
             plan.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            await NotifyAsync(n => n.NotifyPatientAsync(plan.PatientId,
+                new NotificationContent(NotificationConstants.Text.TreatmentPlanProposedTitle,
+                    string.Format(NotificationConstants.Text.TreatmentPlanProposedMessage, plan.PlanName ?? string.Empty, NotificationFormat.Money(plan.EstimatedTotalCost)),
+                    NotificationConstants.Reference.TreatmentPlan, plan.Id.ToString()), cancellationToken));
             return ToProgressResponse(plan);
         }
 
@@ -216,6 +227,10 @@ namespace OZE.Application.Services
             plan.UpdatedAt = now;
 
             await _treatmentPlanRepository.SaveChangesAsync(cancellationToken);
+            await NotifyAsync(n => n.NotifyStaffAsync(plan.CreatedByDoctorId,
+                new NotificationContent(NotificationConstants.Text.TreatmentPlanApprovedTitle,
+                    string.Format(NotificationConstants.Text.TreatmentPlanApprovedMessage, plan.Patient?.FullName ?? string.Empty, plan.PlanName ?? string.Empty),
+                    NotificationConstants.Reference.TreatmentPlan, plan.Id.ToString()), cancellationToken));
             return ToProgressResponse(plan);
         }
 

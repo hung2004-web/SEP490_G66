@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using OZE.Application.Helpers;
 using OZE.Application.Interfaces;
 using OZE.Application.Middlewares;
 using OZE.Common.Constants;
@@ -17,6 +18,7 @@ namespace OZE.Application.Services
         private readonly ITreatmentPlanRepository _treatmentPlanRepository;
         private readonly IServiceRepository _serviceRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly INotificationService? _notifications;
 
         public InvoiceService(
             IInvoiceRepository invoiceRepository,
@@ -24,7 +26,8 @@ namespace OZE.Application.Services
             IAppointmentRepository appointmentRepository,
             ITreatmentPlanRepository treatmentPlanRepository,
             IServiceRepository serviceRepository,
-            IAuditLogService auditLogService)
+            IAuditLogService auditLogService,
+            INotificationService? notifications = null)
         {
             _invoiceRepository = invoiceRepository;
             _patientRepository = patientRepository;
@@ -32,6 +35,7 @@ namespace OZE.Application.Services
             _treatmentPlanRepository = treatmentPlanRepository;
             _serviceRepository = serviceRepository;
             _auditLogService = auditLogService;
+            _notifications = notifications;
         }
 
         public async Task<InvoiceResponse> CreateAsync(
@@ -113,9 +117,16 @@ namespace OZE.Application.Services
                 invoice.Id.ToString(),
                 null,
                 new { invoice.InvoiceNumber, invoice.PatientId, invoice.FinalAmount, invoice.PaymentStatus });
+            await NotifyAsync(n => n.NotifyPatientAsync(invoice.PatientId,
+                new NotificationContent(NotificationConstants.Text.InvoiceCreatedTitle, string.Format(NotificationConstants.Text.InvoiceCreatedMessage, invoice.InvoiceNumber, NotificationFormat.Money(invoice.FinalAmount)),
+                    NotificationConstants.Reference.Invoice, invoice.Id.ToString()), cancellationToken));
 
             return ToResponse(invoice, patient?.FullName);
         }
+
+
+        // In-app notifications are optional so unit tests can build the service without them
+        private Task NotifyAsync(Func<INotificationService, Task> send) => _notifications == null ? Task.CompletedTask : send(_notifications);
 
         public async Task<InvoiceResponse> GetByIdAsync(
             long id,

@@ -194,6 +194,12 @@ namespace OZE.Common.Constants
             public const string InvalidEstimatedMinutes = "Estimated minutes must be greater than 0";
         }
 
+        // In-app notifications (F-CRM-03)
+        public static class NotificationMessage
+        {
+            public const string NotFound = "Notification not found.";
+        }
+
         // Service variant management for the clinic manager
         public static class ServiceVariantMessage
         {
