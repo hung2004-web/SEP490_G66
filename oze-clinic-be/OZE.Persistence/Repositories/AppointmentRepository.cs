@@ -129,6 +129,16 @@ namespace OZE.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Appointment>> GetPendingFromAsync(DateOnly fromDate, CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(x => x.Patient)
+                .Include(x => x.Doctor)
+                .Where(x => x.Status == AppointmentConstants.PendingStatus && x.AppointmentDate >= fromDate)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<List<Appointment>> GetAppointmentsOfDoctorsAsync(DateOnly date, IReadOnlyCollection<int> doctorIds, IReadOnlyCollection<string> statuses)
         {
             return await _context.Appointments

@@ -1,15 +1,15 @@
 # F-APT-10 Cảnh báo lịch `PENDING` quá hạn xác nhận
 
 > Nghiệp vụ tổng: [Dac_ta_nghiep_vu_OZE.md](../../Dac_ta_nghiep_vu_OZE.md). Mã quy tắc `BR-...` lấy từ đó.
-> **Chức năng chưa làm.** Mục 3, 4, 6 dưới đây là **THIẾT KẾ ĐỀ XUẤT**, chưa có trong code.
+> **Đã làm phần backend** (15/11/2026). FE chưa nối API.
 
 | Mục | Giá trị |
 |---|---|
 | Module | M3 Đặt lịch |
-| Trạng thái | ⬜ Chưa làm |
-| Vai trò được dùng | `Receptionist` (đề xuất thêm `ClinicManager`) |
-| API | Chưa có. Đề xuất `GET api/appointments/pending-overdue` |
-| Code chính | Chưa có. Đề xuất `AppointmentsController.GetPendingOverdueAsync` → `AppointmentService.GetPendingOverdueAsync` → `AppointmentRepository` (truy vấn mới) |
+| Trạng thái | 🟡 BE ✅, FE chưa nối |
+| Vai trò được dùng | `Receptionist`, `ClinicManager` |
+| API | `GET api/appointments/pending-overdue` |
+| Code chính | `AppointmentsController.GetPendingOverdueAsync` → `AppointmentService.GetPendingOverdueAsync` → `AppointmentRepository.GetPendingFromAsync` |
 
 ## 1. Chức năng này làm gì
 
@@ -20,9 +20,9 @@ Lịch đặt online ở `PENDING` vẫn **giữ chỗ** (BR-APT-05). Nếu lễ
 ## 2. Tiền điều kiện
 
 - Đăng nhập role lễ tân.
-- Có cấu hình ngưỡng quá hạn (đề xuất thêm khóa mới, xem mục 9).
+- Có cấu hình `Booking.PendingConfirmHours` (mặc định 4) và `Booking.PendingVisitSoonHours` (mặc định 24), thêm bằng migration `AddPendingConfirmConfigs` và seeder.
 
-## 3. API (ĐỀ XUẤT)
+## 3. API
 
 **Request** `GET api/appointments/pending-overdue`, quyền `[Authorize(Roles = "Receptionist,ClinicManager")]`. Không có tham số bắt buộc.
 
@@ -34,16 +34,17 @@ Lịch đặt online ở `PENDING` vẫn **giữ chỗ** (BR-APT-05). Nếu lễ
 | `patientId`, `patientCode`, `patientName`, `patientPhoneNumber` | | Để lễ tân gọi (số đầy đủ) |
 | `appointmentDate`, `timeSlotStart` | DateOnly, TimeOnly? | Giờ khám |
 | `doctorId`, `doctorName` | | |
-| `createdAt` | DateTimeOffset | Lúc đặt |
+| `pendingSince` | DateTimeOffset | Lúc lịch về `PENDING`: lúc đặt, hoặc lần bệnh nhân đổi lịch gần nhất (`UpdatedAt ?? CreatedAt`) |
+| `confirmDeadline` | DateTime (giờ phòng khám) | Hạn xác nhận = sớm hơn trong hai mốc: `pendingSince + PendingConfirmHours` và `giờ khám - PendingVisitSoonHours` |
 | `pendingHours` | int | Số giờ đã chờ xác nhận |
-| `hoursUntilVisit` | int | Số giờ còn tới giờ khám |
-| `reason` | string | `WAITING_TOO_LONG` hoặc `VISIT_SOON` (đề xuất, chưa có hằng số) |
+| `hoursUntilVisit` | int | Số giờ còn tới giờ khám (âm nếu đã qua giờ khám) |
+| `reason` | string | `VISIT_SOON` hoặc `WAITING_TOO_LONG` (`AppointmentConstants`); cả hai cùng đúng thì là `VISIT_SOON` |
 
-## 4. Luồng xử lý trong code (ĐỀ XUẤT)
+## 4. Luồng xử lý trong code
 
 1. Đọc ngưỡng từ `SystemConfigurations` qua `GetIntConfigAsync` (như `AppointmentService.cs:355-361`).
 2. Lấy lịch `Status = PENDING`, `AppointmentDate >= ClinicClock.Today` (BR-C01).
-3. Đánh dấu `WAITING_TOO_LONG` khi `ClinicClock.Now - CreatedAt >= Booking.PendingConfirmHours`; `VISIT_SOON` khi giờ khám - `ClinicClock.Now` <= `Booking.PendingVisitSoonHours`.
+3. Tính `confirmDeadline`; lịch vào danh sách khi `ClinicClock.Now >= confirmDeadline`. `VISIT_SOON` khi đã tới mốc giờ khám, còn lại `WAITING_TOO_LONG`.
 4. Sắp: `VISIT_SOON` trước, rồi theo giờ khám.
 5. Không đổi dữ liệu. (Tùy chọn sau này: FE gọi định kỳ hoặc đẩy `Notification` cho lễ tân, liên quan F-CRM-03.)
 
@@ -52,9 +53,9 @@ Lịch đặt online ở `PENDING` vẫn **giữ chỗ** (BR-APT-05). Nếu lễ
 | Mã | Quy tắc | Được kiểm tra ở |
 |---|---|---|
 | BR-APT-05 | Lịch `PENDING` giữ chỗ đến khi được xác nhận | Đã có ở `AppointmentRepository.cs:86-95` (chỉ `CANCELLED`, `NO_SHOW` nhả chỗ) |
-| Q10 | Quá hạn chỉ cảnh báo, không tự hủy (mặc định tạm) | Chưa làm |
+| Q10 | Quá hạn chỉ cảnh báo, không tự hủy (mặc định tạm) | API chỉ đọc |
 
-## 6. Trạng thái và dữ liệu thay đổi (ĐỀ XUẤT)
+## 6. Trạng thái và dữ liệu thay đổi
 
 Chỉ đọc. Nếu sau này chốt "tự hủy" (Q10) thì lịch `PENDING` → `CANCELLED` với `CancelledByUserId = null` và lý do hệ thống, ghi audit `APPOINTMENT_CANCELLED`.
 
@@ -69,11 +70,12 @@ Chỉ đọc. Nếu sau này chốt "tự hủy" (Q10) thì lịch `PENDING` →
 
 ## 8. Kiểm thử
 
-- Test hiện có: Chưa có (chưa làm).
+- Test hiện có: `Services/Appointments/GetPendingOverdueTests` (OZ-APT-10).
 - Ca cần test khi làm: lịch vừa đặt không xuất hiện; lịch chờ quá ngưỡng xuất hiện; lịch sắp tới giờ xuất hiện dù mới đặt; lịch `CONFIRMED`/`CANCELLED` không xuất hiện; lịch ngày đã qua không xuất hiện.
 
 ## 9. Còn thiếu / câu hỏi mở
 
 - Q10: tự hủy hay chỉ cảnh báo. Mặc định tạm: chỉ cảnh báo.
-- Cần thêm khóa cấu hình mới (đề xuất `Booking.PendingConfirmHours`, `Booking.PendingVisitSoonHours`) vào `ConfigKeyConstants` và seed `SystemConfigurations`; chưa có trong mục 7 tài liệu tổng. Giá trị mặc định chưa chốt.
+- Giá trị mặc định 4 giờ / 24 giờ là tạm, cần chốt với phòng khám. Chưa ghi vào mục 7 tài liệu tổng.
+- FE chưa gọi API: màn "Xác nhận lịch hẹn" và khung "Cần xử lý ngay" vẫn dùng ngưỡng 2 giờ viết cứng (`isPendingSoon`).
 - Lịch `PENDING` của ngày đã qua hiện không được dọn và không chặn bệnh nhân đặt mới (`HasUnfinishedAppointmentAsync` chỉ xét ngày ≥ hôm nay, `AppointmentRepository.cs:310-319`), nhưng vẫn nằm ở `PENDING` mãi. Chưa chốt có tự chuyển `NO_SHOW`/`CANCELLED` không.

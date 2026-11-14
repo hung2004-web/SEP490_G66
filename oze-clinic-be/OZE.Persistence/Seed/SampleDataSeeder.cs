@@ -182,6 +182,8 @@ namespace OZE.Persistence.Seed
             (ConfigKeyConstants.BookingMaxDaysAhead, "30", "Int", "Đặt lịch trước tối đa (ngày)"),
             (ConfigKeyConstants.BookingMinHoursAhead, "2", "Int", "Đặt trước giờ hẹn ít nhất (giờ)"),
             (ConfigKeyConstants.BookingCancelCutoffHours, "24", "Int", "Bệnh nhân tự huỷ trước giờ hẹn ít nhất (giờ)"),
+            (ConfigKeyConstants.BookingPendingConfirmHours, "4", "Int", "Lịch chờ xác nhận quá số giờ này thì cảnh báo lễ tân (giờ)"),
+            (ConfigKeyConstants.BookingPendingVisitSoonHours, "24", "Int", "Lịch chờ xác nhận sắp tới giờ khám trong số giờ này thì cảnh báo lễ tân (giờ)"),
             ("CheckIn.EarlyMinutes", "30", "Int", "Cho check-in sớm tối đa (phút)"),
             (ConfigKeyConstants.CheckInLateMinutes, "15", "Int", "Trễ quá thì đánh dấu NO_SHOW (phút)"),
             ("Queue.AutoExpireMinutes", "60", "Int", "Chờ quá thì tự huỷ khỏi hàng chờ (phút)"),

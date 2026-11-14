@@ -180,7 +180,7 @@ flowchart LR
 | F-APT-07 | Hủy lịch | Bệnh nhân, lễ tân, quản lý | `POST {id}/cancel` | ✅ |
 | F-APT-08 | Đổi lịch | Bệnh nhân, lễ tân | `POST {id}/reschedule` | ✅ |
 | F-APT-09 | Lễ tân đặt hộ (tự xác nhận): bệnh nhân có sẵn hoặc mới theo số điện thoại; màn Quản lý lịch hẹn (lịch tuần), Hồ sơ bệnh nhân, Yêu cầu tư vấn | Lễ tân | `POST api/appointments/reception-booking` | ✅ |
-| F-APT-10 | Cảnh báo lịch `PENDING` quá hạn xác nhận | Lễ tân | | ⬜ |
+| F-APT-10 | Cảnh báo lịch `PENDING` quá hạn xác nhận | Lễ tân | | 🟡 BE |
 | F-APT-11 | Ghi kết quả liên lạc với khách (gọi đi, khách gọi đến) và đặt lại lịch đã hủy | Lễ tân | Đề xuất `POST/GET {id}/contact-attempts`, `POST {id}/rebook` | ⬜ **Đề xuất, chờ nhóm chốt** |
 
 | Mã | Quy tắc |

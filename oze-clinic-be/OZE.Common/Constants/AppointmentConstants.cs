@@ -19,6 +19,10 @@ namespace OZE.Common.Constants
         public const string AttentionWaiting = "WAITING";
         public const string AttentionUpcoming = "UPCOMING";
 
+        // Why a PENDING appointment is overdue for confirmation
+        public const string PendingVisitSoon = "VISIT_SOON";
+        public const string PendingWaitingTooLong = "WAITING_TOO_LONG";
+
         // Must match the check constraint CK_Appointments_Type
         public const string BookedType = "BOOKED";
         public const string WalkInType = "WALK_IN";

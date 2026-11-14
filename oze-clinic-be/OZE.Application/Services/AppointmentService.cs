@@ -836,6 +836,56 @@ namespace OZE.Application.Services
                 .ToList();
         }
 
+        public async Task<List<PendingOverdueResponse>> GetPendingOverdueAsync(CancellationToken cancellationToken = default)
+        {
+            var confirmHours = await GetIntConfigAsync(ConfigKeyConstants.BookingPendingConfirmHours);
+            var visitSoonHours = await GetIntConfigAsync(ConfigKeyConstants.BookingPendingVisitSoonHours);
+            var now = ClinicClock.Now;
+
+            var pending = await _appointmentRepository.GetPendingFromAsync(DateOnly.FromDateTime(ClinicClock.Today), cancellationToken);
+            var items = new List<PendingOverdueResponse>();
+            foreach (var appointment in pending)
+            {
+                // A reschedule by the patient puts the appointment back to PENDING, so the wait starts again from there
+                var pendingSince = appointment.UpdatedAt ?? appointment.CreatedAt;
+                var waitDeadline = ClinicClock.ToClinicTime(pendingSince).AddHours(confirmHours);
+                // A booking without a time (should not happen for PENDING) counts from the start of its day
+                var visitAt = appointment.AppointmentDate.ToDateTime(appointment.TimeSlotStart ?? TimeOnly.MinValue);
+                var visitDeadline = visitAt.AddHours(-visitSoonHours);
+                var deadline = waitDeadline < visitDeadline ? waitDeadline : visitDeadline;
+                if (now < deadline)
+                {
+                    continue;
+                }
+
+                items.Add(new PendingOverdueResponse
+                {
+                    AppointmentId = appointment.Id,
+                    PatientId = appointment.PatientId,
+                    PatientCode = appointment.Patient?.PatientCode ?? string.Empty,
+                    PatientName = appointment.Patient?.FullName ?? string.Empty,
+                    PatientPhoneNumber = appointment.Patient?.PhoneNumber ?? string.Empty,
+                    AppointmentDate = appointment.AppointmentDate,
+                    TimeSlotStart = appointment.TimeSlotStart,
+                    DoctorId = appointment.DoctorId,
+                    DoctorName = appointment.Doctor?.FullName,
+                    PendingSince = pendingSince,
+                    ConfirmDeadline = deadline,
+                    PendingHours = (int)Math.Floor((now - ClinicClock.ToClinicTime(pendingSince)).TotalHours),
+                    HoursUntilVisit = (int)Math.Floor((visitAt - now).TotalHours),
+                    Reason = now >= visitDeadline ? AppointmentConstants.PendingVisitSoon : AppointmentConstants.PendingWaitingTooLong
+                });
+            }
+
+            // The visits closest in time first: those are the calls that cannot wait
+            return items
+                .OrderBy(x => x.Reason == AppointmentConstants.PendingVisitSoon ? 0 : 1)
+                .ThenBy(x => x.AppointmentDate)
+                .ThenBy(x => x.TimeSlotStart)
+                .ThenBy(x => x.AppointmentId)
+                .ToList();
+        }
+
         public async Task<AppointmentResponse> ReassignDoctorAsync(long id, ReassignDoctorRequest request, CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository.GetByIdWithExaminationAsync(id, cancellationToken);
